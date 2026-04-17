@@ -1,0 +1,37 @@
+---
+title: Quickstart
+description: Add the ShipEasy SDK and evaluate your first gate in under 5 minutes.
+---
+
+# Quickstart
+
+## Install
+
+```bash
+npm install @shipeasy/sdk
+```
+
+## Initialize
+
+```ts
+import { ShipEasy } from "@shipeasy/sdk";
+
+const client = new ShipEasy({ sdkKey: process.env.SHIPEASY_SDK_KEY });
+```
+
+## Evaluate a gate
+
+```ts
+const enabled = await client.checkGate("my-feature", { userId: "user_123" });
+
+if (enabled) {
+  // show new feature
+}
+```
+
+## Evaluate a dynamic config
+
+```ts
+const config = await client.getDynamicConfig("pricing-config");
+const price = config.get("base_price", 9.99);
+```

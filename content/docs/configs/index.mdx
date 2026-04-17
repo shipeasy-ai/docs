@@ -1,0 +1,25 @@
+---
+title: Introduction
+description: Feature flags and dynamic configuration for your application.
+---
+
+# Configs
+
+Configs gives you feature gates and dynamic config values that update at the edge — no redeploy required.
+
+## What you get
+
+- **Gates** — boolean feature flags with optional targeting rules (user ID, attributes, percentage rollout)
+- **Dynamic values** — typed key/value configs (string, number, JSON) served from Cloudflare KV with sub-millisecond reads
+
+## How it works
+
+1. Create a gate or config value in the dashboard
+2. Install the ShipEasy SDK in your app
+3. Evaluate flags on the server or client — values are cached in KV and CDN-purged on change
+
+## Next steps
+
+- [Quickstart](/configs/quickstart) — add the SDK and evaluate your first gate
+- [Gates](/configs/gates) — targeting rules, percentage rollouts, overrides
+- [Dynamic values](/configs/values) — typed configs, JSON payloads

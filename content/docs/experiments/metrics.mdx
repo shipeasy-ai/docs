@@ -1,0 +1,27 @@
+---
+title: Metrics
+description: Define the events and computed values that drive experiment analysis.
+---
+
+# Metrics
+
+Metrics define what you measure in an experiment. Each metric is tied to one or more event types and an aggregation function.
+
+## Metric types
+
+| Type         | Description                                  |
+| ------------ | -------------------------------------------- |
+| `count`      | Number of events per user                    |
+| `sum`        | Sum of a numeric event property              |
+| `mean`       | Average of a numeric event property          |
+| `conversion` | Binary — did the event happen at least once? |
+
+## Creating a metric
+
+1. Go to **Experiments → Metrics**
+2. Click **New metric**
+3. Choose the event type and aggregation
+
+## Attaching metrics to experiments
+
+When creating an experiment, select one or more metrics as the primary and guardrail metrics. The analysis pipeline runs Welch's t-test on each metric for each variant vs. control.

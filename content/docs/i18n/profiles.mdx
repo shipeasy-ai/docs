@@ -1,0 +1,34 @@
+---
+title: Profiles
+description: Locale and environment groupings for your label sets.
+---
+
+# Profiles
+
+A profile is a named, versioned manifest of label keys for a specific locale and environment combination.
+
+## Naming convention
+
+Profiles use a `locale:environment` format:
+
+| Profile      | Meaning             |
+| ------------ | ------------------- |
+| `en:prod`    | English, production |
+| `fr:staging` | French, staging     |
+| `de:prod`    | German, production  |
+
+## Creating a profile
+
+Go to **String Manager → Profiles → New profile**, or use the CLI:
+
+```bash
+shipeasy i18n profiles create --name en:prod --locale en
+```
+
+## Versioning
+
+Every publish creates a new version. The current version is served from KV. You can roll back to any previous version from the dashboard.
+
+## Key counts
+
+The profiles list shows how many label keys each profile contains. Click **Browse keys** to filter the keys view to a specific profile.

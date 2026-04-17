@@ -1,0 +1,29 @@
+---
+title: Introduction
+description: A/B testing, feature experiments, and statistical analysis.
+---
+
+# Experiments
+
+Run rigorous A/B tests with automatic statistical analysis, holdouts, and multi-variate support — all at the Cloudflare edge.
+
+## What you get
+
+- **Experiments** — A/B and multi-variate tests with Welch's t-test significance reporting
+- **Universes** — logical groupings of experiments with holdout support
+- **Metrics** — the events and computed values you care about
+- **Events** — raw telemetry ingested via Analytics Engine
+- **User attributes** — custom dimensions for targeting and analysis
+
+## How it works
+
+1. Define metrics (conversion events) in the dashboard
+2. Create an experiment with variants and allocation percentage
+3. Log exposure and conversion events via the SDK
+4. Daily cron runs t-tests and writes results back to D1
+
+## Next steps
+
+- [Quickstart](/experiments/quickstart) — create and run your first experiment
+- [Universes](/experiments/universes) — holdouts, mutual exclusion
+- [Metrics](/experiments/metrics) — defining what you measure

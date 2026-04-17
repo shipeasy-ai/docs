@@ -1,0 +1,32 @@
+---
+title: User Attributes
+description: Custom dimensions for targeting gates and segmenting experiment results.
+---
+
+# User Attributes
+
+User attributes are custom key/value pairs you pass alongside a user ID. They power targeting rules in gates and segmentation in experiment analysis.
+
+## Passing attributes
+
+```ts
+const user = {
+  userId: "user_123",
+  custom: {
+    plan: "pro",
+    country: "US",
+    beta_tester: true,
+  },
+};
+
+const enabled = await client.checkGate("new-ui", user);
+const experiment = await client.getExperiment("pricing-test", user);
+```
+
+## Registering attributes
+
+Declare your attribute schema in **Experiments → User attributes** so the dashboard can surface them in the targeting rule builder and segmentation filters.
+
+## Supported value types
+
+`string`, `number`, `boolean`

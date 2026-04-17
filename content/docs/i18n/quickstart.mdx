@@ -1,0 +1,54 @@
+---
+title: Quickstart
+description: Scan your codebase, generate translations, and serve them at the edge.
+---
+
+# Quickstart
+
+## Install the CLI
+
+```bash
+npm install -g @shipeasy/cli
+shipeasy login
+```
+
+## Scan your codebase
+
+```bash
+shipeasy i18n scan --dir ./src
+```
+
+This discovers all `t("key")` calls (or your configured pattern) and pushes them to the dashboard as label keys.
+
+## Create a profile
+
+```bash
+shipeasy i18n profiles create --name en:prod --locale en
+```
+
+## Generate a translation draft
+
+```bash
+shipeasy i18n translate --profile en:prod --ai
+```
+
+The AI draft appears in **String Manager → Drafts** for review.
+
+## Publish
+
+After approving the draft in the dashboard:
+
+```bash
+shipeasy i18n publish --profile en:prod
+```
+
+Labels are now live at the edge via Cloudflare KV.
+
+## Load in your app
+
+```ts
+import { loadLabels } from "@shipeasy/sdk";
+
+const labels = await loadLabels({ profile: "en:prod" });
+const title = labels.get("hero.title", "Welcome");
+```

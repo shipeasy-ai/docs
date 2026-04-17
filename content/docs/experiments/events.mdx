@@ -1,0 +1,35 @@
+---
+title: Events
+description: Raw telemetry ingested and stored in Cloudflare Analytics Engine.
+---
+
+# Events
+
+Events are the raw signal that metrics are computed from. They are written to Cloudflare Analytics Engine (fire-and-forget) via the edge worker.
+
+## Logging events
+
+```ts
+await client.logEvent("add_to_cart", {
+  userId: "user_123",
+  value: 29.99,
+  metadata: { sku: "SHIRT-L-BLUE" },
+});
+```
+
+## Event schema
+
+| Field      | Type     | Required |
+| ---------- | -------- | -------- |
+| `event`    | `string` | Yes      |
+| `userId`   | `string` | Yes      |
+| `value`    | `number` | No       |
+| `metadata` | `object` | No       |
+
+## Retention
+
+Events are retained for 90 days (Pro plan) or 30 days (Starter plan). The analysis cron runs daily and aggregates events into per-experiment results stored in D1.
+
+## Viewing events
+
+Raw events are visible in **Experiments → Events** for debugging. For analysis, use Metrics.

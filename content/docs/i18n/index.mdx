@@ -1,0 +1,29 @@
+---
+title: Introduction
+description: Localized labels and AI-assisted translations for your application.
+---
+
+# String Manager
+
+String Manager handles all your localization needs — from key discovery to AI-assisted translation to profile publishing — without leaving your workflow.
+
+## What you get
+
+- **Profiles** — locale + environment groupings (e.g. `en:prod`, `fr:staging`)
+- **Label keys** — auto-discovered from your codebase via CLI or MCP scan
+- **Drafts** — translation proposals (human or AI) that go through a review step before publishing
+- **Publish** — push a profile to Cloudflare KV for instant edge delivery
+
+## How it works
+
+1. Run `shipeasy i18n scan` (or use the MCP tool) to discover keys from your source code
+2. Create a translation draft — manually or via AI
+3. Review and approve the draft
+4. Publish the profile
+
+## Next steps
+
+- [Quickstart](/i18n/quickstart) — scan your first project and publish translations
+- [Profiles](/i18n/profiles) — locale/environment groupings
+- [Label keys](/i18n/keys) — key schema and chunking
+- [Drafts](/i18n/drafts) — review and approval workflow

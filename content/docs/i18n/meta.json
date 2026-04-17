@@ -1,0 +1,5 @@
+{
+  "title": "String Manager",
+  "root": true,
+  "pages": ["index", "quickstart", "profiles", "keys", "drafts"]
+}

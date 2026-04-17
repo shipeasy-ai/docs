@@ -1,0 +1,36 @@
+---
+title: Quickstart
+description: Create and run your first A/B experiment in minutes.
+---
+
+# Quickstart
+
+## Install
+
+```bash
+npm install @shipeasy/sdk
+```
+
+## Log an exposure
+
+```ts
+import { ShipEasy } from "@shipeasy/sdk";
+
+const client = new ShipEasy({ sdkKey: process.env.SHIPEASY_SDK_KEY });
+
+const experiment = await client.getExperiment("checkout-button-color", {
+  userId: "user_123",
+});
+
+const variant = experiment.get("color", "blue"); // "blue" | "green"
+```
+
+## Log a conversion event
+
+```ts
+await client.logEvent("purchase", { userId: "user_123", value: 49.99 });
+```
+
+## View results
+
+Results update daily. Go to **Experiments → [your experiment]** to see lift, p-value, and confidence intervals per variant.

@@ -1,0 +1,32 @@
+{
+  "name": "@shipeasy/docs",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "type-check": "fumadocs-mdx && tsc --noEmit",
+    "deploy": "next build && wrangler deploy",
+    "preview": "next build && wrangler dev"
+  },
+  "dependencies": {
+    "fumadocs-core": "^16.7.16",
+    "fumadocs-mdx": "^14.3.0",
+    "fumadocs-ui": "^16.7.16",
+    "next": "16.2.3",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.39",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@eslint/eslintrc": "^3",
+    "eslint": "^9",
+    "eslint-config-next": "15.4.6",
+    "typescript": "^5.7.4",
+    "wrangler": "^4.83.0"
+  }
+}

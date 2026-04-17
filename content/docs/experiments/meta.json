@@ -1,0 +1,5 @@
+{
+  "title": "Experiments",
+  "root": true,
+  "pages": ["index", "quickstart", "universes", "metrics", "events", "attributes"]
+}

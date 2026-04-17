@@ -1,0 +1,45 @@
+---
+title: Label Keys
+description: Auto-discovered translation keys from your codebase.
+---
+
+# Label Keys
+
+Label keys are the translatable strings in your application. They are discovered from source code and tracked in ShipEasy.
+
+## Key schema
+
+| Field     | Description                                |
+| --------- | ------------------------------------------ |
+| `key`     | Dot-notation identifier, e.g. `hero.title` |
+| `value`   | Default (source) value                     |
+| `chunk`   | Optional grouping for lazy-loading         |
+| `profile` | The profile this key belongs to            |
+
+## Discovering keys
+
+Run the CLI scanner to auto-discover keys:
+
+```bash
+shipeasy i18n scan --dir ./src
+```
+
+Or use the MCP tool from your AI assistant:
+
+```
+scan codebase for i18n keys
+```
+
+## Chunking
+
+Large apps can split keys into chunks for lazy loading:
+
+```ts
+const labels = await loadLabels({ profile: "en:prod", chunk: "checkout" });
+```
+
+Chunks are defined by directory or explicit annotation in the source scanner config.
+
+## Deleting keys
+
+Keys can be deleted from **String Manager → Label keys**. Deleting a key removes it from all profiles and any open drafts that reference it.

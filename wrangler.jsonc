@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "shipeasy-docs",
+  "compatibility_date": "2026-04-16",
+  "assets": {
+    "directory": "./out",
+    "not_found_handling": "404-page",
+  },
+  "routes": [{ "pattern": "docs.shipeasy.ai", "custom_domain": true }],
+  "observability": {
+    "enabled": true,
+  },
+}

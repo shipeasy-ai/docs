@@ -1,0 +1,37 @@
+---
+title: Dynamic Values
+description: Typed key/value configs that update instantly without a redeploy.
+---
+
+# Dynamic Values
+
+Dynamic configs are typed key/value pairs served from Cloudflare KV. Changes propagate in milliseconds via CDN purge — no redeploy or SDK restart needed.
+
+## Supported types
+
+| Type      | Example          |
+| --------- | ---------------- |
+| `string`  | `"v2"`, `"en"`   |
+| `number`  | `9.99`, `100`    |
+| `boolean` | `true`, `false`  |
+| `json`    | `{ "limit": 5 }` |
+
+## Creating a config
+
+1. Go to **Configs → Dynamic values** in the dashboard
+2. Click **New config**
+3. Choose a key, type, and initial value
+
+## SDK usage
+
+```ts
+const config = await client.getDynamicConfig("app-settings");
+
+const limit = config.get("rate_limit", 100); // number
+const theme = config.get("default_theme", "light"); // string
+const flags = config.get("feature_flags", {}); // json
+```
+
+## Delivery
+
+Values are stored in Cloudflare KV with plan-specific TTLs. The SDK fetches a single bundle per project — not one request per key.

@@ -1,0 +1,25 @@
+---
+title: Universes
+description: Group experiments and define holdouts for clean causal analysis.
+---
+
+# Universes
+
+A universe is a logical namespace for experiments. It controls:
+
+- **Holdout** — a percentage of users excluded from all experiments in the universe, used as a global control
+- **Mutual exclusion** — users in one experiment within a universe are excluded from others (optional)
+
+## Creating a universe
+
+1. Go to **Experiments → Universes**
+2. Click **New universe**
+3. Set a name and optional holdout percentage
+
+## Assigning experiments to a universe
+
+When creating or editing an experiment, select a universe. Users in the holdout will receive no variant and won't be included in analysis.
+
+## When to use holdouts
+
+Use holdouts when you want a pristine baseline unaffected by any running experiments — especially useful when many experiments run simultaneously and you want to measure their combined effect.

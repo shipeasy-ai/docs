@@ -1,0 +1,36 @@
+---
+title: Gates
+description: Boolean feature flags with targeting rules and percentage rollouts.
+---
+
+# Gates
+
+Gates are boolean feature flags that evaluate to `true` or `false` for a given user.
+
+## Creating a gate
+
+1. Go to **Configs → Gates** in the dashboard
+2. Click **New gate**
+3. Give it a name (e.g. `new-checkout-flow`)
+4. Set targeting rules or enable for everyone
+
+## Targeting rules
+
+Gates support targeting by:
+
+- **User ID** — exact match or list
+- **User attributes** — any attribute in your `StatsigUser` object
+- **Percentage rollout** — serve to X% of users, deterministically by user ID
+
+## SDK usage
+
+```ts
+const enabled = await client.checkGate("new-checkout-flow", {
+  userId: "user_123",
+  custom: { plan: "pro", country: "US" },
+});
+```
+
+## Overrides
+
+You can force a gate `true` or `false` for specific user IDs from the dashboard — useful for QA and dogfooding.
