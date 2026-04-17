@@ -4,6 +4,7 @@ import "fumadocs-ui/style.css";
 import { DocsLayout } from "fumadocs-ui/layouts/docs";
 import { RootProvider } from "fumadocs-ui/provider/next";
 import { source } from "@/lib/source";
+import { Logo } from "@shipeasy/shared/Logo";
 
 export const metadata: Metadata = {
   title: "ShipEasy Docs",
@@ -23,7 +24,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <RootProvider>
           <DocsLayout
             tree={source.pageTree}
-            nav={{ title: "ShipEasy" }}
+            nav={{
+              title: (
+                <span className="flex items-center gap-2 font-bold">
+                  <Logo className="size-5" />
+                  ShipEasy
+                </span>
+              ),
+            }}
             sidebar={{
               tabs: {
                 transform(option) {

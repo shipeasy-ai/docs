@@ -12,6 +12,7 @@
     "preview": "next build && wrangler dev"
   },
   "dependencies": {
+    "@shipeasy/shared": "workspace:*",
     "fumadocs-core": "^16.7.16",
     "fumadocs-mdx": "^14.3.0",
     "fumadocs-ui": "^16.7.16",
@@ -20,10 +21,10 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3",
     "@types/node": "^20.19.39",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "@eslint/eslintrc": "^3",
     "eslint": "^9",
     "eslint-config-next": "15.4.6",
     "typescript": "^5.7.4",
