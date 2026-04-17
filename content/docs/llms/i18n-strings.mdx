@@ -1,0 +1,354 @@
+---
+title: "LLM Onboarding: String Manager (i18n)"
+description: Step-by-step guide for AI agents to fully onboard a project to ShipEasy String Manager — install, scan, codemod, push, and publish.
+---
+
+# LLM Onboarding: String Manager (i18n)
+
+> **For AI agents.** This guide is designed to be followed autonomously.
+> There is exactly **one mandatory stop**: waiting for the human to complete browser-based auth.
+> Every other step runs without user interaction.
+
+---
+
+## Step 1 — Install the CLI and MCP server
+
+Install the ShipEasy CLI globally and register the MCP server with your AI assistant config.
+
+```bash
+npm install -g @shipeasy/cli
+```
+
+Add the MCP server to your AI assistant. For **Claude Code**, edit (or create) `~/.claude/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "shipeasy": {
+      "command": "npx",
+      "args": ["-y", "@shipeasy/mcp@latest"]
+    }
+  }
+}
+```
+
+For **Cursor**, write the same block to `.cursor/mcp.json` in the project root.
+For **Windsurf**, write it to `.windsurf/mcp.json`.
+For any other assistant that supports MCP, write it to `mcp.json` in the project root.
+
+Alternatively, if the CLI is already installed, one command writes all configs automatically:
+
+```bash
+shipeasy mcp install
+```
+
+Add the CLAUDE.md skill block below to your project's `CLAUDE.md` (create one at the repo root if it doesn't exist). This teaches the AI assistant which MCP tools to use for i18n work and when to stop for human input:
+
+```markdown
+## ShipEasy String Manager
+
+This project uses ShipEasy String Manager for localization.
+MCP server: `@shipeasy/mcp` — tools are prefixed `i18n_*`.
+
+Workflow for i18n changes:
+
+1. Call `detect_project` to confirm framework and SDK state.
+2. Call `auth_check` — if not authenticated, stop and ask the human to run `shipeasy auth` in a terminal.
+3. Use `i18n_codemod_preview` to show diffs before writing. Call `i18n_codemod_apply` only after the human approves.
+4. Use `i18n_push_keys` to sync keys to the dashboard after any codemod.
+5. Use `i18n_publish_profile` to push changes to the CDN after reviewing drafts.
+
+Never skip the preview step. Never run `i18n_codemod_apply` without `confirm: true` and explicit approval.
+```
+
+---
+
+## Step 2 — Detect the project and pick the right SDK
+
+Call the `detect_project` MCP tool to identify the framework, package manager, and whether the SDK is already installed:
+
+```
+mcp: detect_project {}
+```
+
+Based on the returned `frameworks` array, install the matching SDK variant:
+
+| Framework                         | Install command                          |
+| --------------------------------- | ---------------------------------------- |
+| Next.js / React (server + client) | `npm install shipeasy`                   |
+| React only (client)               | `npm install shipeasy`                   |
+| Vue / Nuxt                        | `npm install shipeasy`                   |
+| Svelte / SvelteKit                | `npm install shipeasy`                   |
+| Angular                           | `npm install shipeasy`                   |
+| Node.js (server only)             | `npm install shipeasy`                   |
+| Python (Django / Flask / FastAPI) | `pip install shipeasy`                   |
+| Ruby on Rails                     | `gem install shipeasy`                   |
+| Go                                | `go get github.com/shipeasy/shipeasy-go` |
+| PHP / Laravel                     | `composer require shipeasy/shipeasy-php` |
+
+If `detect_project` returns `shipeasy.i18n_sdk.installed: true`, the SDK is already present — skip install and move to Step 3.
+
+---
+
+## Step 3 — Authenticate ⏸ STOP HERE
+
+This is the **only point where the AI must wait for the human.**
+
+Call `auth_check` to test the current session:
+
+```
+mcp: auth_check {}
+```
+
+If it returns `{ "authenticated": false }`, output this exact message to the human and wait:
+
+> **Action required:** Open a terminal and run:
+>
+> ```bash
+> shipeasy auth
+> ```
+>
+> Sign in with GitHub, Google, or your magic link. When the terminal prints "Authenticated", tell me and I'll continue.
+
+Once the human confirms, call `auth_check` again to verify `authenticated: true`, then continue.
+
+If the command is unavailable, the same flow works with the MCP binary directly:
+
+```bash
+shipeasy-mcp install
+```
+
+After auth completes, retrieve the project's SDK keys for the next step:
+
+```
+mcp: list_resources { "kind": "sdk_keys" }
+```
+
+Note the `server_key` and `client_key` values from the response.
+
+---
+
+## Step 4 — Configure credentials
+
+Set environment variables so the SDK can connect to ShipEasy. The exact mechanism depends on the project:
+
+**Next.js / Node.js — `.env.local`**
+
+```bash
+SHIPEASY_SERVER_KEY=sdk_server_...
+NEXT_PUBLIC_SHIPEASY_CLIENT_KEY=sdk_client_...
+```
+
+**Python — `.env`**
+
+```bash
+SHIPEASY_SERVER_KEY=sdk_server_...
+SHIPEASY_CLIENT_KEY=sdk_client_...
+```
+
+**Ruby on Rails — `config/credentials.yml.enc` or `.env`**
+
+```bash
+SHIPEASY_SERVER_KEY=sdk_server_...
+```
+
+**Go — environment or `.env` (with `godotenv`)**
+
+```bash
+SHIPEASY_SERVER_KEY=sdk_server_...
+```
+
+Use the values returned by `list_resources` in Step 3. Never hard-code keys in source files — always use environment variables or a secrets manager.
+
+For CI/CD, add both variables as repository secrets (GitHub Actions, Vercel, Cloudflare, etc.).
+
+---
+
+## Step 5 — Add the loader script tag
+
+The loader script delivers published string bundles to the browser with zero JS dependencies and infinite CDN caching.
+
+Call `i18n_install_loader` to get the correct tag for the detected framework:
+
+```
+mcp: i18n_install_loader {
+  "profile": "en:prod",
+  "client_key": "sdk_client_..."
+}
+```
+
+The tool returns the exact tag and the file where it should be inserted. Insert it there.
+
+Typical output for **Next.js App Router** — insert in `src/app/layout.tsx`:
+
+```html
+<script
+  src="https://api.shipeasy.ai/sdk/i18n/loader.js"
+  data-key="sdk_client_..."
+  data-profile="en:prod"
+  async
+></script>
+```
+
+For **Next.js Pages Router** — insert in `pages/_document.tsx` inside `<Head>`.
+
+For **Vite / plain React / SvelteKit** — insert in `index.html` inside `<head>`.
+
+For **Rails** — insert in `app/views/layouts/application.html.erb` inside `<head>`.
+
+For **Django** — insert in your base template inside `<head>`.
+
+If `detect_project` returned `shipeasy.loader_script_tag.present: true`, this step is already done — skip it.
+
+---
+
+## Step 6 — Create the source profile
+
+A **profile** is a locale + environment pair (e.g. `en:prod` for English production). Create one profile that matches the language already used in the codebase:
+
+```
+mcp: i18n_create_profile {
+  "name": "en:prod",
+  "locale": "en",
+  "environment": "prod"
+}
+```
+
+If the codebase is not in English, substitute the correct BCP-47 locale code (e.g. `fr:prod` for French, `de:prod` for German).
+
+If `list_resources { "kind": "profiles" }` already shows a matching profile, skip this step.
+
+---
+
+## Step 7 — Run the codemod (preview first)
+
+The codemod scans the source tree and wraps every hardcoded string in a `ShipeasyString` component (or the equivalent SDK call for non-JSX frameworks). It generates a diff so you can review before writing.
+
+First, preview without writing:
+
+```
+mcp: i18n_codemod_preview {
+  "framework": "<detected_framework>",
+  "files": ["src/"],
+  "strategy": "jsx_text_literals",
+  "key_prefix": ""
+}
+```
+
+The tool returns a list of file diffs. Review them. If the changes look correct, apply:
+
+```
+mcp: i18n_codemod_apply {
+  "framework": "<detected_framework>",
+  "files": ["src/"],
+  "strategy": "jsx_text_literals",
+  "key_prefix": "",
+  "confirm": true
+}
+```
+
+The apply tool also writes `i18n-codemod-review.json` at the project root — this file lists every string that needs manual review (dynamic strings, strings with HTML, plurals, etc.).
+
+If the project is large (>300 files), run the codemod one directory at a time to keep diffs reviewable:
+
+```
+mcp: i18n_codemod_apply { "files": ["src/app/"], "confirm": true, ... }
+mcp: i18n_codemod_apply { "files": ["src/components/"], "confirm": true, ... }
+```
+
+---
+
+## Step 8 — Push keys to the dashboard
+
+After the codemod writes files, push all discovered keys to the source profile. The push tool reads the codemod output and creates keys in bulk:
+
+```
+mcp: i18n_push_keys {
+  "profile": "en:prod",
+  "source": "codemod"
+}
+```
+
+The tool returns `{ pushed_count, skipped_count, failed_keys }`. If `failed_keys` is non-empty, inspect the errors — usually malformed key names that the codemod couldn't auto-slugify.
+
+Verify keys arrived:
+
+```
+mcp: list_resources { "kind": "keys", "search": "" }
+```
+
+---
+
+## Step 9 — Second codemod pass and key descriptions
+
+Run a second scan over the full app to catch any strings the first pass missed (dynamic strings that were skipped, strings in config files, strings added after the first pass, etc.):
+
+```
+mcp: i18n_scan_code {
+  "path": "src/",
+  "include_dynamic": false
+}
+```
+
+The scan returns candidate strings that don't yet have a matching key in the profile. For each one, either:
+
+- Call `i18n_codemod_apply` on the containing file to wrap it, then `i18n_push_keys` again, or
+- Manually wrap it in a `ShipeasyString` if the codemod can't handle it (dynamic key, rich HTML, etc.)
+
+**Add descriptions to every pushed key.** Descriptions are the most important context a human translator (or AI translation) has. For every key returned by `list_resources { "kind": "keys" }`, call:
+
+```
+mcp: i18n_create_key {
+  "profile": "en:prod",
+  "key": "<key_name>",
+  "value": "<source string>",
+  "description": "<one sentence: where this string appears and what it does>"
+}
+```
+
+Good description examples:
+
+- `"CTA button on the checkout summary page — confirms the purchase"`
+- `"Empty-state heading shown when the user has no active projects"`
+- `"Error message when email validation fails on the signup form"`
+
+Poor descriptions (avoid):
+
+- `"Button text"` — too vague
+- `"The string that appears when..."` — circular
+- `""` — empty
+
+---
+
+## Step 10 — Validate and publish
+
+Validate that every key referenced in code exists in the profile:
+
+```
+mcp: i18n_validate_keys {
+  "profile": "en:prod"
+}
+```
+
+Fix any missing keys reported before proceeding.
+
+Publish the source profile to the CDN:
+
+```
+mcp: i18n_publish_profile {
+  "profile": "en:prod"
+}
+```
+
+The tool rebuilds the KV manifest and purges the CDN. Strings are live at the edge within seconds.
+
+---
+
+## What's next
+
+- **Add translations** — create target profiles (`fr:prod`, `de:prod`, etc.) and run `i18n_translate_draft` using the Anthropic API from your machine.
+- **Review drafts** — open **String Manager → Drafts** in the dashboard to approve or edit AI-generated translations before publishing.
+- **Set up validation in CI** — add `shipeasy i18n validate` as a pre-merge check to prevent missing keys from reaching production.
+- **Automate with the `translate_site` prompt** — if your site has the `/.well-known/i18n.json` manifest, the AI can discover the full state and manage ongoing translation automatically.
+
+See the [String Manager docs](/i18n) for the full reference.
