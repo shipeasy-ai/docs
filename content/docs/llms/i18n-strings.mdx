@@ -50,7 +50,7 @@ Add the CLAUDE.md skill block below to your project's `CLAUDE.md` (create one at
 This project uses ShipEasy String Manager for localization.
 MCP server: `@shipeasy/mcp` — tools are prefixed `i18n_*`.
 
-Framework: <fill in: nextjs-app | nextjs-pages | react-vite | react-vite-client-split | cra>
+Framework: <fill in: nextjs-app | nextjs-pages | react-vite | react-vite-client-split | cra | remix | vue | nuxt | svelte | sveltekit | angular | astro | react-native | rails | django | laravel | express | go>
 Source root: <fill in: src/ | client/src/ | pages/ | etc.>
 Loader target: <fill in: src/app/layout.tsx | client/index.html | index.html | etc.>
 
@@ -72,15 +72,40 @@ Never skip the preview step. Never run `i18n_codemod_apply` without `confirm: tr
 
 ## Step 2 — Identify the project type
 
-Before calling any tool, look at what you already know about the project. Match it against the table below and record the **loader target** and **source root** — you will need both in Steps 4 and 6.
+Before calling any tool, look at what you already know about the project. Match it against the tables below and record the **loader target** and **source root** — you will need both in Steps 4 and 6.
 
-| #   | Project type                           | Signature files                            | Loader target         | Source root                |
-| --- | -------------------------------------- | ------------------------------------------ | --------------------- | -------------------------- |
-| A   | **Next.js App Router**                 | `src/app/layout.tsx` or `app/layout.tsx`   | `src/app/layout.tsx`  | `src/`                     |
-| B   | **Next.js Pages Router**               | `pages/_app.tsx` or `pages/_document.tsx`  | `pages/_document.tsx` | `pages/` and `components/` |
-| C   | **React + Vite (standard)**            | `index.html` at root, `src/main.tsx`       | `index.html`          | `src/`                     |
-| D   | **React + Vite (client/server split)** | `client/index.html`, `client/src/main.tsx` | `client/index.html`   | `client/src/`              |
-| E   | **Create React App**                   | `public/index.html`, `src/index.tsx`       | `public/index.html`   | `src/`                     |
+The **Codemod** column shows whether `i18n_codemod_preview`/`apply` work automatically (JSX/TSX only) or whether you must use `i18n_scan_code` to discover candidates and wrap them by hand.
+
+### JavaScript / TypeScript
+
+| #   | Project type                           | Signature files                               | Loader target                                 | Source root              | Codemod      |
+| --- | -------------------------------------- | --------------------------------------------- | --------------------------------------------- | ------------------------ | ------------ |
+| A   | **Next.js App Router**                 | `src/app/layout.tsx` or `app/layout.tsx`      | `src/app/layout.tsx`                          | `src/`                   | ✅ auto      |
+| B   | **Next.js Pages Router**               | `pages/_app.tsx` or `pages/_document.tsx`     | `pages/_document.tsx`                         | `pages/` + `components/` | ✅ auto      |
+| C   | **React + Vite (standard)**            | `index.html` at root, `src/main.tsx`          | `index.html`                                  | `src/`                   | ✅ auto      |
+| D   | **React + Vite (client/server split)** | `client/index.html`, `client/src/main.tsx`    | `client/index.html`                           | `client/src/`            | ✅ auto      |
+| E   | **Create React App**                   | `public/index.html`, `src/index.tsx`          | `public/index.html`                           | `src/`                   | ✅ auto      |
+| F   | **Remix**                              | `remix.config.js` or `app/root.tsx`           | `app/root.tsx` (inside `<head>`)              | `app/`                   | ✅ auto      |
+| G   | **Vue 3 + Vite**                       | `vite.config.ts` + `.vue` files               | `index.html`                                  | `src/`                   | ⚠️ scan only |
+| H   | **Nuxt 3**                             | `nuxt.config.ts`                              | `app.vue` or `layouts/default.vue`            | `pages/` + `components/` | ⚠️ scan only |
+| I   | **Svelte / SvelteKit**                 | `svelte.config.js`                            | `src/app.html` or `src/routes/+layout.svelte` | `src/`                   | ⚠️ scan only |
+| J   | **Angular**                            | `angular.json`                                | `src/index.html`                              | `src/`                   | ⚠️ scan only |
+| K   | **Astro**                              | `astro.config.mjs`                            | `src/layouts/Layout.astro`                    | `src/`                   | ⚠️ scan only |
+| L   | **React Native**                       | `react-native.config.js` or `metro.config.js` | n/a — no browser loader                       | `src/`                   | ✅ auto      |
+
+### Server-side / backend-rendered
+
+| #   | Project type                              | Signature files                                      | Loader target                            | Source root           | Codemod      |
+| --- | ----------------------------------------- | ---------------------------------------------------- | ---------------------------------------- | --------------------- | ------------ |
+| M   | **Ruby on Rails**                         | `Gemfile` with `rails`                               | `app/views/layouts/application.html.erb` | `app/views/`          | ⚠️ scan only |
+| N   | **Django (Python)**                       | `requirements.txt` or `pyproject.toml` with `django` | base `.html` template                    | `templates/`          | ⚠️ scan only |
+| O   | **Laravel (PHP)**                         | `composer.json` with `laravel/framework`             | `resources/views/layouts/app.blade.php`  | `resources/views/`    | ⚠️ scan only |
+| P   | **Express / Hono + server-rendered HTML** | `package.json` + `views/` or `public/`               | main layout HTML                         | `views/` or `public/` | ⚠️ scan only |
+| Q   | **Go (html/template)**                    | `go.mod` + `*.html` templates                        | base layout template                     | template directory    | ⚠️ scan only |
+
+> **⚠️ scan only** means `i18n_codemod_preview`/`apply` will not run for this framework. Use `i18n_scan_code` to list candidate strings, then wrap them manually or with a framework-specific i18n helper.
+
+---
 
 **If you matched a row:** proceed to Step 3. You do not need to call `detect_project`.
 
@@ -92,7 +117,7 @@ mcp: detect_project {}
 
 `detect_project` returns `entry_points`, `frameworks`, and `shipeasy.loader_script_tag`. Use `entry_points[0]` as the loader target and infer the source root from it. If it returns `status: "needs_clarification"`, ask the user which subdirectory contains the app and pass that path.
 
-If `shipeasy.i18n_sdk.installed: false`, the SDK is not yet installed. Skip SDK install for now — the loader script (Step 4) is sufficient to deliver strings; the React provider can be wired up after the initial push.
+If `shipeasy.i18n_sdk.installed: false`, the SDK is not yet installed. Skip SDK install for now — the loader script (Step 4) is sufficient to deliver strings; the framework-specific provider can be wired up after the initial push.
 
 ---
 
