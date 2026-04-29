@@ -1,35 +1,108 @@
 ---
 title: Events
-description: Raw telemetry ingested and stored in Cloudflare Analytics Engine.
+description: What `track()` actually does, what schema events have, and how they get aggregated.
 ---
 
-# Events
-
-Events are the raw signal that metrics are computed from. They are written to Cloudflare Analytics Engine (fire-and-forget) via the edge worker.
+An event is the raw signal that metrics are computed from. You log it with `track()`; the SDK forwards it to the edge worker (`POST /collect`); the worker writes it to Cloudflare Analytics Engine fire-and-forget. From there a daily cron aggregates events into metric values per user per day.
 
 ## Logging events
 
 ```ts
-await client.logEvent("add_to_cart", {
-  userId: "user_123",
-  value: 29.99,
-  metadata: { sku: "SHIRT-L-BLUE" },
-});
+// server
+flags.track(user_id, "purchase", { value: 49.99, sku: "SHIRT-L-BLUE" });
+
+// browser
+client.track("checkout_viewed", { source: "nav" });
 ```
+
+`track()` is **fire and forget** — it never throws, never blocks. The browser SDK batches events and flushes:
+
+- After a small batch fills (default 20 events).
+- On a 5-second timer.
+- On `pagehide` via `navigator.sendBeacon` so unloads don&apos;t lose data.
 
 ## Event schema
 
-| Field      | Type     | Required |
-| ---------- | -------- | -------- |
-| `event`    | `string` | Yes      |
-| `userId`   | `string` | Yes      |
-| `value`    | `number` | No       |
-| `metadata` | `object` | No       |
+| Field          | Type     | Required     | Notes                                                                   |
+| -------------- | -------- | ------------ | ----------------------------------------------------------------------- |
+| `event`        | `string` | yes          | The event name. Use snake_case: `purchase`, `signup_complete`.          |
+| `user_id`      | `string` | one of these | Pass on the server.                                                     |
+| `anonymous_id` | `string` | one of these | Auto-set by the browser SDK.                                            |
+| `timestamp`    | `number` | no           | Defaults to "now". Pass a unix-ms timestamp to backfill.                |
+| `value`        | `number` | no           | Convenience for `sum`/`mean` metrics. Equivalent to `properties.value`. |
+| `properties`   | `object` | no           | Any string/number/boolean keys.                                         |
 
-## Retention
+A `properties` payload should be **flat** (no nested objects), bounded in size (≤4 KB serialised), and use stable keys. The platform indexes property keys for filtering and segmentation; an unbounded set of property keys (e.g. one key per dynamic value) hurts performance.
 
-Events are retained for 90 days (Pro plan) or 30 days (Starter plan). The analysis cron runs daily and aggregates events into per-experiment results stored in D1.
+## Reserved event names
 
-## Viewing events
+Some event names are populated automatically and should not be logged manually:
 
-Raw events are visible in **Experiments → Events** for debugging. For analysis, use Metrics.
+| Event        | Source                                                                       |
+| ------------ | ---------------------------------------------------------------------------- |
+| `$exposure`  | Logged by `experiments.assign()` the first time a user enters an experiment. |
+| `$page_view` | Browser SDK auto-tracks unless disabled.                                     |
+| `$identify`  | Logged by `client.identify()` and `flags.identify()`.                        |
+| `$alias`     | Logged when stitching anon → user.                                           |
+
+You can opt out of auto-tracking in the SDK options:
+
+```ts
+configureShipeasy({ apiKey, env: "prod", autoTrack: false });
+```
+
+## Where events live
+
+Events are persisted to **Cloudflare Analytics Engine**, a time-series store. Retention depends on your plan:
+
+| Plan       | Retention |
+| ---------- | --------- |
+| Free       | 30 days   |
+| Pro        | 90 days   |
+| Enterprise | 365 days  |
+
+Aggregates (per-experiment, per-metric) are persisted to **D1** indefinitely. If you delete the underlying events, the aggregates remain.
+
+## Pulling raw events
+
+For debugging, the dashboard&apos;s **Events** tab streams the most recent events for the project. You can filter by event name, user, or property.
+
+Programmatically:
+
+```bash
+shipeasy events tail --event purchase --since 1h
+shipeasy events query --metric purchase_conversion --user u_4f2a
+```
+
+Raw events are not the place to do analytics — they&apos;re for "is the wiring correct?" and "what did this one user actually do?" checks. Use metrics for analysis.
+
+## Costs
+
+Events are billed per million per month. Rough orders of magnitude:
+
+- 10 events/user/day × 100k DAU ≈ 30M events/month → comfortably in Pro.
+- Tracking _every_ React render gets you to 10B events/month and a phone call from us.
+
+The browser SDK includes basic web-vitals auto-tracking by default. For high-traffic sites, disable what you don&apos;t use:
+
+```ts
+configureShipeasy({
+  apiKey,
+  env: "prod",
+  autoTrack: { pageView: true, webVitals: true, errors: false, fetch: false },
+});
+```
+
+## Idempotency
+
+`track()` is **not** idempotent — calling it twice logs two events. If a request might retry, gate the call:
+
+```ts
+const eventId = `purchase:${orderId}`;
+if (!alreadyTracked(eventId)) {
+  flags.track(user_id, "purchase", { value: orderTotal });
+  markTracked(eventId);
+}
+```
+
+For the daily-aggregation case this almost never matters; for billing-grade event streams, keep your own dedup ledger.

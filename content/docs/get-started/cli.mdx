@@ -1,0 +1,124 @@
+---
+title: CLI
+description: The `shipeasy` command — manage flags, experiments, keys, and translations from your terminal or CI.
+---
+
+The CLI is a thin wrapper over the public ShipEasy REST API. Anything in the dashboard works from a terminal, and everything is JSON-mode-friendly so you can pipe it into scripts.
+
+## Install
+
+```bash
+npm install -g @shipeasy/cli
+shipeasy --version
+```
+
+See [Authenticate](/get-started/authenticate) for the login flow.
+
+## Common commands
+
+<Terminal title="zsh">
+  <Prompt />
+  shipeasy whoami
+  <Out>
+    {"\n"}Project: acme{"\n"}Email: you@example.com{"\n"}Worker URL: https://edge.shipeasy.dev{"\n"}
+    App URL: https://shipeasy.ai
+  </Out>
+</Terminal>
+
+```bash
+shipeasy flags list
+shipeasy experiments list
+shipeasy keys list
+shipeasy i18n scan ./src
+```
+
+Add `--json` to any read command to get machine-readable output. Add `--project <id>` to override the active project for one call.
+
+## Reference
+
+### Auth
+
+| Command           | Description                                                        |
+| ----------------- | ------------------------------------------------------------------ |
+| `shipeasy login`  | PKCE browser flow. Saves credentials to `~/.shipeasy/credentials`. |
+| `shipeasy logout` | Wipe credentials.                                                  |
+| `shipeasy whoami` | Show the active project, email, and endpoint URLs.                 |
+
+### Flags (gates & dynamic configs)
+
+| Command                         | Description                                                                   |
+| ------------------------------- | ----------------------------------------------------------------------------- |
+| `shipeasy flags list`           | List every flag in the project. `--json` for raw output.                      |
+| `shipeasy flags create <name>`  | Create a new flag. Options: `--rollout`, `--rules`, `--salt`, `--killswitch`. |
+| `shipeasy flags enable <name>`  | Set the flag&apos;s `enabled` bit to true.                                    |
+| `shipeasy flags disable <name>` | Set `enabled` to false (keeps rules).                                         |
+| `shipeasy flags delete <name>`  | Permanent. Use with care.                                                     |
+
+`--rules` accepts a JSON array of `{ attr, op, value }` rules — the same shape the dashboard produces. Example:
+
+```bash
+shipeasy flags create new-ui \
+  --rollout 25 \
+  --rules '[{"attr":"plan","op":"eq","value":"pro"}]'
+```
+
+### Experiments
+
+| Command                              | Description                                                                                              |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `shipeasy experiments list`          | All experiments + status.                                                                                |
+| `shipeasy experiments create <name>` | Create an experiment. Options: `--universe`, `--allocation`, `--groups`, `--params`, `--targeting-gate`. |
+| `shipeasy experiments start <name>`  | Move from `draft` → `running`.                                                                           |
+| `shipeasy experiments stop <name>`   | Move to `stopped`.                                                                                       |
+| `shipeasy experiments status <name>` | Show config + latest analysis (lift, p-value, CI per metric per group).                                  |
+
+`--groups` is a JSON array of `{ name, weight, params }`:
+
+```bash
+shipeasy experiments create checkout-cta \
+  --allocation 100 \
+  --groups '[{"name":"control","weight":50,"params":{"label":"Pay"}},{"name":"v1","weight":50,"params":{"label":"Buy now"}}]'
+```
+
+### SDK keys
+
+| Command                     | Description                                                                                 |
+| --------------------------- | ------------------------------------------------------------------------------------------- |
+| `shipeasy keys list`        | List keys (id, kind, last used). The raw token is **never** shown after creation.           |
+| `shipeasy keys create`      | Create a key. Asks you for `kind` (`server` / `client` / `admin`). Token is shown **once**. |
+| `shipeasy keys revoke <id>` | Revoke by id or id-prefix. First match wins.                                                |
+
+### String Manager (i18n)
+
+| Command                                                    | Description                                                                         |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `shipeasy i18n install-loader`                             | Inject the loader script tag into the right file (auto-detects framework).          |
+| `shipeasy i18n scan [paths...]`                            | Discover `t("key")` calls in source. `--keys-only` skips fuzzy candidate discovery. |
+| `shipeasy i18n push <file>`                                | Push a JSON of keys to a profile. `--chunk` to bucket.                              |
+| `shipeasy i18n profiles create --name en:prod --locale en` | Create a profile.                                                                   |
+| `shipeasy i18n translate --profile fr:prod --ai`           | Generate AI translations as a draft.                                                |
+| `shipeasy i18n publish --profile en:prod`                  | Push the merged profile to KV (live in seconds).                                    |
+| `shipeasy i18n validate --profile en:prod`                 | Fail if any key referenced in code is missing from the profile. Use in CI.          |
+
+### Project detection
+
+| Command                    | Description                                                                                                                       |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `shipeasy scan [paths...]` | Detect project language, framework, and SDK installation status. Useful as a one-liner in CI to confirm wiring. `--json` for raw. |
+
+## Environment variables
+
+| Variable            | Effect                                                                   |
+| ------------------- | ------------------------------------------------------------------------ |
+| `SHIPEASY_API_KEY`  | Long-lived admin key, used in CI. Bypasses interactive login.            |
+| `SHIPEASY_API_URL`  | Override the admin API base URL (default `https://shipeasy.ai`).         |
+| `SHIPEASY_EDGE_URL` | Override the edge worker base URL (default `https://edge.shipeasy.dev`). |
+| `SHIPEASY_PROJECT`  | Default project id when no `--project` flag is passed.                   |
+
+## Exit codes
+
+`0` on success, `1` on any error. JSON output goes to stdout; human-readable progress goes to stderr — pipes work the way you&apos;d expect.
+
+```bash
+shipeasy flags list --json | jq '.[] | select(.enabled == 1) | .name'
+```

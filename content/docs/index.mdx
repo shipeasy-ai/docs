@@ -1,12 +1,68 @@
 ---
-title: ShipEasy Documentation
-description: Documentation for the ShipEasy platform — Configs, Experiments, and String Manager.
+title: ShipEasy
+description: Feature flags, experiments, and translations served from the edge — without a redeploy.
+icon: Rocket
 ---
 
-# ShipEasy Documentation
+<Hero
+  eyebrow="ShipEasy platform"
+  title={
+    <>
+      Ship faster with <em>flags, experiments, and translations</em> at the edge.
+    </>
+  }
+  subtitle="Roll out features behind a flag, run rigorous A/B tests with automated stats, and translate your product without re-deploying. One SDK, one CLI, one MCP server, three products."
+  primaryHref="/get-started/install"
+  primaryLabel="Get started"
+  secondaryHref="/get-started/how-it-works"
+  secondaryLabel="How it works"
+/>
 
-Welcome to the ShipEasy platform documentation. Choose a product from the sidebar to get started.
+<CardGrid>
+  <Card href="/configs" eyebrow="Configs" title="Feature flags & dynamic values">
+    Boolean gates with targeting rules and percentage rollouts. Typed JSON configs that change
+    instantly.
+  </Card>
+  <Card href="/experiments" eyebrow="Experiments" title="A/B tests with stats built in">
+    Universes, holdouts, multivariate variants. Welch&apos;s t-test results delivered daily — no
+    spreadsheets.
+  </Card>
+  <Card href="/i18n" eyebrow="String Manager" title="Localize without redeploying">
+    Scan your codebase, draft AI translations, review, publish to KV. New copy goes live in seconds.
+  </Card>
+  <Card href="/get-started/cli" eyebrow="CLI" title="`shipeasy` everything">
+    Login, list flags, scan code, push keys, publish — all from your terminal or CI.
+  </Card>
+  <Card href="/get-started/mcp" eyebrow="AI Agents" title="MCP server for Claude / Cursor">
+    Hand the docs and tools to your coding agent. Onboard a project to ShipEasy hands-free.
+  </Card>
+  <Card href="/get-started/sdks" eyebrow="SDKs" title="One package, server + browser">
+    Drop-in for Node, Next.js, React, Vue, Svelte, Angular, React Native — and a Ruby SDK too.
+  </Card>
+</CardGrid>
 
-- [**Configs**](/configs) — Feature flags and dynamic configuration
-- [**Experiments**](/experiments) — A/B testing and analysis
-- [**String Manager**](/i18n) — Localized labels and translations
+## Why ShipEasy
+
+<Callout type="success" title="Built for the edge">
+  Reads happen at Cloudflare&apos;s edge from KV with infinite CDN TTL — sub-millisecond, worldwide.
+  Writes are explicit, fast, and surgical: when you flip a flag, ShipEasy purges the affected blob
+  and the next request anywhere on Earth sees the new value within a second.
+</Callout>
+
+- **One SDK** for gates, configs, experiments, and translations.
+- **One CLI** (`shipeasy`) for everything you can do in the dashboard.
+- **One MCP server** so your AI agent can do the boring setup for you.
+- **Stateless evaluation**: flags evaluate locally on the server, no per-request round-trip.
+- **No vendor lock-in for stats**: experiment results are written back to your project as plain rows you can export.
+
+<CardGrid>
+  <Card href="/get-started/install" eyebrow="Step 1" title="Install the SDK & CLI">
+    `npm install @shipeasy/sdk` and `npm install -g @shipeasy/cli`.
+  </Card>
+  <Card href="/get-started/authenticate" eyebrow="Step 2" title="Authenticate">
+    `shipeasy login` opens your browser. No env vars to wrangle.
+  </Card>
+  <Card href="/configs/quickstart" eyebrow="Step 3" title="Ship your first flag">
+    Five-minute walkthrough — create a gate, gate code, flip it.
+  </Card>
+</CardGrid>

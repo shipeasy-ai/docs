@@ -1,25 +1,76 @@
 ---
-title: Universes
-description: Group experiments and define holdouts for clean causal analysis.
+title: Universes & holdouts
+description: Group experiments to keep them from stepping on each other, and reserve a clean slice of users as a global control.
 ---
 
-# Universes
+A **universe** is the world an experiment lives in. It owns:
 
-A universe is a logical namespace for experiments. It controls:
+- A **holdout** — a fixed percentage of users excluded from every experiment in the universe. This holdout becomes a clean global control you can compare aggregate behaviour against.
+- An optional **mutual exclusion** rule — at most one experiment in the universe assigns each user.
 
-- **Holdout** — a percentage of users excluded from all experiments in the universe, used as a global control
-- **Mutual exclusion** — users in one experiment within a universe are excluded from others (optional)
+Most projects start with a single `default` universe and never need another. You add universes when experiments start interfering with each other, or when you want a long-term holdout to measure the cumulative effect of all the experimentation you&apos;re doing.
 
-## Creating a universe
+## Holdouts
 
-1. Go to **Experiments → Universes**
-2. Click **New universe**
-3. Set a name and optional holdout percentage
+A 5% holdout in the `checkout` universe means: 5% of users are pinned to never see _any_ experiment in that universe. They always get the legacy code path. You can:
 
-## Assigning experiments to a universe
+- Compare conversion among holdout users to non-holdout users to estimate the **net effect** of all your checkout experimentation over time.
+- Trust that an experiment whose results look strong _is actually carrying signal_ — because the holdout shows what would have happened without it.
+- Roll back instantly: kill the universe and the next poll, every user falls into the holdout.
 
-When creating or editing an experiment, select a universe. Users in the holdout will receive no variant and won't be included in analysis.
+Holdouts are persistent: a user assigned to the holdout stays in it, across experiments and across time.
 
-## When to use holdouts
+```bash
+shipeasy universes create checkout --holdout 5
+```
 
-Use holdouts when you want a pristine baseline unaffected by any running experiments — especially useful when many experiments run simultaneously and you want to measure their combined effect.
+You can change the holdout size later, but realise that bumping it up reshuffles bucketing — some users move in, some out. Avoid changing it during an active experiment.
+
+## Mutual exclusion
+
+When you flip mutual exclusion **on** in a universe, ShipEasy guarantees a user is assigned to **at most one running experiment** in that universe. The bucket they fall into determines which experiment.
+
+This is important because two experiments touching the same surface can _confound_ each other — if `checkout-cta` and `checkout-layout` overlap on users, you can&apos;t tell which experiment moved the metric.
+
+Mutual exclusion makes the universe a fixed-pie model: experiments compete for the same allocation, you can&apos;t over-allocate.
+
+```bash
+shipeasy universes create checkout --holdout 5 --mutex
+```
+
+## Targeting gates on universes
+
+A universe can carry a **targeting gate** — a regular [gate](/configs/gates) that decides whether a user is _eligible_ for the universe at all. Common shapes:
+
+- _"Logged-in users only"_ — `attr: user_id, op: neq, value: ""`.
+- _"Pro plan only"_ — `attr: plan, op: eq, value: "pro"`.
+- _"Specific country"_ — `attr: country, op: in, value: ["US","CA"]`.
+
+Users not eligible for the universe never enter the holdout, never see any experiment, and never count toward analysis.
+
+## When to add a universe
+
+<Callout type="info" title="A useful default">
+  Start with one universe per **product surface**: `checkout`, `onboarding`, `pricing`. Inside each,
+  run experiments freely. Across them, you&apos;re free to overlap because users on the pricing page
+  aren&apos;t the same population as users at checkout.
+</Callout>
+
+A pattern that works well at scale:
+
+| Universe     | Holdout | Mutex | Notes                                                                       |
+| ------------ | ------- | ----- | --------------------------------------------------------------------------- |
+| `default`    | 0%      | off   | Catch-all for cheap tests on different surfaces.                            |
+| `onboarding` | 5%      | on    | High-leverage area; long-term holdout to measure cumulative lift.           |
+| `checkout`   | 5%      | on    | Same.                                                                       |
+| `pricing`    | 0%      | on    | No holdout because we don&apos;t want users with weird prices for too long. |
+
+## Reading the holdout
+
+In analysis, the holdout shows up as a synthetic group named `holdout` on every experiment in the universe. You can compare any variant against the holdout (instead of against `control`) for an end-to-end "_did our experimentation help, vs not experimenting at all"_ readout.
+
+This is the single best argument for keeping a holdout: it&apos;s the only way to detect when your experimentation program collectively doesn&apos;t move the needle.
+
+## Switching a user out of the holdout
+
+Don&apos;t. The point is stability. If a specific user (e.g. an internal account) needs to bypass the holdout, use a [gate override](/configs/gates#overrides) on the universe&apos;s targeting gate to exclude them — they&apos;ll then be eligible for experiments normally.

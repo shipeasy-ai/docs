@@ -1,45 +1,111 @@
 ---
-title: Label Keys
-description: Auto-discovered translation keys from your codebase.
+title: Label keys
+description: How keys are named, chunked, described, and deleted.
 ---
 
-# Label Keys
+A **label key** is a stable identifier for a translatable string. It&apos;s what your code references; the value (the actual translation) varies per profile.
 
-Label keys are the translatable strings in your application. They are discovered from source code and tracked in ShipEasy.
+## Schema
 
-## Key schema
+| Field         | Description                                                                           |
+| ------------- | ------------------------------------------------------------------------------------- |
+| `key`         | Stable identifier. We recommend snake_case with namespace dots: `checkout.cta_label`. |
+| `value`       | The string in this profile. Plain text; placeholders use `{name}` syntax.             |
+| `chunk`       | Optional grouping for lazy loading by route or feature.                               |
+| `description` | Free-form notes for translators and the AI. **Highly recommended.**                   |
+| `created_at`  | Auto.                                                                                 |
 
-| Field     | Description                                |
-| --------- | ------------------------------------------ |
-| `key`     | Dot-notation identifier, e.g. `hero.title` |
-| `value`   | Default (source) value                     |
-| `chunk`   | Optional grouping for lazy-loading         |
-| `profile` | The profile this key belongs to            |
+## Naming conventions
 
-## Discovering keys
+A key is forever-ish — it&apos;s referenced from code, drafted, translated, reviewed, published. Renaming has a cost: every translator&apos;s context resets. Pick well the first time.
 
-Run the CLI scanner to auto-discover keys:
+- **Namespace by surface**: `checkout.cta_label`, `checkout.summary_total`.
+- **Snake_case the leaf**: `cta_label`, not `ctaLabel`.
+- **Describe role, not content**: `header.cta_primary` ages better than `header.start_free_trial` (the copy will change; the role won&apos;t).
+- **Don&apos;t embed the language**: `welcome_en` is wrong; `welcome` is right.
+
+## Discovery: codemod vs scan
+
+The CLI discovers keys two ways:
+
+- **Codemod** (`--rewrite`) walks JSX/TSX, finds string literals in user-visible positions, and replaces them with `t("key", "value")`. It&apos;s aggressive and high-quality on JSX.
+- **Scan** (no `--rewrite`) walks any text file, lists candidate strings, and reports them — you wrap them by hand. Use this for Vue, Svelte, server templates, plain HTML.
+
+Either way, the key set in your source profile should match the keys actually referenced in code. Use `shipeasy i18n validate` in CI to enforce that.
+
+## Placeholders
+
+The runtime supports two placeholder styles:
+
+```ts
+t("greeting", { name: "Vadim" });
+// value: "Hello {name}!"
+// → "Hello Vadim!"
+```
+
+```ts
+t("notifications", { count: 3 });
+// value: "{count, plural, one {# notification} other {# notifications}}"
+// → "3 notifications"
+```
+
+The pluralisation syntax is ICU MessageFormat. Most translators understand it; the AI translation step preserves it.
+
+## Descriptions matter for the AI
+
+When the AI translates a key, it sees:
+
+- The key (`checkout.cta_label`).
+- The source value (`Pay`).
+- The description, if you&apos;ve added one (`CTA on the checkout summary page; verb, must be short`).
+- A handful of "context keys" — neighbouring keys from the same chunk.
+
+A good description doubles translation quality on ambiguous strings. Add one for any key whose meaning is not obvious from its source value.
 
 ```bash
-shipeasy i18n scan --dir ./src
+shipeasy i18n keys describe checkout.cta_label \
+  --description "CTA button on the checkout summary page; verb, must be ≤12 chars in target locales"
 ```
 
-Or use the MCP tool from your AI assistant:
+## Chunking for performance
 
-```
-scan codebase for i18n keys
-```
-
-## Chunking
-
-Large apps can split keys into chunks for lazy loading:
+By default every key in a profile is served in one bundle. For large apps (≥5k keys), split:
 
 ```ts
 const labels = await loadLabels({ profile: "en:prod", chunk: "checkout" });
 ```
 
-Chunks are defined by directory or explicit annotation in the source scanner config.
+You define a chunk via:
 
-## Deleting keys
+- The `chunk` field on each key (set when pushing).
+- Or by directory in the codemod config:
 
-Keys can be deleted from **String Manager → Label keys**. Deleting a key removes it from all profiles and any open drafts that reference it.
+```json title="shipeasy.config.json"
+{
+  "i18n": {
+    "chunks": {
+      "checkout": ["src/checkout/**"],
+      "settings": ["src/settings/**"],
+      "shared": ["src/components/**"]
+    }
+  }
+}
+```
+
+The loader fetches the chunks active for the current page; navigations fetch additional chunks lazily. This keeps the initial bundle tiny and warm.
+
+## Deleting a key
+
+Deletion is destructive — it removes the key from every profile, every active draft, every version going forward.
+
+```bash
+shipeasy i18n keys delete checkout.old_cta_label --profile en:prod
+```
+
+In practice you should:
+
+1. Remove the `t("checkout.old_cta_label")` call from code first.
+2. Run `shipeasy i18n validate` to confirm no references remain.
+3. Then delete from the dashboard.
+
+The dashboard&apos;s **Unused keys** tab uses your latest validate run to surface candidates.

@@ -1,4 +1,5 @@
 {
   "title": "ShipEasy Docs",
-  "pages": ["configs", "experiments", "i18n", "llms"]
+  "pages": ["get-started", "configs", "experiments", "i18n", "llms"],
+  "root": true
 }

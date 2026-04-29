@@ -1,29 +1,72 @@
 ---
 title: Introduction
-description: Localized labels and AI-assisted translations for your application.
+description: Localized labels and AI-assisted translations — discovered from your code, served from the edge.
+icon: Languages
 ---
 
-# String Manager
+ShipEasy **String Manager** treats translations like configuration. You discover keys from source, store them on the project, generate translations (manually or via AI), review, and publish. New copy goes live worldwide in seconds via Cloudflare KV — no redeploy.
 
-String Manager handles all your localization needs — from key discovery to AI-assisted translation to profile publishing — without leaving your workflow.
+## What it does
 
-## What you get
+<CardGrid>
+  <Card href="/i18n/keys" eyebrow="Discovery" title="Auto-discover keys">
+    Scan your repo for `t("hero.title")` calls and pull every key into the dashboard.
+  </Card>
+  <Card href="/i18n/profiles" eyebrow="Profiles" title="Locale × environment">
+    `en:prod`, `fr:prod`, `de:staging`. Each profile is a versioned manifest of keys and values.
+  </Card>
+  <Card href="/i18n/drafts" eyebrow="Drafts" title="Review before publish">
+    Translations live as drafts. AI-generated or manual. Reviewable inline before they go live.
+  </Card>
+  <Card href="/i18n/translations" eyebrow="AI" title="AI translations">
+    Anthropic Claude generates a draft for missing keys. You proofread, you approve, you publish.
+  </Card>
+</CardGrid>
 
-- **Profiles** — locale + environment groupings (e.g. `en:prod`, `fr:staging`)
-- **Label keys** — auto-discovered from your codebase via CLI or MCP scan
-- **Drafts** — translation proposals (human or AI) that go through a review step before publishing
-- **Publish** — push a profile to Cloudflare KV for instant edge delivery
+## How copy gets to the user
 
-## How it works
+<Steps>
+  <Step title="Codemod or scan">
+    `shipeasy i18n scan ./src` (or the MCP `i18n_codemod_apply`) discovers strings and rewrites them as `t("key")`.
+  </Step>
+  <Step title="Push keys">
+    Discovered keys are pushed to a source profile (e.g. `en:prod`). Each key has a value and an optional description.
+  </Step>
+  <Step title="Translate">
+    Create a target profile (`fr:prod`). Run `i18n translate --ai` to generate a draft. Review in the dashboard.
+  </Step>
+  <Step title="Publish">
+    `i18n publish --profile fr:prod` writes the merged label set to KV in chunks. The CDN serves them with infinite TTL.
+  </Step>
+  <Step title="Loader fetches at the edge">
+    A small loader script `<script>` in your HTML fetches the right chunks for the active locale. Zero JS dependencies, zero round-trips before paint.
+  </Step>
+</Steps>
 
-1. Run `shipeasy i18n scan` (or use the MCP tool) to discover keys from your source code
-2. Create a translation draft — manually or via AI
-3. Review and approve the draft
-4. Publish the profile
+## Quickstart
 
-## Next steps
+```bash
+npm install -g @shipeasy/cli
+shipeasy login
 
-- [Quickstart](/i18n/quickstart) — scan your first project and publish translations
-- [Profiles](/i18n/profiles) — locale/environment groupings
-- [Label keys](/i18n/keys) — key schema and chunking
-- [Drafts](/i18n/drafts) — review and approval workflow
+shipeasy i18n install-loader --profile en:prod  # injects the script tag
+shipeasy i18n scan ./src                         # discovers t("…") calls
+shipeasy i18n push ./i18n/en.json --profile en:prod
+shipeasy i18n profiles create --name fr:prod --locale fr
+shipeasy i18n translate --profile fr:prod --ai   # AI draft
+# review the draft in the dashboard, then:
+shipeasy i18n publish --profile fr:prod
+```
+
+Detailed walkthrough at [Quickstart](/i18n/quickstart).
+
+## Why a separate product
+
+You could store labels as a [dynamic JSON config](/configs/values) — and for tiny apps, you should. String Manager exists because real-world i18n hits problems configs aren&apos;t built for:
+
+- **Volume**: tens of thousands of keys; one JSON blob is unworkable.
+- **Workflow**: translators are not engineers and shouldn&apos;t need access to flag tooling.
+- **Discovery**: keys come and go with code; manual sync drifts immediately.
+- **Performance**: chunking + lazy loading by route is critical at the upper end.
+
+String Manager handles all of that and exposes a dead-simple SDK for the runtime side.

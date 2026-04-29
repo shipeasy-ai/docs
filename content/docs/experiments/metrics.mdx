@@ -1,27 +1,122 @@
 ---
 title: Metrics
-description: Define the events and computed values that drive experiment analysis.
+description: Define what you measure — primary metrics, guardrails, and how to keep results honest.
 ---
 
-# Metrics
+A **metric** is a number computed per user from a set of events. Every experiment has at least one **primary** metric (the thing you&apos;re trying to move) and ideally a couple of **guardrails** (things you don&apos;t want to break).
 
-Metrics define what you measure in an experiment. Each metric is tied to one or more event types and an aggregation function.
+## Aggregation types
 
-## Metric types
+| Type         | What it computes per user                     | Use it for                        |
+| ------------ | --------------------------------------------- | --------------------------------- |
+| `conversion` | 1 if the event happened at least once, else 0 | Did they buy? Did they retain?    |
+| `count`      | Number of events                              | Sessions, page views, clicks.     |
+| `sum`        | Sum of a numeric event property               | Revenue, time spent, items added. |
+| `mean`       | Average of a numeric event property           | Order value, session length.      |
 
-| Type         | Description                                  |
-| ------------ | -------------------------------------------- |
-| `count`      | Number of events per user                    |
-| `sum`        | Sum of a numeric event property              |
-| `mean`       | Average of a numeric event property          |
-| `conversion` | Binary — did the event happen at least once? |
+Conversion is the simplest and statistically the friendliest — variance is bounded. Means and sums need more samples and benefit from outlier handling.
 
 ## Creating a metric
 
-1. Go to **Experiments → Metrics**
-2. Click **New metric**
-3. Choose the event type and aggregation
+```bash
+# binary conversion on `purchase`
+shipeasy metrics create purchase_conversion --type conversion --event purchase
 
-## Attaching metrics to experiments
+# revenue per user
+shipeasy metrics create revenue_per_user --type sum --event purchase --property value
 
-When creating an experiment, select one or more metrics as the primary and guardrail metrics. The analysis pipeline runs Welch's t-test on each metric for each variant vs. control.
+# average order value
+shipeasy metrics create avg_order_value --type mean --event purchase --property value
+
+# sessions per user
+shipeasy metrics create sessions --type count --event session_start
+```
+
+Or in the dashboard: **Experiments → Metrics → New metric**.
+
+## Filtering events into a metric
+
+You can tighten what counts toward a metric with **filters** — same shape as gate targeting rules:
+
+```bash
+shipeasy metrics create paid_purchase \
+  --type conversion --event purchase \
+  --filter '[{"attr":"channel","op":"eq","value":"organic"}]'
+```
+
+Now `paid_purchase` only counts `purchase` events whose `channel == "organic"` property is set on the event payload.
+
+## Primary vs guardrail
+
+When you attach metrics to an experiment, you mark each one as **primary** or **guardrail**.
+
+- **Primary**: the metric you&apos;re trying to move. The experiment&apos;s "did it win?" decision is read off these. Pick one or two; if you have five primaries you have none.
+- **Guardrail**: metrics that must _not_ regress. A new checkout flow had better not tank the page load time. ShipEasy flags any guardrail that moves significantly in the wrong direction, even if your primary won.
+
+A common pattern:
+
+| Role      | Metric                                   |
+| --------- | ---------------------------------------- |
+| Primary   | `purchase_conversion`                    |
+| Guardrail | `error_rate`                             |
+| Guardrail | `p95_page_load_ms`                       |
+| Guardrail | `support_ticket_rate` (computed offline) |
+
+## Outliers
+
+For `sum` and `mean`, a single $50,000 enterprise purchase can swing the mean for thousands of users. ShipEasy supports two outlier handlers per metric:
+
+- **Winsorise** at a configurable percentile (default p99). Anything above is clamped.
+- **Cap** at an absolute value.
+
+Pick one. Winsorising is the default and rarely wrong.
+
+## Segmentation
+
+Once results are in, slice them by user attribute:
+
+```
+purchase_conversion          control  v1     lift     p
+  all                          4.8%   5.2%   +8.3%   0.018
+  country = US                 5.1%   5.4%   +5.9%   0.041
+  country = EU                 4.5%   4.9%   +8.9%   0.062
+  plan = pro                   7.8%   9.4%   +20.5%  0.001
+  plan = free                  3.9%   4.0%   +2.6%   0.401
+```
+
+Segmentation works on any attribute you [register](/get-started/attributes#registering-attributes-in-the-dashboard) on the project. You don&apos;t need to ask for a segment up front — the platform recomputes them on demand.
+
+<Callout type="warn" title="Beware HARKing">
+  **H**ypothesising **A**fter **R**esults are **K**nown — combing through segments until you find
+  one that&apos;s significant — gives false wins. Pre-register the one or two segments you actually
+  care about. Treat anything else as exploratory.
+</Callout>
+
+## Sample size and power
+
+You can&apos;t detect a 1% lift with 100 users. ShipEasy shows you a **power estimate** before you start the experiment given your traffic and the metric&apos;s historical variance — so you know roughly how long the test will need to run.
+
+Quick rules of thumb:
+
+| Baseline conversion | Detectable lift @ 80% power | Users per arm |
+| ------------------- | --------------------------- | ------------- |
+| 5%                  | +5% relative                | ~25,000       |
+| 5%                  | +10% relative               | ~6,500        |
+| 50%                 | +5% relative                | ~1,600        |
+| 50%                 | +10% relative               | ~400          |
+
+If your traffic is low, increase your effect-size requirement (don&apos;t bother shipping for 0.5% lift) or run the experiment longer.
+
+## Where to next
+
+<CardGrid>
+  <Card href="/experiments/events" eyebrow="Telemetry" title="Events">
+    What goes into a metric, and how to log it.
+  </Card>
+  <Card href="/experiments/analysis" eyebrow="Stats" title="How analysis works">
+    From raw events to lift, p-value, CI.
+  </Card>
+  <Card href="/get-started/attributes" eyebrow="Identity" title="User attributes">
+    Pass enough about the user that segmentation is rich.
+  </Card>
+</CardGrid>

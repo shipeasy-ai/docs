@@ -1,37 +1,106 @@
 ---
-title: Dynamic Values
-description: Typed key/value configs that update instantly without a redeploy.
+title: Dynamic values
+description: Typed configs that change instantly without a redeploy.
 ---
 
-# Dynamic Values
+A **dynamic value** is a typed key/value pair stored on your project. Use one when the answer to _"what should this be right now?"_ is not boolean — pricing, copy, limits, feature options, etc.
 
-Dynamic configs are typed key/value pairs served from Cloudflare KV. Changes propagate in milliseconds via CDN purge — no redeploy or SDK restart needed.
+Unlike gates, dynamic values are **global per environment**: every user sees the same value. To vary by user, gate the code that reads the value, or use a [structured config](#structured-configs) with one key per cohort.
 
-## Supported types
+## Types
 
-| Type      | Example          |
-| --------- | ---------------- |
-| `string`  | `"v2"`, `"en"`   |
-| `number`  | `9.99`, `100`    |
-| `boolean` | `true`, `false`  |
-| `json`    | `{ "limit": 5 }` |
+| Type      | Example value                   | Use it for                                                          |
+| --------- | ------------------------------- | ------------------------------------------------------------------- |
+| `string`  | `"v2"`, `"USD"`                 | Copy, theme name, feature variant.                                  |
+| `number`  | `9.99`, `100`                   | Limits, prices, timeouts.                                           |
+| `boolean` | `true`                          | Site-wide on/off, separate from a gate when no targeting is needed. |
+| `json`    | `{ "limit": 5, "tier": "pro" }` | Structured config — see below.                                      |
 
-## Creating a config
-
-1. Go to **Configs → Dynamic values** in the dashboard
-2. Click **New config**
-3. Choose a key, type, and initial value
-
-## SDK usage
+## Reading a value
 
 ```ts
-const config = await client.getDynamicConfig("app-settings");
+import { flags } from "@shipeasy/sdk/server";
 
-const limit = config.get("rate_limit", 100); // number
-const theme = config.get("default_theme", "light"); // string
-const flags = config.get("feature_flags", {}); // json
+const limit = flags.config<number>("rate-limit") ?? 100;
+const theme = flags.config<string>("default-theme") ?? "light";
+const cfg = flags.config<{ tier: string; limit: number }>("plan-defaults");
 ```
 
-## Delivery
+The optional generic types the return value. Always provide a fallback — your code should never crash because the SDK hasn&apos;t initialised yet.
 
-Values are stored in Cloudflare KV with plan-specific TTLs. The SDK fetches a single bundle per project — not one request per key.
+Browser:
+
+```ts
+const cfg = client.getConfig<{ tier: string; limit: number }>("plan-defaults");
+```
+
+## Updating a value
+
+Dashboard: **Configs → Dynamic values → click → edit value → Save**. The change is in KV in &lt;100ms and visible to your SDK on the next poll (default 30s; faster on Pro).
+
+CLI:
+
+```bash
+shipeasy config set rate-limit 200
+shipeasy config set plan-defaults --json '{"tier":"pro","limit":50}'
+```
+
+A new value creates a **revision**; you can roll back from the dashboard at any time.
+
+## Structured configs [#structured-configs]
+
+A single JSON config can encode an entire decision tree. This is great for things like plan limits, where the answer is "a struct" rather than "a value":
+
+```json title="plan-defaults"
+{
+  "free": { "max_seats": 3, "history_days": 7 },
+  "pro": { "max_seats": 25, "history_days": 90 },
+  "ent": { "max_seats": null, "history_days": 365 }
+}
+```
+
+```ts
+const cfg =
+  flags.config<Record<string, { max_seats: number | null; history_days: number }>>("plan-defaults");
+const seats = cfg?.[user.plan]?.max_seats ?? 3;
+```
+
+This collapses N flags into one JSON config that&apos;s atomically updated — no race conditions where the user sees half a new config and half the old one.
+
+## Validation
+
+When you create a config you can attach a **schema**:
+
+- Type: one of `string` / `number` / `boolean` / `json`.
+- For `json`: optionally a Zod schema, stored as a JSON Schema document.
+
+If a write would violate the schema, the dashboard rejects it. The SDK still applies a runtime decoder you supply:
+
+```ts
+import { z } from "zod";
+
+const Schema = z.object({ tier: z.string(), limit: z.number() });
+const cfg = flags.config("plan-defaults", (raw) => Schema.parse(raw));
+```
+
+Pass a `decode` function as the second argument and the SDK calls it once per fetched blob — invalid payloads are dropped (with a console warning) and the previous good value is kept.
+
+## When to use a config vs. a gate
+
+| Question                           | Use                                                         |
+| ---------------------------------- | ----------------------------------------------------------- |
+| Should I show feature X?           | Gate.                                                       |
+| What should the value of N be?     | Dynamic value.                                              |
+| Different value per user / cohort? | Gate around the read, or structured config keyed by cohort. |
+| Different value per environment?   | Always — values are environment-aware by default.           |
+| Need an audit trail?               | Both. Every write is versioned.                             |
+
+## Limits
+
+| Plan       | Configs per project | JSON size per value |
+| ---------- | ------------------- | ------------------- |
+| Free       | 25                  | 4 KB                |
+| Pro        | 250                 | 64 KB               |
+| Enterprise | Unlimited           | 256 KB              |
+
+If your JSON is approaching the limit, you&apos;re probably storing data that belongs in a database, not a config.

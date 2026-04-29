@@ -1,0 +1,90 @@
+---
+title: Environments
+description: dev / staging / prod — separate values, separate keys, easy promotion.
+---
+
+Every project has three environments: **dev**, **staging**, and **prod**. They&apos;re not separate projects — they&apos;re **slices of the same project** so you don&apos;t maintain three parallel lists of flags. Each flag and config holds an independent value per environment, the SDK pins to one environment, and you promote between them with a click.
+
+## Choosing an environment in the SDK
+
+```ts
+configureShipeasy({
+  apiKey: process.env.SHIPEASY_SERVER_KEY!,
+  env: process.env.NODE_ENV === "production" ? "prod" : "dev",
+});
+```
+
+Browser:
+
+```ts
+configureShipeasy({
+  apiKey: import.meta.env.VITE_SHIPEASY_CLIENT_KEY,
+  env: import.meta.env.MODE === "production" ? "prod" : "dev",
+});
+```
+
+The SDK fetches the bundle for that environment only. There&apos;s no per-call switching — pick once at boot.
+
+## What each environment is for
+
+<CardGrid>
+  <Card href="#dev" eyebrow="dev" title="Local + preview deploys">
+    Most flags live at 100% rollout here. Devs flip values freely, no review needed.
+  </Card>
+  <Card href="#staging" eyebrow="staging" title="Integration tests, QA, dogfood">
+    Mirrors production targeting. Used to validate rollout plans before promoting to prod.
+  </Card>
+  <Card href="#prod" eyebrow="prod" title="Production">
+    Real users. Changes here are audited, reviewable, and revertable.
+  </Card>
+</CardGrid>
+
+## Per-environment values
+
+A flag like `new-checkout-flow` has three independent records:
+
+|           | enabled | rollout | killswitch |
+| --------- | ------- | ------- | ---------- |
+| `dev`     | true    | 100%    | off        |
+| `staging` | true    | 100%    | off        |
+| `prod`    | true    | 5%      | off        |
+
+Changing one row never affects the others. The same is true for dynamic values:
+
+```ts
+// dev    → "https://api-dev.example.com"
+// stage  → "https://api-staging.example.com"
+// prod   → "https://api.example.com"
+const apiBase = flags.config<string>("api-base-url");
+```
+
+## Promoting changes
+
+The dashboard&apos;s **Promote** action copies a flag&apos;s configuration from one environment to another in one click. The promotion preserves overrides if both environments allow the same user IDs (they do by default).
+
+You can also promote from the CLI:
+
+```bash
+shipeasy flags promote new-checkout-flow --from staging --to prod
+```
+
+A diff is shown and you confirm. Promotion does **not** auto-flip the killswitch — production keeps its own emergency control.
+
+## Per-environment SDK keys
+
+Each SDK key is **scoped** to one environment. A `prod` server key cannot read `dev` flags and vice versa.
+
+- Generate keys in **Project → SDK keys** with kind `server` / `client` and env `dev` / `staging` / `prod`.
+- Store one set per deploy environment in your env vars / secret manager.
+- Rotate independently — a leaked dev key is not a prod incident.
+
+## Environments and experiments
+
+Experiments are **environment-scoped**. An experiment running in `prod` does not assign or collect data in `dev`. This means:
+
+- You can stage an experiment&apos;s config in dev/staging without affecting prod metrics.
+- Test SDK integration locally with `env: "dev"` and the experiment will assign you to a variant the same way prod will — but the exposure events go to the dev project rows, not your real analysis.
+
+## Environments vs branches
+
+Environments are **runtime** ("which deployment am I"), not source-control ("what code am I"). Don&apos;t try to map preview deploys 1:1 to environments — they all use `dev` (or `staging` if your preview pipeline calls itself that). Per-PR isolation is best done with [overrides](/configs/gates#overrides) on a stable user attribute.

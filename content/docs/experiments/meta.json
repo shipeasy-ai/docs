@@ -1,5 +1,5 @@
 {
   "title": "Experiments",
   "root": true,
-  "pages": ["index", "quickstart", "universes", "metrics", "events", "attributes"]
+  "pages": ["index", "quickstart", "universes", "metrics", "events", "analysis"]
 }

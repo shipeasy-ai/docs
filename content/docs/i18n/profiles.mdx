@@ -1,34 +1,88 @@
 ---
 title: Profiles
-description: Locale and environment groupings for your label sets.
+description: Versioned, named manifests of label keys for one locale × one environment.
 ---
 
-# Profiles
+A **profile** is a named, versioned manifest of label keys for a specific locale and environment combination. It&apos;s the unit you publish, version, and roll back.
 
-A profile is a named, versioned manifest of label keys for a specific locale and environment combination.
+## Naming
 
-## Naming convention
-
-Profiles use a `locale:environment` format:
+Profiles use `locale:environment`:
 
 | Profile      | Meaning             |
 | ------------ | ------------------- |
 | `en:prod`    | English, production |
-| `fr:staging` | French, staging     |
-| `de:prod`    | German, production  |
+| `fr:prod`    | French, production  |
+| `de:staging` | German, staging     |
+| `ja:dev`     | Japanese, dev       |
 
-## Creating a profile
+The locale is BCP-47 (`en`, `fr`, `pt-BR`). The environment is one of `dev`, `staging`, `prod`. You can&apos;t use other names — the SDK and dashboard rely on this format.
 
-Go to **String Manager → Profiles → New profile**, or use the CLI:
+## Lifecycle
 
-```bash
-shipeasy i18n profiles create --name en:prod --locale en
+<Steps>
+  <Step title="Create">
+    ```bash
+    shipeasy i18n profiles create --name fr:prod --locale fr --environment prod
+    ```
+  </Step>
+  <Step title="Translate">
+    Either populate it via codemod (for the source locale) or via AI / manual translations (for target locales). See [Drafts](/i18n/drafts).
+  </Step>
+  <Step title="Publish">
+    Each publish creates a new **version**. The current version is what the loader serves from KV. Old versions stay in the dashboard for rollback.
+
+    ```bash
+    shipeasy i18n publish --profile fr:prod
+    ```
+
+  </Step>
+  <Step title="Roll back">
+    From the dashboard&apos;s **Profiles → fr:prod → Versions** tab, click any prior version → **Restore**. The selected version is republished — usually live in seconds.
+  </Step>
+</Steps>
+
+## Source vs target
+
+ShipEasy doesn&apos;t hard-code English as "the" source. The first profile you create on a project is implicitly the **source**: it&apos;s where the codemod pushes discovered keys, and it&apos;s the basis the AI translates _from_.
+
+Other profiles are **targets**: they hold translations of the source&apos;s keys.
+
+You can switch the source profile in **Project → String Manager → Settings**, but in practice every team picks one and sticks with it.
+
+## Profile inheritance
+
+When a key is missing from a target profile:
+
+```
+loader requests fr:prod label "checkout.cta"
+  ↓ fr:prod has no value
+  ↓ falls back to the source profile (en:prod)
+  ↓ returns "Pay"
 ```
 
-## Versioning
+This means an in-progress French translation never breaks the page — visitors see English for the missing strings until you publish translations. Fallbacks are also visible in the dashboard so you can target what to translate next.
 
-Every publish creates a new version. The current version is served from KV. You can roll back to any previous version from the dashboard.
+## Per-environment profiles
 
-## Key counts
+Why not just one profile per locale? Because:
 
-The profiles list shows how many label keys each profile contains. Click **Browse keys** to filter the keys view to a specific profile.
+- Translators can work in `fr:staging` while `fr:prod` keeps serving last week&apos;s strings.
+- New keys land in `en:dev` first; you don&apos;t need to translate them until they&apos;re promoted to staging or prod.
+- An emergency copy fix in `en:prod` doesn&apos;t require redoing translation review for development branches.
+
+The CLI&apos;s `promote` command copies a profile&apos;s values forward:
+
+```bash
+shipeasy i18n promote --from fr:staging --to fr:prod
+```
+
+This is the recommended flow: write & translate in `staging`, validate, promote to `prod`.
+
+## Limits
+
+| Plan       | Profiles per project | Keys per profile | Versions kept |
+| ---------- | -------------------- | ---------------- | ------------- |
+| Free       | 5                    | 1,000            | 10            |
+| Pro        | 50                   | 50,000           | 100           |
+| Enterprise | Unlimited            | Unlimited        | Unlimited     |

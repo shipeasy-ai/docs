@@ -1,0 +1,121 @@
+---
+title: MCP server
+description: Hand the docs and tools to Claude, Cursor, or any MCP-compatible AI assistant — and let it do the boring setup for you.
+---
+
+ShipEasy ships an MCP (Model Context Protocol) server: `@shipeasy/mcp`. Plug it into your AI coding assistant and the agent gains a typed toolkit for inspecting and changing your ShipEasy project — plus prompts that walk it through complete onboarding flows.
+
+## Install
+
+The CLI can write the right config file for whichever assistant you use:
+
+<Terminal title="zsh">
+  <Prompt />
+  shipeasy mcp install
+  <Out>
+    {"\n"}? Which assistants? › Claude Code, Cursor{"\n"}✔ Wrote ~/.claude/settings.json{"\n"}✔
+    Wrote .cursor/mcp.json{"\n"}MCP server registered. Restart your AI assistant to pick it up.
+  </Out>
+</Terminal>
+
+Or wire it up by hand:
+
+```json title="~/.claude/settings.json (Claude Code)"
+{
+  "mcpServers": {
+    "shipeasy": {
+      "command": "npx",
+      "args": ["-y", "@shipeasy/mcp@latest"]
+    }
+  }
+}
+```
+
+```json title=".cursor/mcp.json (Cursor)"
+{
+  "mcpServers": {
+    "shipeasy": { "command": "npx", "args": ["-y", "@shipeasy/mcp@latest"] }
+  }
+}
+```
+
+For Windsurf use `.windsurf/mcp.json`. For any other client supporting MCP, write the same block to `mcp.json` in the project root.
+
+<Callout type="info" title="The MCP server uses your CLI credentials">
+  There are no environment variables to set. Run `shipeasy login` once and the MCP server picks up
+  `~/.shipeasy/credentials` on every tool call.
+</Callout>
+
+## What the agent gets
+
+The MCP server exposes ~30 tools, grouped by area. Your agent sees them as typed functions with JSON-Schema parameters.
+
+### Project & auth
+
+| Tool             | What it does                                                                |
+| ---------------- | --------------------------------------------------------------------------- |
+| `auth_check`     | Returns `{ authenticated, project_id, user_email }`.                        |
+| `auth_login`     | Triggers `shipeasy login` (asks the human to click).                        |
+| `auth_logout`    | Wipes credentials.                                                          |
+| `detect_project` | Detects framework, source root, loader script presence, SDK install status. |
+
+### Inspection
+
+| Tool              | What it does                                                                  |
+| ----------------- | ----------------------------------------------------------------------------- |
+| `list_resources`  | List flags, configs, experiments, profiles, keys — everything in the project. |
+| `get_resource`    | Fetch a single resource by name.                                              |
+| `get_sdk_snippet` | Returns a copy-pasteable SDK init snippet for the detected framework.         |
+
+### Flags & experiments
+
+| Tool                                           | What it does                                   |
+| ---------------------------------------------- | ---------------------------------------------- |
+| `exp_create_gate`                              | Create a gate.                                 |
+| `exp_create_config`                            | Create a dynamic config.                       |
+| `exp_create_experiment`                        | Create an experiment with universe and groups. |
+| `exp_start_experiment` / `exp_stop_experiment` | Lifecycle.                                     |
+| `exp_experiment_status`                        | Latest results — lift, p-value, CI.            |
+
+### String Manager
+
+| Tool                                          | What it does                                                     |
+| --------------------------------------------- | ---------------------------------------------------------------- |
+| `i18n_discover_site`                          | Read the `/.well-known/i18n.json` manifest from a deployed site. |
+| `i18n_install_loader`                         | Generate the loader `<script>` tag and create a client key.      |
+| `i18n_scan_code`                              | Find candidate translatable strings in source.                   |
+| `i18n_codemod_preview` / `i18n_codemod_apply` | Auto-wrap JSX literals with `t()`.                               |
+| `i18n_create_profile` / `i18n_create_key`     | Profile and key CRUD.                                            |
+| `i18n_push_keys`                              | Sync the codemod-discovered keys to the dashboard.               |
+| `i18n_translate_draft`                        | Generate a translation draft via Anthropic API.                  |
+| `i18n_validate_keys`                          | Fail if any code reference is missing from a profile.            |
+| `i18n_publish_profile`                        | Push to KV, live in seconds.                                     |
+
+### Onboarding prompts
+
+The MCP server bundles long-form prompts you can invoke with `/mcp:shipeasy:<prompt>`:
+
+- `onboard_i18n` — full String Manager onboarding for a fresh project.
+- `add_experiment` — guides the agent from idea → metric → variants → start.
+- `gate_a_feature` — wraps an existing feature with a flag, with a sensible rollout.
+
+## Practical example
+
+Open Claude Code in a fresh React project and say:
+
+> Use the ShipEasy MCP to onboard this project to translations. Use `en` as the source locale.
+
+The agent runs `detect_project` → `auth_check` → `i18n_install_loader` → `i18n_codemod_preview` → asks you to approve diffs → `i18n_codemod_apply` → `i18n_push_keys` → `i18n_publish_profile`. The whole flow takes a few minutes and the only thing you click is the browser confirmation during login.
+
+For the canonical step-by-step the agent follows, see [LLM Guides → String Manager](/llms/i18n-strings).
+
+## Troubleshooting
+
+<Callout type="warn" title="Tool calls return `not authenticated`">
+  Run `shipeasy login` in a real terminal. The MCP server reads the same credentials file the CLI
+  writes.
+</Callout>
+
+<Callout type="warn" title="Tool calls return `project not detected`">
+Pass an explicit `--project <id>` to `shipeasy login`, or set `SHIPEASY_PROJECT=<id>` before launching your AI assistant. Some agents inherit the env from the launcher process.
+</Callout>

@@ -1,0 +1,123 @@
+---
+title: AI translations
+description: How ShipEasy uses Claude to translate at scale — context, glossary, brand tone, and review.
+---
+
+Most teams have hundreds of keys and a small number of locales. Translating that by hand is slow; outsourcing is expensive and slow. **AI translations** give you a 90% draft you can review in an hour.
+
+ShipEasy uses **Anthropic Claude** as the translation engine. You can use ShipEasy&apos;s pooled API key (Pro plan) or bring your own.
+
+## Setup
+
+<Steps>
+  <Step title="Add an Anthropic API key">
+    Either use ShipEasy&apos;s pooled key (no setup; Pro/Enterprise plans only), or add your own:
+
+    ```bash
+    shipeasy projects set-secret ANTHROPIC_API_KEY sk-ant-...
+    ```
+
+    The key is stored encrypted on the project. It&apos;s used only for translation calls; never logged.
+
+  </Step>
+  <Step title="Pick a model">
+    Default is `claude-sonnet-4-6` — fast, accurate, cost-effective. For tricky locales (Japanese, Arabic, regional Spanish), `claude-opus-4-7` produces higher-quality drafts at higher cost.
+
+    ```bash
+    shipeasy projects config set i18n.model claude-opus-4-7
+    ```
+
+  </Step>
+  <Step title="Set tone & glossary (optional)">
+    A short brand voice guide and a glossary of terms that should not be translated (or should be translated specifically) lift quality dramatically.
+
+    ```bash
+    shipeasy projects config set i18n.tone "Friendly, modern, slightly playful. \
+      Address users with informal pronouns where the locale supports it (tu / du)."
+
+    shipeasy projects config set i18n.glossary --json '{
+      "ShipEasy": "ShipEasy",
+      "checkout": "checkout (do not translate to French as paiement)",
+      "flag": "feature gate"
+    }'
+    ```
+
+  </Step>
+</Steps>
+
+## What the AI sees
+
+For each key being translated, the prompt to Claude includes:
+
+- **The key path** (`checkout.cta_label`).
+- **The source value** in the source locale.
+- **The description** on the key, if any.
+- **Up to 8 sibling keys** from the same chunk, so it has surrounding context.
+- **The glossary**, project tone, and target locale.
+- **Any pre-existing translation** in the target profile, when running with `--reflow`.
+
+That much context is the difference between a literal Google-Translate draft and a usable one.
+
+## Running a translation
+
+```bash
+shipeasy i18n translate --profile fr:prod --ai
+```
+
+By default it translates only **missing** keys — keys present in the source profile but absent (or empty) in the target. Add `--reflow` to ask the model to revisit existing values for consistency with the latest tone/glossary, but don&apos;t do this casually — it generates a lot of "diff" you have to review.
+
+Filter by chunk for a smaller, faster run:
+
+```bash
+shipeasy i18n translate --profile fr:prod --ai --chunk checkout
+```
+
+## Cost & rate
+
+Translations are billed per token, with the project&apos;s key (or the pooled key for Pro). Rough order of magnitude with `claude-sonnet-4-6`:
+
+| Keys   | Cost   |
+| ------ | ------ |
+| 100    | ~$0.10 |
+| 1,000  | ~$1    |
+| 10,000 | ~$10   |
+
+Throughput is around 5–20 keys/second depending on context length. The CLI streams progress; long runs are resumable.
+
+## Review
+
+Drafts are never auto-merged. The dashboard&apos;s draft view (see [Drafts](/i18n/drafts)) shows source, proposed value, description, and an optional **back-translation** for sanity-checking locales you don&apos;t speak.
+
+A typical review session:
+
+1. Skim the back-translations for the high-traffic keys.
+2. Read every translation in a locale you _do_ speak; trust them as a sample.
+3. Spot-check 10–20 random keys in locales you don&apos;t.
+4. Push tricky ones to a human translator (mark for translator → external workflow).
+
+For high-stakes copy (legal disclaimers, paid plans, anything regulated) — don&apos;t trust the AI. Use the AI draft as a starting point and have a human lawyer/translator finalise.
+
+## Limitations
+
+<Callout type="warn" title="Plurals and gender are imperfect">
+  ICU MessageFormat plurals are preserved syntactically but the AI may pick wrong plural forms in
+  low-resource languages. Always review plural keys.
+</Callout>
+
+<Callout type="warn" title="Length budgets are not enforced automatically">
+  A button that&apos;s 6 characters in English may be 14 in German, breaking your layout. Add length
+  hints in the description (`max 12 chars`) and ShipEasy&apos;s prompt nudges Claude toward fitting
+  them — but verify in screenshots.
+</Callout>
+
+<Callout type="warn" title="Brand-specific terms drift without a glossary">
+  Without an entry in the glossary, _"flag"_ may be translated as _"drapeau"_ (literal) when you
+  wanted _"feature gate"_ unchanged. Glossary first.
+</Callout>
+
+## Bring-your-own-translator workflows
+
+If you have an in-house or contracted human translation team, you can still use ShipEasy as the system of record. Two patterns:
+
+- **Export → human → import**: `shipeasy i18n drafts export --profile fr:prod` produces XLIFF or JSON; the translator returns it; `--import` ingests it as a draft.
+- **AI assist + human review**: AI generates the draft; the translator reviews and edits in the dashboard. Cheaper than translation-from-scratch; faster than waiting for a contractor.

@@ -1,37 +1,107 @@
 ---
 title: Quickstart
-description: Add the ShipEasy SDK and evaluate your first gate in under 5 minutes.
+description: From zero to a flag-gated feature in production in under five minutes.
 ---
 
-# Quickstart
+This walks through the full flow end to end: create a gate, read it from a server, roll it out, kill-switch it.
 
-## Install
+## Prerequisites
 
-```bash
-npm install @shipeasy/sdk
-```
+- A ShipEasy project. Sign up at [shipeasy.ai](https://shipeasy.ai) — the free tier is enough.
+- A server SDK key. Find it in **Project → SDK keys → Create → server**, or `shipeasy keys create`.
+- The SDK installed: `npm install @shipeasy/sdk`.
 
-## Initialize
+<Steps>
+  <Step title="Initialise the SDK">
+    Initialise once at boot. The server SDK polls flag updates in the background — no per-request cost.
 
-```ts
-import { ShipEasy } from "@shipeasy/sdk";
+    ```ts title="src/lib/shipeasy.ts"
+    import { configureShipeasy, flags } from "@shipeasy/sdk/server";
 
-const client = new ShipEasy({ sdkKey: process.env.SHIPEASY_SDK_KEY });
-```
+    configureShipeasy({
+      apiKey: process.env.SHIPEASY_SERVER_KEY!,
+      env: process.env.NODE_ENV === "production" ? "prod" : "dev",
+    });
 
-## Evaluate a gate
+    export const ready = flags.init();
+    ```
 
-```ts
-const enabled = await client.checkGate("my-feature", { userId: "user_123" });
+    Import this once from your entrypoint and `await ready` before serving requests.
 
-if (enabled) {
-  // show new feature
-}
-```
+  </Step>
 
-## Evaluate a dynamic config
+  <Step title="Create a gate">
+    From the CLI:
 
-```ts
-const config = await client.getDynamicConfig("pricing-config");
-const price = config.get("base_price", 9.99);
-```
+    ```bash
+    shipeasy flags create new-checkout-flow --rollout 0
+    ```
+
+    Or in the dashboard: **Configs → Gates → New gate**, name `new-checkout-flow`, leave the rollout at `0%`.
+
+  </Step>
+
+  <Step title="Gate your code">
+    ```ts
+    import { flags } from "@shipeasy/sdk/server";
+
+    export async function getCheckoutComponent(user) {
+      if (flags.gate("new-checkout-flow", user)) {
+        return import("./checkout/new");
+      }
+      return import("./checkout/legacy");
+    }
+    ```
+
+    `gate()` is synchronous and reads from the in-process cache. Pass any user attributes you want available to targeting rules — at minimum `{ user_id }`.
+
+  </Step>
+
+<Step title="Test locally">
+  Add yourself to the **overrides** list in the dashboard (or pass
+  `?shipeasy_gate_new-checkout-flow=true` if you have the [browser DevTools
+  overlay](/get-started/sdks#devtools) loaded). The flag returns `true` for you and `false` for
+  everyone else.
+</Step>
+
+  <Step title="Roll it out">
+    Bump the rollout from `0%` → `5%` → `25%` → `100%` over a few hours, watching your dashboards. Bucketing is deterministic by user ID, so the same 5% always sees the new path.
+
+    ```bash
+    shipeasy flags create new-checkout-flow --rollout 25
+    ```
+
+  </Step>
+
+  <Step title="Killswitch">
+    If something goes wrong, flip the killswitch. It overrides every targeting rule and serves `false` everywhere within the SDK&apos;s next poll.
+
+    Dashboard: toggle the red **Killswitch** chip. CLI: `shipeasy flags disable new-checkout-flow`.
+
+  </Step>
+</Steps>
+
+## What just happened
+
+When you flipped that rollout from `25` to `100`, the dashboard:
+
+1. Updated the project&apos;s flag row in D1.
+2. Rebuilt the project&apos;s `:flags` blob in Cloudflare KV.
+3. Purged the affected URLs from the CDN.
+4. Within the SDK&apos;s poll interval (default 30s, faster on Pro), every server worldwide saw the new value.
+
+No deploy. No redeploy. No restart. No backend round-trip on the read.
+
+## Where to next
+
+<CardGrid>
+  <Card href="/configs/targeting" eyebrow="Targeting" title="Add precision">
+    Replace _"5% of everyone"_ with _"100% of plan=pro in country=US"_.
+  </Card>
+  <Card href="/configs/values" eyebrow="Configs" title="Tune values without code">
+    `pricing.base = 9.99` can be a config, not a constant.
+  </Card>
+  <Card href="/experiments/quickstart" eyebrow="Experiments" title="Measure, don't guess">
+    Once it&apos;s gated, run an A/B test on the same flag.
+  </Card>
+</CardGrid>

@@ -1,0 +1,114 @@
+---
+title: How analysis works
+description: From raw events to lift, p-value, and CI — what the platform actually computes, and how to interpret it.
+---
+
+Analysis is the part of an experiment platform that is most often hand-waved. This page is a precise description of what ShipEasy computes for you, in language that doesn&apos;t require a stats degree.
+
+## The pipeline
+
+<Steps>
+  <Step title="Daily cron fires">
+    Once per day (default 03:00 UTC, configurable per project), ShipEasy enqueues one analysis job
+    per active experiment.
+  </Step>
+  <Step title="Per-user aggregation">
+    For each (experiment, user) pair, the job pulls all events from the last analysis window, joins
+    them against the exposure timestamp, and computes the metric value per user. Events that
+    happened **before** exposure don&apos;t count — that&apos;s the rule that makes results causal.
+  </Step>
+  <Step title="Per-group statistics">
+    For each (metric, group), the job computes mean, variance, and N.
+  </Step>
+  <Step title="Welch's t-test">
+    For each variant against control, ShipEasy runs Welch&apos;s t-test and computes lift, p-value,
+    and 95% confidence interval.
+  </Step>
+  <Step title="Write back to D1">
+    Results are written as plain rows to the project&apos;s D1. The dashboard reads from these rows;
+    the CLI does too. Nothing is locked away in a vendor format.
+  </Step>
+</Steps>
+
+## What a result row contains
+
+For each (experiment, metric, group, segment, day):
+
+| Column              | Meaning                                                                      |
+| ------------------- | ---------------------------------------------------------------------------- |
+| `n`                 | Number of users in the group with at least one exposure event in the window. |
+| `mean`              | The metric&apos;s average value across those users.                          |
+| `variance`          | Sample variance, used for the t-test.                                        |
+| `lift_rel`          | Relative lift vs control: `(mean - control_mean) / control_mean`.            |
+| `lift_abs`          | Absolute lift: `mean - control_mean`.                                        |
+| `p_value`           | Two-sided p-value from Welch&apos;s t-test.                                  |
+| `ci_low`, `ci_high` | 95% confidence interval bounds for absolute lift.                            |
+
+The dashboard&apos;s pretty headline (_"+8.3% (p=0.018)"_) is a render of these columns.
+
+## Why Welch's t-test
+
+Welch&apos;s is the default because:
+
+- It does **not** assume equal variances between groups (Student&apos;s does, and gets it wrong when traffic is unbalanced or one variant materially shifts variance).
+- It works for the metric types we ship: `conversion` (treated as a Bernoulli, sample size handles normality), `count`/`sum`/`mean` (CLT applies after a few thousand users).
+- It&apos;s well-understood, easy to interpret, and matches the math behind the headline numbers from most major experiment platforms.
+
+For very small samples (`N &lt; 30 per arm`), the platform widens the CI using the Satterthwaite degrees-of-freedom approximation. Below `N = 10` per arm, results are marked **insufficient data** and not surfaced as decisions.
+
+## Reading a p-value
+
+`p_value` is "the probability you&apos;d see a difference at least this large by chance, assuming the variants are actually identical." Conventional thresholds:
+
+| p-value   | Interpretation                                             |
+| --------- | ---------------------------------------------------------- |
+| &lt; 0.01 | Strong evidence of a real effect.                          |
+| &lt; 0.05 | Evidence of a real effect. The standard threshold.         |
+| &lt; 0.10 | Suggestive. Useful for exploratory work, not for shipping. |
+| ≥ 0.10    | No statistically significant difference.                   |
+
+Critical caveats:
+
+- p-values are valid for **fixed-horizon** designs. Decide your duration up front. Stopping the moment something turns significant inflates false-positive rates.
+- p-values measure **detection probability**, not effect size. A `+0.1%, p=0.001` result is real but probably not worth shipping.
+- If you run 20 experiments at p&lt;0.05, you&apos;ll false-win 1 of them by chance. Pre-register your hypotheses; treat post-hoc segments as exploratory.
+
+## Reading a confidence interval
+
+The 95% CI is _"a range of values consistent with the data at the 95% confidence level"_. If the CI is `[+1.4%, +15.2%]`, you can say _"the true lift is plausibly anywhere in this range; we don&apos;t know exactly where"_.
+
+CIs answer the question p-values don&apos;t: **how big is the effect, plausibly?** A CI of `[+0.05%, +20%]` is technically significant but _wide_ — you don&apos;t actually know if the lift is trivial or large. Bigger N narrows the CI.
+
+## Exposure stitching
+
+A user is _exposed_ the first time `experiments.assign()` runs for them. The `$exposure` event captures `(experiment, group, user_id, timestamp, attributes_at_exposure)`.
+
+Conversion events after that timestamp count. Events before it don&apos;t. This is what makes the analysis causal — we&apos;re measuring _"behaviour after the user saw the variant"_, not _"all behaviour for users in this bucket"_.
+
+If a user&apos;s anonymous_id later gets aliased to a user_id (`client.alias()`), exposures are stitched: pre-login behaviour attributed to the right variant.
+
+## Where stats stop and judgement starts
+
+ShipEasy gives you the numbers. It does not tell you whether to ship. You should:
+
+- Trust **p &lt; 0.05** + **CI excludes 0** + **direction matches your hypothesis** + **no guardrail regressed** as a green light.
+- Trust **multiple weeks of data**, not "we just hit significance in hour 3."
+- Be skeptical of segments you didn&apos;t pre-register.
+- Sanity-check: does the result _make sense_? A 30% lift on a button label is suspicious. A 2% lift on a layout change is plausible.
+
+## Exporting raw aggregates
+
+Everything analysis produces is queryable. The CLI:
+
+```bash
+shipeasy experiments status checkout-cta --json > result.json
+```
+
+Or pull straight from the API:
+
+```bash
+curl -H "Authorization: Bearer $SHIPEASY_API_KEY" \
+  https://shipeasy.ai/api/experiments/checkout-cta/results
+```
+
+Pipe it into your warehouse if you want; we won&apos;t make you live in our dashboard.

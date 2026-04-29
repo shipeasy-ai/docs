@@ -1,29 +1,92 @@
 ---
 title: Introduction
-description: A/B testing, feature experiments, and statistical analysis.
+description: A/B and multivariate experiments with managed stats. Welch's t-test, holdouts, segmentation — out of the box.
+icon: FlaskConical
 ---
 
-# Experiments
+ShipEasy **Experiments** lets you ask _"is the new thing actually better?"_ and get a defensible answer.
 
-Run rigorous A/B tests with automatic statistical analysis, holdouts, and multi-variate support — all at the Cloudflare edge.
+You define what you want to measure (a **metric**), set up variant payloads (the **groups**), let users land in one bucket or another, log conversions, and look at the dashboard the next morning. The platform handles assignment, exposure stitching, deduplication, daily aggregation, and the statistics.
 
-## What you get
+## The five building blocks
 
-- **Experiments** — A/B and multi-variate tests with Welch's t-test significance reporting
-- **Universes** — logical groupings of experiments with holdout support
-- **Metrics** — the events and computed values you care about
-- **Events** — raw telemetry ingested via Analytics Engine
-- **User attributes** — custom dimensions for targeting and analysis
+<CardGrid>
+  <Card href="/experiments/universes" eyebrow="Universe" title="Where experiments live">
+    A logical namespace. Carries the holdout (a global control unaffected by every experiment in the
+    universe) and an optional mutual-exclusion rule.
+  </Card>
+  <Card href="/experiments/quickstart" eyebrow="Experiment" title="The test itself">
+    A name, an allocation %, a list of groups with weights and `params`. Optionally a targeting
+    gate.
+  </Card>
+  <Card href="/experiments/metrics" eyebrow="Metrics" title="What you measure">
+    `count`, `sum`, `mean`, or `conversion` over an event type. Pick a primary, and a couple of
+    guardrails.
+  </Card>
+  <Card href="/experiments/events" eyebrow="Events" title="Raw signal">
+    Anything you `track()`. Stored in Cloudflare Analytics Engine, aggregated into metric values
+    daily.
+  </Card>
+  <Card href="/experiments/analysis" eyebrow="Analysis" title="The numbers">
+    Welch&apos;s t-test, lift, p-value, 95% CI. Computed once per day, written back to D1, surfaced
+    in the dashboard.
+  </Card>
+</CardGrid>
 
-## How it works
+## Five-minute mental model
 
-1. Define metrics (conversion events) in the dashboard
-2. Create an experiment with variants and allocation percentage
-3. Log exposure and conversion events via the SDK
-4. Daily cron runs t-tests and writes results back to D1
+You ship feature X behind a flag. You believe it&apos;ll lift `purchase_conversion`. So instead of just gating it, you make it an **experiment**: half the eligible users see X, half don&apos;t. Both groups are tracked. The next day, you look at the dashboard and read either _"X lifts conversion by 3.1% (p=0.002)"_ — or _"no significant difference, scrap it."_
 
-## Next steps
+The honest version requires more care than that summary, and the docs walk through it.
 
-- [Quickstart](/experiments/quickstart) — create and run your first experiment
-- [Universes](/experiments/universes) — holdouts, mutual exclusion
-- [Metrics](/experiments/metrics) — defining what you measure
+## When to gate vs. when to experiment
+
+| Situation                                           | Gate | Experiment |
+| --------------------------------------------------- | ---- | ---------- |
+| Is the change reversible?                           | ✓    | ✓          |
+| Does it have a known clear win (security fix, bug)? | ✓    | –          |
+| Do you need an answer to "did it work"?             | –    | ✓          |
+| Cheap to ship, expensive to undo (data migration)?  | ✓    | –          |
+| Affects a metric you&apos;re paid to move?          | –    | ✓          |
+
+A practical workflow is to gate first (so the rollout is safe), then **promote the gate to an experiment** once the feature is stable.
+
+## Quickstart
+
+<Steps>
+  <Step title="Define the metric">
+    What does success look like? Pick one number. Add a couple of guardrails.
+
+    ```bash
+    shipeasy metrics create purchase_conversion --type conversion --event purchase
+    ```
+
+  </Step>
+  <Step title="Create the experiment">
+    ```bash
+    shipeasy experiments create checkout-cta \
+      --allocation 100 \
+      --groups '[{"name":"control","weight":50,"params":{"label":"Pay"}},
+                 {"name":"v1","weight":50,"params":{"label":"Buy now"}}]'
+    ```
+  </Step>
+  <Step title="Wire it in code">
+    ```ts
+    import { experiments } from "@shipeasy/sdk/server";
+
+    const result = experiments.assign<{ label: string }>("checkout-cta", user);
+    const label = result.params.label;
+    ```
+
+  </Step>
+  <Step title="Track conversions">
+    ```ts
+    flags.track(user.user_id, "purchase", { value: 49.99 });
+    ```
+  </Step>
+  <Step title="Read the results">
+    Wait for daily aggregation, then open **Experiments → checkout-cta**. Or `shipeasy experiments status checkout-cta`.
+  </Step>
+</Steps>
+
+Full walkthrough at [Quickstart](/experiments/quickstart).

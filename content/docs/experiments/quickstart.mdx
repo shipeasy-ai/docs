@@ -1,36 +1,153 @@
 ---
 title: Quickstart
-description: Create and run your first A/B experiment in minutes.
+description: Run your first A/B test from scratch — define a metric, create the experiment, ship variants, read results.
 ---
 
-# Quickstart
+This walks through a complete experiment end to end: a button-label test on the checkout CTA. We&apos;ll set up a conversion metric, create the experiment with two variants at 50/50, instrument the SDK, and read results.
 
-## Install
+## Prerequisites
 
-```bash
-npm install @shipeasy/sdk
-```
+- The SDK installed (`npm install @shipeasy/sdk`) and configured. See [Install](/get-started/install) and [How it works](/get-started/how-it-works).
+- A metric in mind. Here: did the user `purchase` after seeing checkout?
 
-## Log an exposure
+<Steps>
+  <Step title="Define the conversion metric">
+    A **metric** wraps an event type and an aggregation function. For "did this user buy?" we use `conversion` over the `purchase` event.
 
-```ts
-import { ShipEasy } from "@shipeasy/sdk";
+    ```bash
+    shipeasy metrics create purchase_conversion \
+      --type conversion \
+      --event purchase
+    ```
 
-const client = new ShipEasy({ sdkKey: process.env.SHIPEASY_SDK_KEY });
+    Or in the dashboard: **Experiments → Metrics → New metric**.
 
-const experiment = await client.getExperiment("checkout-button-color", {
-  userId: "user_123",
-});
+    Tip: also add **guardrails** — secondary metrics that should _not_ regress. For checkout, page load time and error rate are good guardrails.
 
-const variant = experiment.get("color", "blue"); // "blue" | "green"
-```
+  </Step>
 
-## Log a conversion event
+  <Step title="Create the experiment">
+    Two groups, equal weight, one parameter (`label`):
 
-```ts
-await client.logEvent("purchase", { userId: "user_123", value: 49.99 });
-```
+    ```bash
+    shipeasy experiments create checkout-cta \
+      --allocation 100 \
+      --groups '[
+        {"name":"control","weight":50,"params":{"label":"Pay"}},
+        {"name":"v1","weight":50,"params":{"label":"Buy now"}}
+      ]' \
+      --params '{"label":"string"}'
+    ```
 
-## View results
+    `--allocation 100` means 100% of eligible users are in the experiment, split 50/50. Drop `allocation` to e.g. 20 if you want only a 20% sample of traffic to see _any_ variant — the rest get neither, useful for a soft launch.
 
-Results update daily. Go to **Experiments → [your experiment]** to see lift, p-value, and confidence intervals per variant.
+    Attach `purchase_conversion` as the primary metric in the dashboard.
+
+  </Step>
+
+  <Step title="Wire the SDK">
+    ```ts
+    import { configureShipeasy, flags, experiments } from "@shipeasy/sdk/server";
+
+    configureShipeasy({ apiKey: process.env.SHIPEASY_SERVER_KEY!, env: "prod" });
+    await flags.init();
+    ```
+
+    Then on the request path:
+
+    ```ts
+    const result = experiments.assign<{ label: string }>("checkout-cta", {
+      user_id,
+      plan,
+      country,
+    });
+
+    const label = result.params.label; // "Pay" or "Buy now"
+    ```
+
+    The first time you call `assign()` for a user, an **exposure** event is logged automatically. Subsequent calls in the same process don&apos;t re-log — exposures are deduplicated.
+
+  </Step>
+
+  <Step title="Track the conversion">
+    Wherever the purchase succeeds:
+
+    ```ts
+    flags.track(user_id, "purchase", { value: orderTotal });
+    ```
+
+    The event lands in Analytics Engine. The daily analysis job scans events and joins them against exposures by `user_id`.
+
+  </Step>
+
+  <Step title="Start the experiment">
+    Until you start it, `assign()` returns `inExperiment: false` and the **control** params for everyone — safe.
+
+    ```bash
+    shipeasy experiments start checkout-cta
+    ```
+
+    Or click **Start** in the dashboard.
+
+  </Step>
+
+  <Step title="Read the results">
+    Daily, the analysis cron computes per-metric, per-group results — **lift**, **p-value**, **95% CI** — and writes them back to your project. Read them in the dashboard, or:
+
+    ```bash
+    shipeasy experiments status checkout-cta
+    ```
+
+    A typical result row:
+
+    ```
+    purchase_conversion
+      control  N=12,418  rate=4.8%
+      v1       N=12,503  rate=5.2%   lift +8.3%   p=0.018   CI [+1.4%, +15.2%]
+    ```
+
+    `p &lt; 0.05` and the CI excluding zero is your stop-condition. Promote `v1` by adding a gate that mirrors the variant, then deleting the experiment.
+
+  </Step>
+
+  <Step title="Stop & clean up">
+    ```bash
+    shipeasy experiments stop checkout-cta
+    ```
+
+    Stopping is safe at any time. Stopped experiments keep their config and results; they just stop assigning.
+
+  </Step>
+</Steps>
+
+## Anti-patterns to avoid
+
+<Callout type="warn" title="Don't peek and stop early">
+  The p-values are valid for **fixed-horizon** tests. If you sneak a look every hour and stop the
+  moment something turns significant, you&apos;ll get false wins. Pre-decide the experiment&apos;s
+  duration based on traffic.
+</Callout>
+
+<Callout type="warn" title="Don't change variants mid-flight">
+  Changing `params` on a running experiment invalidates the analysis. Stop the experiment, create a
+  new one with `v2` in the name.
+</Callout>
+
+<Callout type="warn" title="Don't run too many experiments on the same surface">
+  Two experiments touching the same checkout flow can confound each other. That&apos;s what
+  [universes](/experiments/universes) and **mutual exclusion** are for.
+</Callout>
+
+## Where to next
+
+<CardGrid>
+  <Card href="/experiments/universes" eyebrow="Architecture" title="Universes & holdouts">
+    When you have more than one experiment in flight.
+  </Card>
+  <Card href="/experiments/metrics" eyebrow="Stats" title="Metrics, deeper">
+    Counts, means, ratios. Primary vs guardrail. Outliers.
+  </Card>
+  <Card href="/experiments/analysis" eyebrow="Stats" title="How analysis works">
+    What the platform actually does to those numbers.
+  </Card>
+</CardGrid>

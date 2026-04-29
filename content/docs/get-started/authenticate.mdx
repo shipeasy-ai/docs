@@ -1,0 +1,76 @@
+---
+title: Authenticate
+description: Log in once with `shipeasy login` — no API keys to copy and paste.
+---
+
+Authentication uses an OAuth-style PKCE flow. Run one command, click one link, and the CLI plus every MCP tool on your machine is signed in for the next 30 days.
+
+## Log in
+
+<Terminal title="zsh">
+  <Prompt />
+  shipeasy login
+  <Out>
+    {"\n"}→ Opening https://shipeasy.ai/auth/cli/abc123 in your browser...{"\n"}→ Waiting for the
+    browser flow to complete...{"\n"}✔ Authenticated as you@example.com (project: acme){"\n"}✔
+    Credentials saved to ~/.shipeasy/credentials
+  </Out>
+</Terminal>
+
+Your browser opens to a confirmation page. Sign in with GitHub, Google, or a magic link. When you confirm, the CLI command exits with success and the credentials are saved to `~/.shipeasy/credentials`.
+
+<Callout type="info" title="No environment variables required">
+  Once you&apos;ve logged in, every CLI command and every MCP tool call picks up your credentials
+  automatically. You can still set `SHIPEASY_API_KEY` if you prefer (CI), but interactive use never
+  needs it.
+</Callout>
+
+## Pick a project
+
+If your account has multiple projects, the login flow lets you choose one. To switch later:
+
+```bash
+shipeasy whoami            # show the active project
+shipeasy projects list     # list all projects
+shipeasy projects use acme # switch
+```
+
+You can also override the project on a per-command basis with `--project <id>`.
+
+## Log out
+
+```bash
+shipeasy logout
+```
+
+This wipes `~/.shipeasy/credentials`. You&apos;ll need to `login` again before the next CLI or MCP call.
+
+## Using ShipEasy in CI
+
+For GitHub Actions, GitLab CI, and similar non-interactive environments, generate a long-lived **admin API key** in **Project → SDK keys → Create → admin** and pass it as `SHIPEASY_API_KEY`.
+
+```yaml title=".github/workflows/release.yml"
+- name: Validate i18n keys
+  env:
+    SHIPEASY_API_KEY: ${{ secrets.SHIPEASY_API_KEY }}
+  run: shipeasy i18n validate --profile en:prod
+```
+
+<Callout type="warn" title="Scope your CI keys">
+  Admin keys can read and write everything. Treat them like any other production secret: store in
+  your CI vault, rotate them on a schedule, and never commit them. The `shipeasy keys` commands let
+  you list and revoke at any time.
+</Callout>
+
+## What gets stored on your machine
+
+```
+~/.shipeasy/credentials
+├─ access_token        # short-lived (1h), refreshed automatically
+├─ refresh_token       # long-lived, rotates on use
+├─ project_id          # active project
+├─ user_email          # for `whoami`
+└─ created_at          # when this credential set was issued
+```
+
+The file is `0600` (user-only). Refresh happens transparently on the next CLI call after expiry. There is no plaintext password anywhere on disk.

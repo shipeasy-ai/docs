@@ -1,25 +1,65 @@
 ---
 title: Introduction
-description: Feature flags and dynamic configuration for your application.
+description: Feature flags and dynamic config values, served from the edge with no redeploy.
+icon: ToggleLeft
 ---
 
-# Configs
+ShipEasy **Configs** gives you two primitives:
 
-Configs gives you feature gates and dynamic config values that update at the edge — no redeploy required.
+- **Gates** — boolean feature flags with optional targeting rules and percentage rollouts.
+- **Dynamic values** — typed key/value configs (string, number, boolean, JSON) you can change without shipping code.
 
-## What you get
+Both are stored in Cloudflare KV with infinite CDN TTL and surgically purged on change. A flag flip you make in the dashboard is visible to your SDK in seconds, worldwide, with no per-request network call from your code.
 
-- **Gates** — boolean feature flags with optional targeting rules (user ID, attributes, percentage rollout)
-- **Dynamic values** — typed key/value configs (string, number, JSON) served from Cloudflare KV with sub-millisecond reads
+## Mental model
 
-## How it works
+<CardGrid>
+  <Card href="/configs/gates" eyebrow="Gates" title="Boolean answers">
+    _"Should I show feature X to this user?"_ Yes / no. Targeting rules, rollout %, killswitch,
+    environment-aware.
+  </Card>
+  <Card href="/configs/values" eyebrow="Dynamic values" title="Typed payloads">
+    _"What should the value of X be right now?"_ String, number, boolean, or JSON. No targeting —
+    values are global per environment (use a gate to vary by user).
+  </Card>
+  <Card href="/configs/targeting" eyebrow="Targeting" title="Rules engine">
+    Match by user ID, attributes, or rolled-out percentage. Bucketing is deterministic by ID.
+  </Card>
+  <Card href="/configs/environments" eyebrow="Environments" title="dev / staging / prod">
+    Each flag holds a value per environment. SDKs pin to one. Promote between them from the
+    dashboard.
+  </Card>
+</CardGrid>
 
-1. Create a gate or config value in the dashboard
-2. Install the ShipEasy SDK in your app
-3. Evaluate flags on the server or client — values are cached in KV and CDN-purged on change
+## Quickstart
 
-## Next steps
+<Steps>
+  <Step title="Install the SDK">
+    ```bash
+    npm install @shipeasy/sdk
+    ```
+  </Step>
+  <Step title="Create a gate in the dashboard">
+    **Configs → Gates → New gate**, name it `new-checkout-flow`, leave it disabled.
+  </Step>
+  <Step title="Read it in code">
+    ```ts
+    import { configureShipeasy, flags } from "@shipeasy/sdk/server";
 
-- [Quickstart](/configs/quickstart) — add the SDK and evaluate your first gate
-- [Gates](/configs/gates) — targeting rules, percentage rollouts, overrides
-- [Dynamic values](/configs/values) — typed configs, JSON payloads
+    configureShipeasy({ apiKey: process.env.SHIPEASY_SERVER_KEY!, env: "prod" });
+    await flags.init();
+
+    if (flags.gate("new-checkout-flow", { user_id })) {
+      // new path
+    } else {
+      // old path
+    }
+    ```
+
+  </Step>
+  <Step title="Roll it out">
+    Back in the dashboard, set rollout to `5%`. Watch your dashboards. Bump to `25%`, then `100%`.
+  </Step>
+</Steps>
+
+Full walkthrough at [Quickstart](/configs/quickstart).

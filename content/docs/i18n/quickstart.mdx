@@ -1,54 +1,154 @@
 ---
 title: Quickstart
-description: Scan your codebase, generate translations, and serve them at the edge.
+description: Onboard a project to String Manager in 10 minutes — scan, codemod, translate, publish.
 ---
 
-# Quickstart
+This walks through the full onboarding for a fresh frontend project. We&apos;ll discover translatable strings, push them to a source profile, generate French translations with AI, and publish.
 
-## Install the CLI
+If you&apos;d rather have an AI agent do this for you, see the [LLM Guide](/llms/i18n-strings) — it&apos;s the same flow, written for Claude Code / Cursor / Windsurf.
+
+## Prerequisites
+
+- A frontend project with English copy you want to translate. Next.js, Vite, Remix, etc.
+- The CLI installed and logged in: `npm install -g @shipeasy/cli && shipeasy login`.
+
+<Steps>
+  <Step title="Install the loader script">
+    The loader is a tiny `<script>` that fetches your published label bundle at runtime. It has zero JS dependencies and benefits from infinite CDN caching.
+
+    ```bash
+    shipeasy i18n install-loader --profile en:prod
+    ```
+
+    The CLI auto-detects your framework and patches the right file:
+
+    | Framework | Patches |
+    | --- | --- |
+    | Next.js App Router | `src/app/layout.tsx` (inside `<head>`) |
+    | Next.js Pages | `pages/_document.tsx` |
+    | Vite + React | `index.html` |
+    | Remix | `app/root.tsx` |
+    | Anything else | Prints the tag, you paste it |
+
+    The command also creates a **client SDK key** scoped to the project, hard-coded into the script tag. The key only allows reads of published label bundles, nothing else.
+
+  </Step>
+
+  <Step title="Create the source profile">
+    A profile is a `locale:environment` pair. Create the one matching the language already in your code:
+
+    ```bash
+    shipeasy i18n profiles create --name en:prod --locale en --environment prod
+    ```
+
+    For non-English source, use the right BCP-47 code (`fr`, `de`, `ja`, …).
+
+  </Step>
+
+  <Step title="Scan & codemod">
+    Discover strings in your source files. For JSX/TSX we can rewrite them automatically — _codemod_:
+
+    ```bash
+    shipeasy i18n scan ./src --rewrite --profile en:prod
+    ```
+
+    The codemod replaces:
+
+    ```tsx
+    <h1>Welcome back</h1>
+    ```
+
+    with:
+
+    ```tsx
+    <h1>{t("welcome_back", "Welcome back")}</h1>
+    ```
+
+    and adds the import. For non-JSX languages (Vue, Svelte, plain HTML, server templates), the scan reports candidates and you wrap them by hand.
+
+    A `i18n-codemod-review.json` report is written at the project root listing strings the codemod skipped (dynamic interpolations, rich HTML, etc.).
+
+  </Step>
+
+  <Step title="Push keys">
+    ```bash
+    shipeasy i18n push --profile en:prod --source codemod
+    ```
+
+    Pushes every discovered key to the dashboard. Verify in **String Manager → Label keys**.
+
+  </Step>
+
+  <Step title="Add target locales">
+    Say you want French and German:
+
+    ```bash
+    shipeasy i18n profiles create --name fr:prod --locale fr --environment prod
+    shipeasy i18n profiles create --name de:prod --locale de --environment prod
+    ```
+
+  </Step>
+
+  <Step title="Generate AI translations">
+    ```bash
+    shipeasy i18n translate --profile fr:prod --ai
+    shipeasy i18n translate --profile de:prod --ai
+    ```
+
+    Each command creates a **draft** in the dashboard with proposed translations for every key missing from the target profile. The AI uses the source value and any descriptions you&apos;ve added on each key.
+
+  </Step>
+
+  <Step title="Review">
+    Open **String Manager → Drafts → fr:prod**. You see every key, the source value, and the proposed translation, side by side. Edit any value inline. When you&apos;re satisfied, click **Merge draft**.
+
+    Merging promotes the values to the profile. It does **not** publish — that&apos;s a separate, deliberate step.
+
+  </Step>
+
+  <Step title="Publish">
+    ```bash
+    shipeasy i18n publish --profile fr:prod
+    shipeasy i18n publish --profile de:prod
+    ```
+
+    Each publish writes the chunked label bundle to KV and purges the relevant CDN URLs. New copy is live worldwide in seconds.
+
+  </Step>
+
+  <Step title="Switch locale at runtime">
+    The loader reads the active locale from your URL or a cookie. Most frameworks already provide this; the SDK exposes a helper:
+
+    ```ts
+    import { i18n } from "@shipeasy/sdk/client";
+    i18n.setLocale("fr");
+    ```
+
+    The loader fetches the new bundle, swaps the strings, and re-renders.
+
+  </Step>
+</Steps>
+
+## Validate before deploy
+
+In CI, fail the build if any code reference is missing from the source profile:
 
 ```bash
-npm install -g @shipeasy/cli
-shipeasy login
+shipeasy i18n validate --profile en:prod ./src
 ```
 
-## Scan your codebase
+Add this to your pre-merge checks and you&apos;ll never ship an "untranslated string" bug.
 
-```bash
-shipeasy i18n scan --dir ./src
-```
+## Where to next
 
-This discovers all `t("key")` calls (or your configured pattern) and pushes them to the dashboard as label keys.
-
-## Create a profile
-
-```bash
-shipeasy i18n profiles create --name en:prod --locale en
-```
-
-## Generate a translation draft
-
-```bash
-shipeasy i18n translate --profile en:prod --ai
-```
-
-The AI draft appears in **String Manager → Drafts** for review.
-
-## Publish
-
-After approving the draft in the dashboard:
-
-```bash
-shipeasy i18n publish --profile en:prod
-```
-
-Labels are now live at the edge via Cloudflare KV.
-
-## Load in your app
-
-```ts
-import { loadLabels } from "@shipeasy/sdk";
-
-const labels = await loadLabels({ profile: "en:prod" });
-const title = labels.get("hero.title", "Welcome");
-```
+<CardGrid>
+  <Card href="/i18n/profiles" eyebrow="Architecture" title="Profiles">
+    Locale + env. Versioning. Rollback.
+  </Card>
+  <Card href="/i18n/keys" eyebrow="Architecture" title="Keys">
+    Naming, chunks, descriptions, deletion.
+  </Card>
+  <Card href="/i18n/translations" eyebrow="AI" title="Translations">
+    How the AI translates, with what context, and how to keep it on-brand.
+  </Card>
+</CardGrid>

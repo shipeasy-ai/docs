@@ -1,0 +1,181 @@
+---
+title: SDKs
+description: One package, two builds — server and browser. Plus framework adapters and a DevTools overlay.
+---
+
+The TypeScript SDK ships in `@shipeasy/sdk` with conditional exports for Node, Cloudflare Workers, Bun, Deno, and the browser. Bundlers pick the right build automatically; you can also import the explicit subpath if you want to.
+
+## Server SDK [#server]
+
+Use this on your backend (Node, Workers, Bun, Deno, Next.js Server Components, etc.). The server SDK polls flag and experiment blobs in the background and evaluates locally — there is no per-request network call.
+
+```ts
+import { configureShipeasy, flags } from "@shipeasy/sdk/server";
+
+configureShipeasy({
+  apiKey: process.env.SHIPEASY_SERVER_KEY!,
+  env: "prod", // "dev" | "staging" | "prod"
+  baseUrl: "https://edge.shipeasy.dev", // optional override
+});
+
+// Initialise once at boot — safe to await many times.
+await flags.init();
+```
+
+### Evaluating a gate
+
+```ts
+const enabled = flags.gate("new-checkout-flow", {
+  user_id: "u_4f2a",
+  plan: "pro",
+  country: "US",
+});
+```
+
+`gate()` is **synchronous** — the rule set lives in memory. Pass any user attributes you want available to the targeting rules.
+
+### Reading a dynamic config
+
+```ts
+const pricing = flags.config<{ base: number; currency: string }>("pricing");
+const base = pricing?.base ?? 9.99;
+```
+
+Configs are typed via the optional generic. Always provide a fallback — your code should never crash because the SDK hasn&apos;t initialised yet.
+
+### Logging an event
+
+```ts
+flags.track("u_4f2a", "purchase", { value: 49.99, sku: "SHIRT-L-BLUE" });
+```
+
+`track()` is fire-and-forget. Events are batched and sent to `/collect` on the edge worker.
+
+### Resolving an experiment
+
+```ts
+import { experiments } from "@shipeasy/sdk/server";
+
+const result = experiments.assign<{ color: "blue" | "green" }>("checkout-button-color", {
+  user_id: "u_4f2a",
+});
+
+if (result.inExperiment) {
+  // result.group       e.g. "control" | "variant_a"
+  // result.params.color
+}
+```
+
+## Browser SDK [#browser]
+
+Use this in the browser (Vite, Webpack, Next.js client, plain HTML). The browser SDK manages an `anonymous_id` cookie, fetches an evaluation bundle on init, and batches event uploads with `navigator.sendBeacon` on page hide.
+
+```ts
+import { configureShipeasy } from "@shipeasy/sdk/client";
+
+const client = configureShipeasy({
+  apiKey: import.meta.env.VITE_SHIPEASY_CLIENT_KEY,
+  env: "prod",
+});
+
+await client.identify({ user_id: "u_4f2a", plan: "pro" });
+
+if (client.getFlag("new-checkout-flow")) {
+  // …
+}
+
+client.track("checkout_viewed", { source: "nav" });
+```
+
+### Server-side rendering bootstrap
+
+For Next.js / Remix / SvelteKit, you can avoid the client roundtrip by rendering the bundle into the page:
+
+```ts
+// Server: build the bootstrap payload
+import { buildClientBootstrap } from "@shipeasy/sdk/server";
+
+const bootstrap = await buildClientBootstrap({ user: { user_id } });
+
+// Client: hydrate with it
+import { configureShipeasy } from "@shipeasy/sdk/client";
+
+const client = configureShipeasy({ apiKey, env: "prod" });
+client.initFromBootstrap(bootstrap);
+```
+
+This pattern lets you render the right variant on the server **and** keep the client in sync — no flicker.
+
+## React, Vue, Svelte, Angular [#react]
+
+Framework adapters live in their own packages. They wrap the browser SDK and expose idiomatic primitives.
+
+```tsx title="React"
+import { ShipeasyProvider, useGate, useConfig } from "@shipeasy/react";
+
+export function Root({ children }) {
+  return (
+    <ShipeasyProvider apiKey={KEY} env="prod" user={{ user_id }}>
+      {children}
+    </ShipeasyProvider>
+  );
+}
+
+function CheckoutButton() {
+  const enabled = useGate("new-checkout-flow");
+  const cfg = useConfig<{ label: string }>("checkout-cta");
+  return <button>{enabled ? (cfg?.label ?? "Pay") : "Pay"}</button>;
+}
+```
+
+Equivalent packages: `@shipeasy/vue` (composables), `@shipeasy/svelte` (stores), `@shipeasy/angular` (services + structural directives).
+
+## React Native & mobile [#mobile]
+
+Use the server build in React Native (the client build assumes a DOM):
+
+```ts
+import { configureShipeasy } from "@shipeasy/sdk/server";
+```
+
+Provide a stable `anonymous_id` — for example a UUID stored in `AsyncStorage`. The SDK has zero DOM dependencies in this build.
+
+## Ruby SDK [#ruby]
+
+A Ruby gem is published as `shipeasy`:
+
+```ruby
+require "shipeasy"
+
+Shipeasy.configure do |c|
+  c.api_key = ENV.fetch("SHIPEASY_SERVER_KEY")
+  c.env     = "prod"
+end
+
+Shipeasy.init!
+
+if Shipeasy.gate("new-checkout-flow", user_id: "u_4f2a", plan: "pro")
+  # …
+end
+
+Shipeasy.track("u_4f2a", "purchase", value: 49.99)
+```
+
+Python and Go SDKs are in beta — reach out if you want the early access.
+
+## DevTools overlay [#devtools]
+
+Add `?shipeasy=1` to any URL on a site running the browser SDK and a debugging overlay appears. You can inspect every gate, every config, every label, and **override values locally** — no rule changes, no redeploys, scoped to your browser only.
+
+```ts
+import { loadDevtools } from "@shipeasy/sdk/client";
+
+if (process.env.NODE_ENV !== "production") loadDevtools();
+```
+
+Useful for QA, dogfooding new variants, and walking a customer through what they should be seeing.
+
+<Callout type="info" title="The overlay is local-only">
+  Overrides are stored in `localStorage`. They affect only the browser tab where they&apos;re set;
+  analytics and exposure events are tagged so you can filter them out of analysis.
+</Callout>

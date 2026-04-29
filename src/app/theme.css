@@ -1,0 +1,664 @@
+/* ──────────────────────────────────────────────────────────────
+   ShipEasy docs — design tokens + Fumadocs theme overrides.
+   Mirrors apps/ui/src/app/globals.css (warm-dark palette,
+   teal accent, Geist + Instrument Serif typography).
+   ────────────────────────────────────────────────────────────── */
+
+/* Geist + Geist Mono + Instrument Serif from Google Fonts.
+   Hosted-only build (no GFonts plugin), so use a static link. */
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&family=Instrument+Serif:ital@0;1&display=swap");
+
+/* Force dark mode regardless of OS preference, matching the admin app. */
+html {
+  color-scheme: dark;
+}
+
+:root,
+.dark,
+:root:not(.dark) {
+  /* Warm-dark neutrals */
+  --se-bg: #0a0a0b;
+  --se-bg-1: #0f0f10;
+  --se-bg-2: #141416;
+  --se-bg-3: #1a1a1d;
+  --se-bg-4: #222227;
+  --se-line: rgba(255, 255, 255, 0.08);
+  --se-line-2: rgba(255, 255, 255, 0.14);
+  --se-line-3: rgba(255, 255, 255, 0.22);
+  --se-fg: #f5f5f4;
+  --se-fg-2: rgba(245, 245, 244, 0.72);
+  --se-fg-3: rgba(245, 245, 244, 0.48);
+  --se-fg-4: rgba(245, 245, 244, 0.28);
+
+  --se-accent: oklch(0.78 0.17 155);
+  --se-accent-soft: color-mix(in oklch, var(--se-accent) 16%, transparent);
+  --se-accent-fg: #07120d;
+  --se-danger: oklch(0.72 0.18 25);
+  --se-danger-soft: color-mix(in oklch, var(--se-danger) 16%, transparent);
+  --se-warn: oklch(0.82 0.15 85);
+  --se-warn-soft: color-mix(in oklch, var(--se-warn) 16%, transparent);
+  --se-info: oklch(0.74 0.14 245);
+  --se-info-soft: color-mix(in oklch, var(--se-info) 16%, transparent);
+  --se-purple: oklch(0.72 0.18 295);
+
+  --se-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --se-sans: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --se-serif: "Instrument Serif", ui-serif, Georgia, serif;
+
+  /* Override Fumadocs tokens to point at the shipeasy palette. */
+  --color-fd-background: var(--se-bg);
+  --color-fd-foreground: var(--se-fg);
+  --color-fd-muted: var(--se-bg-2);
+  --color-fd-muted-foreground: var(--se-fg-2);
+  --color-fd-popover: var(--se-bg-2);
+  --color-fd-popover-foreground: var(--se-fg);
+  --color-fd-card: var(--se-bg-1);
+  --color-fd-card-foreground: var(--se-fg);
+  --color-fd-border: var(--se-line);
+  --color-fd-primary: var(--se-accent);
+  --color-fd-primary-foreground: var(--se-accent-fg);
+  --color-fd-secondary: var(--se-bg-3);
+  --color-fd-secondary-foreground: var(--se-fg);
+  --color-fd-accent: color-mix(in oklab, var(--se-accent) 18%, transparent);
+  --color-fd-accent-foreground: var(--se-fg);
+  --color-fd-ring: color-mix(in oklab, var(--se-accent) 50%, transparent);
+  --color-fd-overlay: rgba(0, 0, 0, 0.55);
+}
+
+html,
+body {
+  background: var(--se-bg);
+  color: var(--se-fg);
+  font-family: var(--se-sans);
+  font-feature-settings: "ss01", "cv11";
+}
+
+body {
+  /* The atmospheric grid + spotlight from the marketing landing. */
+  background-image:
+    radial-gradient(
+      900px 520px at 50% -180px,
+      color-mix(in oklab, var(--se-accent) 20%, transparent) 0%,
+      transparent 70%
+    ),
+    linear-gradient(transparent 95%, var(--se-line) 95%),
+    linear-gradient(90deg, transparent 95%, var(--se-line) 95%);
+  background-size:
+    auto,
+    56px 56px,
+    56px 56px;
+  background-position:
+    center top,
+    center,
+    center;
+  background-attachment: fixed, fixed, fixed;
+}
+
+/* Selection — accent fill */
+::selection {
+  background: var(--se-accent);
+  color: var(--se-accent-fg);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Typography polish — pull serif italic into headings, give the
+   docs the same "premium tech" feel as the admin app.
+   ────────────────────────────────────────────────────────────── */
+
+article h1,
+.fd-page h1 {
+  letter-spacing: -0.025em;
+  font-weight: 500;
+}
+article h1 em,
+article h2 em {
+  font-family: var(--se-serif);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--se-fg);
+  letter-spacing: -0.01em;
+}
+
+article :is(p, li) {
+  color: var(--se-fg-2);
+}
+article strong {
+  color: var(--se-fg);
+  font-weight: 500;
+}
+
+/* Inline code — monospace pill, accent-tinted */
+article :not(pre) > code {
+  font-family: var(--se-mono);
+  font-size: 0.86em;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--se-bg-3);
+  border: 1px solid var(--se-line);
+  color: var(--se-accent);
+}
+
+/* Code blocks — dark with subtle accent border on hover */
+pre {
+  font-family: var(--se-mono) !important;
+  border: 1px solid var(--se-line) !important;
+  background: var(--se-bg-2) !important;
+  border-radius: 10px !important;
+  font-size: 12.5px !important;
+  line-height: 1.7 !important;
+  font-feature-settings: "ss02";
+}
+
+/* Tables — admin-app style */
+article table {
+  font-size: 13.5px;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--se-line);
+  border-radius: 10px;
+  overflow: hidden;
+  width: 100%;
+}
+article table th {
+  font-family: var(--se-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--se-fg-3);
+  background: var(--se-bg-2);
+  padding: 9px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--se-line);
+}
+article table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--se-line);
+  color: var(--se-fg-2);
+}
+article table tr:last-child td {
+  border-bottom: none;
+}
+article table code {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  color: var(--se-accent) !important;
+}
+
+/* Links — accent on hover with smooth underline */
+article a {
+  color: var(--se-fg);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, var(--se-accent) 50%, transparent);
+  text-underline-offset: 3px;
+  transition:
+    color 0.15s,
+    text-decoration-color 0.15s;
+}
+article a:hover {
+  color: var(--se-accent);
+  text-decoration-color: var(--se-accent);
+}
+
+/* Blockquotes → callout-ish accent rule */
+article blockquote {
+  border-left: 2px solid var(--se-accent);
+  padding: 6px 0 6px 16px;
+  background: linear-gradient(90deg, var(--se-accent-soft), transparent 60%);
+  color: var(--se-fg-2);
+  border-radius: 0 6px 6px 0;
+}
+
+/* Headings — accent rule under H2 */
+article h2 {
+  margin-top: 2.4em;
+  padding-top: 0.4em;
+  letter-spacing: -0.02em;
+  font-weight: 500;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Custom MDX components.
+   ────────────────────────────────────────────────────────────── */
+
+/* Callout — info / success / warn / danger */
+.se-callout {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border: 1px solid var(--se-line);
+  border-radius: 10px;
+  background: var(--se-bg-1);
+  margin: 1.2em 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--se-fg-2);
+}
+.se-callout > .se-callout-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  font-family: var(--se-mono);
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--se-bg-3);
+  color: var(--se-fg-2);
+  border: 1px solid var(--se-line-2);
+}
+.se-callout > .se-callout-body {
+  min-width: 0;
+}
+.se-callout > .se-callout-body > :first-child {
+  margin-top: 0;
+}
+.se-callout > .se-callout-body > :last-child {
+  margin-bottom: 0;
+}
+.se-callout > .se-callout-body strong {
+  color: var(--se-fg);
+}
+.se-callout.tone-info {
+  border-color: color-mix(in oklab, var(--se-info) 30%, var(--se-line));
+  background: linear-gradient(180deg, var(--se-info-soft), var(--se-bg-1) 60%);
+}
+.se-callout.tone-info .se-callout-icon {
+  background: var(--se-info-soft);
+  color: var(--se-info);
+  border-color: color-mix(in oklab, var(--se-info) 30%, transparent);
+}
+.se-callout.tone-success {
+  border-color: color-mix(in oklab, var(--se-accent) 30%, var(--se-line));
+  background: linear-gradient(180deg, var(--se-accent-soft), var(--se-bg-1) 60%);
+}
+.se-callout.tone-success .se-callout-icon {
+  background: var(--se-accent-soft);
+  color: var(--se-accent);
+  border-color: color-mix(in oklab, var(--se-accent) 30%, transparent);
+}
+.se-callout.tone-warn {
+  border-color: color-mix(in oklab, var(--se-warn) 30%, var(--se-line));
+  background: linear-gradient(180deg, var(--se-warn-soft), var(--se-bg-1) 60%);
+}
+.se-callout.tone-warn .se-callout-icon {
+  background: var(--se-warn-soft);
+  color: var(--se-warn);
+  border-color: color-mix(in oklab, var(--se-warn) 30%, transparent);
+}
+.se-callout.tone-danger {
+  border-color: color-mix(in oklab, var(--se-danger) 30%, var(--se-line));
+  background: linear-gradient(180deg, var(--se-danger-soft), var(--se-bg-1) 60%);
+}
+.se-callout.tone-danger .se-callout-icon {
+  background: var(--se-danger-soft);
+  color: var(--se-danger);
+  border-color: color-mix(in oklab, var(--se-danger) 30%, transparent);
+}
+
+/* Steps */
+.se-steps {
+  counter-reset: se-step;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 1.4em 0;
+  border-left: 1px dashed var(--se-line-2);
+  padding-left: 28px;
+}
+.se-step {
+  position: relative;
+  padding: 4px 0 18px;
+}
+.se-step::before {
+  counter-increment: se-step;
+  content: counter(se-step);
+  position: absolute;
+  left: -42px;
+  top: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-family: var(--se-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  background: var(--se-bg-2);
+  color: var(--se-accent);
+  border: 1px solid color-mix(in oklab, var(--se-accent) 30%, transparent);
+  box-shadow: 0 0 0 4px var(--se-bg);
+}
+.se-step > h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--se-fg);
+  letter-spacing: -0.01em;
+}
+.se-step > p {
+  margin: 0 0 8px;
+  color: var(--se-fg-2);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.se-step > pre {
+  margin: 8px 0 0 !important;
+}
+
+/* Card grid */
+.se-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  margin: 1.4em 0;
+}
+.se-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px;
+  background: var(--se-bg-1);
+  border: 1px solid var(--se-line);
+  border-radius: 12px;
+  text-decoration: none !important;
+  color: var(--se-fg) !important;
+  position: relative;
+  overflow: hidden;
+  transition:
+    border-color 0.15s,
+    transform 0.15s,
+    background 0.2s;
+}
+.se-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    300px 120px at 100% 0%,
+    color-mix(in oklab, var(--se-accent) 12%, transparent) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.25s;
+  pointer-events: none;
+}
+.se-card:hover {
+  border-color: color-mix(in oklab, var(--se-accent) 35%, var(--se-line-2));
+}
+.se-card:hover::after {
+  opacity: 1;
+}
+.se-card .se-card-eyebrow {
+  font-family: var(--se-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--se-accent);
+}
+.se-card .se-card-title {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--se-fg);
+}
+.se-card .se-card-desc {
+  font-size: 13px;
+  color: var(--se-fg-2);
+  line-height: 1.55;
+}
+.se-card .se-card-arrow {
+  margin-top: auto;
+  padding-top: 10px;
+  font-family: var(--se-mono);
+  font-size: 11.5px;
+  color: var(--se-accent);
+  letter-spacing: 0.04em;
+}
+
+/* Inline status badge */
+.se-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--se-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--se-line-2);
+  color: var(--se-fg-2);
+  background: var(--se-bg-3);
+  vertical-align: 2px;
+  line-height: 1.5;
+}
+.se-pill.tone-accent {
+  background: var(--se-accent-soft);
+  color: var(--se-accent);
+  border-color: color-mix(in oklab, var(--se-accent) 30%, transparent);
+}
+.se-pill.tone-info {
+  background: var(--se-info-soft);
+  color: var(--se-info);
+  border-color: color-mix(in oklab, var(--se-info) 30%, transparent);
+}
+.se-pill.tone-warn {
+  background: var(--se-warn-soft);
+  color: var(--se-warn);
+  border-color: color-mix(in oklab, var(--se-warn) 30%, transparent);
+}
+.se-pill .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+/* Terminal — looks like the admin's hero terminal */
+.se-term {
+  margin: 1.4em 0;
+  border: 1px solid var(--se-line);
+  background: var(--se-bg-2);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.4);
+}
+.se-term-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--se-line);
+  background: var(--se-bg-3);
+}
+.se-term-head .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  display: inline-block;
+}
+.se-term-head .dot.r {
+  background: #ff5f56;
+}
+.se-term-head .dot.y {
+  background: #ffbd2e;
+}
+.se-term-head .dot.g {
+  background: #27c93f;
+}
+.se-term-head .se-term-title {
+  margin-left: 8px;
+  font-family: var(--se-mono);
+  font-size: 11px;
+  color: var(--se-fg-3);
+  letter-spacing: 0.02em;
+}
+.se-term-body {
+  padding: 14px 16px;
+  font-family: var(--se-mono);
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--se-fg-2);
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+.se-term-body .se-term-prompt {
+  color: var(--se-accent);
+  user-select: none;
+  margin-right: 6px;
+}
+.se-term-body .se-term-out {
+  color: var(--se-fg-3);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Landing hero — only used on the docs root.
+   ────────────────────────────────────────────────────────────── */
+.se-hero {
+  position: relative;
+  isolation: isolate;
+  padding: 56px 24px 48px;
+  border: 1px solid var(--se-line);
+  border-radius: 16px;
+  background: linear-gradient(180deg, var(--se-bg-2), var(--se-bg-1) 80%);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.se-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      600px 280px at 50% -60px,
+      color-mix(in oklab, var(--se-accent) 26%, transparent) 0%,
+      transparent 70%
+    ),
+    linear-gradient(transparent 95.5%, var(--se-line) 95.5%),
+    linear-gradient(90deg, transparent 95.5%, var(--se-line) 95.5%);
+  background-size:
+    auto,
+    44px 44px,
+    44px 44px;
+  z-index: -1;
+}
+.se-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--se-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--se-fg-2);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--se-line-2);
+  background: var(--se-bg-2);
+  margin-bottom: 16px;
+}
+.se-hero-eyebrow .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--se-accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--se-accent) 22%, transparent);
+}
+.se-hero h1 {
+  font-size: clamp(36px, 5vw, 56px);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  font-weight: 500;
+  margin: 0 0 14px;
+  max-width: 18ch;
+  color: var(--se-fg);
+}
+.se-hero h1 em {
+  font-family: var(--se-serif);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--se-accent);
+}
+.se-hero p {
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--se-fg-2);
+  max-width: 60ch;
+  margin: 0 0 22px;
+}
+.se-hero-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.se-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--se-mono);
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+  padding: 9px 14px;
+  border-radius: 8px;
+  text-decoration: none !important;
+  border: 1px solid transparent;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    transform 0.1s;
+}
+.se-btn-primary {
+  background: var(--se-accent);
+  color: var(--se-accent-fg) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 4px 12px -4px color-mix(in oklab, var(--se-accent) 50%, transparent);
+}
+.se-btn-primary:hover {
+  transform: translateY(-1px);
+}
+.se-btn-ghost {
+  background: var(--se-bg-2);
+  color: var(--se-fg) !important;
+  border-color: var(--se-line-2);
+}
+.se-btn-ghost:hover {
+  border-color: var(--se-line-3);
+  background: var(--se-bg-3);
+}
+.se-btn .arr {
+  color: currentColor;
+  opacity: 0.7;
+}
+
+/* Reveal animation for landing sections */
+@keyframes se-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.se-hero,
+.se-card-grid {
+  animation: se-reveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Sidebar polish — subtle accent on active link */
+[data-active="true"] {
+  color: var(--se-accent) !important;
+}
+
+/* Ensure docs body doesn't get the global grid (already in card) */
+main {
+  position: relative;
+  z-index: 1;
+}

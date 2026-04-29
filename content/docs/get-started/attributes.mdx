@@ -1,0 +1,133 @@
+---
+title: User attributes
+description: Pass everything you know about the user — ShipEasy uses it for targeting, holdouts, and analysis breakdowns.
+---
+
+A **user attribute** is any key/value pair you attach to a user when calling the SDK. ShipEasy uses attributes for three things:
+
+1. **Targeting rules** on gates — _"only enable this for `plan = pro`"_.
+2. **Variant assignment** in experiments — _"assign by `account_id` so all teammates see the same thing"_.
+3. **Segmentation** in analysis — _"how did the lift differ for `country = US` vs `EU`?"_.
+
+The richer your attribute payload, the more precise your targeting and analysis. Most teams under-invest here on day one and regret it.
+
+## Reserved attributes
+
+Two attributes are special:
+
+| Attribute      | Meaning                                                                                                                      |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `user_id`      | Stable identifier for a logged-in user. Pass it as soon as the user authenticates.                                           |
+| `anonymous_id` | Stable identifier before login. The browser SDK auto-generates and persists this in a cookie; on the server, you provide it. |
+
+ShipEasy bucketing uses `user_id ?? anonymous_id` — so a user gets a stable assignment before _and_ after login. When a user logs in, call `client.alias(anonymous_id, user_id)` to stitch their pre-login events to their post-login identity.
+
+## Custom attributes
+
+Everything else lives at the **top level** of the user object. There is no `custom: { … }` wrapper.
+
+```ts
+client.identify({
+  user_id: "u_4f2a",
+  plan: "pro",
+  country: "US",
+  signup_at: "2026-01-12T00:00:00Z",
+  beta_tester: true,
+  team_size: 18,
+});
+```
+
+Supported value types: `string`, `number`, `boolean`, and `string[]`. (Arrays are useful with the `in` and `contains` operators.) Nested objects are not supported — flatten them with dot-notation if you need to.
+
+## Server vs browser
+
+On the **server**, you pass the user object on every call:
+
+```ts
+flags.gate("new-ui", { user_id, plan, country });
+```
+
+In the **browser**, you call `identify()` once after the user logs in and the same payload is reused for every subsequent `getFlag` / `getConfig` / `track` / experiment assignment until you `identify()` again.
+
+```ts
+await client.identify({ user_id, plan, country });
+```
+
+## Registering attributes in the dashboard
+
+Go to **Project → User attributes → Register** and declare the attributes you plan to send. Registration is **optional** but unlocks two things:
+
+1. The dashboard rule builder can autocomplete attribute names and validate types.
+2. Analysis surfaces attributes as breakdown dimensions in experiment results.
+
+Unregistered attributes still work — they just won&apos;t appear in pickers.
+
+## Operators
+
+Targeting rules use these operators against attribute values:
+
+| Operator                    | Works on                         | Meaning                        |
+| --------------------------- | -------------------------------- | ------------------------------ |
+| `eq` / `neq`                | any                              | Strict equality.               |
+| `in` / `not_in`             | scalar vs array                  | _"is this value in the list"_. |
+| `gt` / `gte` / `lt` / `lte` | numbers                          | Numeric comparison.            |
+| `contains`                  | string in string, value in array | Substring or membership.       |
+| `regex`                     | string                           | JS regex match.                |
+
+Multiple rules on a gate are **AND**ed. Use `in` with a list to express OR.
+
+## Patterns that pay off
+
+<CardGrid>
+  <Card href="#identity" eyebrow="Identity" title="Stable IDs early">
+    Use a UUID created at signup. Avoid email or username — they change. Avoid client-generated IDs
+    for cross-device experiments.
+  </Card>
+  <Card href="#monetization" eyebrow="Monetization" title="Plan + revenue tier">
+    Pass `plan` (`free` / `pro` / `enterprise`) and `mrr_band` (`0` / `1-99` / `100+`). Most
+    experiment lift questions cut along money.
+  </Card>
+  <Card href="#cohort" eyebrow="Cohort" title="Account age, team size">
+    `signup_at`, `tenure_days`, `team_size`. Powerful for segmenting by maturity.
+  </Card>
+  <Card href="#geo" eyebrow="Geography & locale" title="Country + locale">
+    `country`, `locale`. Lets you regionalise rollouts and stops you from running an EU-wide test on
+    a US-only feature.
+  </Card>
+  <Card href="#device" eyebrow="Device" title="Platform + version">
+    `platform` (`web` / `ios` / `android`), `app_version`. The browser SDK fills `platform`
+    automatically; you fill `app_version`.
+  </Card>
+  <Card href="#org" eyebrow="B2B" title="Organisation hierarchy">
+    `account_id`, `org_id`, `role`. For B2B, bucket experiments by `account_id` so all teammates see
+    the same variant.
+  </Card>
+</CardGrid>
+
+## Bucketing by an attribute
+
+By default ShipEasy buckets users by `user_id`. To bucket by something else (typical for B2B: bucket by account so teammates align):
+
+```ts
+flags.gate(
+  "new-ui",
+  {
+    user_id: "u_4f2a",
+    account_id: "acct_910",
+    plan: "pro",
+  },
+  { bucketBy: "account_id" },
+);
+```
+
+Or set the experiment-level `bucket_by` in the dashboard. The same identity is then used for both assignment and exposure stitching.
+
+## Privacy
+
+ShipEasy stores attributes you send as part of exposure events for analysis. Don&apos;t send PII you wouldn&apos;t want in your analytics warehouse:
+
+- Pass user **IDs**, not emails.
+- Pass `country`, not full IP.
+- Hash anything sensitive on your side first.
+
+You can set per-attribute retention in **Project → Privacy** (default 90 days for Pro, 30 days for Free).

@@ -1,14 +1,57 @@
 ---
-title: LLM Guides
-description: Onboarding guides written for AI agents — follow a URL, run autonomously, stop only when human input is required.
+title: AI Agent guides
+description: Onboarding playbooks written for AI assistants — point your agent at one, say "follow this", get a fully wired project.
+icon: Bot
 ---
 
-# LLM Guides
+ShipEasy is built so that an AI coding agent (Claude Code, Cursor, Windsurf, OpenCode, …) can do most of the boring setup work for you. Hand it a guide URL and it executes a complete onboarding workflow — installing the SDK, scanning your code, wiring the loader, pushing keys, publishing.
 
-These guides are written to be consumed by AI coding assistants (Claude Code, Codex, OpenCode, Cursor, etc.) and executed autonomously. Each guide covers a complete onboarding workflow for one ShipEasy product.
+## How to use these guides
 
-**How to use:** Point your AI assistant at one of the URLs below and say _"follow this guide"_. The guide tells the agent exactly what to install, what commands to run, and where to stop for human input.
+<Steps>
+  <Step title="Install the MCP server">
+    The agent uses ShipEasy&apos;s [MCP server](/get-started/mcp) to call typed tools. One command sets it up:
 
-## Guides
+    ```bash
+    shipeasy mcp install
+    ```
 
-- [**String Manager (i18n)**](/llms/i18n-strings) — Install the MCP server and SDK, scan the codebase, run the codemod, push keys, and publish. One stop for auth.
+    Or wire it by hand — see the MCP page.
+
+  </Step>
+  <Step title="Log in once">
+    ```bash
+    shipeasy login
+    ```
+
+    The MCP tools pick up your credentials automatically. The agent never sees your token.
+
+  </Step>
+  <Step title="Hand the agent a URL">
+    Open your AI assistant and say:
+
+    > "Follow https://docs.shipeasy.ai/llms/i18n-strings to onboard this project to ShipEasy String Manager."
+
+    The agent reads the guide, calls the right MCP tools in the right order, asks you only for the things that need a human (e.g. clicking a browser link to authenticate).
+
+  </Step>
+</Steps>
+
+## Available guides
+
+<CardGrid>
+  <Card
+    href="/llms/i18n-strings"
+    eyebrow="String Manager"
+    title="Onboard a project to translations"
+  >
+    Detect framework → install loader → codemod source → push keys → publish. One stop for browser
+    auth.
+  </Card>
+</CardGrid>
+
+More guides coming — for gating an existing feature, setting up a first experiment, and migrating from another platform.
+
+## Why URLs, not packaged prompts
+
+The guides are plain MDX. Anyone — human or agent — can read them. They evolve with the platform; the URL is stable, the content is current. If you fork a guide for your team&apos;s conventions, you&apos;re welcome to host your own — the MCP tools and shapes are public.

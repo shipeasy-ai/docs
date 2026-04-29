@@ -1,0 +1,5 @@
+{
+  "title": "Get started",
+  "root": true,
+  "pages": ["how-it-works", "install", "authenticate", "sdks", "cli", "mcp", "attributes"]
+}

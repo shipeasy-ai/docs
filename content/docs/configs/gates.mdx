@@ -1,36 +1,118 @@
 ---
 title: Gates
-description: Boolean feature flags with targeting rules and percentage rollouts.
+description: Boolean feature flags with targeting, rollouts, killswitches, and overrides.
 ---
 
-# Gates
+A **gate** is a single boolean answer for a single user. It is the unit of "should I do the new thing?" in your code.
 
-Gates are boolean feature flags that evaluate to `true` or `false` for a given user.
+## Anatomy of a gate
 
-## Creating a gate
+<CardGrid>
+  <Card href="#enabled" eyebrow="enabled" title="Master switch">
+    The on/off bit. When false, the gate returns `false` for everyone, ignoring rules.
+  </Card>
+  <Card href="#killswitch" eyebrow="killswitch" title="Emergency off">
+    Same effect as `enabled = false` but separate, so you can disable a feature without losing its targeting config. Use it during incidents.
+  </Card>
+  <Card href="#rules" eyebrow="rules" title="Targeting">
+    Optional list of `{ attr, op, value }` predicates. ANDed. A user must match every rule (and the rollout) to get `true`.
+  </Card>
+  <Card href="#rollout" eyebrow="rolloutPct" title="Percentage">
+    `0..10000` (we work in basis points internally — UIs show 0–100%). Bucketing is deterministic by user ID and salt.
+  </Card>
+  <Card href="#overrides" eyebrow="overrides" title="Overrides">
+    Force `true` or `false` for specific user IDs. Bypasses everything. Useful for QA + dogfooding.
+  </Card>
+  <Card href="#salt" eyebrow="salt" title="Hash salt">
+    Per-gate salt fed into the bucketing hash. Change it and rollout buckets re-shuffle — useful when rolling out the same feature twice.
+  </Card>
+</CardGrid>
 
-1. Go to **Configs → Gates** in the dashboard
-2. Click **New gate**
-3. Give it a name (e.g. `new-checkout-flow`)
-4. Set targeting rules or enable for everyone
+## Evaluation order
 
-## Targeting rules
+For a request `gate(name, user)`:
 
-Gates support targeting by:
+```
+1. killswitch ON  → false
+2. enabled OFF    → false
+3. user.user_id in overrides[true]  → true
+4. user.user_id in overrides[false] → false
+5. any rule fails → false
+6. murmur3(salt + user_id) % 10000 < rolloutPct → true
+7. otherwise → false
+```
 
-- **User ID** — exact match or list
-- **User attributes** — any attribute in your `StatsigUser` object
-- **Percentage rollout** — serve to X% of users, deterministically by user ID
+That order matters: rules are evaluated **before** the rollout. _"100% of `plan = pro`"_ means _100%_ of pro users, not _the same 100% bucket_ filtered down to pros.
 
-## SDK usage
+## API
 
 ```ts
-const enabled = await client.checkGate("new-checkout-flow", {
-  userId: "user_123",
-  custom: { plan: "pro", country: "US" },
+import { flags } from "@shipeasy/sdk/server";
+
+const enabled = flags.gate("new-checkout-flow", {
+  user_id: "u_4f2a",
+  plan: "pro",
+  country: "US",
 });
 ```
 
-## Overrides
+Browser:
 
-You can force a gate `true` or `false` for specific user IDs from the dashboard — useful for QA and dogfooding.
+```ts
+import { configureShipeasy } from "@shipeasy/sdk/client";
+
+const client = configureShipeasy({ apiKey, env: "prod" });
+await client.identify({ user_id, plan, country });
+
+if (client.getFlag("new-checkout-flow")) {
+  // …
+}
+```
+
+`gate()` / `getFlag()` is synchronous. If you call it before `init()` resolves, you get `false` and a dev-mode warning. Always `await flags.init()` once at boot.
+
+## Killswitch [#killswitch]
+
+The killswitch is a separate field from `enabled` so you can keep targeting and rollout intact while turning the feature off. Three places to flip it:
+
+- Dashboard: red **Killswitch** chip on the gate row.
+- CLI: `shipeasy flags disable <name>` (toggles `enabled`, not the killswitch — for the killswitch use `--killswitch`).
+- API: `PATCH /api/flags/<name>` with `{ "killswitch": true }`.
+
+A killed gate returns `false` everywhere within the SDK&apos;s next poll. Re-enabling restores the full prior state.
+
+## Overrides [#overrides]
+
+In the dashboard, expand a gate and add user IDs under **Overrides → Always on** or **Always off**. Overrides:
+
+- Bypass `enabled`, `killswitch`, all rules, and the rollout.
+- Are scoped to **`user_id`** only (no attribute matching).
+- Are great for: QA accounts, internal dogfooders, customer-success demos, repro of a bug a single customer is hitting.
+
+If you need a percentage-based "always-on for cohort X", use a [targeting rule](/configs/targeting) on a custom attribute (`internal: true`) instead.
+
+## Naming
+
+- Use kebab-case: `new-checkout-flow`, not `newCheckoutFlow`.
+- Describe the **change**, not the abstract feature. `enable-redis-pool` ages better than `redis-pool`.
+- Prefix by area for grouping: `checkout-`, `nav-`, `infra-`.
+
+## Cleaning up
+
+Stale flags are technical debt — once a feature is fully launched, delete the flag and the dead code. The CLI helps:
+
+```bash
+shipeasy flags list --json | jq '.[] | select(.enabled == 1 and .rolloutPct == 10000) | .name'
+```
+
+Lists every gate currently at `enabled: true, rollout: 100%` — these are candidates for removal.
+
+## Limits
+
+| Plan       | Gates per project | Rules per gate | Overrides per gate |
+| ---------- | ----------------- | -------------- | ------------------ |
+| Free       | 50                | 5              | 100                |
+| Pro        | 500               | 20             | 10,000             |
+| Enterprise | Unlimited         | Unlimited      | Unlimited          |
+
+If you hit a limit, audit for stale flags first; those numbers are very generous if you delete what you ship.

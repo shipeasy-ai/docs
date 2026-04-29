@@ -1,0 +1,95 @@
+---
+title: How it works
+description: A tour of the moving pieces — from your code, through the SDK, to the edge and back.
+---
+
+ShipEasy is built so that the **read path is fast and the write path is explicit**. Reading a flag, an experiment assignment, or a translation should never block your request. Changing one should propagate worldwide within a second of you clicking _save_.
+
+## The lifecycle of a flag
+
+<Steps>
+  <Step title="You change something in the dashboard or CLI">
+    A flag is flipped, a rollout percentage is bumped, a new translation is published.
+  </Step>
+  <Step title="ShipEasy rebuilds the project blob">
+    Every project has two compact JSON blobs in Cloudflare KV: one for flags + configs, one for
+    experiment universes. The dashboard rebuilds the affected blob and writes it back to KV.
+  </Step>
+  <Step title="The CDN cache is purged">
+    Reads are cached at the edge with a long TTL. After a write, ShipEasy purges only the affected
+    URLs so existing caches stay warm.
+  </Step>
+  <Step title="Your SDK polls and picks up the change">
+    The server SDK polls every 30s by default; the browser SDK fetches on init. Polling is per-plan;
+    on Pro you get faster intervals. No webhooks, no SSE, no Durable Objects to manage.
+  </Step>
+</Steps>
+
+## What lives where
+
+<CardGrid>
+  <Card href="/configs" eyebrow="Hot path" title="Cloudflare KV (flags + experiments)">
+    Two blobs per project, served with infinite TTL behind a global CDN. This is what your SDK
+    reads.
+  </Card>
+  <Card href="/experiments/events" eyebrow="Telemetry" title="Cloudflare Analytics Engine">
+    Every `track()` call ends up here. Fire-and-forget, no latency on your code path.
+  </Card>
+  <Card href="/experiments/analysis" eyebrow="Source of truth" title="D1 (SQLite at the edge)">
+    Project state, experiment definitions, computed daily results. The dashboard reads from here;
+    the SDK does not.
+  </Card>
+  <Card href="/i18n" eyebrow="Strings" title="KV chunks per profile">
+    Translations are sharded into chunks per profile and served as static JSON.
+  </Card>
+</CardGrid>
+
+## Two runtimes, three products
+
+ShipEasy runs as two independently-deployed Cloudflare Workers:
+
+- **The admin app** is your dashboard, REST API, and CLI backend. It handles login, CRUD, and writes.
+- **The edge worker** runs the SDK hot path: `/sdk/flags`, `/sdk/experiments`, `/sdk/labels`, and `/collect` for events.
+
+You don&apos;t need to know any of this to use the SDK — but it explains the trade-offs. Reads scale with Cloudflare; writes are surgical and explicit; analysis runs on a daily cron, not on every request.
+
+<Callout type="info" title="Eventually-consistent, very quickly">
+  A flag flip is visible to your SDK in **&lt; poll interval + CDN propagation**. For the default
+  30s poll on the Free plan that&apos;s ~30s; on Pro it&apos;s &lt;5s. Browser SDKs see changes on
+  the next `init`.
+</Callout>
+
+## Identity model
+
+ShipEasy uses a simple two-tier identity:
+
+- **`anonymous_id`** — a stable per-browser ID created and stored by the client SDK. Used for pre-login users and exposure stitching.
+- **`user_id`** — your application&apos;s user identifier. Pass it as soon as you know it.
+
+Custom attributes like `plan`, `country`, `beta_tester` are passed alongside. They power [targeting rules](/configs/targeting), [experiment segmentation](/experiments/metrics#segmentation), and analysis breakdowns.
+
+```ts
+client.identify({
+  user_id: "u_4f2a",
+  anonymous_id: "anon_xyz", // optional — auto-managed in the browser
+  plan: "pro",
+  country: "US",
+  beta_tester: true,
+});
+```
+
+See [User attributes](/get-started/attributes) for the full guide.
+
+## Where to next
+
+<CardGrid>
+  <Card href="/get-started/install" eyebrow="Set up" title="Install">
+    Add the SDK and CLI.
+  </Card>
+  <Card href="/get-started/authenticate" eyebrow="Set up" title="Authenticate">
+    Log in once, never think about it again.
+  </Card>
+  <Card href="/configs/quickstart" eyebrow="Build" title="Ship your first flag">
+    Five-minute walkthrough.
+  </Card>
+</CardGrid>

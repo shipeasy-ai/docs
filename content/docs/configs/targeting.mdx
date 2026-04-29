@@ -1,0 +1,113 @@
+---
+title: Targeting & rollouts
+description: How to express "show this to the right users" with rules, percentages, and salts.
+---
+
+A targeting rule on a gate is a predicate of the form **`attr op value`**. Multiple rules on a gate are ANDed together. To OR, use the `in` operator with an array.
+
+## Operators
+
+| Operator                    | Works on                   | Example                       |
+| --------------------------- | -------------------------- | ----------------------------- |
+| `eq` / `neq`                | any                        | `plan eq "pro"`               |
+| `in` / `not_in`             | scalar vs array            | `country in ["US","CA","MX"]` |
+| `gt` / `gte` / `lt` / `lte` | numbers                    | `tenure_days gt 30`           |
+| `contains`                  | string⊂string, array∋value | `roles contains "admin"`      |
+| `regex`                     | strings only               | `email regex "@acme\\.com$"`  |
+
+Numeric ops coerce strings that look like numbers — `"100" gt 50` is `true`. They never coerce booleans.
+
+## Common rule shapes
+
+```ts
+// Beta cohort — explicit list
+{ attr: "user_id", op: "in", value: ["u_1", "u_2", "u_3"] }
+
+// Internal users only
+{ attr: "email", op: "regex", value: "@acme\\.com$" }
+
+// Pro plan in supported regions
+[
+  { attr: "plan",    op: "eq", value: "pro" },
+  { attr: "country", op: "in", value: ["US","CA","UK"] },
+]
+
+// Long-tenured power users
+[
+  { attr: "tenure_days", op: "gte", value: 60 },
+  { attr: "team_size",   op: "gte", value: 5 },
+]
+```
+
+## Rollout percentages
+
+Rollout is deterministic. The SDK computes:
+
+```
+bucket = murmur3(salt + ":" + (user_id ?? anonymous_id)) % 10000
+true   = bucket < rolloutPct
+```
+
+That gives you three properties:
+
+- **Stable**: the same user always gets the same bucket for the same gate.
+- **Independent**: changing one gate&apos;s rollout doesn&apos;t move users on another gate (different salts).
+- **Fair**: bucketing is uniform; small rollouts give a representative sample.
+
+### Rolling out safely
+
+A safe rollout schedule for an unknown-risk change:
+
+```
+0%   → enable rule + dogfood with overrides
+1%   → 1 hour, watch error rate + p95
+5%   → 4 hours
+25%  → overnight
+50%  → 1 day
+100% → keep an eye on it for a week, then delete the flag
+```
+
+For a known-low-risk change you can compress this. For anything load-bearing (auth, billing, the data path) — don&apos;t.
+
+### The salt
+
+Each gate has its own salt. If you ever want to **re-shuffle** the rollout buckets without changing the percentage (say, to avoid the same 5% always being chosen), bump the salt:
+
+```bash
+shipeasy flags update my-feature --salt "v2"
+```
+
+That&apos;s rare. The default salt is fine for almost every case.
+
+## Combining rules + rollout
+
+Rules are checked **before** rollout. Two practical implications:
+
+1. _"100% of `plan = pro`"_ means **all** pro users get `true`. The rollout filter doesn&apos;t fight the rule.
+2. _"5% of `plan = pro`"_ means **5% of pros**, not _"5% of everyone, then keep only pros"_. The bucket is computed against the pre-filtered population.
+
+This is what you almost always want. If you ever need _"this proportion of the entire user base, but only if they&apos;re pro"_ — that&apos;s an [experiment](/experiments) and we have purpose-built tools for it.
+
+## Bucketing by something other than `user_id`
+
+Default: bucketing key is `user_id ?? anonymous_id`. Override per-call:
+
+```ts
+flags.gate("new-team-ui", user, { bucketBy: "account_id" });
+```
+
+Or on the gate itself in the dashboard. Use this in B2B so all teammates of an account see the same variant.
+
+<Callout type="warn" title="Don't bucket by mutable attributes">
+  Bucketing on `email` or `plan` means a user changes bucket whenever the attribute changes.
+  They&apos;ll see the feature flicker on and off. Always bucket on something stable: `user_id`,
+  `account_id`, or `anonymous_id`.
+</Callout>
+
+## Overrides vs rules
+
+Use **rules** for cohorts you can describe — _"all internal users"_, _"all pro accounts"_. They scale.
+
+Use **overrides** for individual user IDs — QA accounts, customers reporting a specific bug, demos. They&apos;re the trump card and bypass everything else.
+
+If you find yourself adding many overrides, that&apos;s a smell — promote them to a rule keyed on a `internal: true` or `early_access: true` attribute.
