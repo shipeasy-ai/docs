@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "shipeasy-docs",
-  "compatibility_date": "2026-04-16",
+  "compatibility_date": "2026-04-30",
   "assets": {
     "directory": "./out",
     "not_found_handling": "404-page",
