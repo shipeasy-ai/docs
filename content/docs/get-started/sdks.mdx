@@ -7,12 +7,12 @@ description: One package, two builds — server and browser. Plus framework adap
   status="Production ready"
   read="9 min read"
   updated="May 3, 2026"
-  works="JS · TS · React · Vue · Svelte · Angular · RN · Python · Go"
+  works="JS · TS · React · Vue · Svelte · Angular · RN · Ruby · Python · Go"
 />
 
 The TypeScript SDK ships in `@shipeasy/sdk` with conditional exports for Node, Cloudflare Workers, Bun, Deno, and the browser. Bundlers pick the right build automatically; you can also import the explicit subpath if you want to be unambiguous.
 
-Other languages have first-party adapters or community ports — see [Python & Go](#python--go) below.
+Other languages have first-party adapters or community ports — see [Ruby](#ruby), [Python & Go](#python--go) below.
 
 ## Server SDK [#server]
 
@@ -160,6 +160,30 @@ import { shipeasy } from "@shipeasy/sdk/server";
 Provide a stable `anonymous_id` — for example a UUID stored in `AsyncStorage`. The SDK has zero DOM dependencies in this build and works fine in the Hermes engine.
 
 For native iOS and Android, use the JS SDK from the React Native bridge or call the same `/sdk/*` endpoints directly from Swift/Kotlin — the wire format is documented at [Reference → SDK protocol](/configs/protocol).
+
+## Ruby [#ruby]
+
+A Ruby gem is published as `shipeasy-sdk` on RubyGems:
+
+```ruby
+require "shipeasy-sdk"
+
+Shipeasy.configure do |c|
+  c.api_key    = ENV.fetch("SHIPEASY_SERVER_KEY")
+  c.public_key = ENV.fetch("SHIPEASY_CLIENT_KEY") # for the i18n view helpers
+  c.profile    = "default"
+end
+
+if Shipeasy.flags.get_flag("new-checkout-flow", { user_id: "u_4f2a", plan: "pro" })
+  # …
+end
+```
+
+The gem mirrors the JS API surface. Polling, evaluation, exposure events, and i18n all behave the same.
+
+### Rails
+
+In a Rails app, drop the `Shipeasy.configure` block above into `config/initializers/shipeasy.rb` and you're done — the gem auto-mounts `i18n_head_tags`, `i18n_inline_data`, `i18n_script_tag`, and `i18n_t` view helpers via a Railtie. In plain Ruby (Sinatra, Hanami, scripts) the Rails surface is skipped automatically.
 
 ## Python & Go
 
