@@ -1,26 +1,34 @@
 ---
 title: SDKs
-description: One package, two builds — server and browser. Plus framework adapters and a DevTools overlay.
+description: One package, two builds — server and browser. Plus framework adapters, native runtimes, and a DevTools overlay.
 ---
 
-The TypeScript SDK ships in `@shipeasy/sdk` with conditional exports for Node, Cloudflare Workers, Bun, Deno, and the browser. Bundlers pick the right build automatically; you can also import the explicit subpath if you want to.
+<DocMeta
+  status="Production ready"
+  read="9 min read"
+  updated="May 3, 2026"
+  works="JS · TS · React · Vue · Svelte · Angular · RN · Ruby · Python · Go"
+/>
+
+The TypeScript SDK ships in `@shipeasy/sdk` with conditional exports for Node, Cloudflare Workers, Bun, Deno, and the browser. Bundlers pick the right build automatically; you can also import the explicit subpath if you want to be unambiguous.
+
+Other languages have first-party adapters or community ports — see [Other languages](#ruby) below.
 
 ## Server SDK [#server]
 
-Use this on your backend (Node, Workers, Bun, Deno, Next.js Server Components, etc.). The server SDK polls flag and experiment blobs in the background and evaluates locally — there is no per-request network call.
+Use this on your backend (Node, Workers, Bun, Deno, Next.js Server Components, etc.). The server SDK polls flag and experiment blobs in the background and evaluates locally — there is no per-request network call from your code.
 
 ```ts
-import { configureShipeasy, flags } from "@shipeasy/sdk/server";
+import { shipeasy, flags } from "@shipeasy/sdk/server";
 
-configureShipeasy({
+await shipeasy({
   apiKey: process.env.SHIPEASY_SERVER_KEY!,
   env: "prod", // "dev" | "staging" | "prod"
   baseUrl: "https://edge.shipeasy.dev", // optional override
 });
-
-// Initialise once at boot — safe to await many times.
-await flags.init();
 ```
+
+`shipeasy()` is idempotent — call it from the framework entry point that runs once per cold start (Next.js root `layout.tsx`, an Express app initialiser, your Worker `fetch` handler).
 
 ### Evaluating a gate
 
@@ -32,7 +40,7 @@ const enabled = flags.gate("new-checkout-flow", {
 });
 ```
 
-`gate()` is **synchronous** — the rule set lives in memory. Pass any user attributes you want available to the targeting rules.
+`gate()` is **synchronous**. The rule set lives in process memory. Pass any user attributes you want available to the targeting rules — see [User attributes](/get-started/attributes) for the full guide.
 
 ### Reading a dynamic config
 
@@ -66,30 +74,42 @@ if (result.inExperiment) {
 }
 ```
 
+Assignment is deterministic by `user_id` (or whatever you set as `bucket_by`). Calling `assign()` also queues an exposure event that the analysis pipeline reads from Analytics Engine.
+
+### Translating a label
+
+```ts
+import { t } from "@shipeasy/sdk/server";
+
+const greeting = t("home.hero.greeting", "Welcome back");
+```
+
+The `t()` function is part of the same SDK — no separate i18n init. Configuration happens once via the same `shipeasy()` call.
+
 ## Browser SDK [#browser]
 
 Use this in the browser (Vite, Webpack, Next.js client, plain HTML). The browser SDK manages an `anonymous_id` cookie, fetches an evaluation bundle on init, and batches event uploads with `navigator.sendBeacon` on page hide.
 
 ```ts
-import { configureShipeasy } from "@shipeasy/sdk/client";
+import { shipeasy } from "@shipeasy/sdk/client";
 
-const client = configureShipeasy({
+shipeasy({
   apiKey: import.meta.env.VITE_SHIPEASY_CLIENT_KEY,
   env: "prod",
 });
 
-await client.identify({ user_id: "u_4f2a", plan: "pro" });
+await shipeasy.identify({ user_id: "u_4f2a", plan: "pro" });
 
-if (client.getFlag("new-checkout-flow")) {
+if (shipeasy.gate("new-checkout-flow")) {
   // …
 }
 
-client.track("checkout_viewed", { source: "nav" });
+shipeasy.track("checkout_viewed", { source: "nav" });
 ```
 
 ### Server-side rendering bootstrap
 
-For Next.js / Remix / SvelteKit, you can avoid the client roundtrip by rendering the bundle into the page:
+For Next.js / Remix / SvelteKit, render the bundle into the page to avoid the client roundtrip:
 
 ```ts
 // Server: build the bootstrap payload
@@ -98,70 +118,72 @@ import { buildClientBootstrap } from "@shipeasy/sdk/server";
 const bootstrap = await buildClientBootstrap({ user: { user_id } });
 
 // Client: hydrate with it
-import { configureShipeasy } from "@shipeasy/sdk/client";
+import { shipeasy } from "@shipeasy/sdk/client";
 
-const client = configureShipeasy({ apiKey, env: "prod" });
-client.initFromBootstrap(bootstrap);
+shipeasy({ apiKey, env: "prod" });
+shipeasy.initFromBootstrap(bootstrap);
 ```
 
-This pattern lets you render the right variant on the server **and** keep the client in sync — no flicker.
+This pattern lets you render the right variant on the server **and** keep the client in sync — no flicker. ShipEasy auto-handles the RSC async-context boundary so the bundle survives SSR streaming.
 
-## React, Vue, Svelte, Angular [#react]
+## Framework usage [#frameworks]
 
-Framework adapters live in their own packages. They wrap the browser SDK and expose idiomatic primitives.
+ShipEasy ships a single SDK — `@shipeasy/sdk` — that works from plain JavaScript. Every API (`gate`, `config`, `experiment`, `t`, `track`) is callable directly from React, Vue, Svelte, Angular, or vanilla JS without any framework-specific wrapper.
 
 ```tsx title="React"
-import { ShipeasyProvider, useGate, useConfig } from "@shipeasy/react";
+import { useEffect, useState } from "react";
+import { shipeasy, gate, t } from "@shipeasy/sdk/client";
 
-export function Root({ children }) {
-  return (
-    <ShipeasyProvider apiKey={KEY} env="prod" user={{ user_id }}>
-      {children}
-    </ShipeasyProvider>
-  );
-}
+shipeasy({ apiKey: KEY, env: "prod", user: { user_id } });
 
 function CheckoutButton() {
-  const enabled = useGate("new-checkout-flow");
-  const cfg = useConfig<{ label: string }>("checkout-cta");
-  return <button>{enabled ? (cfg?.label ?? "Pay") : "Pay"}</button>;
+  const [enabled, setEnabled] = useState(() => gate("new-checkout-flow"));
+  useEffect(() => shipeasy.subscribe(() => setEnabled(gate("new-checkout-flow"))), []);
+  return <button>{t("checkout.cta", "Pay")}</button>;
 }
 ```
 
-Equivalent packages: `@shipeasy/vue` (composables), `@shipeasy/svelte` (stores), `@shipeasy/angular` (services + structural directives).
+The same pattern applies in Vue (`watchEffect`), Svelte (`$:`), or any framework — wrap `shipeasy.subscribe` in whatever reactivity primitive your framework provides.
+
+### A note on vanilla JS [#vanilla-js]
+
+Every ShipEasy SDK API works from plain JavaScript. You can drop the SDK into a plain `<script>` tag, an Astro island, an HTMX page, or a vanilla TS app, and every primitive — gates, configs, experiments, i18n — works without any framework.
 
 ## React Native & mobile [#mobile]
 
-Use the server build in React Native (the client build assumes a DOM):
+Use the **server build** in React Native — the client build assumes a DOM:
 
 ```ts
-import { configureShipeasy } from "@shipeasy/sdk/server";
+import { shipeasy } from "@shipeasy/sdk/server";
 ```
 
-Provide a stable `anonymous_id` — for example a UUID stored in `AsyncStorage`. The SDK has zero DOM dependencies in this build.
+Provide a stable `anonymous_id` — for example a UUID stored in `AsyncStorage`. The SDK has zero DOM dependencies in this build and works fine in the Hermes engine.
 
-## Ruby SDK [#ruby]
+For native iOS and Android, use the JS SDK from the React Native bridge or call the same `/sdk/*` endpoints directly from Swift/Kotlin — the wire format is documented at [Reference → SDK protocol](/configs/protocol).
 
-A Ruby gem is published as `shipeasy`:
+## Python & Go
 
-```ruby
-require "shipeasy"
+In closed beta. Same wire format, same mental model. Reach out on the dashboard if you want early access.
 
-Shipeasy.configure do |c|
-  c.api_key = ENV.fetch("SHIPEASY_SERVER_KEY")
-  c.env     = "prod"
-end
+```python title="Python (preview)"
+from shipeasy import shipeasy, flags
 
-Shipeasy.init!
+shipeasy(api_key=os.environ["SHIPEASY_SERVER_KEY"], env="prod")
 
-if Shipeasy.gate("new-checkout-flow", user_id: "u_4f2a", plan: "pro")
-  # …
-end
-
-Shipeasy.track("u_4f2a", "purchase", value: 49.99)
+if flags.gate("new-checkout-flow", user_id="u_4f2a", plan="pro"):
+    ...
 ```
 
-Python and Go SDKs are in beta — reach out if you want the early access.
+```go title="Go (preview)"
+client, _ := shipeasy.New(shipeasy.Config{
+    APIKey: os.Getenv("SHIPEASY_SERVER_KEY"),
+    Env:    "prod",
+})
+
+if client.Gate("new-checkout-flow", shipeasy.User{ID: "u_4f2a", Attrs: map[string]any{"plan": "pro"}}) {
+    // ...
+}
+```
 
 ## DevTools overlay [#devtools]
 
@@ -173,9 +195,40 @@ import { loadDevtools } from "@shipeasy/sdk/client";
 if (process.env.NODE_ENV !== "production") loadDevtools();
 ```
 
-Useful for QA, dogfooding new variants, and walking a customer through what they should be seeing.
+Useful for QA, dogfooding new variants, walking a customer through what they should be seeing, and inspecting the runtime variables a label or config is using.
 
 <Callout type="info" title="The overlay is local-only">
   Overrides are stored in `localStorage`. They affect only the browser tab where they&apos;re set;
   analytics and exposure events are tagged so you can filter them out of analysis.
 </Callout>
+
+<Callout type="warn" title="Don't put a server key in client code">
+  The two key kinds aren&apos;t interchangeable. Server keys can read full payloads and write
+  events; they don&apos;t belong in a bundle. Put the **client** key in the browser and the
+  **server** key in your server runtime — both come from **Project → SDK keys**.
+</Callout>
+
+<ConvertCTA
+  eyebrow="NEXT"
+  title={
+    <>
+      Drive everything from your <em>terminal</em>.
+    </>
+  }
+  body="The CLI does anything the dashboard does — flags, experiments, keys, i18n, MCP install. Plus JSON output for piping."
+  primaryHref="/get-started/cli"
+  primaryLabel="Open the CLI reference"
+  secondaryHref="/get-started/mcp"
+  secondaryLabel="Or hand it to your AI agent"
+  cmds={[
+    { label: "Install the SDK", cmd: "npm install @shipeasy/sdk" },
+    { label: "Or start with the CLI", cmd: "npm install -g @shipeasy/cli" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/get-started/authenticate", title: "Authenticate" }}
+  next={{ href: "/get-started/cli", title: "CLI" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/get-started/sdks.mdx" />
