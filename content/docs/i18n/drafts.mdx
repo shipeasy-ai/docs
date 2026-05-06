@@ -1,94 +1,216 @@
 ---
 title: Drafts
-description: Translation proposals — manual or AI — that go through review before publishing.
+description: Translation proposals — manual or AI — that land as a reviewable diff before they ever reach a profile.
 ---
 
-Translations don&apos;t go straight into a profile. They land first as a **draft**: a set of proposed values for one profile, attributable to a source (you, an AI run, an imported file) and reviewable inline.
+<DocMeta
+  status="Reference"
+  read="8 min read"
+  updated="May 3, 2026"
+  works="Next, Vite, Remix, Astro, Expo"
+/>
+
+Translations don't go straight into a profile. They land first as a **draft**: a set of proposed values for one profile, attributable to a source (you, an AI run, an imported XLIFF file) and reviewable inline. Merging promotes the draft into the profile. Publishing — a separate, deliberate step — pushes the profile to KV and the CDN.
+
+This separation is the single most important guardrail in Polylang. AI translations are good but not perfect; merging without review is how you ship "Confirmer" as a button label that overflows on mobile in three locales for two weeks before anyone notices.
 
 ## Lifecycle
 
 ```
-created → (review) → merged → (publish)
+created → (review) → merged → (publish) → published
                   └→ abandoned
 ```
 
-| State       | What it means                                             |
-| ----------- | --------------------------------------------------------- |
-| `open`      | Draft exists, nothing merged yet.                         |
-| `merged`    | Values were promoted into the profile. Still unpublished. |
-| `published` | The profile (with these values) was published to KV.      |
-| `abandoned` | Discarded without merging. Auto-deleted after 30 days.    |
+<ApiTable>
+  <ApiRow
+    name="open"
+    required
+    type="state"
+    desc="Draft exists, nothing merged yet. Reviewers can approve, edit, reject rows."
+  />
+  <ApiRow
+    name="merged"
+    required
+    type="state"
+    desc="Approved values were promoted into the profile. Still unpublished — runtime sees nothing yet."
+  />
+  <ApiRow
+    name="published"
+    required
+    type="state"
+    desc="The profile (with these values) was published to KV and the CDN. Visible to users."
+  />
+  <ApiRow
+    name="abandoned"
+    optional
+    type="state"
+    desc="Discarded without merging. Auto-deleted after 30 days. Recoverable until then."
+  />
+</ApiTable>
 
-A profile can have one open draft at a time per source. Multiple sources are fine — you can have an AI draft and a manual draft running in parallel and pick keys from each.
+A profile can have one open draft per source at a time. Multiple sources in parallel are fine — you can have an AI draft and a manual draft running concurrently and pick keys from each. On merge, the dashboard reconciles overlaps row-by-row.
 
 ## Creating a draft
 
 ### From AI
 
+The most common path. The CLI calls Anthropic Claude (using your project's API key — see [Translations](/i18n/translations) for setup) and creates a draft with proposed values for every key missing from the target profile.
+
 ```bash
 shipeasy i18n translate --profile fr:prod --ai
 ```
 
-The CLI calls Anthropic Claude (using your project&apos;s API key — see [Translations](/i18n/translations) for setup) and creates a draft with proposed values for every key missing from the target profile. Existing values are not overwritten unless you pass `--reflow`.
+Existing values are not overwritten unless you pass `--reflow`. Filter by chunk for a smaller, faster run:
 
-### From a JSON file
+```bash
+shipeasy i18n translate --profile fr:prod --ai --chunk checkout
+```
+
+The dashboard streams progress live — keys translated, keys remaining, current cost, ETA.
+
+### From an import
 
 If you already have translations (a contractor delivered a file, you exported from another tool):
 
 ```bash
+# Flat JSON map: { "key": "value" }
 shipeasy i18n translate --profile fr:prod --import ./french-translations.json
+
+# XLIFF 2.1 (industry-standard exchange format)
+shipeasy i18n translate --profile fr:prod --import ./fr.xlf
+
+# CSV with key,value columns
+shipeasy i18n translate --profile fr:prod --import ./fr.csv
 ```
 
-The file is a flat `{ "key": "value" }` map.
+The import becomes a draft, not a direct merge. You still review it; row-by-row attribution shows the import file as the source.
 
 ### Manual entry
 
-In the dashboard, **Drafts → New** opens an empty draft for the chosen profile. You can paste keys and values, or use the inline editor.
+In the dashboard, **Polylang → Drafts → New** opens an empty draft for the chosen profile. You can paste keys and values, or use the inline editor. Useful for quick fixes ("change the FR CTA from 'Régler' to 'Payer'") that don't merit a full AI run.
 
 ## Reviewing a draft
 
-Open **String Manager → Drafts → fr:prod**. You see a three-column view:
+Open **Polylang → Drafts → fr:prod**. You see a four-column view:
 
-| Source (en:prod)  | Proposed (fr:prod)  | Decision               |
-| ----------------- | ------------------- | ---------------------- |
-| Welcome back      | Bienvenue à nouveau | ✓ Approve              |
-| Pay               | Régler              | ✗ Reject (edit inline) |
-| 3 unread messages | 3 messages non lus  | ✓ Approve              |
+| Source (en:prod)  | Current (fr:prod)  | Proposed (draft)    | Decision               |
+| ----------------- | ------------------ | ------------------- | ---------------------- |
+| Welcome back      | Bon retour         | Bienvenue à nouveau | ✓ Approve              |
+| Pay               | _(empty)_          | Régler              | ✗ Reject (edit inline) |
+| 3 unread messages | 3 messages non lus | 3 messages non lus  | — No change            |
+| Sign out          | _(empty)_          | Se déconnecter      | ✓ Approve              |
 
 You can:
 
 - **Approve** a row — the value moves to the merged set.
-- **Edit inline** — fix the AI&apos;s output before approving.
-- **Reject** — keep the existing profile value (or the source fallback).
-- **Mark for translator** — flag a row that needs human attention before merge.
+- **Edit inline** — fix the AI's output before approving (saves the edit alongside the AI proposal for audit).
+- **Reject** — keep the existing profile value (or fall back to source).
+- **Mark for translator** — flag a row that needs human attention before merge; appears in the per-user worklist of anyone with the `translator` role.
+- **Comment** — start a thread on a row. Useful for "is this the right register?" or "ask legal about this".
 
-The dashboard shows the source value, any description on the key, and the AI&apos;s confidence (when sourced from AI).
+The dashboard shows the source value, any description on the key, the AI's confidence (when sourced from AI), and an optional **back-translation** for sanity-checking locales you don't speak.
+
+### Bulk actions
+
+Most drafts are reviewable in under twenty minutes because the bulk actions handle the boring 80%:
+
+- **Approve all unchanged** — every row whose proposal matches the current value.
+- **Approve all high-confidence** — every AI proposal above a confidence threshold (default 0.85).
+- **Approve chunk** — every row in a single chunk after a quick scroll.
+- **Filter to "needs attention"** — rows with low confidence, length-budget warnings, or unresolved comments.
+
+Keyboard shortcuts: `j`/`k` next/prev row, `a` approve, `r` reject, `e` edit, `c` comment, `?` show all.
+
+## RBAC
+
+Roles control what each teammate can do on a draft:
+
+<TileGrid>
+  <Tile
+    icon="✓"
+    title="Translator"
+    meta={
+      <>
+        <span>
+          <b>per-locale</b> scope
+        </span>
+        <span>·</span>
+        <span>edit + comment</span>
+      </>
+    }
+  >
+    Can edit, approve, and reject rows on drafts for the locales they're scoped to. Cannot merge,
+    cannot publish, cannot create profiles.
+  </Tile>
+  <Tile
+    icon="◇"
+    title="Reviewer"
+    meta={
+      <>
+        <span>
+          <b>per-project</b> scope
+        </span>
+        <span>·</span>
+        <span>can merge</span>
+      </>
+    }
+  >
+    All translator powers, plus can merge drafts into the profile. Cannot publish to{" "}
+    <code>:prod</code> environments — that needs admin.
+  </Tile>
+  <Tile
+    icon="✦"
+    title="Admin"
+    meta={
+      <>
+        <span>
+          <b>full</b> control
+        </span>
+        <span>·</span>
+        <span>publish to prod</span>
+      </>
+    }
+  >
+    All reviewer powers, plus publish to any environment, create/delete profiles, manage roles,
+    configure tone and glossary.
+  </Tile>
+</TileGrid>
+
+Translator scope is set per-locale: a translator scoped to `fr` sees only `fr:*` drafts; one scoped to `fr,es,it` sees those three. The CLI honors the same scoping when authenticated with a personal token.
 
 ## Merging
 
-When you&apos;re satisfied, click **Merge draft**. Approved values are promoted into the profile. The draft moves to `merged`.
+When you're satisfied, click **Merge draft**. Approved values are promoted into the profile. The draft moves to `merged`.
 
-**Merging does not publish.** This is deliberate — merging is "I&apos;ve reviewed; the profile is internally correct". Publishing is "this version is going to users". Decoupling them lets you stage a complete merge (often dozens of keys at once) and publish atomically:
+**Merging does not publish.** This is deliberate — merging is "I've reviewed; the profile is internally correct". Publishing is "this version is going to users". Decoupling them lets you stage a complete merge (often dozens of keys at once) and publish atomically:
 
 ```bash
 shipeasy i18n publish --profile fr:prod
 ```
 
-You can also auto-publish on merge in **Project → String Manager → Settings** if you trust the review step entirely.
+You can also auto-publish on merge in **Project → Polylang → Settings → Auto-publish on merge** if you trust the review step entirely. Most teams turn this on for `:dev` and `:staging` but leave `:prod` manual.
 
-## Side-by-side review
+## Side-by-side review and back-translation
 
-For target locales you don&apos;t speak, the dashboard offers a **back-translation** view. The AI translates the proposed value back to the source locale; you compare the back-translation against the original. Mismatches usually mean the proposed translation drifted.
+For target locales you don't speak, the dashboard offers a **back-translation** view. The AI translates the proposed value back to the source locale; you compare the back-translation against the original. Mismatches usually mean the proposed translation drifted.
 
 ```
 Original:        "Pay"
 Proposed (FR):   "Régler"
 Back-translation: "To settle / pay (a bill)"  → ✓ acceptable
+
+Original:        "Sign out"
+Proposed (DE):   "Anmelden"
+Back-translation: "Sign in"                    → ✗ reject — this is wrong
 ```
+
+Back-translation is on-demand (one extra Claude call per row) so it doesn't bloat the default review cost.
 
 ## Conflict resolution
 
-If two open drafts touch the same key, the latest merge wins; the other draft&apos;s row for that key is marked **conflicted** and you re-decide on next review.
+If two open drafts touch the same key, the latest merge wins; the other draft's row for that key is marked **conflicted** and you re-decide on next review. The dashboard surfaces conflicts at the top of the draft view with a banner — no one can merge a conflicted draft without acknowledging it.
+
+A typical scenario: a translator is hand-editing `fr:prod` while a nightly cron runs `--ai` on new keys. The cron's draft has a row for `checkout.cta_label`; the translator's draft also touched it. On merge of one, the other gets flagged.
 
 ## CI integration
 
@@ -98,10 +220,62 @@ For teams running translation contracts, the `--ci` mode generates a draft, prin
 shipeasy i18n translate --profile fr:prod --ai --ci
 ```
 
-## Abandoning
+A common GitHub Actions setup:
+
+```yaml
+# .github/workflows/i18n-nightly.yml
+on:
+  schedule: [{ cron: "0 4 * * *" }]
+  workflow_dispatch:
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm i -g @shipeasy/cli
+      - run: shipeasy login --token $SHIPEASY_TOKEN
+      - run: shipeasy i18n translate --profile fr:prod --ai --ci
+        env: { SHIPEASY_TOKEN: ${{ secrets.SHIPEASY_TOKEN }} }
+```
+
+The job opens a draft if there are new keys; reviewers get an email with the draft URL.
+
+## Discarding and abandoning
 
 ```bash
 shipeasy i18n drafts abandon <draft-id>
 ```
 
-Or from the dashboard. Abandoning frees the profile for a new draft. The abandoned values remain in the dashboard&apos;s history for 30 days in case you change your mind.
+Or from the dashboard. Abandoning frees the profile for a new draft. The abandoned values remain in the dashboard's history for 30 days in case you change your mind — `shipeasy i18n drafts restore <draft-id>` brings it back as a new open draft.
+
+<Callout type="info" title="Drafts are cheap — make many">
+  Drafts cost nothing to create or abandon. The dashboard is built around the assumption that you'll
+  have several in flight at once: an AI draft for new keys, a human draft for a marketing rewrite,
+  an XLIFF import from a contractor. Pick rows from each, abandon the rest.
+</Callout>
+
+<ConvertCTA
+  eyebrow="NEXT"
+  title={
+    <>
+      Tune <em>how Claude writes</em>.
+    </>
+  }
+  body="Drafts are only as good as the prompt behind them. Configure tone, glossary, and per-locale overrides so the AI sounds like your brand from the first run."
+  primaryHref="/i18n/translations"
+  primaryLabel="AI translations"
+  secondaryHref="/i18n/profiles"
+  secondaryLabel="Back to profiles"
+  cmds={[
+    { label: "AI draft", cmd: "shipeasy i18n translate --profile fr:prod --ai" },
+    { label: "Publish merged", cmd: "shipeasy i18n publish --profile fr:prod" },
+  ]}
+  note="Side-by-side review · RBAC · back-translation"
+/>
+
+<DocNav
+  prev={{ href: "/i18n/keys", title: "Label keys" }}
+  next={{ href: "/i18n/translations", title: "AI translations" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/i18n/drafts.mdx" />

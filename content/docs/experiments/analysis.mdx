@@ -1,100 +1,172 @@
 ---
 title: How analysis works
-description: From raw events to lift, p-value, and CI — what the platform actually computes, and how to interpret it.
+description: From raw events to lift, p-value, and CI — exactly what the platform computes, why, and how to interpret it without fooling yourself.
 ---
 
-Analysis is the part of an experiment platform that is most often hand-waved. This page is a precise description of what ShipEasy computes for you, in language that doesn&apos;t require a stats degree.
+<DocMeta
+  status="Production ready"
+  read="11 min read"
+  updated="May 3, 2026"
+  works="Daily cron · Edge Worker · D1"
+/>
+
+Analysis is the part of an experiment platform that is most often hand-waved. This page is a precise description of what ShipEasy computes for you, in language that doesn't require a stats degree, and an honest description of the assumptions behind it.
 
 ## The pipeline
 
 <Steps>
   <Step title="Daily cron fires">
-    Once per day (default 03:00 UTC, configurable per project), ShipEasy enqueues one analysis job
-    per active experiment.
+    Once per day (default 03:00 UTC, configurable per project), a Cloudflare cron trigger on the
+    edge worker enqueues one analysis job per active experiment into the `ANALYSIS_QUEUE`. Workers
+    Queues handles retries and DLQ; if a job fails it's retried up to 3× with backoff, then parked
+    in the DLQ for inspection.
   </Step>
   <Step title="Per-user aggregation">
-    For each (experiment, user) pair, the job pulls all events from the last analysis window, joins
-    them against the exposure timestamp, and computes the metric value per user. Events that
-    happened **before** exposure don&apos;t count — that&apos;s the rule that makes results causal.
+    For each (experiment, user) pair, the consumer pulls all matching events from the analysis
+    window from Analytics Engine, joins them against the exposure timestamp, and computes the metric
+    value per user. Events that happened **before** exposure don't count — that's the rule that
+    makes results causal.
   </Step>
   <Step title="Per-group statistics">
-    For each (metric, group), the job computes mean, variance, and N.
+    For each (metric, group), the job computes mean, variance, and N. Outlier handling
+    (winsorisation or capping) is applied here, symmetrically across all groups in the comparison.
   </Step>
   <Step title="Welch's t-test">
-    For each variant against control, ShipEasy runs Welch&apos;s t-test and computes lift, p-value,
-    and 95% confidence interval.
+    For each variant against the control group (and against the universe holdout, when one exists),
+    ShipEasy runs Welch's t-test and computes lift, two-sided p-value, and 95% confidence interval.
   </Step>
   <Step title="Write back to D1">
-    Results are written as plain rows to the project&apos;s D1. The dashboard reads from these rows;
-    the CLI does too. Nothing is locked away in a vendor format.
+    Results are written as plain rows to the project's D1, one row per (experiment, metric, group,
+    segment, day). The dashboard reads from these rows; the CLI does too. Nothing is locked away in
+    a vendor format — `wrangler d1 execute` against your own database returns the same numbers the
+    dashboard shows.
   </Step>
 </Steps>
+
+The whole pipeline is idempotent on the (experiment, metric, group, day) key — if a job retries, it overwrites the row, never duplicates it.
 
 ## What a result row contains
 
 For each (experiment, metric, group, segment, day):
 
-| Column              | Meaning                                                                      |
-| ------------------- | ---------------------------------------------------------------------------- |
-| `n`                 | Number of users in the group with at least one exposure event in the window. |
-| `mean`              | The metric&apos;s average value across those users.                          |
-| `variance`          | Sample variance, used for the t-test.                                        |
-| `lift_rel`          | Relative lift vs control: `(mean - control_mean) / control_mean`.            |
-| `lift_abs`          | Absolute lift: `mean - control_mean`.                                        |
-| `p_value`           | Two-sided p-value from Welch&apos;s t-test.                                  |
-| `ci_low`, `ci_high` | 95% confidence interval bounds for absolute lift.                            |
+| Column              | Meaning                                                                        |
+| ------------------- | ------------------------------------------------------------------------------ |
+| `n`                 | Number of users in the group with at least one exposure event in the window.   |
+| `mean`              | The metric's average value across those users.                                 |
+| `variance`          | Sample variance, used for the t-test.                                          |
+| `lift_rel`          | Relative lift vs control: `(mean - control_mean) / control_mean`.              |
+| `lift_abs`          | Absolute lift: `mean - control_mean`.                                          |
+| `p_value`           | Two-sided p-value from Welch's t-test.                                         |
+| `ci_low`, `ci_high` | 95% confidence interval bounds for absolute lift.                              |
+| `df`                | Degrees of freedom (Satterthwaite approximation, used for the t-distribution). |
+| `status`            | `ok`, `insufficient_data`, `insufficient_power`, or `srm_warning`.             |
 
-The dashboard&apos;s pretty headline (_"+8.3% (p=0.018)"_) is a render of these columns.
+The dashboard's pretty headline (_"+8.3% (p=0.018)"_) is a render of these columns. Everything is queryable raw:
+
+```bash
+shipeasy experiments status checkout-cta --json > result.json
+```
+
+A typical result block:
+
+```
+purchase_conversion · last 7 days
+  control   N=12,418   rate=4.8%   var=0.0457
+  v1        N=12,503   rate=5.2%   var=0.0492   lift +8.3%   p=0.018   CI [+0.07%, +0.73%]
+  holdout   N=  658    rate=4.7%   var=0.0448   lift +10.6%  p=0.041   CI [+0.04%, +0.91%]
+```
 
 ## Why Welch's t-test
 
-Welch&apos;s is the default because:
+Welch's is the default because:
 
-- It does **not** assume equal variances between groups (Student&apos;s does, and gets it wrong when traffic is unbalanced or one variant materially shifts variance).
-- It works for the metric types we ship: `conversion` (treated as a Bernoulli, sample size handles normality), `count`/`sum`/`mean` (CLT applies after a few thousand users).
-- It&apos;s well-understood, easy to interpret, and matches the math behind the headline numbers from most major experiment platforms.
+- **It does not assume equal variances** between groups (Student's t-test does, and gets it wrong when traffic is unbalanced or when one variant materially shifts variance — both common in real experiments).
+- **It does not assume equal N** between groups (which matters when allocation isn't 50/50, or when SRM happens, or when the holdout is 5% vs 95% non-holdout).
+- It works for the metric types we ship: `conversion` (treated as Bernoulli; the central limit theorem covers normality after a few thousand samples), `count`/`sum`/`mean` (CLT applies after ~1,000 users for non-pathological distributions, after ~10,000 for heavy-tailed ones).
+- It's well-understood, easy to explain, and matches the math behind the headline numbers from most major experiment platforms (Optimizely, Statsig, Eppo, GrowthBook). When a stakeholder asks _"why doesn't your number match the one in our analytics tool?"_ the answer is almost always different windows, different exposure semantics, or different outlier handling — not different statistics.
 
-For very small samples (`N &lt; 30 per arm`), the platform widens the CI using the Satterthwaite degrees-of-freedom approximation. Below `N = 10` per arm, results are marked **insufficient data** and not surfaced as decisions.
+For very small samples (`N < 30 per arm`), the platform widens the CI using the Satterthwaite degrees-of-freedom approximation. Below `N = 10` per arm, results are marked `insufficient_data` and not surfaced as decisions.
+
+### Why not Bayesian?
+
+A reasonable alternative is a Bayesian approach: posterior distributions, "probability variant beats control = 96%". It has nice properties — peeking is less of a sin, the output is more intuitive. We don't ship it today for two reasons:
+
+1. **Calibration depends on prior choice.** A weakly-informative prior on a high-traffic experiment converges to roughly the same answer as the t-test, but a wrong prior on a low-traffic experiment can mislead more confidently than a frequentist test does.
+2. **Most teams know how to read p-values.** The cost of educating a team on a new framework, when the underlying decisions are the same, isn't worth it. We may add a Bayesian view later for advanced users; we won't make it the default.
 
 ## Reading a p-value
 
-`p_value` is "the probability you&apos;d see a difference at least this large by chance, assuming the variants are actually identical." Conventional thresholds:
+`p_value` is _"the probability you'd see a difference at least this large by chance, assuming the variants are actually identical."_ Conventional thresholds:
 
 | p-value   | Interpretation                                             |
 | --------- | ---------------------------------------------------------- |
-| &lt; 0.01 | Strong evidence of a real effect.                          |
-| &lt; 0.05 | Evidence of a real effect. The standard threshold.         |
-| &lt; 0.10 | Suggestive. Useful for exploratory work, not for shipping. |
-| ≥ 0.10    | No statistically significant difference.                   |
+| `< 0.01`  | Strong evidence of a real effect.                          |
+| `< 0.05`  | Evidence of a real effect. The standard threshold.         |
+| `< 0.10`  | Suggestive. Useful for exploratory work, not for shipping. |
+| `>= 0.10` | No statistically significant difference.                   |
 
 Critical caveats:
 
-- p-values are valid for **fixed-horizon** designs. Decide your duration up front. Stopping the moment something turns significant inflates false-positive rates.
-- p-values measure **detection probability**, not effect size. A `+0.1%, p=0.001` result is real but probably not worth shipping.
-- If you run 20 experiments at p&lt;0.05, you&apos;ll false-win 1 of them by chance. Pre-register your hypotheses; treat post-hoc segments as exploratory.
+- **p-values are valid for fixed-horizon designs.** Decide your duration up front. Stopping the moment something turns significant inflates false-positive rates dramatically — under continuous peeking with a stop-when-significant rule, the true false-positive rate at nominal `α=0.05` rises to `>30%`.
+- **p-values measure detection probability, not effect size.** A `+0.1%, p=0.001` result is real but probably not worth shipping. Read the CI before you ship.
+- **Multiple comparisons inflate false-positive rate.** If you run 20 experiments at `p<0.05`, you'll false-win 1 of them by chance. If you check 20 segments inside one experiment, same problem. Pre-register hypotheses; treat post-hoc segments as exploratory.
+- **The null is "no difference"**, not "the variant is bad". A non-significant result is "we don't have evidence", not "we have evidence of no effect". Use the CI to bound the effect.
 
 ## Reading a confidence interval
 
-The 95% CI is _"a range of values consistent with the data at the 95% confidence level"_. If the CI is `[+1.4%, +15.2%]`, you can say _"the true lift is plausibly anywhere in this range; we don&apos;t know exactly where"_.
+The 95% CI is _"a range of values consistent with the data at the 95% confidence level"_. If the CI is `[+1.4%, +15.2%]`, you can say _"the true lift is plausibly anywhere in this range; the data don't pin it down further"_.
 
-CIs answer the question p-values don&apos;t: **how big is the effect, plausibly?** A CI of `[+0.05%, +20%]` is technically significant but _wide_ — you don&apos;t actually know if the lift is trivial or large. Bigger N narrows the CI.
+CIs answer the question p-values don't: **how big is the effect, plausibly?**
 
-## Exposure stitching
+- A CI of `[+0.05%, +20%]` is technically significant (excludes 0) but _wide_ — you don't actually know if the lift is trivial or large. More N narrows the CI.
+- A CI of `[+4%, +6%]` is narrow and excludes 0 — strong, well-bounded evidence. Ship it.
+- A CI of `[-2%, +12%]` is wide and includes 0 — the experiment is **inconclusive**, not "no effect". Run it longer or ship if the downside risk is acceptable.
+
+## Sample size & MDE intuition
+
+Power calculation is the inverse of the t-test: given a baseline rate, a desired lift, and a desired confidence, how many users per arm? The arithmetic is `n ∝ σ² / δ²` — variance over effect size squared. Practical implications:
+
+- **Halving the lift you want to detect quadruples the required N.** Doubling traffic doesn't double the lift you can detect — it cuts it by `√2 ≈ 1.4×`.
+- **Conversion baseline matters.** Detecting `+10%` relative on a 50% baseline is way easier than on a 1% baseline because the variance shrinks at the extremes (`p(1-p)` peaks at `0.5`).
+- **For revenue metrics, variance is the killer.** A long-tailed `revenue_per_user` distribution can need 5–10× more N than the equivalent conversion metric. Winsorisation helps; switching to a less variable metric (e.g. `purchase_conversion` instead of `revenue_per_user`) helps more.
+
+The dashboard surfaces an **MDE** (minimum detectable effect) alongside every running experiment, recomputed daily as data arrives. If your MDE after 7 days is `+8%` and the lift you're hoping to see is `+2%`, you'll need roughly `(8/2)² = 16×` more data — or you should accept that the experiment can't answer the question you asked.
+
+## Exposure stitching [#exposure-stitching]
 
 A user is _exposed_ the first time `experiments.assign()` runs for them. The `$exposure` event captures `(experiment, group, user_id, timestamp, attributes_at_exposure)`.
 
-Conversion events after that timestamp count. Events before it don&apos;t. This is what makes the analysis causal — we&apos;re measuring _"behaviour after the user saw the variant"_, not _"all behaviour for users in this bucket"_.
+Conversion events **after** that timestamp count. Events **before** it don't. This is what makes the analysis causal — we're measuring _"behaviour after the user saw the variant"_, not _"all behaviour for users in this bucket"_.
 
-If a user&apos;s anonymous_id later gets aliased to a user_id (`client.alias()`), exposures are stitched: pre-login behaviour attributed to the right variant.
+Concretely:
+
+```
+user u_42 timeline:
+  10:00  page_view              <- before exposure, doesn't count
+  10:05  page_view
+  10:07  $exposure (v1)         <- bucketed into v1
+  10:09  click                  <- counts toward v1
+  10:14  purchase   value=49    <- counts toward v1
+```
+
+If a user's `anonymous_id` later gets aliased to a `user_id` (`client.alias()`), exposures are stitched: pre-login behaviour is attributed to the right variant for the right user. The aliasing is applied retroactively at analysis time, so you don't need to log everything as `user_id` to get correct results.
+
+### Sample Ratio Mismatch (SRM)
+
+If you allocated 50/50 but the actual exposure counts come back 51,200 / 48,800, that's almost certainly a bucketing bug, a redirect that drops one variant, or a tracking gap. The dashboard runs an SRM chi-squared test on every result and flips `status = srm_warning` when the imbalance is significant beyond chance (`p < 0.001` on the ratio).
+
+**Don't trust an experiment with an SRM warning.** It almost always means one variant's users are being filtered out somewhere upstream, which biases the comparison in ways the t-test can't fix.
 
 ## Where stats stop and judgement starts
 
 ShipEasy gives you the numbers. It does not tell you whether to ship. You should:
 
-- Trust **p &lt; 0.05** + **CI excludes 0** + **direction matches your hypothesis** + **no guardrail regressed** as a green light.
-- Trust **multiple weeks of data**, not "we just hit significance in hour 3."
-- Be skeptical of segments you didn&apos;t pre-register.
-- Sanity-check: does the result _make sense_? A 30% lift on a button label is suspicious. A 2% lift on a layout change is plausible.
+- Trust **`p < 0.05`** + **CI excludes 0** + **direction matches your hypothesis** + **no guardrail regressed** + **no SRM warning** as a green light.
+- Trust **multiple weeks of data**, not _"we just hit significance in hour 3"_.
+- Be skeptical of segments you didn't pre-register.
+- **Sanity-check effect size against priors.** A 30% lift on a button label is suspicious — check the wiring before you celebrate. A 2% lift on a layout change is plausible. If a result looks too good to be true, it usually is.
+- **Look at multiple metrics.** A primary win that comes with a guardrail regression is a draw, not a win.
+- **Consider novelty effects.** New things often look better in the first week and revert. For visible UI changes, run for at least 2 weeks before reading.
 
 ## Exporting raw aggregates
 
@@ -102,6 +174,8 @@ Everything analysis produces is queryable. The CLI:
 
 ```bash
 shipeasy experiments status checkout-cta --json > result.json
+shipeasy experiments status checkout-cta --csv  > result.csv
+shipeasy experiments status checkout-cta --segment country=US
 ```
 
 Or pull straight from the API:
@@ -111,4 +185,119 @@ curl -H "Authorization: Bearer $SHIPEASY_API_KEY" \
   https://shipeasy.ai/api/experiments/checkout-cta/results
 ```
 
-Pipe it into your warehouse if you want; we won&apos;t make you live in our dashboard.
+Or read directly from D1 if you've enabled the read-replica binding on your project:
+
+```bash
+wrangler d1 execute YOUR_DB --command \
+  "SELECT * FROM experiment_results WHERE experiment='checkout-cta' AND day >= date('now','-7 days')"
+```
+
+Pipe it into your warehouse if you want; we won't make you live in our dashboard.
+
+## API · result row
+
+<ApiTable>
+  <ApiRow name="experiment" required type="string" desc="Experiment name." />
+  <ApiRow name="metric" required type="string" desc="Metric name." />
+  <ApiRow
+    name="group"
+    required
+    type="string"
+    desc={
+      <>
+        <code>control</code>, a variant name, or <code>holdout</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="segment"
+    optional
+    type="string"
+    desc={
+      <>
+        Segment expression, e.g. <code>country=US</code>. <code>null</code> for the all-users row.
+      </>
+    }
+  />
+  <ApiRow name="day" required type="string" desc="ISO date for the analysis window's end day." />
+  <ApiRow name="n" required type="number" desc="Exposed users in the group during the window." />
+  <ApiRow name="mean" required type="number" desc="Per-user metric mean." />
+  <ApiRow name="variance" required type="number" desc="Sample variance." />
+  <ApiRow
+    name="lift_rel"
+    optional
+    type="number"
+    desc="Relative lift vs control. Null on the control row."
+  />
+  <ApiRow
+    name="lift_abs"
+    optional
+    type="number"
+    desc="Absolute lift vs control. Null on the control row."
+  />
+  <ApiRow
+    name="p_value"
+    optional
+    type="number"
+    desc="Two-sided p-value from Welch's t-test. Null on the control row."
+  />
+  <ApiRow
+    name="ci_low"
+    optional
+    type="number"
+    desc="Lower bound of the 95% CI for absolute lift."
+  />
+  <ApiRow
+    name="ci_high"
+    optional
+    type="number"
+    desc="Upper bound of the 95% CI for absolute lift."
+  />
+  <ApiRow
+    name="status"
+    required
+    type='"ok" | "insufficient_data" | "insufficient_power" | "srm_warning"'
+    desc="Hint to the dashboard about whether to surface the row as a decision."
+  />
+</ApiTable>
+
+<Callout type="warn" title="Don't peek and stop early">
+  The p-values are valid for **fixed-horizon** tests. If you sneak a look every hour and stop the
+  moment something turns significant, you'll get false wins — the realised false-positive rate under
+  continuous peeking can exceed 30% even when the nominal threshold is 5%. Pre-decide the
+  experiment's duration based on traffic.
+</Callout>
+
+<Callout type="warn" title="Don't change variants mid-flight">
+  Changing `params` on a running experiment invalidates the analysis — the users exposed before the
+  change saw a different thing than those exposed after, but they're pooled into the same group.
+  Stop the experiment, create a new one with `v2` in the name.
+</Callout>
+
+<ConvertCTA
+  eyebrow="READY?"
+  title={
+    <>
+      Stop reading. <em>Start shipping.</em>
+    </>
+  }
+  body="You know what the platform computes, what to trust, and what to look at before you ship. The next experiment is the only thing left."
+  primaryHref="/experiments/quickstart"
+  primaryLabel="Run a quickstart"
+  secondaryHref="/experiments"
+  secondaryLabel="Back to overview"
+  cmds={[
+    { label: "Read a result", cmd: "shipeasy experiments status checkout-cta" },
+    {
+      label: "Export to JSON",
+      cmd: "shipeasy experiments status checkout-cta --json > result.json",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/experiments/events", title: "Events" }}
+  next={{ href: "/experiments", title: "Experiments overview" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/experiments/analysis.mdx" />

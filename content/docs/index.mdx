@@ -18,28 +18,114 @@ icon: Rocket
   secondaryLabel="How it works"
 />
 
-<CardGrid>
-  <Card href="/configs" eyebrow="Configs" title="Feature flags & dynamic values">
+<DocMeta
+  status="Production ready"
+  read="3 min read"
+  updated="May 3, 2026"
+  works="Next, Vite, Remix, Expo, Workers"
+/>
+
+## Three products, one platform
+
+<TileGrid>
+  <Tile
+    href="/configs"
+    icon="⌗"
+    title="Configs — flags & values"
+    meta={
+      <>
+        <span>
+          <b>~1ms</b> evaluation
+        </span>
+        <span>·</span>
+        <span>edge KV</span>
+      </>
+    }
+  >
     Boolean gates with targeting rules and percentage rollouts. Typed JSON configs that change
     instantly.
-  </Card>
-  <Card href="/experiments" eyebrow="Experiments" title="A/B tests with stats built in">
-    Universes, holdouts, multivariate variants. Welch&apos;s t-test results delivered daily — no
-    spreadsheets.
-  </Card>
-  <Card href="/i18n" eyebrow="String Manager" title="Localize without redeploying">
-    Scan your codebase, draft AI translations, review, publish to KV. New copy goes live in seconds.
-  </Card>
-  <Card href="/get-started/cli" eyebrow="CLI" title="`shipeasy` everything">
-    Login, list flags, scan code, push keys, publish — all from your terminal or CI.
-  </Card>
-  <Card href="/get-started/mcp" eyebrow="AI Agents" title="MCP server for Claude / Cursor">
+  </Tile>
+  <Tile
+    href="/experiments"
+    icon="◈"
+    title="Experiments — A/B tests with stats"
+    meta={
+      <>
+        <span>
+          <b>Welch</b> t-test
+        </span>
+        <span>·</span>
+        <span>daily aggregation</span>
+      </>
+    }
+  >
+    Universes, holdouts, multivariate variants. Automated p-values and 95% CIs delivered to the
+    dashboard each day.
+  </Tile>
+  <Tile
+    href="/i18n"
+    icon="✎"
+    title="Polylang — localized labels"
+    meta={
+      <>
+        <span>
+          <b>0kb</b> runtime cost
+        </span>
+        <span>·</span>
+        <span>chunked at edge</span>
+      </>
+    }
+  >
+    Scan your codebase, draft AI translations, review and publish. New copy goes live worldwide in
+    seconds.
+  </Tile>
+  <Tile
+    href="/llms"
+    icon="✦"
+    title="AI Agents — MCP server"
+    meta={
+      <>
+        <span>
+          <b>1</b> command install
+        </span>
+        <span>·</span>
+        <span>typed tools</span>
+      </>
+    }
+  >
     Hand the docs and tools to your coding agent. Onboard a project to ShipEasy hands-free.
-  </Card>
-  <Card href="/get-started/sdks" eyebrow="SDKs" title="One package, server + browser">
-    Drop-in for Node, Next.js, React, Vue, Svelte, Angular, React Native — and a Ruby SDK too.
-  </Card>
-</CardGrid>
+  </Tile>
+</TileGrid>
+
+## The 5-minute path
+
+<Quickstart title="From zero to ShipEasy" time="~5 minutes · no card required">
+  <QuickstartStep
+    num={1}
+    label="INSTALL"
+    title="Add the SDK and CLI"
+    cmd="npm i @shipeasy/sdk && npm i -g @shipeasy/cli"
+  >
+    One package for server + browser. The CLI logs in via your browser — no env tokens to wrangle.
+  </QuickstartStep>
+  <QuickstartStep
+    num={2}
+    label="WIRE"
+    title="Configure once, use everywhere"
+    cmd="shipeasy login && shipeasy init"
+  >
+    Flags, experiments and i18n share a single API key. One <code>shipeasy()</code> call boots all
+    three.
+  </QuickstartStep>
+  <QuickstartStep
+    num={3}
+    label="SHIP"
+    title="Flip a flag, ship a translation"
+    cmd="shipeasy gate create checkout-v2 --rollout 5"
+  >
+    Reads happen from KV at the edge. Writes purge surgically — visible worldwide in under a second.
+  </QuickstartStep>
+</Quickstart>
 
 ## Why ShipEasy
 
@@ -49,11 +135,17 @@ icon: Rocket
   and the next request anywhere on Earth sees the new value within a second.
 </Callout>
 
-- **One SDK** for gates, configs, experiments, and translations.
+- **One SDK** for gates, configs, experiments, and translations. Server _and_ client.
 - **One CLI** (`shipeasy`) for everything you can do in the dashboard.
 - **One MCP server** so your AI agent can do the boring setup for you.
 - **Stateless evaluation**: flags evaluate locally on the server, no per-request round-trip.
 - **No vendor lock-in for stats**: experiment results are written back to your project as plain rows you can export.
+
+## Install the SDK
+
+<InstallTabs npm="npm install @shipeasy/sdk" />
+
+## Pick where to go next
 
 <CardGrid>
   <Card href="/get-started/install" eyebrow="Step 1" title="Install the SDK & CLI">
@@ -66,3 +158,22 @@ icon: Rocket
     Five-minute walkthrough — create a gate, gate code, flip it.
   </Card>
 </CardGrid>
+
+<ConvertCTA
+  eyebrow="READY?"
+  title={
+    <>
+      Stop reading. <em>Start shipping.</em>
+    </>
+  }
+  body="The fastest way to feel ShipEasy is to install it on a real repo. The free tier is generous, the CLI does the boring parts, and your AI agent can do the rest."
+  primaryHref="/get-started/install"
+  primaryLabel="Run quickstart"
+  secondaryHref="/llms"
+  secondaryLabel="Hand it to an AI agent"
+  cmds={[
+    { label: "One command", cmd: "npm install -g @shipeasy/cli" },
+    { label: "Then log in", cmd: "shipeasy login" },
+  ]}
+  note="Detects framework · respects your existing setup · streams to disk"
+/>

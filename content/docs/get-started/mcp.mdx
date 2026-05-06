@@ -1,13 +1,22 @@
 ---
 title: MCP server
-description: Hand the docs and tools to Claude, Cursor, or any MCP-compatible AI assistant — and let it do the boring setup for you.
+description: Hand the docs and tools to Claude Code, Cursor, Windsurf, or any MCP-compatible AI assistant — and let it do the boring setup for you.
 ---
+
+<DocMeta
+  status="Production ready"
+  read="7 min read"
+  updated="May 3, 2026"
+  works="Claude Code · Cursor · Windsurf · any MCP client"
+/>
 
 ShipEasy ships an MCP (Model Context Protocol) server: `@shipeasy/mcp`. Plug it into your AI coding assistant and the agent gains a typed toolkit for inspecting and changing your ShipEasy project — plus prompts that walk it through complete onboarding flows.
 
+The MCP server is the same surface as the CLI, exposed as JSON-Schema-typed tools instead of argv. That distinction matters: a typed tool is much harder for an LLM to misuse than a free-form CLI invocation.
+
 ## Install
 
-The CLI can write the right config file for whichever assistant you use:
+The CLI patches the right config file for whichever assistants you use:
 
 <Terminal title="zsh">
   <Prompt />
@@ -18,7 +27,11 @@ The CLI can write the right config file for whichever assistant you use:
   </Out>
 </Terminal>
 
-Or wire it up by hand:
+After install, restart your assistant. The new MCP server appears under its tool list as `shipeasy`.
+
+## Manual config
+
+If your client isn&apos;t auto-detected, or you prefer to write the config yourself:
 
 ```json title="~/.claude/settings.json (Claude Code)"
 {
@@ -34,70 +47,265 @@ Or wire it up by hand:
 ```json title=".cursor/mcp.json (Cursor)"
 {
   "mcpServers": {
-    "shipeasy": { "command": "npx", "args": ["-y", "@shipeasy/mcp@latest"] }
+    "shipeasy": {
+      "command": "npx",
+      "args": ["-y", "@shipeasy/mcp@latest"]
+    }
   }
 }
 ```
 
-For Windsurf use `.windsurf/mcp.json`. For any other client supporting MCP, write the same block to `mcp.json` in the project root.
+```json title=".windsurf/mcp.json (Windsurf)"
+{
+  "mcpServers": {
+    "shipeasy": {
+      "command": "npx",
+      "args": ["-y", "@shipeasy/mcp@latest"]
+    }
+  }
+}
+```
+
+For any other MCP-compatible client, write the same block to whatever config file it reads.
 
 <Callout type="info" title="The MCP server uses your CLI credentials">
   There are no environment variables to set. Run `shipeasy login` once and the MCP server picks up
-  `~/.shipeasy/credentials` on every tool call.
+  `~/.shipeasy/credentials` on every tool call. No second auth flow, no shared tokens, no secrets in
+  `mcp.json`.
 </Callout>
 
-## What the agent gets
+## Why typed tools beat free-form
 
-The MCP server exposes ~30 tools, grouped by area. Your agent sees them as typed functions with JSON-Schema parameters.
+A CLI is great for a human — short flags, terse output, easy to chain. For an LLM, a CLI is a parsing hazard. The agent has to remember the flag spelling, escape JSON correctly, and interpret the textual response.
 
-### Project & auth
+A typed MCP tool flips that. Each tool is a named function with a JSON-Schema parameter object. The agent sees the schema, fills it, and gets a structured response back. Misuse — wrong types, missing required fields, unsupported flags — is caught at the protocol layer, not by the CLI&apos;s argv parser.
 
-| Tool             | What it does                                                                |
-| ---------------- | --------------------------------------------------------------------------- |
-| `auth_check`     | Returns `{ authenticated, project_id, user_email }`.                        |
-| `auth_login`     | Triggers `shipeasy login` (asks the human to click).                        |
-| `auth_logout`    | Wipes credentials.                                                          |
-| `detect_project` | Detects framework, source root, loader script presence, SDK install status. |
+That&apos;s why the MCP server is the recommended surface for any AI-driven setup. The CLI is for humans and CI.
+
+## Tool inventory
+
+The MCP server exposes ~30 tools, grouped by area. The agent sees them as `mcp__shipeasy__<name>`.
+
+### Auth & project
+
+<ApiTable>
+  <ApiRow
+    name="auth_check"
+    required
+    type="tool"
+    desc={
+      <>
+        Returns <code>{`{ authenticated, project_id, user_email }`}</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="auth_login"
+    required
+    type="tool"
+    desc={
+      <>
+        Triggers <code>shipeasy login</code> — asks the human to click.
+      </>
+    }
+  />
+  <ApiRow name="auth_logout" required type="tool" desc={<>Wipes credentials.</>} />
+  <ApiRow
+    name="detect_project"
+    required
+    type="tool"
+    desc={<>Detects framework, source root, loader script presence, SDK install status.</>}
+  />
+</ApiTable>
 
 ### Inspection
 
-| Tool              | What it does                                                                  |
-| ----------------- | ----------------------------------------------------------------------------- |
-| `list_resources`  | List flags, configs, experiments, profiles, keys — everything in the project. |
-| `get_resource`    | Fetch a single resource by name.                                              |
-| `get_sdk_snippet` | Returns a copy-pasteable SDK init snippet for the detected framework.         |
+<ApiTable>
+  <ApiRow
+    name="list_resources"
+    required
+    type="tool"
+    desc={<>List flags, configs, experiments, profiles, keys — everything in the project.</>}
+  />
+  <ApiRow name="get_resource" required type="tool" desc={<>Fetch a single resource by name.</>} />
+  <ApiRow
+    name="get_sdk_snippet"
+    required
+    type="tool"
+    desc={<>Returns a copy-pasteable SDK init snippet for the detected framework.</>}
+  />
+</ApiTable>
 
 ### Flags & experiments
 
-| Tool                                           | What it does                                   |
-| ---------------------------------------------- | ---------------------------------------------- |
-| `exp_create_gate`                              | Create a gate.                                 |
-| `exp_create_config`                            | Create a dynamic config.                       |
-| `exp_create_experiment`                        | Create an experiment with universe and groups. |
-| `exp_start_experiment` / `exp_stop_experiment` | Lifecycle.                                     |
-| `exp_experiment_status`                        | Latest results — lift, p-value, CI.            |
+<ApiTable>
+  <ApiRow name="exp_create_gate" required type="tool" desc={<>Create a gate.</>} />
+  <ApiRow name="exp_create_config" required type="tool" desc={<>Create a dynamic config.</>} />
+  <ApiRow
+    name="exp_create_experiment"
+    required
+    type="tool"
+    desc={<>Create an experiment with a universe and group spec.</>}
+  />
+  <ApiRow
+    name="exp_start_experiment"
+    required
+    type="tool"
+    desc={
+      <>
+        Move from <code>draft</code> → <code>running</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="exp_stop_experiment"
+    required
+    type="tool"
+    desc={
+      <>
+        Move to <code>stopped</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="exp_experiment_status"
+    required
+    type="tool"
+    desc={<>Latest results — lift, p-value, CI per metric per group.</>}
+  />
+</ApiTable>
 
-### String Manager
+### i18n (Polylang)
 
-| Tool                                          | What it does                                                     |
-| --------------------------------------------- | ---------------------------------------------------------------- |
-| `i18n_discover_site`                          | Read the `/.well-known/i18n.json` manifest from a deployed site. |
-| `i18n_install_loader`                         | Generate the loader `<script>` tag and create a client key.      |
-| `i18n_scan_code`                              | Find candidate translatable strings in source.                   |
-| `i18n_codemod_preview` / `i18n_codemod_apply` | Auto-wrap JSX literals with `t()`.                               |
-| `i18n_create_profile` / `i18n_create_key`     | Profile and key CRUD.                                            |
-| `i18n_push_keys`                              | Sync the codemod-discovered keys to the dashboard.               |
-| `i18n_translate_draft`                        | Generate a translation draft via Anthropic API.                  |
-| `i18n_validate_keys`                          | Fail if any code reference is missing from a profile.            |
-| `i18n_publish_profile`                        | Push to KV, live in seconds.                                     |
+<ApiTable>
+  <ApiRow
+    name="i18n_discover_site"
+    required
+    type="tool"
+    desc={
+      <>
+        Read the <code>/.well-known/i18n.json</code> manifest from a deployed site.
+      </>
+    }
+  />
+  <ApiRow
+    name="i18n_install_loader"
+    required
+    type="tool"
+    desc={
+      <>
+        Generate the loader <code>{"<script>"}</code> tag and create a client key.
+      </>
+    }
+  />
+  <ApiRow
+    name="i18n_scan_code"
+    required
+    type="tool"
+    desc={<>Find candidate translatable strings in source.</>}
+  />
+  <ApiRow
+    name="i18n_codemod_preview"
+    required
+    type="tool"
+    desc={<>Dry-run the JSX literal codemod and show diffs.</>}
+  />
+  <ApiRow
+    name="i18n_codemod_apply"
+    required
+    type="tool"
+    desc={
+      <>
+        Apply the codemod — wraps JSX literals with <code>t()</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="i18n_create_profile"
+    required
+    type="tool"
+    desc={
+      <>
+        Create a <code>locale:env</code> profile.
+      </>
+    }
+  />
+  <ApiRow
+    name="i18n_create_key"
+    required
+    type="tool"
+    desc={<>Create a single key on a profile.</>}
+  />
+  <ApiRow
+    name="i18n_push_keys"
+    required
+    type="tool"
+    desc={<>Sync codemod-discovered keys to the dashboard.</>}
+  />
+  <ApiRow
+    name="i18n_translate_draft"
+    required
+    type="tool"
+    desc={<>Generate a translation draft via the configured AI provider.</>}
+  />
+  <ApiRow
+    name="i18n_validate_keys"
+    required
+    type="tool"
+    desc={<>Fail if any code reference is missing from a profile.</>}
+  />
+  <ApiRow
+    name="i18n_publish_profile"
+    required
+    type="tool"
+    desc={<>Push to KV — live in seconds.</>}
+  />
+</ApiTable>
 
-### Onboarding prompts
+## Onboarding prompts
 
 The MCP server bundles long-form prompts you can invoke with `/mcp:shipeasy:<prompt>`:
 
-- `onboard_i18n` — full String Manager onboarding for a fresh project.
-- `add_experiment` — guides the agent from idea → metric → variants → start.
-- `gate_a_feature` — wraps an existing feature with a flag, with a sensible rollout.
+<TileGrid>
+  <Tile
+    href="/llms/i18n-strings"
+    icon="✎"
+    title="onboard_i18n"
+    meta={
+      <>
+        <span>full Polylang setup</span>
+      </>
+    }
+  >
+    Discover strings, codemod, push keys, AI-draft translations, publish — for a fresh project.
+  </Tile>
+  <Tile
+    href="#"
+    icon="◈"
+    title="add_experiment"
+    meta={
+      <>
+        <span>idea → metric → start</span>
+      </>
+    }
+  >
+    Walks the agent from a hypothesis through metric selection, variant creation, and start.
+  </Tile>
+  <Tile
+    href="#"
+    icon="⌗"
+    title="gate_a_feature"
+    meta={
+      <>
+        <span>existing code</span>
+        <span>·</span>
+        <span>sensible rollout</span>
+      </>
+    }
+  >
+    Wraps an existing feature with a flag, with rollout defaults that won&apos;t blow up your prod.
+  </Tile>
+</TileGrid>
 
 ## Practical example
 
@@ -105,17 +313,79 @@ Open Claude Code in a fresh React project and say:
 
 > Use the ShipEasy MCP to onboard this project to translations. Use `en` as the source locale.
 
-The agent runs `detect_project` → `auth_check` → `i18n_install_loader` → `i18n_codemod_preview` → asks you to approve diffs → `i18n_codemod_apply` → `i18n_push_keys` → `i18n_publish_profile`. The whole flow takes a few minutes and the only thing you click is the browser confirmation during login.
+The agent will:
 
-For the canonical step-by-step the agent follows, see [LLM Guides → String Manager](/llms/i18n-strings).
+<Steps>
+  <Step title="Detect the project">
+    Calls `mcp__shipeasy__detect_project` to learn the framework, source root, and SDK install
+    status.
+  </Step>
+  <Step title="Check auth">
+    Calls `mcp__shipeasy__auth_check`. If you&apos;re not logged in, prompts you to run `shipeasy
+    login` in a real terminal.
+  </Step>
+  <Step title="Install the loader">
+    Calls `mcp__shipeasy__i18n_install_loader` with the right framework hint. Creates a client key,
+    writes the script tag.
+  </Step>
+  <Step title="Preview & apply the codemod">
+    Calls `mcp__shipeasy__i18n_codemod_preview` to show diffs. Asks for your approval. Calls
+    `mcp__shipeasy__i18n_codemod_apply`.
+  </Step>
+  <Step title="Push & publish">
+    Calls `mcp__shipeasy__i18n_push_keys` then `mcp__shipeasy__i18n_publish_profile`. New copy is
+    live within seconds.
+  </Step>
+</Steps>
+
+The whole flow takes a few minutes and the only thing you click is the browser confirmation during login. For the canonical step-by-step the agent follows, see [LLM Guides → String Manager](/llms/i18n-strings).
+
+## Auth model
+
+The MCP server is launched as a subprocess of your AI assistant. It reads `~/.shipeasy/credentials` on every tool call — the same file the CLI writes. There are three implications worth knowing:
+
+1. **One login covers everything.** Run `shipeasy login` once on your machine, and every MCP tool in every assistant is authenticated.
+2. **Refresh happens transparently.** If the access token has expired, the MCP server refreshes it before the tool call — same behaviour as the CLI.
+3. **Tokens never appear in MCP config.** Your `mcp.json` only contains the launcher command. Stealing the config gives an attacker nothing.
 
 ## Troubleshooting
 
 <Callout type="warn" title="Tool calls return `not authenticated`">
   Run `shipeasy login` in a real terminal. The MCP server reads the same credentials file the CLI
-  writes.
+  writes. If the CLI sees you as logged in (`shipeasy whoami`) but the MCP server doesn&apos;t, your
+  assistant is launching with a stripped env — set `HOME` explicitly in your `mcp.json` block.
 </Callout>
 
 <Callout type="warn" title="Tool calls return `project not detected`">
-Pass an explicit `--project <id>` to `shipeasy login`, or set `SHIPEASY_PROJECT=<id>` before launching your AI assistant. Some agents inherit the env from the launcher process.
+  Pass an explicit `--project <id>` to `shipeasy login`, or set `SHIPEASY_PROJECT=<id>` before launching your AI assistant. Some agents inherit env from the launcher, others don&apos;t.
 </Callout>
+
+<Callout type="warn" title="Tool list is empty after install">
+  Restart the AI assistant. MCP servers are loaded at process start; editing `mcp.json` while the
+  assistant is running has no effect.
+</Callout>
+
+<ConvertCTA
+  eyebrow="NEXT"
+  title={
+    <>
+      Tell the agent <em>who your users are</em>.
+    </>
+  }
+  body="The richer your attributes, the more precise your targeting and analysis. Most teams under-invest here on day one and regret it."
+  primaryHref="/get-started/attributes"
+  primaryLabel="User attributes"
+  secondaryHref="/llms"
+  secondaryLabel="LLM guides"
+  cmds={[
+    { label: "Install the MCP", cmd: "shipeasy mcp install" },
+    { label: "Confirm auth", cmd: "shipeasy whoami" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/get-started/cli", title: "CLI" }}
+  next={{ href: "/get-started/attributes", title: "User attributes" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/get-started/mcp.mdx" />

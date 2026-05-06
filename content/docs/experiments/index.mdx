@@ -1,39 +1,121 @@
 ---
-title: Introduction
+title: Experiments — A/B tests with stats built in
 description: A/B and multivariate experiments with managed stats. Welch's t-test, holdouts, segmentation — out of the box.
 icon: FlaskConical
 ---
+
+<Hero
+  eyebrow="ShipEasy · Experiments"
+  title={
+    <>
+      Was the new thing <em>actually better?</em>
+    </>
+  }
+  subtitle="Define a metric, ship a variant, get a defensible answer the next morning. Welch's t-test, lift, p-value and 95% CI — written back to your project as plain rows."
+  primaryHref="/experiments/quickstart"
+  primaryLabel="Quickstart"
+  secondaryHref="#building-blocks"
+  secondaryLabel="Building blocks"
+/>
+
+<DocMeta
+  status="Production ready"
+  read="6 min read"
+  updated="May 3, 2026"
+  works="Server SDK · Edge Worker · Daily cron"
+/>
 
 ShipEasy **Experiments** lets you ask _"is the new thing actually better?"_ and get a defensible answer.
 
 You define what you want to measure (a **metric**), set up variant payloads (the **groups**), let users land in one bucket or another, log conversions, and look at the dashboard the next morning. The platform handles assignment, exposure stitching, deduplication, daily aggregation, and the statistics.
 
-## The five building blocks
+## The five building blocks [#building-blocks]
 
-<CardGrid>
-  <Card href="/experiments/universes" eyebrow="Universe" title="Where experiments live">
+<TileGrid>
+  <Tile
+    href="/experiments/universes"
+    icon="◇"
+    title="Universe"
+    meta={
+      <>
+        <span>
+          <b>holdout</b>
+        </span>
+        <span>·</span>
+        <span>mutual exclusion</span>
+      </>
+    }
+  >
     A logical namespace. Carries the holdout (a global control unaffected by every experiment in the
     universe) and an optional mutual-exclusion rule.
-  </Card>
-  <Card href="/experiments/quickstart" eyebrow="Experiment" title="The test itself">
-    A name, an allocation %, a list of groups with weights and `params`. Optionally a targeting
-    gate.
-  </Card>
-  <Card href="/experiments/metrics" eyebrow="Metrics" title="What you measure">
-    `count`, `sum`, `mean`, or `conversion` over an event type. Pick a primary, and a couple of
-    guardrails.
-  </Card>
-  <Card href="/experiments/events" eyebrow="Events" title="Raw signal">
-    Anything you `track()`. Stored in Cloudflare Analytics Engine, aggregated into metric values
-    daily.
-  </Card>
-  <Card href="/experiments/analysis" eyebrow="Analysis" title="The numbers">
+  </Tile>
+  <Tile
+    href="/experiments/quickstart"
+    icon="◈"
+    title="Experiment"
+    meta={
+      <>
+        <span>weighted groups</span>
+        <span>·</span>
+        <span>typed params</span>
+      </>
+    }
+  >
+    A name, an allocation %, a list of groups with weights and <code>params</code>. Optionally a
+    targeting gate.
+  </Tile>
+  <Tile
+    href="/experiments/metrics"
+    icon="∑"
+    title="Metrics"
+    meta={
+      <>
+        <span>
+          <b>conversion</b>
+        </span>
+        <span>·</span>
+        <span>count · sum · mean</span>
+      </>
+    }
+  >
+    <code>count</code>, <code>sum</code>, <code>mean</code>, or <code>conversion</code> over an
+    event type. Pick a primary, and a couple of guardrails.
+  </Tile>
+  <Tile
+    href="/experiments/events"
+    icon="✎"
+    title="Events"
+    meta={
+      <>
+        <span>Analytics Engine</span>
+        <span>·</span>
+        <span>fire-and-forget</span>
+      </>
+    }
+  >
+    Anything you <code>track()</code>. Stored in Cloudflare Analytics Engine, aggregated into metric
+    values daily.
+  </Tile>
+  <Tile
+    href="/experiments/analysis"
+    icon="∫"
+    title="Analysis"
+    meta={
+      <>
+        <span>
+          <b>Welch</b> t-test
+        </span>
+        <span>·</span>
+        <span>p · CI · lift</span>
+      </>
+    }
+  >
     Welch&apos;s t-test, lift, p-value, 95% CI. Computed once per day, written back to D1, surfaced
     in the dashboard.
-  </Card>
-</CardGrid>
+  </Tile>
+</TileGrid>
 
-## Five-minute mental model
+## The 5-minute mental model
 
 You ship feature X behind a flag. You believe it&apos;ll lift `purchase_conversion`. So instead of just gating it, you make it an **experiment**: half the eligible users see X, half don&apos;t. Both groups are tracked. The next day, you look at the dashboard and read either _"X lifts conversion by 3.1% (p=0.002)"_ — or _"no significant difference, scrap it."_
 
@@ -51,42 +133,154 @@ The honest version requires more care than that summary, and the docs walk throu
 
 A practical workflow is to gate first (so the rollout is safe), then **promote the gate to an experiment** once the feature is stable.
 
-## Quickstart
+## The 5-minute path
+
+<Quickstart title="From metric to result" time="~5 minutes setup · 24h to first stats">
+  <QuickstartStep
+    num={1}
+    label="METRIC"
+    title="Define what success looks like"
+    cmd="shipeasy metrics create purchase_conversion --type conversion --event purchase"
+  >
+    One number. A primary, plus a couple of guardrails (latency, error rate).
+  </QuickstartStep>
+  <QuickstartStep
+    num={2}
+    label="EXPERIMENT"
+    title="Two groups, equal weight"
+    cmd="shipeasy experiments create checkout-cta"
+  >
+    100% allocation, 50/50 split, two label variants. Targeting via a gate is optional.
+  </QuickstartStep>
+  <QuickstartStep
+    num={3}
+    label="WIRE"
+    title="assign + track"
+    cmd="experiments.assign('checkout-cta', user)"
+  >
+    First call logs an exposure. <code>flags.track()</code> on conversion. Daily cron does the math.
+  </QuickstartStep>
+</Quickstart>
+
+## Wire the SDK
+
+<InstallTabs npm="npm install @shipeasy/sdk" />
+
+```ts
+import { configureShipeasy, flags, experiments } from "@shipeasy/sdk/server";
+
+configureShipeasy({ apiKey: process.env.SHIPEASY_SERVER_KEY!, env: "prod" });
+await flags.init();
+
+const result = experiments.assign<{ label: string }>("checkout-cta", {
+  user_id,
+  plan,
+  country,
+});
+const label = result.params.label; // "Pay" or "Buy now"
+```
+
+```ts
+// Wherever the purchase succeeds:
+flags.track(user_id, "purchase", { value: orderTotal });
+```
+
+The first time you call `assign()` for a user, an **exposure** is logged automatically. Subsequent calls in the same process don&apos;t re-log — exposures are deduplicated.
+
+## API · `experiments.assign`
+
+<ApiTable>
+  <ApiRow
+    name="name"
+    required
+    type="string"
+    desc="The experiment name. Stable identifier, used in URLs and result rows."
+  />
+  <ApiRow
+    name="user"
+    required
+    type="EvalContext"
+    desc={
+      <>
+        An object with at least <code>user_id</code>. Add attributes used by the targeting gate (
+        <code>plan</code>, <code>country</code>, …).
+      </>
+    }
+  />
+  <ApiRow
+    name="defaultParams"
+    optional
+    type="T"
+    desc="Returned when the experiment is stopped, the user is in the holdout, or assignment fails. Defaults to the control group's params."
+  />
+</ApiTable>
+
+The return shape:
+
+```ts
+{
+  inExperiment: boolean,   // false if stopped, holdout, or excluded
+  group: string,           // "control" | "v1" | …
+  params: T,               // typed payload from the assigned group
+  reason: AssignmentReason // "assigned" | "holdout" | "stopped" | "excluded"
+}
+```
+
+## What the daily analysis does
 
 <Steps>
-  <Step title="Define the metric">
-    What does success look like? Pick one number. Add a couple of guardrails.
-
-    ```bash
-    shipeasy metrics create purchase_conversion --type conversion --event purchase
-    ```
-
+  <Step title="Cron enqueues a job per project">
+    A scheduled trigger on the Edge Worker fans out one queue message per project that has running
+    experiments.
   </Step>
-  <Step title="Create the experiment">
-    ```bash
-    shipeasy experiments create checkout-cta \
-      --allocation 100 \
-      --groups '[{"name":"control","weight":50,"params":{"label":"Pay"}},
-                 {"name":"v1","weight":50,"params":{"label":"Buy now"}}]'
-    ```
+  <Step title="Consumer scans Analytics Engine">
+    For each project, the consumer pulls yesterday&apos;s exposures and events from Analytics
+    Engine, joins by <code>user_id</code>, and aggregates per metric × group.
   </Step>
-  <Step title="Wire it in code">
-    ```ts
-    import { experiments } from "@shipeasy/sdk/server";
-
-    const result = experiments.assign<{ label: string }>("checkout-cta", user);
-    const label = result.params.label;
-    ```
-
+  <Step title="Welch's t-test">
+    Lift, two-sided p-value, 95% CI. Per metric, per group, vs. the control group.
   </Step>
-  <Step title="Track conversions">
-    ```ts
-    flags.track(user.user_id, "purchase", { value: 49.99 });
-    ```
-  </Step>
-  <Step title="Read the results">
-    Wait for daily aggregation, then open **Experiments → checkout-cta**. Or `shipeasy experiments status checkout-cta`.
+  <Step title="Write back to D1">
+    Results land as plain rows in D1, scoped to the project. The dashboard reads them; you can
+    export them.
   </Step>
 </Steps>
 
-Full walkthrough at [Quickstart](/experiments/quickstart).
+<Callout type="warn" title="Don't peek and stop early">
+  The p-values are valid for **fixed-horizon** tests. If you sneak a look every hour and stop the
+  moment something turns significant, you'll get false wins. Pre-decide the experiment&apos;s
+  duration based on traffic.
+</Callout>
+
+<Callout type="warn" title="Don't change variants mid-flight">
+  Changing `params` on a running experiment invalidates the analysis. Stop the experiment, create a
+  new one with `v2` in the name.
+</Callout>
+
+<ConvertCTA
+  eyebrow="READY?"
+  title={
+    <>
+      Run your <em>first experiment</em>.
+    </>
+  }
+  body="A complete walk-through: define the metric, create the experiment, wire two SDK calls, read the result the next morning."
+  primaryHref="/experiments/quickstart"
+  primaryLabel="Open the quickstart"
+  secondaryHref="/experiments/analysis"
+  secondaryLabel="How analysis works"
+  cmds={[
+    {
+      label: "Create the metric",
+      cmd: "shipeasy metrics create purchase_conversion --type conversion --event purchase",
+    },
+    { label: "Create the experiment", cmd: "shipeasy experiments create checkout-cta" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/", title: "Platform overview" }}
+  next={{ href: "/experiments/quickstart", title: "Quickstart" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/experiments/index.mdx" />

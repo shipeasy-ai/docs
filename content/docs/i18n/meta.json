@@ -1,5 +1,5 @@
 {
-  "title": "String Manager",
+  "title": "Polylang",
   "root": true,
   "pages": ["index", "quickstart", "profiles", "keys", "drafts", "translations"]
 }

@@ -3,12 +3,42 @@ title: Quickstart
 description: Run your first A/B test from scratch — define a metric, create the experiment, ship variants, read results.
 ---
 
-This walks through a complete experiment end to end: a button-label test on the checkout CTA. We&apos;ll set up a conversion metric, create the experiment with two variants at 50/50, instrument the SDK, and read results.
+<DocMeta
+  status="Tutorial"
+  read="8 min read"
+  updated="May 3, 2026"
+  works="Server SDK · Daily cron"
+/>
+
+This walks through a complete experiment end to end: a button-label test on the checkout CTA. We'll set up a conversion metric, create the experiment with two variants at 50/50, instrument the SDK, and read results.
+
+<Quickstart title="Your first experiment" time="~5 min setup · 24h to first stats">
+  <QuickstartStep
+    num={1}
+    label="METRIC"
+    title="Define the conversion"
+    cmd="shipeasy metrics create purchase_conversion --type conversion --event purchase"
+  />
+  <QuickstartStep
+    num={2}
+    label="EXPERIMENT"
+    title="Two groups, equal weight"
+    cmd="shipeasy experiments create checkout-cta"
+  />
+  <QuickstartStep
+    num={3}
+    label="WIRE"
+    title="assign + track"
+    cmd="shipeasy experiments start checkout-cta"
+  />
+</Quickstart>
 
 ## Prerequisites
 
-- The SDK installed (`npm install @shipeasy/sdk`) and configured. See [Install](/get-started/install) and [How it works](/get-started/how-it-works).
+- The SDK installed and configured. See [Install](/get-started/install) and [How it works](/get-started/how-it-works).
 - A metric in mind. Here: did the user `purchase` after seeing checkout?
+
+<InstallTabs npm="npm install @shipeasy/sdk" />
 
 <Steps>
   <Step title="Define the conversion metric">
@@ -57,15 +87,13 @@ This walks through a complete experiment end to end: a button-label test on the 
 
     ```ts
     const result = experiments.assign<{ label: string }>("checkout-cta", {
-      user_id,
-      plan,
-      country,
+      user_id, plan, country,
     });
 
     const label = result.params.label; // "Pay" or "Buy now"
     ```
 
-    The first time you call `assign()` for a user, an **exposure** event is logged automatically. Subsequent calls in the same process don&apos;t re-log — exposures are deduplicated.
+    The first time you call `assign()` for a user, an **exposure** event is logged automatically. Subsequent calls in the same process don't re-log — exposures are deduplicated.
 
   </Step>
 
@@ -106,7 +134,7 @@ This walks through a complete experiment end to end: a button-label test on the 
       v1       N=12,503  rate=5.2%   lift +8.3%   p=0.018   CI [+1.4%, +15.2%]
     ```
 
-    `p &lt; 0.05` and the CI excluding zero is your stop-condition. Promote `v1` by adding a gate that mirrors the variant, then deleting the experiment.
+    `p < 0.05` and the CI excluding zero is your stop-condition. Promote `v1` by adding a gate that mirrors the variant, then deleting the experiment.
 
   </Step>
 
@@ -124,8 +152,8 @@ This walks through a complete experiment end to end: a button-label test on the 
 
 <Callout type="warn" title="Don't peek and stop early">
   The p-values are valid for **fixed-horizon** tests. If you sneak a look every hour and stop the
-  moment something turns significant, you&apos;ll get false wins. Pre-decide the experiment&apos;s
-  duration based on traffic.
+  moment something turns significant, you'll get false wins. Pre-decide the experiment's duration
+  based on traffic.
 </Callout>
 
 <Callout type="warn" title="Don't change variants mid-flight">
@@ -134,20 +162,98 @@ This walks through a complete experiment end to end: a button-label test on the 
 </Callout>
 
 <Callout type="warn" title="Don't run too many experiments on the same surface">
-  Two experiments touching the same checkout flow can confound each other. That&apos;s what
+  Two experiments touching the same checkout flow can confound each other. That's what
   [universes](/experiments/universes) and **mutual exclusion** are for.
 </Callout>
 
 ## Where to next
 
-<CardGrid>
-  <Card href="/experiments/universes" eyebrow="Architecture" title="Universes & holdouts">
-    When you have more than one experiment in flight.
-  </Card>
-  <Card href="/experiments/metrics" eyebrow="Stats" title="Metrics, deeper">
-    Counts, means, ratios. Primary vs guardrail. Outliers.
-  </Card>
-  <Card href="/experiments/analysis" eyebrow="Stats" title="How analysis works">
+<TileGrid>
+  <Tile
+    href="/experiments/universes"
+    icon="◇"
+    title="Universes & holdouts"
+    meta={
+      <>
+        <span>mutual exclusion</span>
+        <span>·</span>
+        <span>global control</span>
+      </>
+    }
+  >
+    When you have more than one experiment in flight on the same surface.
+  </Tile>
+  <Tile
+    href="/experiments/metrics"
+    icon="∑"
+    title="Metrics, deeper"
+    meta={
+      <>
+        <span>primary · guardrail</span>
+        <span>·</span>
+        <span>outliers</span>
+      </>
+    }
+  >
+    Counts, means, ratios. Primary vs guardrail. Outlier handling.
+  </Tile>
+  <Tile
+    href="/experiments/analysis"
+    icon="∫"
+    title="How analysis works"
+    meta={
+      <>
+        <span>Welch t-test</span>
+        <span>·</span>
+        <span>p · CI · lift</span>
+      </>
+    }
+  >
     What the platform actually does to those numbers.
-  </Card>
-</CardGrid>
+  </Tile>
+  <Tile
+    href="/experiments/events"
+    icon="✎"
+    title="Events"
+    meta={
+      <>
+        <span>Analytics Engine</span>
+        <span>·</span>
+        <span>fire-and-forget</span>
+      </>
+    }
+  >
+    What you should track and what you definitely shouldn&apos;t.
+  </Tile>
+</TileGrid>
+
+<ConvertCTA
+  eyebrow="ALREADY GATING?"
+  title={
+    <>
+      Promote a gate to an <em>experiment</em>.
+    </>
+  }
+  body="If a feature is already behind a gate at 50%, you're one CLI command away from collecting stats on it instead of guessing whether it works."
+  primaryHref="/experiments"
+  primaryLabel="Read the overview"
+  secondaryHref="/configs"
+  secondaryLabel="Back to gates"
+  cmds={[
+    {
+      label: "Create from existing gate",
+      cmd: "shipeasy experiments create checkout-v2 --from-gate checkout-v2",
+    },
+    {
+      label: "Then attach a metric",
+      cmd: "shipeasy experiments attach-metric checkout-v2 purchase_conversion --primary",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/experiments", title: "Experiments overview" }}
+  next={{ href: "/experiments/universes", title: "Universes" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/experiments/quickstart.mdx" />

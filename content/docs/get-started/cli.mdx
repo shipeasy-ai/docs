@@ -1,20 +1,29 @@
 ---
 title: CLI
-description: The `shipeasy` command — manage flags, experiments, keys, and translations from your terminal or CI.
+description: The `shipeasy` command — manage flags, experiments, keys, translations, and the MCP server from your terminal or CI.
 ---
 
-The CLI is a thin wrapper over the public ShipEasy REST API. Anything in the dashboard works from a terminal, and everything is JSON-mode-friendly so you can pipe it into scripts.
+<DocMeta
+  status="Production ready"
+  read="8 min read"
+  updated="May 3, 2026"
+  works="macOS · Linux · Windows · Docker · CI"
+/>
+
+The CLI is a thin wrapper over the same Server Actions the dashboard uses. Anything you can do in the UI works from a terminal, and every read command supports `--json` so you can pipe results into scripts.
 
 ## Install
 
+<InstallTabs npm="npm install -g @shipeasy/cli" />
+
 ```bash
-npm install -g @shipeasy/cli
 shipeasy --version
+shipeasy --help
 ```
 
 See [Authenticate](/get-started/authenticate) for the login flow.
 
-## Common commands
+## At a glance
 
 <Terminal title="zsh">
   <Prompt />
@@ -26,43 +35,113 @@ See [Authenticate](/get-started/authenticate) for the login flow.
 </Terminal>
 
 ```bash
-shipeasy flags list
+shipeasy gate list
+shipeasy value list
 shipeasy experiments list
 shipeasy keys list
 shipeasy i18n scan ./src
+shipeasy mcp install
 ```
 
-Add `--json` to any read command to get machine-readable output. Add `--project <id>` to override the active project for one call.
+Add `--json` to any read command for machine-readable output. Add `--project <id>` to override the active project for a single call.
 
-## Reference
+## Global flags
 
-### Auth
+<ApiTable>
+  <ApiRow
+    name="--project"
+    optional
+    type="string"
+    desc={
+      <>
+        Override the active project for this call. Wins over <code>SHIPEASY_PROJECT</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="--env"
+    optional
+    type={`"dev" | "staging" | "prod"`}
+    desc={
+      <>
+        Target environment. Defaults to <code>prod</code>. Only relevant for commands that read or
+        write env-scoped state.
+      </>
+    }
+  />
+  <ApiRow
+    name="--json"
+    optional
+    type="boolean"
+    desc={
+      <>
+        Emit machine-readable JSON to stdout. Human-readable progress goes to stderr — pipes work
+        the way you&apos;d expect.
+      </>
+    }
+  />
+  <ApiRow
+    name="--quiet"
+    optional
+    type="boolean"
+    desc={<>Suppress progress output. Errors still go to stderr.</>}
+  />
+  <ApiRow
+    name="--no-color"
+    optional
+    type="boolean"
+    desc={
+      <>
+        Disable ANSI colour. Also honoured via <code>NO_COLOR=1</code>.
+      </>
+    }
+  />
+</ApiTable>
 
-| Command           | Description                                                        |
-| ----------------- | ------------------------------------------------------------------ |
-| `shipeasy login`  | PKCE browser flow. Saves credentials to `~/.shipeasy/credentials`. |
-| `shipeasy logout` | Wipe credentials.                                                  |
-| `shipeasy whoami` | Show the active project, email, and endpoint URLs.                 |
+## Auth
 
-### Flags (gates & dynamic configs)
+| Command                      | Description                                                                        |
+| ---------------------------- | ---------------------------------------------------------------------------------- |
+| `shipeasy login`             | PKCE browser flow. Saves credentials to `~/.shipeasy/credentials`.                 |
+| `shipeasy logout`            | Wipe credentials. Add `--revoke` to also invalidate the refresh token server-side. |
+| `shipeasy whoami`            | Show the active project, email, and endpoint URLs.                                 |
+| `shipeasy projects list`     | List every project you have access to.                                             |
+| `shipeasy projects use <id>` | Set the active project.                                                            |
 
-| Command                         | Description                                                                   |
-| ------------------------------- | ----------------------------------------------------------------------------- |
-| `shipeasy flags list`           | List every flag in the project. `--json` for raw output.                      |
-| `shipeasy flags create <name>`  | Create a new flag. Options: `--rollout`, `--rules`, `--salt`, `--killswitch`. |
-| `shipeasy flags enable <name>`  | Set the flag&apos;s `enabled` bit to true.                                    |
-| `shipeasy flags disable <name>` | Set `enabled` to false (keeps rules).                                         |
-| `shipeasy flags delete <name>`  | Permanent. Use with care.                                                     |
+## Gates (boolean flags)
 
-`--rules` accepts a JSON array of `{ attr, op, value }` rules — the same shape the dashboard produces. Example:
+| Command                                    | Description                                                                   |
+| ------------------------------------------ | ----------------------------------------------------------------------------- |
+| `shipeasy gate list`                       | List every gate in the project. `--json` for raw output.                      |
+| `shipeasy gate create <name>`              | Create a new gate. Options: `--rollout`, `--rules`, `--salt`, `--killswitch`. |
+| `shipeasy gate rollout <name> --percent N` | Set the rollout %. `--percent 0` is an instant kill-switch.                   |
+| `shipeasy gate enable <name>`              | Set the gate&apos;s `enabled` bit to true.                                    |
+| `shipeasy gate disable <name>`             | Set `enabled` to false (keeps rules).                                         |
+| `shipeasy gate delete <name>`              | Permanent. Use with care.                                                     |
+
+`--rules` accepts a JSON array of `{ attr, op, value }` rules — the same shape the dashboard produces:
 
 ```bash
-shipeasy flags create new-ui \
+shipeasy gate create new-ui \
   --rollout 25 \
   --rules '[{"attr":"plan","op":"eq","value":"pro"}]'
 ```
 
-### Experiments
+## Dynamic values (configs)
+
+| Command                                    | Description                                                            |
+| ------------------------------------------ | ---------------------------------------------------------------------- |
+| `shipeasy value list`                      | List every dynamic config.                                             |
+| `shipeasy value create <name> --type json` | Create a config. `--type` is `string`, `number`, `boolean`, or `json`. |
+| `shipeasy value set <name> <json>`         | Update the value (env-scoped — pair with `--env`).                     |
+| `shipeasy value get <name>`                | Read the current value.                                                |
+| `shipeasy value delete <name>`             | Permanent.                                                             |
+
+```bash
+shipeasy value set pricing '{"base":9.99,"currency":"USD"}' --env prod
+```
+
+## Experiments
 
 | Command                              | Description                                                                                              |
 | ------------------------------------ | -------------------------------------------------------------------------------------------------------- |
@@ -80,45 +159,189 @@ shipeasy experiments create checkout-cta \
   --groups '[{"name":"control","weight":50,"params":{"label":"Pay"}},{"name":"v1","weight":50,"params":{"label":"Buy now"}}]'
 ```
 
-### SDK keys
+## Metrics
 
-| Command                     | Description                                                                                 |
-| --------------------------- | ------------------------------------------------------------------------------------------- |
-| `shipeasy keys list`        | List keys (id, kind, last used). The raw token is **never** shown after creation.           |
-| `shipeasy keys create`      | Create a key. Asks you for `kind` (`server` / `client` / `admin`). Token is shown **once**. |
-| `shipeasy keys revoke <id>` | Revoke by id or id-prefix. First match wins.                                                |
+| Command                          | Description                                                                |
+| -------------------------------- | -------------------------------------------------------------------------- |
+| `shipeasy metrics list`          | Every metric registered for the project.                                   |
+| `shipeasy metrics create <name>` | Define a new metric. Options: `--type`, `--source-event`, `--aggregation`. |
+| `shipeasy metrics latest <name>` | Latest daily aggregation row.                                              |
 
-### String Manager (i18n)
+## SDK keys
 
-| Command                                                    | Description                                                                         |
-| ---------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `shipeasy i18n install-loader`                             | Inject the loader script tag into the right file (auto-detects framework).          |
-| `shipeasy i18n scan [paths...]`                            | Discover `t("key")` calls in source. `--keys-only` skips fuzzy candidate discovery. |
-| `shipeasy i18n push <file>`                                | Push a JSON of keys to a profile. `--chunk` to bucket.                              |
-| `shipeasy i18n profiles create --name en:prod --locale en` | Create a profile.                                                                   |
-| `shipeasy i18n translate --profile fr:prod --ai`           | Generate AI translations as a draft.                                                |
-| `shipeasy i18n publish --profile en:prod`                  | Push the merged profile to KV (live in seconds).                                    |
-| `shipeasy i18n validate --profile en:prod`                 | Fail if any key referenced in code is missing from the profile. Use in CI.          |
+| Command                     | Description                                                                       |
+| --------------------------- | --------------------------------------------------------------------------------- |
+| `shipeasy keys list`        | List keys (id, kind, last used). The raw token is **never** shown after creation. |
+| `shipeasy keys create`      | Create a key. Asks for `kind` (`server` / `client`). Token is shown **once**.     |
+| `shipeasy keys revoke <id>` | Revoke by id or id-prefix. First match wins.                                      |
 
-### Project detection
+## API tokens
 
-| Command                    | Description                                                                                                                       |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `shipeasy scan [paths...]` | Detect project language, framework, and SDK installation status. Useful as a one-liner in CI to confirm wiring. `--json` for raw. |
+| Command                       | Description                                                |
+| ----------------------------- | ---------------------------------------------------------- |
+| `shipeasy tokens list`        | List API tokens (id, kind, scopes, last used).             |
+| `shipeasy tokens create`      | Create a long-lived token for CI. Token is shown **once**. |
+| `shipeasy tokens revoke <id>` | Revoke.                                                    |
+
+API tokens are different from SDK keys — see [Authenticate → SDK keys vs API tokens](/get-started/authenticate#sdk-keys-vs-api-tokens-pick-the-right-one).
+
+## i18n (Polylang)
+
+| Command                                                    | Description                                                                                                          |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `shipeasy i18n install-loader`                             | Inject the loader script tag into the right file (auto-detects framework).                                           |
+| `shipeasy i18n scan [paths...]`                            | Discover `t("key")` calls in source. `--rewrite` enables the codemod. `--keys-only` skips fuzzy candidate discovery. |
+| `shipeasy i18n push <file>`                                | Push a JSON of keys to a profile. `--chunk` to bucket.                                                               |
+| `shipeasy i18n profiles create --name en:prod --locale en` | Create a profile.                                                                                                    |
+| `shipeasy i18n profiles list`                              | List profiles.                                                                                                       |
+| `shipeasy i18n translate --profile fr:prod --ai`           | Generate AI translations as a draft.                                                                                 |
+| `shipeasy i18n publish --profile en:prod`                  | Push the merged profile to KV (live in seconds).                                                                     |
+| `shipeasy i18n validate --profile en:prod`                 | Fail if any key referenced in code is missing from the profile. Use in CI.                                           |
+
+## Codemod
+
+| Command                            | Description                                                                                                         |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `shipeasy codemod i18n [paths...]` | Run the i18n codemod standalone — same as `i18n scan --rewrite` but exposed as a top-level command for easy CI use. |
+
+## MCP server
+
+| Command                  | Description                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------ |
+| `shipeasy mcp install`   | Patch the right config file for Claude Code, Cursor, Windsurf, or a custom MCP client.     |
+| `shipeasy mcp uninstall` | Remove the registration.                                                                   |
+| `shipeasy mcp serve`     | Run the MCP server in the foreground. Used by the install command — rarely needed by hand. |
+
+See [MCP server](/get-started/mcp) for the tool inventory.
+
+## Project detection
+
+| Command           | Description                                                                                                                                                   |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `shipeasy detect` | Detect project language, framework, source root, loader script presence, SDK install status. Useful as a one-liner in CI to confirm wiring. `--json` for raw. |
+
+## Plugin
+
+| Command                            | Description                                                                                      |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `shipeasy plugin install <name>`   | Install a CLI plugin (e.g. private experiment templates). Plugins live in `~/.shipeasy/plugins`. |
+| `shipeasy plugin list`             | List installed plugins.                                                                          |
+| `shipeasy plugin uninstall <name>` | Remove a plugin.                                                                                 |
+
+## Skills
+
+| Command                          | Description                                                      |
+| -------------------------------- | ---------------------------------------------------------------- |
+| `shipeasy skills list`           | List installed Claude Code skills exposed by the CLI.            |
+| `shipeasy skills install <name>` | Install a packaged skill into your `~/.claude/skills` directory. |
 
 ## Environment variables
 
-| Variable            | Effect                                                                   |
-| ------------------- | ------------------------------------------------------------------------ |
-| `SHIPEASY_API_KEY`  | Long-lived admin key, used in CI. Bypasses interactive login.            |
-| `SHIPEASY_API_URL`  | Override the admin API base URL (default `https://shipeasy.ai`).         |
-| `SHIPEASY_EDGE_URL` | Override the edge worker base URL (default `https://edge.shipeasy.dev`). |
-| `SHIPEASY_PROJECT`  | Default project id when no `--project` flag is passed.                   |
+<ApiTable>
+  <ApiRow
+    name="SHIPEASY_API_TOKEN"
+    optional
+    type="string"
+    desc={<>Long-lived API token used for CI. Bypasses interactive login.</>}
+  />
+  <ApiRow
+    name="SHIPEASY_API_URL"
+    optional
+    type="string"
+    desc={
+      <>
+        Override the admin API base URL (default <code>https://shipeasy.ai</code>).
+      </>
+    }
+  />
+  <ApiRow
+    name="SHIPEASY_EDGE_URL"
+    optional
+    type="string"
+    desc={
+      <>
+        Override the edge worker base URL (default <code>https://edge.shipeasy.dev</code>).
+      </>
+    }
+  />
+  <ApiRow
+    name="SHIPEASY_PROJECT"
+    optional
+    type="string"
+    desc={
+      <>
+        Default project id when no <code>--project</code> flag is passed.
+      </>
+    }
+  />
+  <ApiRow
+    name="SHIPEASY_ENV"
+    optional
+    type={`"dev" | "staging" | "prod"`}
+    desc={
+      <>
+        Default environment when no <code>--env</code> flag is passed.
+      </>
+    }
+  />
+  <ApiRow name="NO_COLOR" optional type="any" desc={<>Disable ANSI colour output.</>} />
+</ApiTable>
 
 ## Exit codes
 
 `0` on success, `1` on any error. JSON output goes to stdout; human-readable progress goes to stderr — pipes work the way you&apos;d expect.
 
 ```bash
-shipeasy flags list --json | jq '.[] | select(.enabled == 1) | .name'
+shipeasy gate list --json | jq '.[] | select(.enabled == true) | .name'
 ```
+
+## Examples
+
+```bash
+# Create a gate, set targeting, roll out to 5%, then promote to 100%.
+shipeasy gate create checkout-v2 --rules '[{"attr":"plan","op":"eq","value":"pro"}]'
+shipeasy gate rollout checkout-v2 --percent 5
+shipeasy gate rollout checkout-v2 --percent 100
+
+# Scan a Next.js app for translatable strings, push to source profile, AI-translate, publish.
+shipeasy i18n install-loader --profile en:prod
+shipeasy i18n scan ./src --rewrite --profile en:prod
+shipeasy i18n push --profile en:prod --source codemod
+shipeasy i18n profiles create --name fr:prod --locale fr
+shipeasy i18n translate --profile fr:prod --ai
+shipeasy i18n publish --profile fr:prod
+
+# CI smoke test — fail the build if a translatable key is missing from prod.
+SHIPEASY_API_TOKEN="$CI_TOKEN" shipeasy i18n validate --profile en:prod ./src
+```
+
+<Callout type="info" title="Pipe-friendly by design">
+  Every read command accepts `--json`. Every write command exits non-zero on failure. The CLI is
+  built to be scripted — drop it into a Makefile or a GitHub Actions step and it behaves the way
+  you&apos;d expect.
+</Callout>
+
+<ConvertCTA
+  eyebrow="NEXT"
+  title={
+    <>
+      Hand it to an <em>AI agent</em>.
+    </>
+  }
+  body="The MCP server exposes the same surface as typed tools. Your agent gets one-call install and a curated tool inventory."
+  primaryHref="/get-started/mcp"
+  primaryLabel="Install the MCP server"
+  secondaryHref="/llms"
+  secondaryLabel="LLM guides"
+  cmds={[
+    { label: "Install the MCP", cmd: "shipeasy mcp install" },
+    { label: "Then restart your agent", cmd: "# pick up the new MCP config" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/get-started/sdks", title: "SDKs" }}
+  next={{ href: "/get-started/mcp", title: "MCP server" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/get-started/cli.mdx" />

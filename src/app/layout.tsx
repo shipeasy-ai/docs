@@ -6,6 +6,7 @@ import { DocsLayout } from "fumadocs-ui/layouts/docs";
 import { RootProvider } from "fumadocs-ui/provider/next";
 import { source } from "@/lib/source";
 import { Logo } from "@shipeasy/shared/Logo";
+import { ProductSwitcher } from "@/components/product-switcher";
 
 export const metadata: Metadata = {
   title: { default: "ShipEasy Docs", template: "%s — ShipEasy" },
@@ -17,7 +18,7 @@ const PRODUCT_DESCRIPTIONS: Record<string, string> = {
   "Get started": "Install, authenticate, and ship",
   Configs: "Feature flags & dynamic values",
   Experiments: "A/B tests, universes & metrics",
-  "String Manager": "Localized labels & translations",
+  Polylang: "Localized labels & AI translations",
   "AI Agents": "MCP server & agent guides",
 };
 
@@ -32,7 +33,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               title: (
                 <span className="flex items-center gap-2 font-semibold">
                   <Logo className="size-5" />
-                  ShipEasy <span style={{ opacity: 0.45, fontWeight: 400 }}>docs</span>
+                  ShipEasy
+                  <ProductSwitcher />
                 </span>
               ),
             }}

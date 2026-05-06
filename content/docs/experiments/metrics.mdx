@@ -1,20 +1,33 @@
 ---
 title: Metrics
-description: Define what you measure — primary metrics, guardrails, and how to keep results honest.
+description: Define what you measure — primary metrics, guardrails, outliers, segmentation, and how to keep results honest.
 ---
 
-A **metric** is a number computed per user from a set of events. Every experiment has at least one **primary** metric (the thing you&apos;re trying to move) and ideally a couple of **guardrails** (things you don&apos;t want to break).
+<DocMeta
+  status="Production ready"
+  read="9 min read"
+  updated="May 3, 2026"
+  works="Server SDK · Daily cron"
+/>
+
+A **metric** is a number computed per user from a set of events. Every experiment has at least one **primary** metric (the thing you're trying to move) and ideally a couple of **guardrails** (things you don't want to break). Get these two choices right and most of your experimentation problems go away on their own.
 
 ## Aggregation types
 
-| Type         | What it computes per user                     | Use it for                        |
-| ------------ | --------------------------------------------- | --------------------------------- |
-| `conversion` | 1 if the event happened at least once, else 0 | Did they buy? Did they retain?    |
-| `count`      | Number of events                              | Sessions, page views, clicks.     |
-| `sum`        | Sum of a numeric event property               | Revenue, time spent, items added. |
-| `mean`       | Average of a numeric event property           | Order value, session length.      |
+ShipEasy ships four aggregation functions. Each one collapses a user's event stream into a single number per analysis window:
 
-Conversion is the simplest and statistically the friendliest — variance is bounded. Means and sums need more samples and benefit from outlier handling.
+| Type         | What it computes per user                     | Use it for                        | Variance                               |
+| ------------ | --------------------------------------------- | --------------------------------- | -------------------------------------- |
+| `conversion` | 1 if the event happened at least once, else 0 | Did they buy? Did they retain?    | Bounded `p(1-p)` — the friendliest.    |
+| `count`      | Number of events                              | Sessions, page views, clicks.     | Long-tailed; outliers possible.        |
+| `sum`        | Sum of a numeric event property               | Revenue, time spent, items added. | Heavy-tailed; outliers a real problem. |
+| `mean`       | Average of a numeric event property           | Order value, session length.      | Same as `sum`, plus zero-handling.     |
+
+Conversion is the simplest and statistically the friendliest — the variance is bounded by `p(1-p)`, so power calculations are cheap and the t-test behaves. Means and sums need more samples and benefit from outlier handling (see below).
+
+### When the metric is "no event"
+
+For `conversion`, a user with zero matching events contributes a `0`. For `mean`, you have a choice: include zero-event users at `0`, or drop them entirely. The default is `include` — _"average revenue across **all** exposed users, including non-buyers"_ — because that's the question business stakeholders almost always actually ask. You can flip it with `--zero-handling drop` when you want _"average order value among buyers"_.
 
 ## Creating a metric
 
@@ -22,11 +35,11 @@ Conversion is the simplest and statistically the friendliest — variance is bou
 # binary conversion on `purchase`
 shipeasy metrics create purchase_conversion --type conversion --event purchase
 
-# revenue per user
+# revenue per user (includes non-buyers as $0)
 shipeasy metrics create revenue_per_user --type sum --event purchase --property value
 
-# average order value
-shipeasy metrics create avg_order_value --type mean --event purchase --property value
+# average order value (across buyers only)
+shipeasy metrics create avg_order_value --type mean --event purchase --property value --zero-handling drop
 
 # sessions per user
 shipeasy metrics create sessions --type count --event session_start
@@ -36,7 +49,7 @@ Or in the dashboard: **Experiments → Metrics → New metric**.
 
 ## Filtering events into a metric
 
-You can tighten what counts toward a metric with **filters** — same shape as gate targeting rules:
+You can tighten what counts toward a metric with **filters** — same shape as gate targeting rules. Filters run against the event's `properties` payload _before_ the aggregation:
 
 ```bash
 shipeasy metrics create paid_purchase \
@@ -44,32 +57,77 @@ shipeasy metrics create paid_purchase \
   --filter '[{"attr":"channel","op":"eq","value":"organic"}]'
 ```
 
-Now `paid_purchase` only counts `purchase` events whose `channel == "organic"` property is set on the event payload.
+Now `paid_purchase` only counts `purchase` events whose `channel == "organic"` property is set on the event payload. You can compose multiple filters with implicit AND. Common shapes:
+
+```bash
+# Web purchases only (exclude mobile app)
+--filter '[{"attr":"platform","op":"eq","value":"web"}]'
+
+# Orders above $10 (exclude $0 promo redemptions)
+--filter '[{"attr":"value","op":"gte","value":10}]'
+
+# Multiple conditions
+--filter '[
+  {"attr":"platform","op":"eq","value":"web"},
+  {"attr":"country","op":"in","value":["US","CA","GB"]}
+]'
+```
 
 ## Primary vs guardrail
 
 When you attach metrics to an experiment, you mark each one as **primary** or **guardrail**.
 
-- **Primary**: the metric you&apos;re trying to move. The experiment&apos;s "did it win?" decision is read off these. Pick one or two; if you have five primaries you have none.
-- **Guardrail**: metrics that must _not_ regress. A new checkout flow had better not tank the page load time. ShipEasy flags any guardrail that moves significantly in the wrong direction, even if your primary won.
+- **Primary**: the metric you're trying to move. The experiment's "did it win?" decision is read off these. Pick one or two; if you have five primaries you have none.
+- **Guardrail**: metrics that must _not_ regress. A new checkout flow had better not tank page load time. ShipEasy flags any guardrail that moves significantly in the wrong direction, even if your primary won. By default, the dashboard treats a guardrail as failed when `p < 0.05` and the lift is in the bad direction.
 
-A common pattern:
+A common pattern for a checkout experiment:
 
-| Role      | Metric                                   |
-| --------- | ---------------------------------------- |
-| Primary   | `purchase_conversion`                    |
-| Guardrail | `error_rate`                             |
-| Guardrail | `p95_page_load_ms`                       |
-| Guardrail | `support_ticket_rate` (computed offline) |
+| Role      | Metric                                   | Direction |
+| --------- | ---------------------------------------- | --------- |
+| Primary   | `purchase_conversion`                    | up        |
+| Guardrail | `error_rate`                             | down      |
+| Guardrail | `p95_page_load_ms`                       | down      |
+| Guardrail | `support_ticket_rate` (computed offline) | down      |
+
+The primary tells you _"did the change work?"_, the guardrails tell you _"did it work without breaking something else?"_. A win that ships is one where the primary moves and no guardrail regresses.
 
 ## Outliers
 
 For `sum` and `mean`, a single $50,000 enterprise purchase can swing the mean for thousands of users. ShipEasy supports two outlier handlers per metric:
 
-- **Winsorise** at a configurable percentile (default p99). Anything above is clamped.
-- **Cap** at an absolute value.
+- **Winsorise** at a configurable percentile (default `p99`). Anything above is clamped to the p99 value of the combined sample. Default for `sum` and `mean`.
+- **Cap** at an absolute value. Use this when there's a domain-specific ceiling (e.g. a maximum plausible session length).
 
-Pick one. Winsorising is the default and rarely wrong.
+```bash
+# Winsorise at p99 (default)
+shipeasy metrics create revenue_per_user --type sum --event purchase --property value \
+  --winsorise p99
+
+# Hard cap at $1000
+shipeasy metrics create revenue_per_user --type sum --event purchase --property value \
+  --cap 1000
+```
+
+Winsorising is the default and is rarely wrong. The trade-off: clamping reduces variance (good — narrower CI, easier to detect lift) at the cost of slightly understating the true effect when the variant genuinely moves the tail (rare).
+
+<Callout type="info" title="Outlier handling is symmetric across groups">
+  The p99 cutoff is computed from the **combined** control + variant sample, then applied to both.
+  This prevents the bug where one variant accidentally has its outliers preserved and looks
+  artificially better.
+</Callout>
+
+## Ratio metrics
+
+Some questions are inherently ratios — _"clicks per impression"_, _"conversion per visit"_, _"revenue per session"_. Define them with two events: a numerator and a denominator.
+
+```bash
+shipeasy metrics create click_through_rate \
+  --type ratio \
+  --numerator-event click \
+  --denominator-event impression
+```
+
+Ratio metrics use the **delta method** to compute variance correctly (the naive ratio-of-means understates variance and inflates significance). The dashboard shows the per-user numerator and denominator alongside the ratio so the math is auditable.
 
 ## Segmentation
 
@@ -82,41 +140,197 @@ purchase_conversion          control  v1     lift     p
   country = EU                 4.5%   4.9%   +8.9%   0.062
   plan = pro                   7.8%   9.4%   +20.5%  0.001
   plan = free                  3.9%   4.0%   +2.6%   0.401
+  device = mobile              4.2%   4.9%  +16.7%   0.006
+  device = desktop             5.6%   5.6%   +0.0%   0.974
 ```
 
-Segmentation works on any attribute you [register](/get-started/attributes#registering-attributes-in-the-dashboard) on the project. You don&apos;t need to ask for a segment up front — the platform recomputes them on demand.
+Segmentation works on any attribute you [register](/get-started/attributes#registering-attributes-in-the-dashboard) on the project. The platform stores `attributes_at_exposure` on the `$exposure` event, so segmentation is on the user's state _at the moment they entered the experiment_ — a user who upgraded from `free` to `pro` mid-experiment stays in the `free` segment. This is the right behaviour: it's the only way segmentation is causal.
+
+You don't need to ask for a segment up front — the platform recomputes them on demand from the existing exposure + event data, no re-bucketing required.
 
 <Callout type="warn" title="Beware HARKing">
-  **H**ypothesising **A**fter **R**esults are **K**nown — combing through segments until you find
-  one that&apos;s significant — gives false wins. Pre-register the one or two segments you actually
-  care about. Treat anything else as exploratory.
+  **H**ypothesising **A**fter **R**esults are **K**nown — combing through segments until you find one that's significant — gives false wins. With 20 segments and `p < 0.05`, you expect 1 false positive by pure chance. Pre-register the one or two segments you actually care about. Treat anything else as exploratory and label it as such on the dashboard.
 </Callout>
 
 ## Sample size and power
 
-You can&apos;t detect a 1% lift with 100 users. ShipEasy shows you a **power estimate** before you start the experiment given your traffic and the metric&apos;s historical variance — so you know roughly how long the test will need to run.
+You can't detect a 1% lift with 100 users. ShipEasy shows you a **power estimate** before you start the experiment, given your traffic and the metric's historical variance — so you know roughly how long the test will need to run.
 
-Quick rules of thumb:
+Quick rules of thumb (80% power, α = 0.05, two-sided):
 
 | Baseline conversion | Detectable lift @ 80% power | Users per arm |
 | ------------------- | --------------------------- | ------------- |
+| 1%                  | +10% relative               | ~155,000      |
 | 5%                  | +5% relative                | ~25,000       |
 | 5%                  | +10% relative               | ~6,500        |
+| 20%                 | +5% relative                | ~5,500        |
+| 20%                 | +10% relative               | ~1,400        |
 | 50%                 | +5% relative                | ~1,600        |
 | 50%                 | +10% relative               | ~400          |
 
-If your traffic is low, increase your effect-size requirement (don&apos;t bother shipping for 0.5% lift) or run the experiment longer.
+If your traffic is low, increase your effect-size requirement (don't bother shipping for 0.5% lift) or run the experiment longer. The platform will not stop you from running an underpowered test, but the dashboard will mark it `insufficient_power` and warn that the absence of a significant result doesn't mean the absence of an effect.
+
+### MDE (minimum detectable effect)
+
+The flip side of "how many users do I need" is "given the users I have, what's the smallest lift I can reliably detect?" The dashboard surfaces an MDE alongside every running experiment, recomputed daily. If your MDE is `+8%` and the lift you're hoping to see is `+2%`, you're going to need to run the experiment for substantially longer — or accept that you won't be able to tell.
+
+## API · `metrics.create`
+
+<ApiTable>
+  <ApiRow
+    name="name"
+    required
+    type="string"
+    desc="Stable identifier. Used in result rows and the CLI."
+  />
+  <ApiRow
+    name="type"
+    required
+    type='"conversion" | "count" | "sum" | "mean" | "ratio"'
+    desc="Aggregation function applied per user."
+  />
+  <ApiRow
+    name="event"
+    required
+    type="string"
+    desc={
+      <>
+        Event name to aggregate. For <code>ratio</code>, use <code>numerator_event</code> +{" "}
+        <code>denominator_event</code> instead.
+      </>
+    }
+  />
+  <ApiRow
+    name="property"
+    optional
+    type="string"
+    desc={
+      <>
+        Numeric property on the event to aggregate. Required for <code>sum</code> and{" "}
+        <code>mean</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="filter"
+    optional
+    type="Rule[]"
+    desc="Same shape as a gate rule. Only events matching all rules are aggregated."
+  />
+  <ApiRow
+    name="winsorise"
+    optional
+    type='"p95" | "p99" | "p99.9"'
+    desc={
+      <>
+        Percentile clip for <code>sum</code>/<code>mean</code>. Default <code>p99</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="cap"
+    optional
+    type="number"
+    desc="Absolute clip. Mutually exclusive with winsorise."
+  />
+  <ApiRow
+    name="zero_handling"
+    optional
+    type='"include" | "drop"'
+    desc={
+      <>
+        How to count exposed users with no matching event. Default <code>include</code> (treats them
+        as 0).
+      </>
+    }
+  />
+  <ApiRow
+    name="direction"
+    optional
+    type='"up" | "down"'
+    desc={
+      <>
+        Which direction is "good". Used to colour result rows and trigger guardrail alerts. Defaults
+        to <code>up</code>.
+      </>
+    }
+  />
+</ApiTable>
 
 ## Where to next
 
-<CardGrid>
-  <Card href="/experiments/events" eyebrow="Telemetry" title="Events">
+<TileGrid>
+  <Tile
+    href="/experiments/events"
+    icon="✎"
+    title="Events"
+    meta={
+      <>
+        <span>Analytics Engine</span>
+        <span>·</span>
+        <span>fire-and-forget</span>
+      </>
+    }
+  >
     What goes into a metric, and how to log it.
-  </Card>
-  <Card href="/experiments/analysis" eyebrow="Stats" title="How analysis works">
+  </Tile>
+  <Tile
+    href="/experiments/analysis"
+    icon="∫"
+    title="How analysis works"
+    meta={
+      <>
+        <span>Welch t-test</span>
+        <span>·</span>
+        <span>p · CI · lift</span>
+      </>
+    }
+  >
     From raw events to lift, p-value, CI.
-  </Card>
-  <Card href="/get-started/attributes" eyebrow="Identity" title="User attributes">
+  </Tile>
+  <Tile
+    href="/get-started/attributes"
+    icon="◇"
+    title="User attributes"
+    meta={
+      <>
+        <span>identity</span>
+        <span>·</span>
+        <span>segmentation</span>
+      </>
+    }
+  >
     Pass enough about the user that segmentation is rich.
-  </Card>
-</CardGrid>
+  </Tile>
+</TileGrid>
+
+<ConvertCTA
+  eyebrow="NEXT"
+  title={
+    <>
+      Wire <em>real events</em>.
+    </>
+  }
+  body="A metric is just an aggregation rule. The data that feeds it is your tracking calls — and there are exactly three things you need to get right."
+  primaryHref="/experiments/events"
+  primaryLabel="Read about events"
+  secondaryHref="/experiments/analysis"
+  secondaryLabel="Skip to analysis"
+  cmds={[
+    {
+      label: "Create a primary metric",
+      cmd: "shipeasy metrics create purchase_conversion --type conversion --event purchase",
+    },
+    {
+      label: "Add a guardrail",
+      cmd: "shipeasy metrics create error_rate --type conversion --event client_error --direction down",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/experiments/universes", title: "Universes & holdouts" }}
+  next={{ href: "/experiments/events", title: "Events" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/experiments/metrics.mdx" />

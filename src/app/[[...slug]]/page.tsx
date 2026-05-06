@@ -4,16 +4,27 @@ import { DocsPage, DocsBody, DocsTitle, DocsDescription } from "fumadocs-ui/page
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import { getPage, getPages } from "@/lib/source";
 import {
+  ApiRow,
+  ApiTable,
   Callout,
   Card,
   CardGrid,
+  ConvertCTA,
+  DocFeedback,
+  DocMeta,
+  DocNav,
   Hero,
+  InstallTabs,
   Out,
   Pill,
   Prompt,
+  Quickstart,
+  QuickstartStep,
   Step,
   Steps,
   Terminal,
+  Tile,
+  TileGrid,
 } from "@/components/mdx";
 
 type Page = InferPageType<typeof import("@/lib/source").source>;
@@ -24,16 +35,27 @@ interface Props {
 
 const components = {
   ...defaultMdxComponents,
+  ApiRow,
+  ApiTable,
   Callout,
   Card,
   CardGrid,
+  ConvertCTA,
+  DocFeedback,
+  DocMeta,
+  DocNav,
   Hero,
+  InstallTabs,
   Out,
   Pill,
   Prompt,
+  Quickstart,
+  QuickstartStep,
   Step,
   Steps,
   Terminal,
+  Tile,
+  TileGrid,
 };
 
 export default async function Page({ params }: Props) {

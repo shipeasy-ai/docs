@@ -1,57 +1,351 @@
 ---
 title: AI Agent guides
-description: Onboarding playbooks written for AI assistants — point your agent at one, say "follow this", get a fully wired project.
+description: URL-addressable runbooks an AI coding assistant can follow end-to-end — install the SDK, scan your code, push keys, ship a flag, run an experiment. Hand the agent a link, answer one auth prompt, watch it work.
 icon: Bot
 ---
 
-ShipEasy is built so that an AI coding agent (Claude Code, Cursor, Windsurf, OpenCode, …) can do most of the boring setup work for you. Hand it a guide URL and it executes a complete onboarding workflow — installing the SDK, scanning your code, wiring the loader, pushing keys, publishing.
+<Hero
+  eyebrow="ShipEasy · LLM Guides"
+  title={
+    <>
+      Hand it to an <em>AI agent</em>. Done in minutes.
+    </>
+  }
+  subtitle="Plain-MDX runbooks at stable URLs, designed to be followed by Claude Code, Cursor, Windsurf, OpenCode, and anything else that speaks MCP. The agent calls typed ShipEasy tools — never your shell, never your secrets — and stops only when a human is required."
+  primaryHref="/llms/i18n-strings"
+  primaryLabel="Open the i18n runbook"
+  secondaryHref="#how-it-works"
+  secondaryLabel="How it works"
+/>
 
-## How to use these guides
+<DocMeta
+  status="Production ready"
+  read="5 min read"
+  updated="May 3, 2026"
+  works="Claude Code · Cursor · Windsurf · OpenCode"
+/>
+
+ShipEasy ships every product behind a typed **MCP server** (`shipeasy-mcp`). The CLI installs it into your AI assistant's config, the agent discovers the tools, and these guides tell the agent the right sequence of calls to make for a given workflow. You answer one browser auth prompt; the agent does the rest.
+
+## Why URL-addressable runbooks
+
+<TileGrid>
+  <Tile
+    icon="◇"
+    title="Stable URL, current content"
+    meta={
+      <>
+        <span>
+          <b>versionless</b>
+        </span>
+        <span>·</span>
+        <span>always live</span>
+      </>
+    }
+  >
+    The guide URL never changes. The content evolves with the platform — new tools, new defaults,
+    new framework support — and the next agent that loads it gets the current version. No prompt
+    drift, no stale snippets in your repo.
+  </Tile>
+  <Tile
+    icon="✓"
+    title="Readable by humans too"
+    meta={
+      <>
+        <span>
+          <b>plain MDX</b>
+        </span>
+        <span>·</span>
+        <span>no encoding</span>
+      </>
+    }
+  >
+    These pages are not packaged prompts or hidden system messages. Open them in a browser, skim the
+    steps, decide whether to delegate. Same content the agent sees.
+  </Tile>
+  <Tile
+    icon="⌗"
+    title="Typed tools, not shell"
+    meta={
+      <>
+        <span>
+          <b>MCP</b>
+        </span>
+        <span>·</span>
+        <span>no token leaks</span>
+      </>
+    }
+  >
+    Every action is a typed tool call (<code>i18n_codemod_apply</code>, <code>exp_create_gate</code>
+    , …) with a JSON-Schema input. The agent can&apos;t fabricate flags, leak credentials, or wander
+    off into <code>rm -rf</code> territory.
+  </Tile>
+  <Tile
+    icon="✦"
+    title="Forkable for your team"
+    meta={
+      <>
+        <span>
+          <b>open source</b>
+        </span>
+        <span>·</span>
+        <span>copy &amp; edit</span>
+      </>
+    }
+  >
+    Your team has conventions — naming, source roots, review steps. Fork a guide, host it on your
+    own docs site, point your agents at <em>that</em> URL. The MCP tools and shapes are public.
+  </Tile>
+</TileGrid>
+
+## How it works [#how-it-works]
 
 <Steps>
   <Step title="Install the MCP server">
-    The agent uses ShipEasy&apos;s [MCP server](/get-started/mcp) to call typed tools. One command sets it up:
+    The CLI ships a one-shot installer that writes the right MCP config for whichever assistants it finds on your machine — `~/.claude/settings.json`, `.cursor/mcp.json`, `.windsurf/mcp.json`.
 
     ```bash
+    npm install -g @shipeasy/cli
     shipeasy mcp install
     ```
 
-    Or wire it by hand — see the MCP page.
+    Under the hood it registers `npx -y @shipeasy/mcp@latest` as the `shipeasy` MCP server. The binary is `shipeasy-mcp`; it runs locally over stdio, never as a hosted endpoint.
 
   </Step>
+
   <Step title="Log in once">
     ```bash
     shipeasy login
     ```
 
-    The MCP tools pick up your credentials automatically. The agent never sees your token.
+    The CLI runs an OAuth device-code flow against the ShipEasy worker (`/auth/device/*`) and stores a long-lived credential at `~/.shipeasy/credentials`. The MCP server reads from the same file. **The agent never sees your token** — every tool call attaches the credential server-side.
 
   </Step>
-  <Step title="Hand the agent a URL">
-    Open your AI assistant and say:
 
-    > "Follow https://docs.shipeasy.ai/llms/i18n-strings to onboard this project to ShipEasy String Manager."
+  <Step title="Hand the agent a guide URL">
+    Open your AI assistant in your project and say something like:
 
-    The agent reads the guide, calls the right MCP tools in the right order, asks you only for the things that need a human (e.g. clicking a browser link to authenticate).
+    > _"Follow https://docs.shipeasy.ai/llms/i18n-strings to onboard this project to ShipEasy."_
+
+    The agent fetches the page, reads the steps, and starts calling the appropriate `mcp__shipeasy__*` tools in order. It pauses for human input only at the points the runbook marks with <code>STOP</code> (typically: browser auth, ambiguous codemod cases).
 
   </Step>
 </Steps>
+
+## What the MCP server exposes
+
+The `shipeasy-mcp` binary advertises a typed tool surface grouped by product. Every guide on this site is a recipe for chaining these tools:
+
+<ApiTable>
+  <ApiRow
+    name="auth_check"
+    type="tool"
+    desc={
+      <>
+        Returns <code>{`{ authenticated: boolean, user, project }`}</code>. First call in every
+        workflow — if it returns <code>false</code>, the agent must ask the human to run{" "}
+        <code>shipeasy login</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="auth_login / auth_logout"
+    type="tool"
+    desc="Wrap the device-code flow. Login opens a browser; the human clicks once. The agent waits for the tool to return."
+  />
+  <ApiRow
+    name="detect_project"
+    type="tool"
+    desc={
+      <>
+        Inspects the working directory and returns <code>frameworks</code>,{" "}
+        <code>entry_points</code>, and <code>shipeasy.{`{i18n_sdk, loader_script_tag}`}</code>. Lets
+        the agent skip framework guesswork.
+      </>
+    }
+  />
+  <ApiRow
+    name="list_resources / get_resource"
+    type="tool"
+    desc={
+      <>
+        Read-only views into the project — list <code>profiles</code>, <code>keys</code>,{" "}
+        <code>gates</code>, <code>configs</code>, <code>experiments</code>. Cheap to call; the agent
+        uses these to verify state between mutations.
+      </>
+    }
+  />
+  <ApiRow
+    name="i18n_*"
+    type="11 tools"
+    desc={
+      <>
+        Polylang surface — <code>install_loader</code>, <code>create_profile</code>,{" "}
+        <code>scan_code</code>, <code>codemod_preview</code>, <code>codemod_apply</code>,{" "}
+        <code>push_keys</code>, <code>create_key</code>, <code>translate_draft</code>,{" "}
+        <code>validate_keys</code>, <code>publish_profile</code>, <code>discover_site</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="exp_*"
+    type="6 tools"
+    desc={
+      <>
+        Configs / experiments surface — <code>create_gate</code>, <code>create_config</code>,{" "}
+        <code>create_experiment</code>, <code>start_experiment</code>, <code>stop_experiment</code>,{" "}
+        <code>experiment_status</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="get_sdk_snippet"
+    type="tool"
+    desc="Returns ready-to-paste init code for the detected framework, scoped to the current project's API key."
+  />
+</ApiTable>
+
+<Callout type="info" title="No tool runs your shell">
+  MCP tools mutate ShipEasy state through the public API. Anything that touches your filesystem (the
+  codemod, the loader install) runs the local CLI binary, which prints what it&apos;s about to do
+  and respects <code>--dry-run</code>. There is no <code>exec_arbitrary_command</code> tool.
+</Callout>
 
 ## Available guides
 
 <CardGrid>
   <Card
     href="/llms/i18n-strings"
-    eyebrow="String Manager"
+    eyebrow="Polylang · production ready"
     title="Onboard a project to translations"
   >
-    Detect framework → install loader → codemod source → push keys → publish. One stop for browser
-    auth.
+    Detect framework, install loader, codemod source, push keys, validate, publish. Twelve MCP tools
+    chained into one workflow. The only human stop is browser auth.
   </Card>
 </CardGrid>
 
-More guides coming — for gating an existing feature, setting up a first experiment, and migrating from another platform.
+## Planned guides
 
-## Why URLs, not packaged prompts
+These are scaffolded against the same MCP surface and ship as the underlying products stabilise. Watch this index — when the link goes live, it works.
 
-The guides are plain MDX. Anyone — human or agent — can read them. They evolve with the platform; the URL is stable, the content is current. If you fork a guide for your team&apos;s conventions, you&apos;re welcome to host your own — the MCP tools and shapes are public.
+<TileGrid>
+  <Tile
+    icon="⌗"
+    title="Gate an existing feature"
+    meta={
+      <>
+        <span>
+          <b>configs</b>
+        </span>
+        <span>·</span>
+        <span>~5 min</span>
+      </>
+    }
+  >
+    Pick a code path, create the gate, wrap the call site, default-off, ship. Optional rollout to
+    5%. Uses <code>exp_create_gate</code> + <code>get_sdk_snippet</code>.
+  </Tile>
+  <Tile
+    icon="✦"
+    title="Run your first experiment"
+    meta={
+      <>
+        <span>
+          <b>experiments</b>
+        </span>
+        <span>·</span>
+        <span>~10 min</span>
+      </>
+    }
+  >
+    Define the metric, create the universe, set traffic split, instrument the exposure event. Uses
+    the full <code>exp_*</code> chain plus <code>experiment_status</code> for the read-back.
+  </Tile>
+  <Tile
+    icon="◇"
+    title="Migrate from LaunchDarkly"
+    meta={
+      <>
+        <span>
+          <b>configs</b>
+        </span>
+        <span>·</span>
+        <span>~30 min</span>
+      </>
+    }
+  >
+    Pull flag definitions via LD&apos;s API, map to gates + targeting rules, generate the codemod
+    that swaps SDK call sites, run side-by-side in one environment for sign-off.
+  </Tile>
+  <Tile
+    icon="◇"
+    title="Migrate from Statsig"
+    meta={
+      <>
+        <span>
+          <b>experiments</b>
+        </span>
+        <span>·</span>
+        <span>~45 min</span>
+      </>
+    }
+  >
+    Statsig flags + experiments → ShipEasy gates + universes. Preserves bucketing where possible
+    (deterministic by user_id) and flags any incompatible targeting expressions for human review.
+  </Tile>
+</TileGrid>
+
+## Write your own guide
+
+The guides are plain MDX. If your team has conventions — a specific source root, a review step, a Slack channel that needs pinging on publish — fork one, edit it, host it. The agent doesn&apos;t care where the URL points; it cares that the page describes a sequence of MCP tool calls.
+
+<Steps>
+  <Step title="Start from an existing guide">
+    Copy `content/docs/llms/i18n-strings.mdx` from [the docs
+    repo](https://github.com/shipeasy-ai/shipeasy2/tree/main/apps/docs/content/docs/llms). It&apos;s
+    the canonical pattern: numbered steps, explicit tool names, explicit JSON args, explicit failure
+    handling.
+  </Step>
+  <Step title="Mark every human stop">
+    Use the literal token <code>STOP</code> in step titles where the agent must wait — browser auth,
+    codemod approval, anything that mutates production. Agents are trained to honour this.
+  </Step>
+  <Step title="Reference tools by their MCP name">
+    Use the canonical tool name (<code>i18n_codemod_apply</code>, not <em>"the apply step"</em>).
+    Show the full JSON arg shape. Agents pattern-match on these.
+  </Step>
+  <Step title="Host it on a stable URL">
+    Anywhere the agent can fetch — your docs site, a GitHub raw URL, a gist. Hand the URL to your
+    team and to your agents.
+  </Step>
+</Steps>
+
+<Callout type="warn" title="Don't hardcode runbooks into your codebase">
+  Resist the urge to paste a guide into `CLAUDE.md` or your project&apos;s `AGENTS.md`. The MCP tool
+  surface evolves; the URL stays current; a copy goes stale immediately. Reference the URL,
+  don&apos;t inline it.
+</Callout>
+
+<ConvertCTA
+  eyebrow="READY?"
+  title={
+    <>
+      Try the <em>i18n runbook</em> on a real project.
+    </>
+  }
+  body="Install the CLI, install the MCP server, log in once, paste the URL into your AI assistant. Five minutes from a hardcoded-English app to a published source profile."
+  primaryHref="/llms/i18n-strings"
+  primaryLabel="Open the i18n runbook"
+  secondaryHref="/get-started/mcp"
+  secondaryLabel="MCP setup"
+  cmds={[
+    { label: "Install everything", cmd: "npm i -g @shipeasy/cli && shipeasy mcp install" },
+    { label: "Log in once", cmd: "shipeasy login" },
+    { label: "Then say to your agent", cmd: "Follow https://docs.shipeasy.ai/llms/i18n-strings" },
+  ]}
+  note="Works with Claude Code, Cursor, Windsurf, OpenCode, and any MCP-aware client."
+/>
+
+<DocNav next={{ href: "/llms/i18n-strings", title: "i18n strings runbook" }} />
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/llms/index.mdx" />

@@ -1,19 +1,56 @@
 ---
 title: Quickstart
-description: From zero to a flag-gated feature in production in under five minutes.
+description: From zero to a flag-gated feature in production — install the SDK, create a gate, roll it out, kill-switch it, and watch it in the dashboard. Five minutes, end to end.
 ---
 
-This walks through the full flow end to end: create a gate, read it from a server, roll it out, kill-switch it.
+<DocMeta
+  status="Tutorial"
+  read="8 min read"
+  updated="May 3, 2026"
+  works="Server SDK · Browser SDK · CLI"
+/>
+
+This walks through the full flow end to end: install the SDK, create a gate, gate code, roll it out gradually, then kill-switch it. By the end you&apos;ll have a feature behind a flag in production, evaluated locally with no per-request network call, that you can flip from your phone.
+
+If you&apos;d rather hand this to an AI agent, the [LLM guide](/llms/configs) describes the same flow for Claude Code, Cursor, and Windsurf.
+
+<Quickstart title="The 5-minute path" time="install · create · gate · roll out">
+  <QuickstartStep
+    num={1}
+    label="INSTALL"
+    title="Install the SDK & log in"
+    cmd="npm install @shipeasy/sdk && shipeasy login"
+  />
+  <QuickstartStep
+    num={2}
+    label="CREATE"
+    title="Create a gate at 0%"
+    cmd="shipeasy flags create new-checkout-flow --rollout 0"
+  />
+  <QuickstartStep
+    num={3}
+    label="ROLL OUT"
+    title="Bump it to 5%, then 100%"
+    cmd="shipeasy flags rollout new-checkout-flow --percent 5"
+  />
+</Quickstart>
 
 ## Prerequisites
 
-- A ShipEasy project. Sign up at [shipeasy.ai](https://shipeasy.ai) — the free tier is enough.
-- A server SDK key. Find it in **Project → SDK keys → Create → server**, or `shipeasy keys create`.
-- The SDK installed: `npm install @shipeasy/sdk`.
+- A ShipEasy project. Sign up at [shipeasy.ai](https://shipeasy.ai) — the free tier is enough for this walkthrough.
+- A **server SDK key** scoped to your environment. Find it in **Project &rarr; SDK keys &rarr; Create &rarr; server**, or generate one from the CLI:
+
+```bash
+shipeasy keys create --kind server --env prod
+```
+
+- The SDK installed in your project:
+
+<InstallTabs npm="npm install @shipeasy/sdk" />
 
 <Steps>
   <Step title="Initialise the SDK">
-    Initialise once at boot. The server SDK polls flag updates in the background — no per-request cost.
+    Initialise once at boot. The server SDK polls flag updates in the background — no per-request cost, no fetch on the hot path.
 
     ```ts title="src/lib/shipeasy.ts"
     import { configureShipeasy, flags } from "@shipeasy/sdk/server";
@@ -26,7 +63,11 @@ This walks through the full flow end to end: create a gate, read it from a serve
     export const ready = flags.init();
     ```
 
-    Import this once from your entrypoint and `await ready` before serving requests.
+    Import this once from your entrypoint and `await ready` before serving the first request. After that, every `flags.gate()` call is synchronous and reads from in-process memory.
+
+    <Callout type="info" title="One configure call, one key">
+      Flags, dynamic values, experiments, and i18n all share the same `apiKey`. Don&apos;t create per-feature wrappers in your codebase — the SDK owns its own initialisation.
+    </Callout>
 
   </Step>
 
@@ -37,7 +78,13 @@ This walks through the full flow end to end: create a gate, read it from a serve
     shipeasy flags create new-checkout-flow --rollout 0
     ```
 
-    Or in the dashboard: **Configs → Gates → New gate**, name `new-checkout-flow`, leave the rollout at `0%`.
+    Or in the dashboard: **Configs &rarr; Gates &rarr; New gate**, name `new-checkout-flow`, leave the rollout at `0%`. The default value is `false` — nobody sees the new path yet.
+
+    Naming conventions to save your future self pain:
+
+    - **kebab-case**: `new-checkout-flow`, not `newCheckoutFlow`.
+    - **Describe the change, not the abstract feature**: `enable-redis-pool` ages better than `redis-pool`.
+    - **Prefix by area**: `checkout-`, `nav-`, `infra-`. Makes deletion sweeps easy.
 
   </Step>
 
@@ -53,30 +100,76 @@ This walks through the full flow end to end: create a gate, read it from a serve
     }
     ```
 
-    `gate()` is synchronous and reads from the in-process cache. Pass any user attributes you want available to targeting rules — at minimum `{ user_id }`.
+    `gate()` is synchronous and reads from the in-process cache. Pass any user attributes you want available to targeting rules — at minimum `{ user_id }`. The shape of `user` is just a plain object:
 
-  </Step>
-
-<Step title="Test locally">
-  Add yourself to the **overrides** list in the dashboard (or pass
-  `?shipeasy_gate_new-checkout-flow=true` if you have the [browser DevTools
-  overlay](/get-started/sdks#devtools) loaded). The flag returns `true` for you and `false` for
-  everyone else.
-</Step>
-
-  <Step title="Roll it out">
-    Bump the rollout from `0%` → `5%` → `25%` → `100%` over a few hours, watching your dashboards. Bucketing is deterministic by user ID, so the same 5% always sees the new path.
-
-    ```bash
-    shipeasy flags create new-checkout-flow --rollout 25
+    ```ts
+    {
+      user_id: "u_4f2a",      // required for deterministic bucketing
+      plan: "pro",            // any attribute your rules want
+      country: "US",
+      tenure_days: 142,
+    }
     ```
 
   </Step>
 
-  <Step title="Killswitch">
-    If something goes wrong, flip the killswitch. It overrides every targeting rule and serves `false` everywhere within the SDK&apos;s next poll.
+  <Step title="Test locally with overrides">
+    Add yourself to the **overrides** list in the dashboard (**Gate &rarr; Overrides &rarr; Always on**, paste your `user_id`). The flag returns `true` for you and `false` for everyone else — no rollout math involved.
 
-    Dashboard: toggle the red **Killswitch** chip. CLI: `shipeasy flags disable new-checkout-flow`.
+    If you have the [browser DevTools overlay](/get-started/sdks#devtools) loaded, you can also force a value with a query param:
+
+    ```
+    https://app.local/?shipeasy_gate_new-checkout-flow=true
+    ```
+
+    That&apos;s persisted in `localStorage` and survives reloads until you toggle it off.
+
+  </Step>
+
+  <Step title="Roll it out gradually">
+    Bump the rollout from `0%` &rarr; `5%` &rarr; `25%` &rarr; `100%` over a few hours, watching your error rate and p95.
+
+    ```bash
+    shipeasy flags rollout new-checkout-flow --percent 5
+    shipeasy flags rollout new-checkout-flow --percent 25
+    shipeasy flags rollout new-checkout-flow --percent 100
+    ```
+
+    Bucketing is deterministic by `user_id`, so the same 5% always sees the new path. You won&apos;t see flicker as you bump the percentage — you only ever **add** users to the bucket, never reshuffle.
+
+    A safe schedule for an unknown-risk change:
+
+    ```
+    0%   → enable rule + dogfood with overrides
+    1%   → 1 hour, watch error rate + p95
+    5%   → 4 hours
+    25%  → overnight
+    50%  → 1 day
+    100% → keep an eye on it for a week, then delete the flag
+    ```
+
+  </Step>
+
+  <Step title="Killswitch (when something breaks)">
+    If something goes wrong, flip the killswitch. It overrides every targeting rule and serves `false` everywhere within the SDK&apos;s next poll (default 30s, faster on Pro).
+
+    ```bash
+    shipeasy flags disable new-checkout-flow --killswitch
+    ```
+
+    Dashboard: toggle the red **Killswitch** chip on the gate row. The killswitch is a separate field from `enabled`, so flipping it preserves your targeting rules and rollout — re-enabling restores the full prior state.
+
+  </Step>
+
+  <Step title="Wire it into CI">
+    Add a check that fails the build if you reference a flag that doesn&apos;t exist on the project:
+
+    ```bash title=".github/workflows/ci.yml"
+    - name: Validate flags
+      run: shipeasy flags validate ./src --env prod
+    ```
+
+    This catches typos (`new-checkut-flow`) and stale references after a flag has been deleted.
 
   </Step>
 </Steps>
@@ -85,23 +178,104 @@ This walks through the full flow end to end: create a gate, read it from a serve
 
 When you flipped that rollout from `25` to `100`, the dashboard:
 
-1. Updated the project&apos;s flag row in D1.
-2. Rebuilt the project&apos;s `:flags` blob in Cloudflare KV.
-3. Purged the affected URLs from the CDN.
-4. Within the SDK&apos;s poll interval (default 30s, faster on Pro), every server worldwide saw the new value.
+1. Updated the project&apos;s flag row in **D1** (source of truth).
+2. Rebuilt the project&apos;s `:flags` blob in **Cloudflare KV**.
+3. **Purged** the affected URLs from the CDN explicitly.
+4. Within the SDK&apos;s poll interval (default 30s, 10s on Pro, push on Enterprise), every server worldwide saw the new value.
 
-No deploy. No redeploy. No restart. No backend round-trip on the read.
+No deploy. No restart. No backend round-trip on the read. The hot path in your code is a hash table lookup.
+
+<Callout type="success" title="What you just got for free">
+  An audit log of every change, side-by-side dashboards for the affected gate, deterministic
+  bucketing per user, and a kill-switch you can hit from your phone. You didn&apos;t have to build
+  any of it.
+</Callout>
 
 ## Where to next
 
-<CardGrid>
-  <Card href="/configs/targeting" eyebrow="Targeting" title="Add precision">
-    Replace _"5% of everyone"_ with _"100% of plan=pro in country=US"_.
-  </Card>
-  <Card href="/configs/values" eyebrow="Configs" title="Tune values without code">
-    `pricing.base = 9.99` can be a config, not a constant.
-  </Card>
-  <Card href="/experiments/quickstart" eyebrow="Experiments" title="Measure, don't guess">
-    Once it&apos;s gated, run an A/B test on the same flag.
-  </Card>
-</CardGrid>
+<TileGrid>
+  <Tile
+    href="/configs/targeting"
+    icon="⌥"
+    title="Add precision"
+    meta={
+      <>
+        <span>id · attribute · %</span>
+        <span>·</span>
+        <span>deterministic</span>
+      </>
+    }
+  >
+    Replace <em>&quot;5% of everyone&quot;</em> with{" "}
+    <em>&quot;100% of plan=pro in country=US&quot;</em>.
+  </Tile>
+  <Tile
+    href="/configs/values"
+    icon="◫"
+    title="Tune values without code"
+    meta={
+      <>
+        <span>
+          <b>JSON</b>
+        </span>
+        <span>·</span>
+        <span>per-environment</span>
+      </>
+    }
+  >
+    <code>pricing.base = 9.99</code> can be a config, not a constant.
+  </Tile>
+  <Tile
+    href="/configs/environments"
+    icon="◇"
+    title="Promote dev → prod"
+    meta={
+      <>
+        <span>dev · staging · prod</span>
+        <span>·</span>
+        <span>one-click</span>
+      </>
+    }
+  >
+    Stage rollout plans in <code>staging</code>, promote to <code>prod</code> when ready.
+  </Tile>
+  <Tile
+    href="/experiments/quickstart"
+    icon="✦"
+    title="Measure, don't guess"
+    meta={
+      <>
+        <span>A/B</span>
+        <span>·</span>
+        <span>same flag</span>
+      </>
+    }
+  >
+    Once it&apos;s gated, run an experiment on the same flag.
+  </Tile>
+</TileGrid>
+
+<ConvertCTA
+  eyebrow="NEXT"
+  title={
+    <>
+      Hand it to an <em>AI agent</em>.
+    </>
+  }
+  body="The same flow, but driven by Claude Code or Cursor through the MCP server. You answer one auth prompt, the agent creates the gate, wires the SDK, and opens the PR."
+  primaryHref="/llms/configs"
+  primaryLabel="Open the LLM guide"
+  secondaryHref="/configs"
+  secondaryLabel="Back to overview"
+  cmds={[
+    { label: "Install the MCP", cmd: "shipeasy mcp install" },
+    { label: "Then ask your agent", cmd: "ship a flag for new checkout, default off" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/configs", title: "Configs overview" }}
+  next={{ href: "/configs/gates", title: "Gates" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/configs/quickstart.mdx" />

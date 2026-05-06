@@ -1,21 +1,32 @@
 ---
 title: Targeting & rollouts
-description: How to express "show this to the right users" with rules, percentages, and salts.
+description: Express &quot;show this to the right users&quot; with attribute rules, deterministic percentage rollouts, and per-gate salts. The rules engine, in detail.
 ---
 
-A targeting rule on a gate is a predicate of the form **`attr op value`**. Multiple rules on a gate are ANDed together. To OR, use the `in` operator with an array.
+<DocMeta
+  status="Production ready"
+  read="10 min read"
+  updated="May 3, 2026"
+  works="Server SDK · Browser SDK"
+/>
+
+A targeting rule on a gate is a predicate of the form **`attr op value`**. Multiple rules on a gate are **ANDed** together. To OR, use the `in` operator with an array, or split into separate gates and combine in code.
+
+This page is the operational reference for the rules engine: every operator, the bucketing math, and the patterns we&apos;ve seen work for safe rollouts.
 
 ## Operators
 
-| Operator                    | Works on                   | Example                       |
-| --------------------------- | -------------------------- | ----------------------------- |
-| `eq` / `neq`                | any                        | `plan eq "pro"`               |
-| `in` / `not_in`             | scalar vs array            | `country in ["US","CA","MX"]` |
-| `gt` / `gte` / `lt` / `lte` | numbers                    | `tenure_days gt 30`           |
-| `contains`                  | string⊂string, array∋value | `roles contains "admin"`      |
-| `regex`                     | strings only               | `email regex "@acme\\.com$"`  |
+| Operator                     | Works on                   | Example                           |
+| ---------------------------- | -------------------------- | --------------------------------- |
+| `eq` / `neq`                 | any                        | `plan eq "pro"`                   |
+| `in` / `not_in`              | scalar vs array            | `country in ["US","CA","MX"]`     |
+| `gt` / `gte` / `lt` / `lte`  | numbers                    | `tenure_days gt 30`               |
+| `contains`                   | string⊂string, array∋value | `roles contains "admin"`          |
+| `starts_with` / `ends_with`  | strings only               | `email ends_with "@acme.com"`     |
+| `regex`                      | strings only               | `email regex "@acme\\.com$"`      |
+| `version_gte` / `version_lt` | semver strings             | `app_version version_gte "2.4.0"` |
 
-Numeric ops coerce strings that look like numbers — `"100" gt 50` is `true`. They never coerce booleans.
+Numeric ops coerce strings that look like numbers — `"100" gt 50` is `true`. They never coerce booleans. `regex` is anchored only when you anchor it (`^` / `$`); we run it in the SDK, no server round-trip.
 
 ## Common rule shapes
 
@@ -37,6 +48,21 @@ Numeric ops coerce strings that look like numbers — `"100" gt 50` is `true`. T
   { attr: "tenure_days", op: "gte", value: 60 },
   { attr: "team_size",   op: "gte", value: 5 },
 ]
+
+// Mobile app, version-gated
+[
+  { attr: "platform",    op: "eq",          value: "ios" },
+  { attr: "app_version", op: "version_gte", value: "2.4.0" },
+]
+```
+
+The dashboard shape is JSON, so you can copy these straight in — or push them with the CLI:
+
+```bash
+shipeasy flags rules set new-checkout-flow --json '[
+  { "attr": "plan",    "op": "eq", "value": "pro" },
+  { "attr": "country", "op": "in", "value": ["US","CA","UK"] }
+]'
 ```
 
 ## Rollout percentages
@@ -50,9 +76,11 @@ true   = bucket < rolloutPct
 
 That gives you three properties:
 
-- **Stable**: the same user always gets the same bucket for the same gate.
+- **Stable**: the same user always gets the same bucket for the same gate. No flicker on reloads, no flicker across servers.
 - **Independent**: changing one gate&apos;s rollout doesn&apos;t move users on another gate (different salts).
 - **Fair**: bucketing is uniform; small rollouts give a representative sample.
+
+Internally we work in basis points (0..10000), so you can roll out at 0.01% granularity if you really need it.
 
 ### Rolling out safely
 
@@ -67,26 +95,35 @@ A safe rollout schedule for an unknown-risk change:
 100% → keep an eye on it for a week, then delete the flag
 ```
 
-For a known-low-risk change you can compress this. For anything load-bearing (auth, billing, the data path) — don&apos;t.
+For a known-low-risk change you can compress this. For anything load-bearing (auth, billing, the data path) — don&apos;t. The whole point of a gradual rollout is to find the surprise before it&apos;s 100% of your traffic.
 
-### The salt
+<Callout type="info" title="Bumping percentage never reshuffles">
+  Going from 5% → 25% **adds** users to the bucket — the original 5% is still in. You won&apos;t see
+  a user flap from <code>true</code> back to <code>false</code> as you ramp up. The only way to
+  reshuffle is to bump the [salt](#salt).
+</Callout>
 
-Each gate has its own salt. If you ever want to **re-shuffle** the rollout buckets without changing the percentage (say, to avoid the same 5% always being chosen), bump the salt:
+### The salt [#salt]
+
+Each gate has its own salt. If you ever want to **re-shuffle** the rollout buckets without changing the percentage (say, to avoid the same 5% always being chosen for every gate you ever roll out), bump the salt:
 
 ```bash
-shipeasy flags update my-feature --salt "v2"
+shipeasy flags update my-feature --salt v2
 ```
 
-That&apos;s rare. The default salt is fine for almost every case.
+That&apos;s rare. The default salt is fine for almost every case. The salt is also why two gates at 50% don&apos;t serve the same 50% of users — different salts, different buckets, statistically independent.
 
 ## Combining rules + rollout
 
 Rules are checked **before** rollout. Two practical implications:
 
-1. _"100% of `plan = pro`"_ means **all** pro users get `true`. The rollout filter doesn&apos;t fight the rule.
-2. _"5% of `plan = pro`"_ means **5% of pros**, not _"5% of everyone, then keep only pros"_. The bucket is computed against the pre-filtered population.
+1. <em>&quot;100% of `plan = pro`&quot;</em> means **all** pro users get `true`. The rollout filter
+   doesn&apos;t fight the rule.
+2. <em>&quot;5% of `plan = pro`&quot;</em> means **5% of pros**, not
+   <em>&quot;5% of everyone, then keep only pros&quot;</em>. The bucket is computed against the
+   pre-filtered population.
 
-This is what you almost always want. If you ever need _"this proportion of the entire user base, but only if they&apos;re pro"_ — that&apos;s an [experiment](/experiments) and we have purpose-built tools for it.
+This is what you almost always want. If you ever need <em>&quot;this proportion of the entire user base, but only if they&apos;re pro&quot;</em> — that&apos;s an [experiment](/experiments) and we have purpose-built tools for it.
 
 ## Bucketing by something other than `user_id`
 
@@ -96,18 +133,107 @@ Default: bucketing key is `user_id ?? anonymous_id`. Override per-call:
 flags.gate("new-team-ui", user, { bucketBy: "account_id" });
 ```
 
-Or on the gate itself in the dashboard. Use this in B2B so all teammates of an account see the same variant.
+Or on the gate itself in the dashboard. Use this in B2B so all teammates of an account see the same variant — half a team on the new UI and half on the old is a confusing user experience and an unanalysable rollout.
 
 <Callout type="warn" title="Don't bucket by mutable attributes">
-  Bucketing on `email` or `plan` means a user changes bucket whenever the attribute changes.
-  They&apos;ll see the feature flicker on and off. Always bucket on something stable: `user_id`,
-  `account_id`, or `anonymous_id`.
+  Bucketing on <code>email</code> or <code>plan</code> means a user changes bucket whenever the
+  attribute changes. They&apos;ll see the feature flicker on and off. Always bucket on something
+  stable: <code>user_id</code>, <code>account_id</code>, or <code>anonymous_id</code>.
 </Callout>
+
+## First-match-wins evaluation
+
+When a gate has multiple rule **groups** (the dashboard&apos;s &quot;OR an additional cohort&quot; affordance), the SDK evaluates them top to bottom and takes the **first match**. Each group can have its own rollout percentage and bucketing key.
+
+```json title="multi-group rule"
+[
+  {
+    "match": [{ "attr": "internal", "op": "eq", "value": true }],
+    "rollout": 10000,
+    "bucketBy": "user_id"
+  },
+  {
+    "match": [{ "attr": "plan", "op": "eq", "value": "pro" }],
+    "rollout": 500,
+    "bucketBy": "account_id"
+  }
+]
+```
+
+Reads as: <em>&quot;100% of internal users; 5% of pro accounts (consistent across teammates); everyone else gets the default.&quot;</em>
+
+The order matters. If a user is both internal and pro, the first matching group wins — they get the 100% bucket, not the 5% one.
 
 ## Overrides vs rules
 
-Use **rules** for cohorts you can describe — _"all internal users"_, _"all pro accounts"_. They scale.
+Use **rules** for cohorts you can describe — <em>&quot;all internal users&quot;</em>, <em>&quot;all pro accounts&quot;</em>. They scale.
 
-Use **overrides** for individual user IDs — QA accounts, customers reporting a specific bug, demos. They&apos;re the trump card and bypass everything else.
+Use **[overrides](/configs/gates#overrides)** for individual user IDs — QA accounts, customers reporting a specific bug, demos. They&apos;re the trump card and bypass everything else.
 
-If you find yourself adding many overrides, that&apos;s a smell — promote them to a rule keyed on a `internal: true` or `early_access: true` attribute.
+If you find yourself adding many overrides, that&apos;s a smell — promote them to a rule keyed on a `internal: true` or `early_access: true` attribute and you&apos;ll thank yourself when the QA team turns over.
+
+## Attributes that travel
+
+Whatever attributes you pass to `flags.gate()` are also available to:
+
+- [Experiments](/experiments) (for assignment and segmentation)
+- [Dynamic values](/configs/values) decoders
+- The [analysis pipeline](/experiments/stats) (as exposure dimensions)
+
+So define attributes once at the request boundary and pass the same `user` shape everywhere:
+
+```ts title="src/lib/auth.ts"
+export function buildEvalCtx(req: Request) {
+  const session = getSession(req);
+  return {
+    user_id: session.user_id,
+    plan: session.plan,
+    country: geoFromReq(req),
+    tenure_days: daysSince(session.created_at),
+    app_version: req.headers.get("x-app-version") ?? "0.0.0",
+  };
+}
+```
+
+## Debugging a rule
+
+The dashboard&apos;s **Test evaluator** panel takes a JSON context and shows the full evaluation trace — which rule matched, which didn&apos;t, what bucket the user landed in. The CLI exposes the same:
+
+```bash
+shipeasy flags eval new-checkout-flow \
+  --ctx '{"user_id":"u_4f2a","plan":"pro","country":"US"}'
+```
+
+```text
+gate    new-checkout-flow
+result  true
+trace   killswitch=off, enabled=on, override=–, rule[plan=pro]=match,
+        rule[country in [US,CA,UK]]=match, bucket=2147 < 5000=true
+```
+
+Indispensable when a customer says &quot;I should be in the beta, why am I not?&quot;.
+
+<ConvertCTA
+  eyebrow="NEXT"
+  title={
+    <>
+      Pin to an <em>environment</em>.
+    </>
+  }
+  body="Your dev cluster shouldn't see the prod rollout, and your prod cluster shouldn't see dev experiments. Environments are the pin."
+  primaryHref="/configs/environments"
+  primaryLabel="Environments"
+  secondaryHref="/experiments"
+  secondaryLabel="Promote to experiment"
+  cmds={[
+    { label: "Set rules", cmd: "shipeasy flags rules set my-flag --json '[…]'" },
+    { label: "Eval locally", cmd: "shipeasy flags eval my-flag --ctx '{…}'" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/configs/values", title: "Dynamic values" }}
+  next={{ href: "/configs/environments", title: "Environments" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/configs/targeting.mdx" />

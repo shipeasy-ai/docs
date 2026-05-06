@@ -1,307 +1,643 @@
 ---
-title: "LLM Onboarding: String Manager (i18n)"
-description: Step-by-step guide for AI agents to fully onboard a project to ShipEasy String Manager — install, scan, codemod, push, and publish.
+title: "Runbook: Onboard a project to Polylang (i18n)"
+description: Step-by-step MCP runbook for an AI agent to fully onboard a project to ShipEasy Polylang — detect the framework, install the loader, codemod the source, push keys, validate, and publish. One human stop for browser auth.
 ---
 
-# LLM Onboarding: String Manager (i18n)
+<DocMeta
+  status="Runbook · for AI agents"
+  read="agent: 3–8 min · human: 1 click"
+  updated="May 3, 2026"
+  works="Next · Vite · Remix · Astro · Vue · Svelte · Rails · Django · Laravel"
+/>
 
-> **For AI agents.** This guide is designed to be followed autonomously.
-> There is exactly **one mandatory stop**: the human must click the browser link that opens during `shipeasy auth login`.
-> Every other step runs without user interaction.
+<Callout type="info" title="Audience">
+  This page is written for an AI coding assistant (Claude Code, Cursor, Windsurf, OpenCode) to follow autonomously. There is exactly **one mandatory human stop**: clicking the browser link that opens during `shipeasy login`. Every other step is a typed MCP tool call.
 
----
+If you&apos;re a human reading this to decide whether to delegate — yes, hand it to your agent. The runbook is conservative (preview before apply, validate before publish) and it stops on ambiguity rather than guessing.
 
-## Step 1 — Install the CLI and MCP server
+</Callout>
 
-Install the ShipEasy CLI globally and register the MCP server with your AI assistant config.
+## Required tool surface
 
-```bash
-npm install -g @shipeasy/cli
-```
+Every step below references one of these MCP tools, all under the `mcp__shipeasy__` prefix. If your client doesn&apos;t expose them, the user hasn&apos;t installed the MCP server — see [the LLM index](/llms) for setup.
 
-Add the MCP server to your AI assistant. For **Claude Code**, edit (or create) `~/.claude/settings.json`:
-
-```json
-{
-  "mcpServers": {
-    "shipeasy": {
-      "command": "npx",
-      "args": ["-y", "@shipeasy/mcp@latest"]
+<ApiTable>
+  <ApiRow
+    name="auth_check"
+    type="() → { authenticated, user?, project? }"
+    desc="Idempotent. Call first, and again after any login."
+  />
+  <ApiRow
+    name="detect_project"
+    type="() → { frameworks, entry_points, shipeasy }"
+    desc={
+      <>
+        Reads the cwd. Skip if the user already declared the framework in <code>CLAUDE.md</code>.
+      </>
     }
+  />
+  <ApiRow
+    name="i18n_install_loader"
+    required
+    type="{ profile }"
+    desc={
+      <>
+        Returns <code>{`{ data_key, profile, loader_url, script_tag, next_step }`}</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="i18n_create_profile"
+    required
+    type="{ name, locale, environment }"
+    desc={
+      <>
+        Creates a <code>locale:env</code> profile. Idempotent on <code>name</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="i18n_scan_code"
+    type="{ paths }"
+    desc="Returns candidate strings without rewriting. Use for non-JSX frameworks."
+  />
+  <ApiRow
+    name="i18n_codemod_preview"
+    required
+    type="{ files, profile }"
+    desc="Returns proposed diffs. Always call before apply."
+  />
+  <ApiRow
+    name="i18n_codemod_apply"
+    required
+    type="{ files, profile, confirm: true }"
+    desc={
+      <>
+        Writes files. Refuses without <code>confirm: true</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="i18n_push_keys"
+    required
+    type='{ profile, source: "codemod" | "scan" }'
+    desc={
+      <>
+        Returns <code>{`{ pushed_count, skipped_count, failed_keys }`}</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="i18n_create_key"
+    type="{ profile, key, value, description }"
+    desc="Use to add or refine a description. Same shape as discovered keys."
+  />
+  <ApiRow
+    name="i18n_validate_keys"
+    required
+    type="{ profile, paths }"
+    desc="Cross-checks code references against the profile. Must return clean before publishing."
+  />
+  <ApiRow
+    name="i18n_translate_draft"
+    type="{ profile, source_profile? }"
+    desc="Generates AI translations for a target profile. Lands as a draft, never auto-published."
+  />
+  <ApiRow
+    name="i18n_publish_profile"
+    required
+    type="{ profile }"
+    desc="Promotes the profile to KV + purges CDN. Live worldwide in seconds."
+  />
+  <ApiRow
+    name="i18n_discover_site"
+    type="{ url }"
+    desc={
+      <>
+        Optional. Reads <code>/.well-known/i18n.json</code> from a deployed URL to reconcile state.
+      </>
+    }
+  />
+</ApiTable>
+
+---
+
+## Step 1 — Verify the tool surface and authenticate
+
+<Steps>
+  <Step title="Confirm the tools are present">
+    Before doing anything else, check that `mcp__shipeasy__auth_check` is callable. If it isn&apos;t, stop and tell the human:
+
+    > _"I don&apos;t see the ShipEasy MCP tools. Run `npm install -g @shipeasy/cli && shipeasy mcp install`, restart this session, and try again."_
+
+  </Step>
+  <Step title="Call auth_check">
+    ```
+    mcp__shipeasy__auth_check {}
+    ```
+
+    Expected shape: `{ authenticated: boolean, user?, project? }`.
+
+  </Step>
+  <Step title="STOP — if not authenticated, ask the human to log in">
+    If `authenticated: false`, you cannot proceed without a human. Ask them to run, in their terminal:
+
+    ```bash
+    shipeasy login
+    ```
+
+    The CLI opens their default browser to a ShipEasy auth page. They sign in (GitHub / Google / magic link). The CLI prints `Authenticated successfully` and writes credentials to `~/.shipeasy/credentials`. **Do not attempt `mcp__shipeasy__auth_login` first** — the device-code flow benefits from being attached to the user&apos;s terminal so they can see progress.
+
+    Once they confirm success, call `auth_check` again. If it still returns `false`, ask them to paste any error from the CLI output and stop.
+
+  </Step>
+  <Step title="Confirm the project binding">
+    `auth_check` returns `project` when the cwd is bound to a ShipEasy project. If it&apos;s missing, ask the human:
+
+    > _"Which ShipEasy project should I onboard this codebase to? You can list yours with `shipeasy projects list`."_
+
+    Once they answer, run `shipeasy link <project-id>` (or have them run it) and re-check.
+
+  </Step>
+</Steps>
+
+---
+
+## Step 2 — Identify the framework
+
+<Steps>
+  <Step title="Prefer declared facts over detection">
+    If `CLAUDE.md` (or `AGENTS.md`) at the repo root contains a `## ShipEasy String Manager` block with `Framework:`, `Source root:`, and `Loader target:` filled in, **use those values** and skip `detect_project`. Humans declare them precisely because detection guesses wrong on monorepos.
+  </Step>
+  <Step title="Otherwise, call detect_project">
+    ```
+    mcp__shipeasy__detect_project {}
+    ```
+
+    The response shape:
+
+    ```ts
+    {
+      frameworks: string[],            // e.g. ["nextjs-app"]
+      entry_points: string[],          // e.g. ["src/app/layout.tsx"]
+      shipeasy: {
+        i18n_sdk: { installed: boolean, version?: string },
+        loader_script_tag: { present: boolean, file?: string }
+      },
+      status?: "ok" | "needs_clarification"
+    }
+    ```
+
+    Use `entry_points[0]` as the **loader target**. Infer the **source root** from it (e.g. `src/app/layout.tsx` → source root `src/`).
+
+  </Step>
+  <Step title="STOP — if status is needs_clarification, ask the human">
+    Monorepos and unusual layouts return `status: "needs_clarification"`. Ask:
+
+    > _"I see multiple candidate apps in this repo: `apps/web`, `apps/admin`, `packages/marketing`. Which one should I onboard?"_
+
+    Pass the chosen path back into `detect_project` via the optional `cwd` argument and continue.
+
+  </Step>
+  <Step title="Note the codemod capability">
+    JSX/TSX/MDX frameworks (Next, Vite-React, CRA, Remix, React Native) support the **automated codemod**. Vue, Svelte, Astro, Angular, Rails, Django, Laravel, Express templates, Go templates support **scan only** — you discover candidates and the human (or you, with their approval) wraps them by hand. Record this; it changes Step 5.
+  </Step>
+</Steps>
+
+---
+
+## Step 3 — Install the loader
+
+<Steps>
+  <Step title="Skip if already present">
+    If `detect_project` returned `shipeasy.loader_script_tag.present: true`, skip this step entirely. The loader is already in the entry HTML.
+  </Step>
+  <Step title="Generate the script tag">
+    ```
+    mcp__shipeasy__i18n_install_loader {
+      "profile": "en:prod"
+    }
+    ```
+
+    If the source language isn&apos;t English, substitute the right BCP-47 code: `fr:prod`, `de:prod`, `ja:prod`, etc. The tool returns:
+
+    ```ts
+    {
+      data_key: string,        // public client key, scoped to read published bundles only
+      profile: "en:prod",
+      loader_url: string,
+      script_tag: string,      // ready-to-paste <script src="…" data-key="…"></script>
+      next_step: string        // hint for the CLI invocation below
+    }
+    ```
+
+  </Step>
+  <Step title="Inject the tag with the CLI">
+    Run, in the project root:
+
+    ```bash
+    shipeasy i18n install-loader --data-key <data_key> --profile en:prod
+    ```
+
+    The CLI auto-detects the framework and patches the right file:
+
+    | Framework | Patches |
+    | --- | --- |
+    | Next.js App Router | `src/app/layout.tsx` (inside `<head>`) |
+    | Next.js Pages | `pages/_document.tsx` |
+    | React + Vite | `index.html` |
+    | Remix | `app/root.tsx` |
+    | Astro | `src/layouts/*.astro` |
+    | Anything else | Prints the tag, you paste it |
+
+    Pass `--path <file>` to override the target. Pass `--print` to dry-run (prints, doesn&apos;t write).
+
+  </Step>
+  <Step title="Failure handling">
+    If the CLI says _"unknown framework"_, take the `script_tag` from the tool response and ask the human to paste it inside the `<head>` of their root HTML. Then re-run `detect_project` to confirm `loader_script_tag.present: true`.
+  </Step>
+</Steps>
+
+---
+
+## Step 4 — Create the source profile
+
+<Steps>
+  <Step title="Check if it already exists">
+    Cheap read first:
+
+    ```
+    mcp__shipeasy__list_resources { "kind": "profiles" }
+    ```
+
+    If a profile with `name: "en:prod"` (or your source locale) is already present, skip the create call.
+
+  </Step>
+  <Step title="Otherwise, create it">
+    ```
+    mcp__shipeasy__i18n_create_profile {
+      "name": "en:prod",
+      "locale": "en",
+      "environment": "prod"
+    }
+    ```
+
+    `name` is the public identifier you&apos;ll use everywhere downstream. Convention is `<locale>:<environment>`. Stick to it.
+
+  </Step>
+</Steps>
+
+---
+
+## Step 5 — Discover and rewrite strings
+
+The branch here depends on what Step 2 told you about codemod capability.
+
+### 5a · JSX/TSX/MDX frameworks (auto codemod)
+
+<Steps>
+  <Step title="ALWAYS preview first">
+    ```
+    mcp__shipeasy__i18n_codemod_preview {
+      "files": ["<source root>"],
+      "profile": "en:prod"
+    }
+    ```
+
+    The response includes `diffs` and a list of proposed `strings`. **Read the strings list before applying.** Verify each is real UI copy — not a TypeScript identifier, an import path, a `className` token, a date format string, or an aria-label that&apos;s already a translation key.
+
+  </Step>
+  <Step title="STOP — show the human a sample for approval">
+    For codebases over ~20 files, show the human the first 10–15 proposed rewrites and ask:
+
+    > _"Here are the first 12 strings the codemod wants to wrap. Anything that shouldn&apos;t be translated? (Brand names, code identifiers, technical strings.) I&apos;ll add them to the glossary or skip them."_
+
+    For brand names and acronyms, edit `shipeasy.config.ts`&apos;s `glossary` (e.g. `"ShipEasy": "ShipEasy"` to lock the term).
+
+  </Step>
+  <Step title="Apply">
+    ```
+    mcp__shipeasy__i18n_codemod_apply {
+      "files": ["<source root>"],
+      "profile": "en:prod",
+      "confirm": true
+    }
+    ```
+
+    The tool refuses without `confirm: true`. After it runs, `i18n-codemod-review.json` is written at the project root listing every string that was skipped (dynamic interpolations, rich HTML, plurals, conditional fragments). Read it; surface anything non-trivial to the human.
+
+  </Step>
+  <Step title="Chunk large codebases">
+    If the source root has more than ~300 source files, run preview/apply one subdirectory at a time (`src/app/`, then `src/components/`, then `src/lib/`). Diffs stay reviewable, failures stay isolated.
+  </Step>
+</Steps>
+
+### 5b · Scan-only frameworks (Vue, Svelte, Rails, Django, Laravel, Astro, Angular, Go templates)
+
+<Steps>
+  <Step title="Scan for candidates">
+    ```
+    mcp__shipeasy__i18n_scan_code {
+      "paths": ["<source root>"]
+    }
+    ```
+
+    Returns a flat list of `{ file, line, snippet, suggested_key }` candidates.
+
+  </Step>
+  <Step title="Wrap by hand or with framework helpers">
+    For each candidate, edit the source to use the framework&apos;s i18n call. Examples:
+
+    - **Vue**: `{{ $t('hero.title') }}`
+    - **Svelte**: `{$_('hero.title')}`
+    - **Rails (ERB)**: `<%= t('hero.title') %>`
+    - **Django**: `{% trans "Hero title" %}`
+    - **Laravel Blade**: `{{ __('hero.title') }}`
+
+    Push the keys you create regardless of helper syntax — ShipEasy stores them by key name, not call site.
+
+  </Step>
+  <Step title="STOP — for ambiguous cases, ask">
+    Server-rendered templates often interleave logic and copy. When you&apos;re not sure whether a string is user-facing, ask:
+
+    > _"In `views/orders/show.html.erb` line 47, this string `\"#{order.status.upcase}\"` is interpolated. Is &apos;status&apos; user-facing copy that should be translated, or a code-level enum value?"_
+
+  </Step>
+</Steps>
+
+---
+
+## Step 6 — Push keys to the source profile
+
+<Steps>
+  <Step title="Push">
+    ```
+    mcp__shipeasy__i18n_push_keys {
+      "profile": "en:prod",
+      "source": "codemod"
+    }
+    ```
+
+    Use `"source": "scan"` if you used the scan path in Step 5b. Response: `{ pushed_count, skipped_count, failed_keys }`.
+
+  </Step>
+  <Step title="Inspect failures">
+    If `failed_keys` is non-empty, the keys are usually malformed (whitespace, leading digits, reserved characters). Each entry includes a reason. Fix the key in source, re-run the codemod or edit by hand, and re-push.
+  </Step>
+  <Step title="Verify">
+    ```
+    mcp__shipeasy__list_resources { "kind": "keys" }
+    ```
+
+    Spot-check that the count matches `pushed_count` (allowing for keys that already existed).
+
+  </Step>
+</Steps>
+
+---
+
+## Step 7 — Add descriptions
+
+Translation quality drops sharply without context. For every key the codemod created, add a one-sentence description of where the string appears and what it does.
+
+<Steps>
+  <Step title="List keys without descriptions">
+    ```
+    mcp__shipeasy__list_resources { "kind": "keys", "filter": "no_description" }
+    ```
+  </Step>
+  <Step title="For each, call create_key with the description">
+    `i18n_create_key` is upsert-style — call it on an existing key with new fields and they merge.
+
+    ```
+    mcp__shipeasy__i18n_create_key {
+      "profile": "en:prod",
+      "key": "checkout.confirm_button",
+      "value": "Confirm and pay",
+      "description": "Primary CTA on the checkout summary page — submits the order for payment processing."
+    }
+    ```
+
+    Good descriptions cite **where** (page / component) and **what** (purpose / action). Bad descriptions repeat the value.
+
+  </Step>
+  <Step title="Don't block on this">
+    For a first onboarding, descriptions on the top-50 highest-traffic keys is enough. Mark the rest as TODO in `i18n-codemod-review.json` and surface to the human.
+  </Step>
+</Steps>
+
+---
+
+## Step 8 — Validate
+
+<Steps>
+  <Step title="Cross-check code references against the profile">
+    ```
+    mcp__shipeasy__i18n_validate_keys {
+      "profile": "en:prod",
+      "paths": ["<source root>"]
+    }
+    ```
+
+    Returns `{ missing_in_profile, unused_in_code, mismatched_values }`. **All three must be empty (or expected) before publishing.**
+
+  </Step>
+  <Step title="Resolve mismatches">
+    - `missing_in_profile`: code calls `t("foo")` but `foo` isn&apos;t in the profile. Push it: re-run Step 6, or call `i18n_create_key`.
+    - `unused_in_code`: profile has `bar` but no source file references it. Usually safe to leave (might be runtime-generated). Don&apos;t auto-delete.
+    - `mismatched_values`: code passes a different default than the profile&apos;s value. The code default is the source of truth — update the profile via `i18n_create_key` with the new value.
+  </Step>
+</Steps>
+
+---
+
+## Step 9 — Publish
+
+<Steps>
+  <Step title="STOP — confirm with the human">
+    Publishing writes to production KV and purges the CDN — every visitor will see the new bundle within seconds. Confirm:
+
+    > _"Ready to publish `en:prod`? This makes &lt;N&gt; keys live worldwide. Type &apos;yes&apos; or tell me what to fix first."_
+
+  </Step>
+  <Step title="Publish">
+    ```
+    mcp__shipeasy__i18n_publish_profile {
+      "profile": "en:prod"
+    }
+    ```
+
+    Response: `{ published_at, chunks, purge_urls }`. Strings are live in seconds.
+
+  </Step>
+  <Step title="Verify in the wild">
+    If the project has a deployed URL, optionally run:
+
+    ```
+    mcp__shipeasy__i18n_discover_site { "url": "https://example.com" }
+    ```
+
+    This reads `/.well-known/i18n.json` and confirms the loader is fetching the bundle you just published.
+
+  </Step>
+</Steps>
+
+---
+
+## Step 10 — Translate (optional, do per target locale)
+
+<Steps>
+  <Step title="Create the target profile">
+    ```
+    mcp__shipeasy__i18n_create_profile {
+      "name": "fr:prod",
+      "locale": "fr",
+      "environment": "prod"
+    }
+    ```
+  </Step>
+  <Step title="Generate the AI draft">
+    ```
+    mcp__shipeasy__i18n_translate_draft {
+      "profile": "fr:prod",
+      "source_profile": "en:prod"
+    }
+    ```
+
+    Lands as a **draft** in the dashboard — never auto-publishes. Anthropic Claude reads the project tone and glossary on every call.
+
+  </Step>
+  <Step title="STOP — hand off to a human reviewer">
+    AI translations need a human pass for tone, brand terms, and locale-specific idioms. Tell the human:
+
+    > _"I&apos;ve drafted `fr:prod`. Review at https://app.shipeasy.ai/i18n/drafts/fr:prod and click &apos;Merge draft&apos; when ready. Then I&apos;ll publish."_
+
+  </Step>
+  <Step title="Publish the target profile">
+    Once they confirm the draft is merged, repeat Step 9 with `"profile": "fr:prod"`. Repeat per target locale.
+  </Step>
+</Steps>
+
+---
+
+## Failure modes — quick reference
+
+<ApiTable>
+  <ApiRow
+    name="auth_check returns false after login"
+    type="env"
+    desc={
+      <>
+        Credentials file unreadable. Ask the human to <code>cat ~/.shipeasy/credentials</code> — if
+        missing, re-run <code>shipeasy login</code>; if present, check file permissions (should be
+        600).
+      </>
+    }
+  />
+  <ApiRow
+    name="detect_project returns needs_clarification"
+    type="layout"
+    desc="Monorepo with multiple apps. Ask the human which subdirectory and pass it as cwd."
+  />
+  <ApiRow
+    name="codemod_preview shows code identifiers as strings"
+    type="false positive"
+    desc={
+      <>
+        Add the file or pattern to <code>shipeasy.config.ts</code>&apos;s <code>files</code>{" "}
+        exclusion globs and re-preview. Don&apos;t apply.
+      </>
+    }
+  />
+  <ApiRow
+    name="codemod_apply refused"
+    type="missing arg"
+    desc={
+      <>
+        You forgot <code>confirm: true</code>. The refusal is intentional.
+      </>
+    }
+  />
+  <ApiRow
+    name="push_keys reports failed_keys"
+    type="naming"
+    desc="Key names with whitespace, leading digits, or reserved characters. Fix in source and re-run."
+  />
+  <ApiRow
+    name="validate_keys shows missing_in_profile"
+    type="drift"
+    desc="Re-run push_keys or create the missing keys explicitly. Never publish with this non-empty."
+  />
+  <ApiRow
+    name="publish_profile fails with 403"
+    type="auth"
+    desc={
+      <>
+        Token lacks publish permission for this project. Ask the human to verify role in the
+        dashboard, or to re-login as a project owner.
+      </>
+    }
+  />
+  <ApiRow
+    name="publish_profile fails with 429"
+    type="rate limit"
+    desc="Plan-level publish quota exceeded. Wait 60s and retry; if it persists, surface to the human (likely needs a plan upgrade)."
+  />
+</ApiTable>
+
+---
+
+## Verification checklist
+
+When you believe you&apos;re done, confirm each of these and report results to the human:
+
+<Steps>
+  <Step title="Loader present">
+    `detect_project` returns `shipeasy.loader_script_tag.present: true`.
+  </Step>
+  <Step title="Source profile published">
+    `list_resources { "kind": "profiles" }` shows `en:prod` (or your source locale) with a recent `published_at`.
+  </Step>
+  <Step title="Validation clean">
+    `i18n_validate_keys` returns empty `missing_in_profile` and `mismatched_values`.
+  </Step>
+  <Step title="Codemod review handled">
+    `i18n-codemod-review.json` either doesn&apos;t exist (clean run) or has been triaged with the human.
+  </Step>
+  <Step title="Site verified (if deployed)">
+    `i18n_discover_site` against the deployed URL confirms the loader is fetching the bundle you published.
+  </Step>
+</Steps>
+
+If all five pass, the project is onboarded. Tell the human:
+
+> _"Polylang is fully wired. `en:prod` is live with N keys. Add target locales any time with `i18n_create_profile` + `i18n_translate_draft`, or run `/llms/i18n-strings` again starting at Step 10."_
+
+<ConvertCTA
+  eyebrow="DONE?"
+  title={
+    <>
+      Add a <em>target locale</em> next.
+    </>
   }
-}
-```
-
-For **Cursor**, write the same block to `.cursor/mcp.json` in the project root.
-For **Windsurf**, write it to `.windsurf/mcp.json`.
-For any other assistant that supports MCP, write it to `mcp.json` in the project root.
-
-Alternatively, one command writes all configs automatically:
-
-```bash
-shipeasy mcp install
-```
-
-Add the CLAUDE.md skill block below to your project's `CLAUDE.md` (create one at the repo root if it doesn't exist):
-
-```markdown
-## ShipEasy String Manager
-
-This project uses ShipEasy String Manager for localization.
-MCP server: `@shipeasy/mcp` — tools are prefixed `i18n_*`.
-
-Framework: <fill in: nextjs-app | nextjs-pages | react-vite | react-vite-client-split | cra | remix | vue | nuxt | svelte | sveltekit | angular | astro | react-native | rails | django | laravel | express | go>
-Source root: <fill in: src/ | client/src/ | pages/ | etc.>
-Loader target: <fill in: src/app/layout.tsx | client/index.html | index.html | etc.>
-
-Workflow for i18n changes:
-
-1. Identify framework from the values above — skip `detect_project` if already known.
-   If framework is unknown, call `detect_project {}` and read `entry_points[0]`.
-2. Call `auth_check` — if not authenticated, run `shipeasy auth login` in the terminal.
-   It opens a browser automatically; wait for it to print success or failure, then continue.
-3. Use `i18n_codemod_preview { "files": ["<source root>"] }` to show diffs before writing.
-   Call `i18n_codemod_apply` only after the human approves.
-4. Use `i18n_push_keys { "source": "codemod" }` to sync keys after any codemod.
-5. Use `i18n_publish_profile` to push changes to the CDN after reviewing drafts.
-
-Never skip the preview step. Never run `i18n_codemod_apply` without `confirm: true` and explicit approval.
-```
-
----
-
-## Step 2 — Identify the project type
-
-Before calling any tool, look at what you already know about the project. Match it against the tables below and record the **loader target** and **source root** — you will need both in Steps 4 and 6.
-
-The **Codemod** column shows whether `i18n_codemod_preview`/`apply` work automatically (JSX/TSX only) or whether you must use `i18n_scan_code` to discover candidates and wrap them by hand.
-
-### JavaScript / TypeScript
-
-| #   | Project type                           | Signature files                               | Loader target                                 | Source root              | Codemod      |
-| --- | -------------------------------------- | --------------------------------------------- | --------------------------------------------- | ------------------------ | ------------ |
-| A   | **Next.js App Router**                 | `src/app/layout.tsx` or `app/layout.tsx`      | `src/app/layout.tsx`                          | `src/`                   | ✅ auto      |
-| B   | **Next.js Pages Router**               | `pages/_app.tsx` or `pages/_document.tsx`     | `pages/_document.tsx`                         | `pages/` + `components/` | ✅ auto      |
-| C   | **React + Vite (standard)**            | `index.html` at root, `src/main.tsx`          | `index.html`                                  | `src/`                   | ✅ auto      |
-| D   | **React + Vite (client/server split)** | `client/index.html`, `client/src/main.tsx`    | `client/index.html`                           | `client/src/`            | ✅ auto      |
-| E   | **Create React App**                   | `public/index.html`, `src/index.tsx`          | `public/index.html`                           | `src/`                   | ✅ auto      |
-| F   | **Remix**                              | `remix.config.js` or `app/root.tsx`           | `app/root.tsx` (inside `<head>`)              | `app/`                   | ✅ auto      |
-| G   | **Vue 3 + Vite**                       | `vite.config.ts` + `.vue` files               | `index.html`                                  | `src/`                   | ⚠️ scan only |
-| H   | **Nuxt 3**                             | `nuxt.config.ts`                              | `app.vue` or `layouts/default.vue`            | `pages/` + `components/` | ⚠️ scan only |
-| I   | **Svelte / SvelteKit**                 | `svelte.config.js`                            | `src/app.html` or `src/routes/+layout.svelte` | `src/`                   | ⚠️ scan only |
-| J   | **Angular**                            | `angular.json`                                | `src/index.html`                              | `src/`                   | ⚠️ scan only |
-| K   | **Astro**                              | `astro.config.mjs`                            | `src/layouts/Layout.astro`                    | `src/`                   | ⚠️ scan only |
-| L   | **React Native**                       | `react-native.config.js` or `metro.config.js` | n/a — no browser loader                       | `src/`                   | ✅ auto      |
-
-### Server-side / backend-rendered
-
-| #   | Project type                              | Signature files                                      | Loader target                            | Source root           | Codemod      |
-| --- | ----------------------------------------- | ---------------------------------------------------- | ---------------------------------------- | --------------------- | ------------ |
-| M   | **Ruby on Rails**                         | `Gemfile` with `rails`                               | `app/views/layouts/application.html.erb` | `app/views/`          | ⚠️ scan only |
-| N   | **Django (Python)**                       | `requirements.txt` or `pyproject.toml` with `django` | base `.html` template                    | `templates/`          | ⚠️ scan only |
-| O   | **Laravel (PHP)**                         | `composer.json` with `laravel/framework`             | `resources/views/layouts/app.blade.php`  | `resources/views/`    | ⚠️ scan only |
-| P   | **Express / Hono + server-rendered HTML** | `package.json` + `views/` or `public/`               | main layout HTML                         | `views/` or `public/` | ⚠️ scan only |
-| Q   | **Go (html/template)**                    | `go.mod` + `*.html` templates                        | base layout template                     | template directory    | ⚠️ scan only |
-
-> **⚠️ scan only** means `i18n_codemod_preview`/`apply` will not run for this framework. Use `i18n_scan_code` to list candidate strings, then wrap them manually or with a framework-specific i18n helper.
-
----
-
-**If you matched a row:** proceed to Step 3. You do not need to call `detect_project`.
-
-**If you are not sure:** call `detect_project` to let the tool resolve it:
-
-```
-mcp: detect_project {}
-```
-
-`detect_project` returns `entry_points`, `frameworks`, and `shipeasy.loader_script_tag`. Use `entry_points[0]` as the loader target and infer the source root from it. If it returns `status: "needs_clarification"`, ask the user which subdirectory contains the app and pass that path.
-
-If `shipeasy.i18n_sdk.installed: false`, the SDK is not yet installed. Skip SDK install for now — the loader script (Step 4) is sufficient to deliver strings; the framework-specific provider can be wired up after the initial push.
-
----
-
-## Step 3 — Authenticate ⏸ STOP FOR BROWSER CLICK
-
-Run the auth status check:
-
-```
-mcp: auth_check {}
-```
-
-If it returns `{ "authenticated": false }`, run `shipeasy auth login` in the terminal:
-
-```bash
-shipeasy auth login
-```
-
-This command opens the ShipEasy login page in your default browser automatically. The human must sign in (GitHub, Google, or magic link). When the browser flow completes, the command prints either `Authenticated successfully` or an error message and exits.
-
-Credentials are stored in `~/.shipeasy/credentials` and are picked up automatically by all future CLI commands and MCP tool calls — no environment variables needed.
-
-Call `auth_check` again to verify `authenticated: true`, then continue.
-
----
-
-## Step 4 — Add the loader script tag
-
-The loader script delivers published string bundles to the browser with zero JS dependencies and infinite CDN caching.
-
-Call `i18n_install_loader` to generate the script tag parameters (creates a client SDK key automatically if needed):
-
-```
-mcp: i18n_install_loader {
-  "profile": "en:prod"
-}
-```
-
-The tool returns `{ data_key, profile, loader_url, script_tag, next_step }`.
-
-Then run the CLI to inject the tag into the right file automatically:
-
-```bash
-shipeasy i18n install-loader --data-key <data_key> --profile en:prod
-```
-
-The CLI auto-detects your framework:
-
-- **Next.js App Router** → patches `src/app/layout.tsx` inside `<head>`
-- **Next.js Pages Router** → patches `pages/_document.tsx`
-- **React + Vite** → patches `index.html`
-- **Unknown framework** → prints the tag; paste it manually inside `<head>`
-
-Pass `--path <file>` to override the target file. Pass `--print` to print the tag without writing files.
-
-If `detect_project` returned `shipeasy.loader_script_tag.present: true`, skip this step.
-
----
-
-## Step 5 — Create the source profile
-
-A **profile** is a locale + environment pair (e.g. `en:prod` for English production). Create one profile that matches the language already used in the codebase:
-
-```
-mcp: i18n_create_profile {
-  "name": "en:prod",
-  "locale": "en",
-  "environment": "prod"
-}
-```
-
-If the codebase is not in English, substitute the correct BCP-47 locale code (e.g. `fr:prod`, `de:prod`).
-
-If `list_resources { "kind": "profiles" }` already shows a matching profile, skip this step.
-
----
-
-## Step 6 — Run the codemod (preview first)
-
-Use the **source root** you identified in Step 2 (e.g. `src/`, `client/src/`, `pages/`).
-
-First, preview without writing:
-
-```
-mcp: i18n_codemod_preview {
-  "files": ["<source root>"],
-  "profile": "en:prod"
-}
-```
-
-Review the returned diffs. Verify that `strings` entries look like real UI copy — not TypeScript identifiers, import paths, or code tokens. If they look correct, apply:
-
-```
-mcp: i18n_codemod_apply {
-  "files": ["<source root>"],
-  "profile": "en:prod",
-  "confirm": true
-}
-```
-
-The apply tool also writes `i18n-codemod-review.json` at the project root listing every string that needs manual review (dynamic strings, rich HTML, plurals, etc.).
-
-If the project is large (>300 files), run the codemod one directory at a time to keep diffs reviewable.
-
----
-
-## Step 7 — Push keys to the dashboard
-
-After the codemod writes files, push all discovered keys to the source profile:
-
-```
-mcp: i18n_push_keys {
-  "profile": "en:prod",
-  "source": "codemod"
-}
-```
-
-The tool returns `{ pushed_count, skipped_count, failed_keys }`. If `failed_keys` is non-empty, inspect the errors — usually malformed key names.
-
-Verify keys arrived:
-
-```
-mcp: list_resources { "kind": "keys", "search": "" }
-```
-
----
-
-## Step 8 — Second pass and key descriptions
-
-Run a second scan to catch strings the first pass missed. Use the same **source root** from Step 2:
-
-```
-mcp: i18n_scan_code {
-  "paths": ["<source root>"]
-}
-```
-
-For each candidate string not yet in the profile, either call `i18n_codemod_apply` on the containing file, or wrap it manually if the codemod can't handle it (dynamic key, rich HTML, etc.).
-
-**Add descriptions to every pushed key.** For every key returned by `list_resources { "kind": "keys" }`, call:
-
-```
-mcp: i18n_create_key {
-  "profile": "en:prod",
-  "key": "<key_name>",
-  "value": "<source string>",
-  "description": "<one sentence: where this string appears and what it does>"
-}
-```
-
-Good descriptions: `"CTA button on the checkout summary page — confirms the purchase"`,
-`"Empty-state heading shown when the user has no active projects"`.
-
----
-
-## Step 9 — Validate and publish
-
-Validate that every key referenced in code exists in the profile. Pass the same **source root** from Step 2:
-
-```
-mcp: i18n_validate_keys {
-  "profile": "en:prod",
-  "paths": ["<source root>"]
-}
-```
-
-Fix any missing keys before proceeding.
-
-Publish the source profile to the CDN:
-
-```
-mcp: i18n_publish_profile {
-  "profile": "en:prod"
-}
-```
-
-Strings are live at the edge within seconds.
-
----
-
-## What's next
-
-- **Add translations** — create target profiles (`fr:prod`, `de:prod`, etc.) and run `i18n_translate_draft` using the Anthropic API from your machine.
-- **Review drafts** — open **String Manager → Drafts** in the dashboard to approve or edit AI-generated translations before publishing.
-- **Set up validation in CI** — add `shipeasy i18n validate` as a pre-merge check to prevent missing keys from reaching production.
-- **Automate with the `translate_site` prompt** — if your site has the `/.well-known/i18n.json` manifest, the AI can discover the full state and manage ongoing translation automatically.
-
-See the [String Manager docs](/i18n) for the full reference.
+  body="Same flow, but with a target profile. The agent creates the profile, drafts translations with Claude, hands off to a human for review, and publishes."
+  primaryHref="/i18n/quickstart"
+  primaryLabel="Human quickstart"
+  secondaryHref="/llms"
+  secondaryLabel="More agent guides"
+  cmds={[
+    {
+      label: "New target profile",
+      cmd: "mcp: i18n_create_profile { name: 'fr:prod', locale: 'fr', environment: 'prod' }",
+    },
+    { label: "Draft translations", cmd: "mcp: i18n_translate_draft { profile: 'fr:prod' }" },
+  ]}
+  note="Drafts never auto-publish. A human always reviews before strings ship."
+/>
+
+<DocNav
+  prev={{ href: "/llms", title: "AI agent guides" }}
+  next={{ href: "/i18n", title: "Polylang overview" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/llms/i18n-strings.mdx" />

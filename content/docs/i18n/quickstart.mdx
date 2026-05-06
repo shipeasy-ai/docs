@@ -1,16 +1,50 @@
 ---
 title: Quickstart
-description: Onboard a project to String Manager in 10 minutes — scan, codemod, translate, publish.
+description: Onboard a project to Polylang in 10 minutes — scan, codemod, translate, publish.
 ---
 
-This walks through the full onboarding for a fresh frontend project. We&apos;ll discover translatable strings, push them to a source profile, generate French translations with AI, and publish.
+<DocMeta
+  status="Tutorial"
+  read="10 min read"
+  updated="May 3, 2026"
+  works="Next, Vite, Remix, Astro"
+/>
 
-If you&apos;d rather have an AI agent do this for you, see the [LLM Guide](/llms/i18n-strings) — it&apos;s the same flow, written for Claude Code / Cursor / Windsurf.
+This walks through the full onboarding for a fresh frontend project. We'll discover translatable strings, push them to a source profile, generate French translations with AI, and publish.
+
+If you'd rather have an AI agent do this for you, see the [LLM Guide](/llms/i18n-strings) — it's the same flow, written for Claude Code / Cursor / Windsurf.
+
+<Quickstart title="The 10-minute path" time="install · scan · translate · publish">
+  <QuickstartStep
+    num={1}
+    label="LOADER"
+    title="Install the loader"
+    cmd="shipeasy i18n install-loader --profile en:prod"
+  />
+  <QuickstartStep
+    num={2}
+    label="SCAN"
+    title="Codemod & push keys"
+    cmd="shipeasy i18n scan ./src --rewrite"
+  />
+  <QuickstartStep
+    num={3}
+    label="PUBLISH"
+    title="AI draft, review, ship"
+    cmd="shipeasy i18n publish --profile fr:prod"
+  />
+</Quickstart>
 
 ## Prerequisites
 
 - A frontend project with English copy you want to translate. Next.js, Vite, Remix, etc.
-- The CLI installed and logged in: `npm install -g @shipeasy/cli && shipeasy login`.
+- The CLI installed and logged in:
+
+<InstallTabs npm="npm install -g @shipeasy/cli" />
+
+```bash
+shipeasy login
+```
 
 <Steps>
   <Step title="Install the loader script">
@@ -28,6 +62,7 @@ If you&apos;d rather have an AI agent do this for you, see the [LLM Guide](/llms
     | Next.js Pages | `pages/_document.tsx` |
     | Vite + React | `index.html` |
     | Remix | `app/root.tsx` |
+    | Astro | `src/layouts/*.astro` |
     | Anything else | Prints the tag, you paste it |
 
     The command also creates a **client SDK key** scoped to the project, hard-coded into the script tag. The key only allows reads of published label bundles, nothing else.
@@ -75,7 +110,7 @@ If you&apos;d rather have an AI agent do this for you, see the [LLM Guide](/llms
     shipeasy i18n push --profile en:prod --source codemod
     ```
 
-    Pushes every discovered key to the dashboard. Verify in **String Manager → Label keys**.
+    Pushes every discovered key to the dashboard. Verify in **Polylang → Label keys**.
 
   </Step>
 
@@ -95,14 +130,14 @@ If you&apos;d rather have an AI agent do this for you, see the [LLM Guide](/llms
     shipeasy i18n translate --profile de:prod --ai
     ```
 
-    Each command creates a **draft** in the dashboard with proposed translations for every key missing from the target profile. The AI uses the source value and any descriptions you&apos;ve added on each key.
+    Each command creates a **draft** in the dashboard with proposed translations for every key missing from the target profile. The AI uses the source value, the project tone, the glossary, and any descriptions you've added on each key.
 
   </Step>
 
   <Step title="Review">
-    Open **String Manager → Drafts → fr:prod**. You see every key, the source value, and the proposed translation, side by side. Edit any value inline. When you&apos;re satisfied, click **Merge draft**.
+    Open **Polylang → Drafts → fr:prod**. You see every key, the source value, and the proposed translation, side by side. Edit any value inline. When you're satisfied, click **Merge draft**.
 
-    Merging promotes the values to the profile. It does **not** publish — that&apos;s a separate, deliberate step.
+    Merging promotes the values to the profile. It does **not** publish — that's a separate, deliberate step.
 
   </Step>
 
@@ -137,18 +172,95 @@ In CI, fail the build if any code reference is missing from the source profile:
 shipeasy i18n validate --profile en:prod ./src
 ```
 
-Add this to your pre-merge checks and you&apos;ll never ship an "untranslated string" bug.
+Add this to your pre-merge checks and you'll never ship an "untranslated string" bug.
 
-## Where to next
+<Callout type="warn" title="Don't translate user-generated content this way">
+  The keys flow above is for static UI strings extracted at build time. For UGC (chat messages,
+  reviews, support tickets), use the runtime `/translate` endpoint with the streaming SDK.
+</Callout>
 
-<CardGrid>
-  <Card href="/i18n/profiles" eyebrow="Architecture" title="Profiles">
-    Locale + env. Versioning. Rollback.
-  </Card>
-  <Card href="/i18n/keys" eyebrow="Architecture" title="Keys">
-    Naming, chunks, descriptions, deletion.
-  </Card>
-  <Card href="/i18n/translations" eyebrow="AI" title="Translations">
-    How the AI translates, with what context, and how to keep it on-brand.
-  </Card>
-</CardGrid>
+## What you just got
+
+<TileGrid>
+  <Tile
+    href="/i18n/profiles"
+    icon="◇"
+    title="Profiles"
+    meta={
+      <>
+        <span>locale × env</span>
+        <span>·</span>
+        <span>versioned</span>
+      </>
+    }
+  >
+    Each <code>locale:env</code> pair is its own publishable manifest. Roll back any time.
+  </Tile>
+  <Tile
+    href="/i18n/keys"
+    icon="✓"
+    title="Keys"
+    meta={
+      <>
+        <span>auto-discovered</span>
+        <span>·</span>
+        <span>chunked</span>
+      </>
+    }
+  >
+    Stable hashes for every string. Re-scans don&apos;t shuffle ordering.
+  </Tile>
+  <Tile
+    href="/i18n/translations"
+    icon="✦"
+    title="AI translations"
+    meta={
+      <>
+        <span>tone + glossary</span>
+        <span>·</span>
+        <span>BYOK</span>
+      </>
+    }
+  >
+    Claude reads your brand voice on every call. Use our key or yours.
+  </Tile>
+  <Tile
+    href="/i18n/drafts"
+    icon="✎"
+    title="Drafts"
+    meta={
+      <>
+        <span>side-by-side review</span>
+        <span>·</span>
+        <span>RBAC</span>
+      </>
+    }
+  >
+    Translations land as drafts. Reviewable by anyone with edit access.
+  </Tile>
+</TileGrid>
+
+<ConvertCTA
+  eyebrow="NEXT"
+  title={
+    <>
+      Hand it to an <em>AI agent</em>.
+    </>
+  }
+  body="The same flow, but driven by Claude Code or Cursor through the MCP server. You answer one auth prompt, the agent does the rest."
+  primaryHref="/llms/i18n-strings"
+  primaryLabel="Open the LLM guide"
+  secondaryHref="/i18n"
+  secondaryLabel="Back to overview"
+  cmds={[
+    { label: "Install the MCP", cmd: "shipeasy mcp install" },
+    { label: "Then point your agent at", cmd: "https://docs.shipeasy.ai/llms/i18n-strings" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/i18n", title: "Polylang overview" }}
+  next={{ href: "/i18n/profiles", title: "Profiles" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/i18n/quickstart.mdx" />

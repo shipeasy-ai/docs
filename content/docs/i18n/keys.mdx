@@ -1,55 +1,249 @@
 ---
 title: Label keys
-description: How keys are named, chunked, described, and deleted.
+description: How Polylang names, hashes, chunks, describes, and deletes the strings your code references.
 ---
 
-A **label key** is a stable identifier for a translatable string. It&apos;s what your code references; the value (the actual translation) varies per profile.
+<DocMeta
+  status="Reference"
+  read="9 min read"
+  updated="May 3, 2026"
+  works="Next, Vite, Remix, Astro, Expo"
+/>
+
+A **label key** is a stable identifier for a translatable string. It is what your code references; the value (the actual translation) varies per profile. Keys are the contract between your codebase and every locale you ship.
+
+Polylang's job is to make keys feel invisible: you write English in code, the codemod hashes it, the AI translates it, and the runtime resolves it back. But understanding what a key actually is — and how it survives renames, refactors, and re-scans — is what stops your localization from drifting six months in.
 
 ## Schema
 
-| Field         | Description                                                                           |
-| ------------- | ------------------------------------------------------------------------------------- |
-| `key`         | Stable identifier. We recommend snake_case with namespace dots: `checkout.cta_label`. |
-| `value`       | The string in this profile. Plain text; placeholders use `{name}` syntax.             |
-| `chunk`       | Optional grouping for lazy loading by route or feature.                               |
-| `description` | Free-form notes for translators and the AI. **Highly recommended.**                   |
-| `created_at`  | Auto.                                                                                 |
+<ApiTable>
+  <ApiRow
+    name="key"
+    required
+    type="string"
+    desc={
+      <>
+        Stable identifier. Either explicit (<code>checkout.cta_label</code>) or auto-derived from
+        the source value's hash plus the file path namespace.
+      </>
+    }
+  />
+  <ApiRow
+    name="value"
+    required
+    type="string"
+    desc={
+      <>
+        The string in this profile. Plain text; placeholders use <code>{`{{name}}`}</code> ICU
+        MessageFormat syntax.
+      </>
+    }
+  />
+  <ApiRow
+    name="hash"
+    required
+    type="string"
+    desc={
+      <>
+        SHA-256 of the source value, truncated to 12 chars. Used for change detection — when the
+        English changes, the hash changes, target translations are marked stale.
+      </>
+    }
+  />
+  <ApiRow
+    name="chunk"
+    optional
+    type="string"
+    desc="Grouping for lazy loading by route or feature. One chunk per HTTP fetch."
+  />
+  <ApiRow
+    name="namespace"
+    optional
+    type="string"
+    desc="Auto-derived from file path (e.g. src/checkout/Page.tsx → checkout). Used for sibling-key context in AI translation."
+  />
+  <ApiRow
+    name="description"
+    optional
+    type="string"
+    desc={
+      <>
+        <b>Highly recommended.</b> Free-form notes for translators and the AI. Read on every Claude
+        call.
+      </>
+    }
+  />
+  <ApiRow
+    name="max_length"
+    optional
+    type="number"
+    desc="Soft limit nudged into the AI prompt. Useful for buttons and table headers."
+  />
+  <ApiRow
+    name="placeholders"
+    optional
+    type="string[]"
+    desc="List of allowed placeholder names. Validated on translation upload."
+  />
+  <ApiRow name="created_at" optional type="datetime" desc="Auto." />
+  <ApiRow
+    name="last_seen_in_code"
+    optional
+    type="datetime"
+    desc="Updated by every code scan. Drives the Unused keys view."
+  />
+</ApiTable>
+
+## Identity: explicit keys vs hashed keys
+
+There are two ways a key gets its identifier, and you can mix both in one project:
+
+<TileGrid>
+  <Tile
+    icon="✓"
+    title="Explicit key"
+    meta={
+      <>
+        <span>
+          <b>you choose</b> the name
+        </span>
+        <span>·</span>
+        <span>survives copy edits</span>
+      </>
+    }
+  >
+    <code>{`t("checkout.cta_label", "Pay")`}</code> — the key is <code>checkout.cta_label</code>.
+    Editing the English value does not break translations. Recommended for buttons, headings, and
+    any copy that will iterate.
+  </Tile>
+  <Tile
+    icon="✦"
+    title="Hashed key"
+    meta={
+      <>
+        <span>
+          <b>auto-derived</b>
+        </span>
+        <span>·</span>
+        <span>zero ceremony</span>
+      </>
+    }
+  >
+    <code>{`t("Pay")`}</code> — the key is the source value itself, hashed to a stable id. Edit the
+    English and you implicitly create a new key (the old one is marked stale). Best for high-volume
+    marketing copy.
+  </Tile>
+</TileGrid>
+
+The codemod defaults to hashed keys for raw JSX strings (`<h1>Welcome back</h1>`) and explicit keys for anything inside a clearly labelled CTA component. You can flip the default with `--keys=explicit` or `--keys=hashed`.
 
 ## Naming conventions
 
-A key is forever-ish — it&apos;s referenced from code, drafted, translated, reviewed, published. Renaming has a cost: every translator&apos;s context resets. Pick well the first time.
+Explicit keys are forever-ish — they are referenced from code, drafted, translated, reviewed, published. Renaming has a cost: every translator's context resets. Pick well the first time.
 
 - **Namespace by surface**: `checkout.cta_label`, `checkout.summary_total`.
-- **Snake_case the leaf**: `cta_label`, not `ctaLabel`.
-- **Describe role, not content**: `header.cta_primary` ages better than `header.start_free_trial` (the copy will change; the role won&apos;t).
-- **Don&apos;t embed the language**: `welcome_en` is wrong; `welcome` is right.
+- **Snake_case the leaf**: `cta_label`, not `ctaLabel` or `cta-label`.
+- **Describe role, not content**: `header.cta_primary` ages better than `header.start_free_trial` (the copy will change; the role won't).
+- **Don't embed the language**: `welcome_en` is wrong; `welcome` is right.
+- **Don't embed the environment**: keys are scoped to a profile, not duplicated per env.
+
+A loose convention that scales well: `<surface>.<component>.<role>`. So `checkout.summary.cta_primary`, `settings.billing.heading`, `auth.signup.subtitle`.
 
 ## Discovery: codemod vs scan
 
 The CLI discovers keys two ways:
 
-- **Codemod** (`--rewrite`) walks JSX/TSX, finds string literals in user-visible positions, and replaces them with `t("key", "value")`. It&apos;s aggressive and high-quality on JSX.
-- **Scan** (no `--rewrite`) walks any text file, lists candidate strings, and reports them — you wrap them by hand. Use this for Vue, Svelte, server templates, plain HTML.
+<TileGrid>
+  <Tile
+    icon="◇"
+    title="Codemod"
+    meta={
+      <>
+        <span>
+          <code>--rewrite</code>
+        </span>
+        <span>·</span>
+        <span>JSX, TSX, MDX</span>
+      </>
+    }
+  >
+    Walks the AST, finds string literals in user-visible positions (JSX text, JSX attribute values
+    for known props, <code>useT</code> arguments), and replaces them with{" "}
+    <code>{`t("key", "value")`}</code>. Aggressive and high-quality on JSX.
+  </Tile>
+  <Tile
+    icon="✓"
+    title="Scan"
+    meta={
+      <>
+        <span>read-only</span>
+        <span>·</span>
+        <span>any text file</span>
+      </>
+    }
+  >
+    Walks any text file, lists candidate strings, and reports them. You wrap them by hand. Use for
+    Vue SFCs, Svelte, server templates, plain HTML, and email templates.
+  </Tile>
+</TileGrid>
 
-Either way, the key set in your source profile should match the keys actually referenced in code. Use `shipeasy i18n validate` in CI to enforce that.
+Either way, the key set in your source profile should match the keys actually referenced in code. Use `shipeasy i18n validate` in CI to enforce that — it fails the build if a `t("…")` call has no matching key in the profile.
 
-## Placeholders
+```bash
+shipeasy i18n scan ./src --rewrite --profile en:prod
+shipeasy i18n validate --profile en:prod ./src
+```
 
-The runtime supports two placeholder styles:
+The codemod skips strings it cannot safely rewrite — anything with embedded JSX, dynamic interpolation in a non-template position, or suspicious-looking content (URLs, emails, all-numeric). Skipped candidates land in `i18n-codemod-review.json` at the project root with file, line, and reason.
+
+## Placeholders and pluralization
+
+The runtime supports ICU MessageFormat for both interpolation and plurals.
 
 ```ts
 t("greeting", { name: "Vadim" });
-// value: "Hello {name}!"
+// value: "Hello {{name}}!"
 // → "Hello Vadim!"
 ```
 
 ```ts
 t("notifications", { count: 3 });
-// value: "{count, plural, one {# notification} other {# notifications}}"
+// value: "{{count, plural, one {# notification} other {# notifications}}}"
 // → "3 notifications"
 ```
 
-The pluralisation syntax is ICU MessageFormat. Most translators understand it; the AI translation step preserves it.
+```ts
+t("invite_status", { gender: "f", name: "Anna" });
+// value: "{{gender, select, m {He} f {She} other {They}}} invited {{name}}."
+// → "She invited Anna."
+```
+
+Pluralization rules follow CLDR — Polylang preserves the structure across translation. The AI is instructed to fill out every plural category required by the target locale (Russian needs `one / few / many / other`; Arabic needs `zero / one / two / few / many / other`). Categories the source locale does not use are filled by analogy.
+
+<Callout type="warn" title="Validate your plural categories">
+  Always spot-check plural keys in low-resource locales after AI translation. Claude is good at this
+  but not perfect — wrong forms slip through and can survive review if no one on the team reads the
+  locale.
+</Callout>
+
+## Rich text and HTML
+
+For mixed text + markup (a sentence with a bold word, an inline link), wrap it as a fragment:
+
+```tsx
+<T id="legal.tos_consent">
+  By continuing you agree to our <Link href="/tos">Terms</Link> and{" "}
+  <Link href="/privacy">Privacy Policy</Link>.
+</T>
+```
+
+The codemod produces a value with placeholders for each component:
+
+```
+By continuing you agree to our {{0}}Terms{{/0}} and {{1}}Privacy Policy{{/1}}.
+```
+
+Translators see the placeholders as visible tokens; the runtime swaps them back into React elements. This keeps translation safe (no HTML injection) and re-renderable on the client without re-parsing.
 
 ## Descriptions matter for the AI
 
@@ -57,19 +251,35 @@ When the AI translates a key, it sees:
 
 - The key (`checkout.cta_label`).
 - The source value (`Pay`).
-- The description, if you&apos;ve added one (`CTA on the checkout summary page; verb, must be short`).
-- A handful of "context keys" — neighbouring keys from the same chunk.
+- The description, if you've added one (`CTA on the checkout summary page; verb, must be short`).
+- Up to 8 "context keys" — neighbouring keys from the same chunk or namespace.
+- Project-level tone and glossary.
 
-A good description doubles translation quality on ambiguous strings. Add one for any key whose meaning is not obvious from its source value.
+A good description doubles translation quality on ambiguous strings. Add one for any key whose meaning is not obvious from its source value. Common cases that need a description:
+
+- Single words (`Pay`, `Match`, `Order`) — disambiguate verb vs noun.
+- Branded UI labels (`Spaces`, `Workflows`) — mark do-not-translate.
+- Length-constrained strings (`Save`, `Done`) — tell the AI the budget.
+- Idioms (`You're all set!`) — explain the intent.
 
 ```bash
 shipeasy i18n keys describe checkout.cta_label \
-  --description "CTA button on the checkout summary page; verb, must be ≤12 chars in target locales"
+  --description "CTA button on the checkout summary page; verb, must be ≤12 chars in target locales" \
+  --max-length 12
+```
+
+You can also set descriptions inline in code with a comment that the codemod picks up:
+
+```tsx
+{
+  /* i18n: CTA button, verb, ≤12 chars */
+}
+<button>{t("checkout.cta_label", "Pay")}</button>;
 ```
 
 ## Chunking for performance
 
-By default every key in a profile is served in one bundle. For large apps (≥5k keys), split:
+By default every key in a profile is served in one bundle. For large apps (≥5k keys), split into chunks so the loader fetches only what each route needs.
 
 ```ts
 const labels = await loadLabels({ profile: "en:prod", chunk: "checkout" });
@@ -86,17 +296,46 @@ You define a chunk via:
     "chunks": {
       "checkout": ["src/checkout/**"],
       "settings": ["src/settings/**"],
+      "marketing": ["src/(marketing)/**"],
       "shared": ["src/components/**"]
     }
   }
 }
 ```
 
-The loader fetches the chunks active for the current page; navigations fetch additional chunks lazily. This keeps the initial bundle tiny and warm.
+The loader fetches chunks active for the current page; navigations fetch additional chunks lazily. This keeps the initial bundle tiny and warm.
+
+KV storage layout per published version:
+
+```
+i18n/v1/{project}/{profile}/v{n}/index.json     — chunk → hash manifest, ~2 KB
+i18n/v1/{project}/{profile}/v{n}/shared.json    — chunk bundle
+i18n/v1/{project}/{profile}/v{n}/checkout.json
+i18n/v1/{project}/{profile}/v{n}/settings.json
+i18n/v1/{project}/{profile}/v{n}/marketing.json
+```
+
+The index is cached aggressively at the edge; chunk URLs are content-hashed in the index, so a single-key edit in `checkout` purges only `checkout.json` for the new version. Other chunks stay warm.
+
+<Callout type="info" title="Don't chunk too early">
+  Under ~5,000 keys, a single bundle is usually faster end-to-end (one request, smaller HTTP
+  overhead). Chunk when the bundle exceeds ~80 KB gzipped or when route-level lazy loading actually
+  pays off.
+</Callout>
+
+## Stale keys and re-translation
+
+Polylang detects when a source value changes (the hash changes) and marks every target translation as **stale**. Stale keys still serve their old value at the loader — nothing breaks — but they show up in the dashboard with a yellow flag and are eligible for re-translation.
+
+```bash
+shipeasy i18n translate --profile fr:prod --ai --stale-only
+```
+
+The AI run sees the previous source value, the new source value, and the previous translation, and proposes an updated value. Most edits are tiny ("Sign in" → "Sign in →") and the AI keeps the existing translation; meaningful edits get a new draft.
 
 ## Deleting a key
 
-Deletion is destructive — it removes the key from every profile, every active draft, every version going forward.
+Deletion is destructive — it removes the key from every profile, every active draft, every version going forward (old published versions still contain the key, since they are immutable).
 
 ```bash
 shipeasy i18n keys delete checkout.old_cta_label --profile en:prod
@@ -106,6 +345,45 @@ In practice you should:
 
 1. Remove the `t("checkout.old_cta_label")` call from code first.
 2. Run `shipeasy i18n validate` to confirm no references remain.
-3. Then delete from the dashboard.
+3. Then delete from the dashboard or CLI.
 
-The dashboard&apos;s **Unused keys** tab uses your latest validate run to surface candidates.
+The dashboard's **Unused keys** tab uses the `last_seen_in_code` timestamp from your latest validate run to surface candidates. By default keys not seen in code for 30 days appear there; you can sweep them with:
+
+```bash
+shipeasy i18n keys prune --not-seen-in 30d --dry-run
+```
+
+Drop `--dry-run` once you trust the list.
+
+<Callout type="warn" title="Soft-delete vs hard-delete">
+  The CLI's <code>delete</code> hard-removes; the dashboard offers a <b>Mark deprecated</b> action
+  that keeps the key in the source profile but hides it from translation drafts. Deprecated keys are
+  excluded from coverage stats. Use this when you are mid-migration and old code still references
+  the key.
+</Callout>
+
+<ConvertCTA
+  eyebrow="NEXT"
+  title={
+    <>
+      Translate them — <em>safely</em>.
+    </>
+  }
+  body="Every translation lands as a draft, never directly in a profile. Review side-by-side, edit inline, then merge."
+  primaryHref="/i18n/drafts"
+  primaryLabel="How drafts work"
+  secondaryHref="/i18n/translations"
+  secondaryLabel="AI translations"
+  cmds={[
+    { label: "Validate keys", cmd: "shipeasy i18n validate --profile en:prod ./src" },
+    { label: "Prune unused", cmd: "shipeasy i18n keys prune --not-seen-in 30d" },
+  ]}
+  note="Stable hashes · stale detection · safe deletion"
+/>
+
+<DocNav
+  prev={{ href: "/i18n/profiles", title: "Profiles" }}
+  next={{ href: "/i18n/drafts", title: "Drafts" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/i18n/keys.mdx" />

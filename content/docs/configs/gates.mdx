@@ -1,53 +1,151 @@
 ---
 title: Gates
-description: Boolean feature flags with targeting, rollouts, killswitches, and overrides.
+description: Boolean feature flags with targeting rules, percentage rollouts, kill-switches, and per-user overrides — evaluated locally in your SDK with zero per-request cost.
 ---
 
-A **gate** is a single boolean answer for a single user. It is the unit of "should I do the new thing?" in your code.
+<DocMeta
+  status="Production ready"
+  read="9 min read"
+  updated="May 3, 2026"
+  works="Server SDK · Browser SDK · Edge KV"
+/>
+
+A **gate** is a single boolean answer for a single user. It is the unit of <em>&quot;should I do the new thing?&quot;</em> in your code. Gates are evaluated locally — the SDK keeps the bundle in process and the call is a hash table lookup, not a network round trip.
+
+Use a gate when the answer is yes/no. For typed payloads (strings, numbers, JSON), reach for a [dynamic value](/configs/values). For yes/no with measurement attached, reach for an [experiment](/experiments).
 
 ## Anatomy of a gate
 
-<CardGrid>
-  <Card href="#enabled" eyebrow="enabled" title="Master switch">
-    The on/off bit. When false, the gate returns `false` for everyone, ignoring rules.
-  </Card>
-  <Card href="#killswitch" eyebrow="killswitch" title="Emergency off">
-    Same effect as `enabled = false` but separate, so you can disable a feature without losing its targeting config. Use it during incidents.
-  </Card>
-  <Card href="#rules" eyebrow="rules" title="Targeting">
-    Optional list of `{ attr, op, value }` predicates. ANDed. A user must match every rule (and the rollout) to get `true`.
-  </Card>
-  <Card href="#rollout" eyebrow="rolloutPct" title="Percentage">
-    `0..10000` (we work in basis points internally — UIs show 0–100%). Bucketing is deterministic by user ID and salt.
-  </Card>
-  <Card href="#overrides" eyebrow="overrides" title="Overrides">
-    Force `true` or `false` for specific user IDs. Bypasses everything. Useful for QA + dogfooding.
-  </Card>
-  <Card href="#salt" eyebrow="salt" title="Hash salt">
-    Per-gate salt fed into the bucketing hash. Change it and rollout buckets re-shuffle — useful when rolling out the same feature twice.
-  </Card>
-</CardGrid>
+<TileGrid>
+  <Tile
+    href="#enabled"
+    icon="⏻"
+    title="enabled — master switch"
+    meta={
+      <>
+        <span>
+          <b>boolean</b>
+        </span>
+        <span>·</span>
+        <span>preserves config</span>
+      </>
+    }
+  >
+    The on/off bit. When false, the gate returns <code>false</code> for everyone, ignoring rules.
+    Targeting rules and rollout are preserved.
+  </Tile>
+  <Tile
+    href="#killswitch"
+    icon="◉"
+    title="killswitch — emergency off"
+    meta={
+      <>
+        <span>
+          <b>boolean</b>
+        </span>
+        <span>·</span>
+        <span>incident-grade</span>
+      </>
+    }
+  >
+    Same effect as <code>enabled = false</code> but separate, so you can disable a feature during an
+    incident without losing its targeting config.
+  </Tile>
+  <Tile
+    href="#rules"
+    icon="⌥"
+    title="rules — targeting"
+    meta={
+      <>
+        <span>list of predicates</span>
+        <span>·</span>
+        <span>ANDed</span>
+      </>
+    }
+  >
+    Optional list of <code>{`{ attr, op, value }`}</code> predicates. ANDed. A user must match every
+    rule (and the rollout) to get <code>true</code>.
+  </Tile>
+  <Tile
+    href="#rollout"
+    icon="▦"
+    title="rolloutPct — percentage"
+    meta={
+      <>
+        <span>
+          <b>0–100%</b>
+        </span>
+        <span>·</span>
+        <span>basis points</span>
+      </>
+    }
+  >
+    <code>0..10000</code> internally (UIs show 0–100%). Bucketing is deterministic by user ID and
+    salt.
+  </Tile>
+  <Tile
+    href="#overrides"
+    icon="◆"
+    title="overrides — per-user"
+    meta={
+      <>
+        <span>always-on / always-off</span>
+        <span>·</span>
+        <span>by user_id</span>
+      </>
+    }
+  >
+    Force <code>true</code> or <code>false</code> for specific user IDs. Bypasses everything. Useful
+    for QA + dogfooding.
+  </Tile>
+  <Tile
+    href="#salt"
+    icon="⁂"
+    title="salt — hash salt"
+    meta={
+      <>
+        <span>per-gate</span>
+        <span>·</span>
+        <span>re-shuffle buckets</span>
+      </>
+    }
+  >
+    Per-gate salt fed into the bucketing hash. Bump it and rollout buckets re-shuffle — useful when
+    rolling out the same feature twice.
+  </Tile>
+</TileGrid>
 
 ## Evaluation order
 
 For a request `gate(name, user)`:
 
 ```
-1. killswitch ON  → false
-2. enabled OFF    → false
-3. user.user_id in overrides[true]  → true
-4. user.user_id in overrides[false] → false
-5. any rule fails → false
+1. killswitch ON                       → false
+2. enabled OFF                         → false
+3. user.user_id ∈ overrides[true]      → true
+4. user.user_id ∈ overrides[false]     → false
+5. any rule fails                      → false
 6. murmur3(salt + user_id) % 10000 < rolloutPct → true
-7. otherwise → false
+7. otherwise                           → false
 ```
 
-That order matters: rules are evaluated **before** the rollout. _"100% of `plan = pro`"_ means _100%_ of pro users, not _the same 100% bucket_ filtered down to pros.
+That order matters: rules are evaluated **before** the rollout. <em>&quot;100% of `plan = pro`&quot;</em> means <em>100%</em> of pro users, not <em>the same 100% bucket</em> filtered down to pros. The rollout filter never fights a targeting rule.
+
+<Callout type="info" title="Why deterministic bucketing matters">
+  Same user, same gate, same answer — every time, on every server, in every language SDK. No
+  flicker, no &quot;why does this user see different things on different requests&quot;, no need to
+  persist assignments anywhere. The hash is the persistence.
+</Callout>
 
 ## API
 
+### Server SDK
+
 ```ts
-import { flags } from "@shipeasy/sdk/server";
+import { configureShipeasy, flags } from "@shipeasy/sdk/server";
+
+configureShipeasy({ apiKey: process.env.SHIPEASY_SERVER_KEY!, env: "prod" });
+await flags.init();
 
 const enabled = flags.gate("new-checkout-flow", {
   user_id: "u_4f2a",
@@ -56,7 +154,7 @@ const enabled = flags.gate("new-checkout-flow", {
 });
 ```
 
-Browser:
+### Browser SDK
 
 ```ts
 import { configureShipeasy } from "@shipeasy/sdk/client";
@@ -71,43 +169,118 @@ if (client.getFlag("new-checkout-flow")) {
 
 `gate()` / `getFlag()` is synchronous. If you call it before `init()` resolves, you get `false` and a dev-mode warning. Always `await flags.init()` once at boot.
 
+<ApiTable>
+  <ApiRow
+    name="name"
+    required
+    type="string"
+    desc="Stable identifier — used in the dashboard, the CLI, and as the KV key suffix. kebab-case."
+  />
+  <ApiRow
+    name="ctx"
+    required
+    type="EvalContext"
+    desc={
+      <>
+        Evaluation context. Must contain <code>user_id</code> for deterministic bucketing. Add any
+        attributes used by your targeting rules.
+      </>
+    }
+  />
+  <ApiRow
+    name="defaultValue"
+    optional
+    type="boolean"
+    desc="Returned when the gate is missing from the bundle (e.g. SDK not initialised). Defaults to false — fail closed."
+  />
+  <ApiRow
+    name="bucketBy"
+    optional
+    type="string"
+    desc={
+      <>
+        Override the bucketing key for this call. Defaults to <code>user_id</code>. Use{" "}
+        <code>account_id</code> for B2B cohort consistency.
+      </>
+    }
+  />
+</ApiTable>
+
+The return is a plain `boolean`. There is no async, no Promise, no fetch — the bundle is in memory.
+
 ## Killswitch [#killswitch]
 
 The killswitch is a separate field from `enabled` so you can keep targeting and rollout intact while turning the feature off. Three places to flip it:
 
-- Dashboard: red **Killswitch** chip on the gate row.
-- CLI: `shipeasy flags disable <name>` (toggles `enabled`, not the killswitch — for the killswitch use `--killswitch`).
-- API: `PATCH /api/flags/<name>` with `{ "killswitch": true }`.
+- **Dashboard**: red **Killswitch** chip on the gate row.
+- **CLI**: `shipeasy flags disable <name> --killswitch` (without `--killswitch` it toggles `enabled` instead).
+- **API**: `PATCH /api/flags/<name>` with `{ "killswitch": true }`.
 
-A killed gate returns `false` everywhere within the SDK&apos;s next poll. Re-enabling restores the full prior state.
+A killed gate returns `false` everywhere within the SDK&apos;s next poll. Re-enabling restores the full prior state — overrides, rules, rollout %, salt, all of it. Treat the killswitch as your incident lever; treat `enabled` as your &quot;feature is shipped, deactivated cleanly&quot; lever.
+
+<Callout type="warn" title="Killswitch is a contract, not a panic button">
+  A killed gate goes false within the next poll, not instantly. With the default 30s poll a
+  worst-case worker still serves the new path for ~30s after you hit the switch. For sub-second
+  cutoff, use the Pro 10s poll or the Enterprise streaming push.
+</Callout>
 
 ## Overrides [#overrides]
 
-In the dashboard, expand a gate and add user IDs under **Overrides → Always on** or **Always off**. Overrides:
+In the dashboard, expand a gate and add user IDs under **Overrides &rarr; Always on** or **Always off**. Overrides:
 
 - Bypass `enabled`, `killswitch`, all rules, and the rollout.
-- Are scoped to **`user_id`** only (no attribute matching).
+- Are scoped to **`user_id`** only (no attribute matching — it&apos;s a literal set lookup).
 - Are great for: QA accounts, internal dogfooders, customer-success demos, repro of a bug a single customer is hitting.
 
-If you need a percentage-based "always-on for cohort X", use a [targeting rule](/configs/targeting) on a custom attribute (`internal: true`) instead.
+```ts
+// dashboard JSON shape:
+{
+  "name": "new-checkout-flow",
+  "overrides": {
+    "always_on":  ["u_qa1", "u_qa2", "u_demo"],
+    "always_off": ["u_legacy_partner"]
+  }
+}
+```
 
-## Naming
+If you need a percentage-based &quot;always-on for cohort X&quot;, use a [targeting rule](/configs/targeting) on a custom attribute (`internal: true`) instead. Overrides scale linearly per-row in KV; rules are O(1).
 
-- Use kebab-case: `new-checkout-flow`, not `newCheckoutFlow`.
-- Describe the **change**, not the abstract feature. `enable-redis-pool` ages better than `redis-pool`.
-- Prefix by area for grouping: `checkout-`, `nav-`, `infra-`.
+## Naming [#enabled]
 
-## Cleaning up
+- **kebab-case**: `new-checkout-flow`, not `newCheckoutFlow`.
+- **Describe the change, not the abstract feature**: `enable-redis-pool` ages better than `redis-pool` (which sounds like a permanent feature, not a temporary gate).
+- **Prefix by area** for grouping: `checkout-`, `nav-`, `infra-`.
+- **Avoid double-negatives**: prefer `show-banner` over `hide-banner`.
+
+## Cleaning up [#rules]
 
 Stale flags are technical debt — once a feature is fully launched, delete the flag and the dead code. The CLI helps:
 
 ```bash
-shipeasy flags list --json | jq '.[] | select(.enabled == 1 and .rolloutPct == 10000) | .name'
+# Every gate currently at enabled: true, rollout: 100%
+shipeasy flags list --json \
+  | jq '.[] | select(.enabled == 1 and .rolloutPct == 10000) | .name'
 ```
 
-Lists every gate currently at `enabled: true, rollout: 100%` — these are candidates for removal.
+These are candidates for removal. Run a `shipeasy flags validate ./src` after the deletion to catch any code references that need to be ripped out.
 
-## Limits
+The dashboard also surfaces a **Cleanup** view that lists gates which have been at 100% (or 0%) for more than 30 days, with a one-click PR-creation button if you&apos;ve connected a GitHub app.
+
+## The salt [#salt]
+
+Each gate has its own salt. If you ever want to **re-shuffle** the rollout buckets without changing the percentage (say, to avoid the same 5% always being chosen for every gate), bump the salt:
+
+```bash
+shipeasy flags update my-feature --salt v2
+```
+
+That&apos;s rare. The default salt is fine for almost every case. The salt is also why two gates at 50% don&apos;t serve the same 50% of users — different salts, different buckets, independently distributed.
+
+## Audit log
+
+Every write to a gate is recorded in the audit log: who, when, from what (dashboard, CLI, API), and the diff. Find it under **Configs &rarr; Gates &rarr; \<gate\> &rarr; History**. Each row links to a one-click revert.
+
+## Limits [#rollout]
 
 | Plan       | Gates per project | Rules per gate | Overrides per gate |
 | ---------- | ----------------- | -------------- | ------------------ |
@@ -116,3 +289,31 @@ Lists every gate currently at `enabled: true, rollout: 100%` — these are candi
 | Enterprise | Unlimited         | Unlimited      | Unlimited          |
 
 If you hit a limit, audit for stale flags first; those numbers are very generous if you delete what you ship.
+
+<ConvertCTA
+  eyebrow="NEXT"
+  title={
+    <>
+      Add <em>targeting rules</em>.
+    </>
+  }
+  body='A flag with no rules is a kill-switch. Add an attribute predicate and you&apos;ve got the rules engine — "100% of plan=pro in country=US" in one line.'
+  primaryHref="/configs/targeting"
+  primaryLabel="Targeting & rollouts"
+  secondaryHref="/configs/values"
+  secondaryLabel="Dynamic values"
+  cmds={[
+    {
+      label: "Create with a rule",
+      cmd: "shipeasy flags create dark-mode --rule plan=pro --rollout 100",
+    },
+    { label: "Re-shuffle buckets", cmd: "shipeasy flags update dark-mode --salt v2" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/configs/quickstart", title: "Quickstart" }}
+  next={{ href: "/configs/values", title: "Dynamic values" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/configs/gates.mdx" />

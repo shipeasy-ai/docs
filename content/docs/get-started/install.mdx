@@ -1,23 +1,94 @@
 ---
 title: Install
-description: Add the ShipEasy SDK to your application and the CLI to your machine.
+description: Add the ShipEasy SDK to your application, the CLI to your machine, and (optionally) the MCP server to your AI assistant.
 ---
 
-ShipEasy ships as a small set of npm packages. You only need the ones you use.
+<DocMeta
+  status="Production ready"
+  read="6 min read"
+  updated="May 3, 2026"
+  works="Node 20+ · Workers · Bun · Deno · Browser"
+/>
+
+ShipEasy ships as a small set of npm packages — install only the ones you need. There is one SDK, one CLI binary, and one MCP server. They all share the same login.
 
 ## Pick what you need
 
-<CardGrid>
-  <Card href="#sdk" eyebrow="Required" title="@shipeasy/sdk">
-    The SDK — server + browser builds, conditional exports.
-  </Card>
-  <Card href="#cli" eyebrow="Recommended" title="@shipeasy/cli">
-    `shipeasy` binary. Login, manage flags, scan code, publish translations.
-  </Card>
-  <Card href="#mcp" eyebrow="Optional" title="@shipeasy/mcp">
-    MCP server for AI assistants — Claude Code, Cursor, Windsurf, etc.
-  </Card>
-</CardGrid>
+<TileGrid>
+  <Tile
+    href="#sdk"
+    icon="◇"
+    title="@shipeasy/sdk"
+    meta={
+      <>
+        <span>
+          <b>required</b>
+        </span>
+        <span>·</span>
+        <span>server + browser</span>
+      </>
+    }
+  >
+    The core SDK. Conditional exports pick the right build for your runtime — Node, Workers, Bun,
+    Deno, or browser.
+  </Tile>
+  <Tile
+    href="#cli"
+    icon="⌗"
+    title="@shipeasy/cli"
+    meta={
+      <>
+        <span>
+          <b>recommended</b>
+        </span>
+        <span>·</span>
+        <span>~12MB binary</span>
+      </>
+    }
+  >
+    The <code>shipeasy</code> command. Login, manage flags and experiments, scan code for i18n keys,
+    install the MCP server.
+  </Tile>
+  <Tile
+    href="#mcp"
+    icon="✦"
+    title="@shipeasy/mcp"
+    meta={
+      <>
+        <span>
+          <b>optional</b>
+        </span>
+        <span>·</span>
+        <span>Claude · Cursor · Windsurf</span>
+      </>
+    }
+  >
+    MCP server for AI assistants. Installed via the CLI — your agent gets a typed toolkit.
+  </Tile>
+  <Tile
+    href="#frameworks"
+    icon="◈"
+    title="Framework adapters"
+    meta={
+      <>
+        <span>React · Vue · Svelte · Angular</span>
+      </>
+    }
+  >
+    Idiomatic wrappers around the browser SDK. Hooks, composables, stores, directives.
+  </Tile>
+</TileGrid>
+
+## Quick install
+
+<InstallTabs npm="npm install @shipeasy/sdk" />
+
+```bash
+npm install -g @shipeasy/cli
+shipeasy login
+```
+
+That&apos;s the whole runway from zero to working. Everything below is detail.
 
 ## SDK [#sdk]
 
@@ -25,101 +96,269 @@ ShipEasy ships as a small set of npm packages. You only need the ones you use.
   <Step title="Install the package">
     ```bash
     npm install @shipeasy/sdk
-    # or pnpm add / yarn add / bun add
+    # pnpm add @shipeasy/sdk
+    # yarn add @shipeasy/sdk
+    # bun add @shipeasy/sdk
     ```
-    The package ships **both** server (Node, Cloudflare Workers, Bun, Deno) and browser builds via conditional exports — your bundler picks the right one automatically.
-  </Step>
-  <Step title="Server initialisation">
-    ```ts
-    import { configureShipeasy } from "@shipeasy/sdk/server";
 
-    const sdk = configureShipeasy({
+    The package ships **both** server (Node, Cloudflare Workers, Bun, Deno) and browser builds via conditional exports. Your bundler picks the right one automatically; you can also import the explicit subpath (`/server`, `/client`) when you want to be unambiguous (e.g. inside a monorepo with a shared util used from both).
+
+  </Step>
+
+  <Step title="Server initialisation">
+    For Next.js, put this in your root `layout.tsx` so it runs once per cold start. For an Express or Hono app, call it during startup. For RSC, the SDK persists state across the async-context boundary so you don&apos;t need a Provider on the server side.
+
+    ```ts
+    import { shipeasy } from "@shipeasy/sdk/server";
+
+    await shipeasy({
       apiKey: process.env.SHIPEASY_SERVER_KEY!, // server SDK key
       env: "prod",                              // "dev" | "staging" | "prod"
     });
-
-    await sdk.init(); // hydrates the in-process cache; safe to call once
     ```
-    The server SDK polls `/sdk/flags` and `/sdk/experiments` in the background. Evaluation happens **locally** — no per-request network call.
+
+    The server SDK polls `/sdk/flags` and `/sdk/experiments` in the background. Evaluation happens **locally** — there is no per-request network call from your code.
 
   </Step>
+
   <Step title="Browser initialisation">
     ```ts
-    import { configureShipeasy } from "@shipeasy/sdk/client";
+    import { shipeasy } from "@shipeasy/sdk/client";
 
-    const client = configureShipeasy({
-      apiKey: import.meta.env.VITE_SHIPEASY_CLIENT_KEY,
+    shipeasy({
+      apiKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY!,
       env: "prod",
     });
 
-    await client.identify({ user_id: "u_4f2a", plan: "pro" });
+    // Once you know who the user is:
+    await shipeasy.identify({ user_id: "u_4f2a", plan: "pro" });
     ```
-    The client SDK auto-manages an `anonymous_id` cookie, batches event uploads, and exposes a [devtools overlay](/get-started/sdks#devtools).
+
+    The client SDK auto-manages an `anonymous_id` cookie, batches event uploads with `navigator.sendBeacon` on page hide, and exposes a [devtools overlay](/get-started/sdks#devtools) at `?shipeasy=1`.
+
+  </Step>
+
+  <Step title="One key, one configure call">
+    Flags, experiments, and i18n share a single `apiKey`. There is no separate `i18n.init()`, no second `flags.configure()`. The single `shipeasy()` call boots all three.
+
+    Don&apos;t wrap this in a custom helper file. The SDK owns its own initialisation.
 
   </Step>
 </Steps>
 
-<Callout type="warn" title="Two kinds of keys">
+<Callout type="warn" title="Two kinds of keys — server vs client">
   **Server keys** can read full payloads and write events. **Client keys** are scoped: they expose
-  only the flags and configs you mark _client-readable_, and rate-limit by domain. Never put a
+  only the gates and configs you mark _client-readable_, and they rate-limit by domain. Never put a
   server key in browser code. Manage both in **Project → SDK keys**, or with `shipeasy keys`.
 </Callout>
 
 ## CLI [#cli]
 
 <Steps>
-
   <Step title="Install globally">
+    <InstallTabs npm="npm install -g @shipeasy/cli" />
+
+    Or skip the install and use it ad-hoc:
 
     ```bash
-    npm install -g @shipeasy/cli
-    # or use it without installing
     npx -y @shipeasy/cli@latest --help
     ```
 
   </Step>
 
-  <Step title="Verify">
+<Step title="Verify">```bash shipeasy --version shipeasy --help ```</Step>
 
+  <Step title="Log in">
     ```bash
-    shipeasy --version
-    shipeasy --help
+    shipeasy login
     ```
 
-  </Step>
+    Opens a browser to confirm. After confirmation, credentials are written to `~/.shipeasy/credentials` (mode `0600`). See [Authenticate](/get-started/authenticate) for the full flow including CI tokens.
 
+  </Step>
 </Steps>
 
-The CLI is a thin wrapper over the public REST API. Anything you see in the dashboard, you can do from your terminal or CI. See the [full command reference](/get-started/cli).
+The CLI is a thin wrapper over the same Server Actions the dashboard uses. Anything you can do in the UI, you can do from a terminal or a CI job. Full reference at [CLI](/get-started/cli).
 
 ## MCP server [#mcp]
 
-If you use Claude Code, Cursor, Windsurf, or any other MCP-compatible AI assistant, install the ShipEasy MCP server so your agent can do setup work for you.
+If you use Claude Code, Cursor, Windsurf, or any other MCP-compatible AI assistant, install the ShipEasy MCP server so your agent can do setup work for you:
 
 <Terminal title="zsh">
   <Prompt />
   shipeasy mcp install
   <Out>
-    {"\n"}✔ Wrote ~/.claude/settings.json{"\n"}✔ Wrote .cursor/mcp.json{"\n"}MCP server registered.
-    Restart your AI assistant to pick it up.
+    {"\n"}? Which assistants? › Claude Code, Cursor{"\n"}✔ Wrote ~/.claude/settings.json{"\n"}✔
+    Wrote .cursor/mcp.json{"\n"}MCP server registered. Restart your AI assistant to pick it up.
   </Out>
 </Terminal>
 
-Or wire it up by hand — see [MCP server setup](/get-started/mcp).
+The MCP server uses your CLI credentials — no extra env vars, no separate token. See [MCP server](/get-started/mcp) for the tool inventory and manual config.
 
-## Frameworks & languages
+## Environment variables
 
-<CardGrid>
-  <Card href="/get-started/sdks" eyebrow="JavaScript" title="Node, Next.js, Vite, Bun, Workers">
-    `@shipeasy/sdk` ships all of these out of the box.
-  </Card>
-  <Card href="/get-started/sdks#react" eyebrow="UI" title="React, Vue, Svelte, Angular">
-    Per-framework adapters with hooks/composables/directives.
-  </Card>
-  <Card href="/get-started/sdks#mobile" eyebrow="Mobile" title="React Native, iOS, Android">
-    Same SDK — the SDK has no DOM dependencies on the server build.
-  </Card>
-  <Card href="/get-started/sdks#ruby" eyebrow="Backend" title="Ruby, Python, Go">
-    A Ruby gem is published; Python and Go are in beta.
-  </Card>
-</CardGrid>
+The SDK reads the following from `process.env` (and `import.meta.env` in Vite). Anything passed explicitly to `shipeasy({ ... })` wins.
+
+<ApiTable>
+  <ApiRow
+    name="SHIPEASY_SERVER_KEY"
+    optional
+    type="string"
+    desc={<>Server-side SDK key. Used by the server build. Treat as a secret.</>}
+  />
+  <ApiRow
+    name="NEXT_PUBLIC_SHIPEASY_CLIENT_KEY"
+    optional
+    type="string"
+    desc={
+      <>
+        Client-side SDK key. Safe to expose. Vite users: <code>VITE_SHIPEASY_CLIENT_KEY</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="SHIPEASY_ENV"
+    optional
+    type={`"dev" | "staging" | "prod"`}
+    desc={
+      <>
+        Default environment when not passed explicitly. Defaults to <code>"prod"</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="SHIPEASY_EDGE_URL"
+    optional
+    type="string"
+    desc={
+      <>
+        Override the edge worker base URL. Defaults to <code>https://edge.shipeasy.dev</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="SHIPEASY_API_URL"
+    optional
+    type="string"
+    desc={
+      <>
+        Override the admin API base URL. Defaults to <code>https://shipeasy.ai</code>.
+      </>
+    }
+  />
+</ApiTable>
+
+## Frameworks [#frameworks]
+
+<TileGrid>
+  <Tile
+    href="/get-started/sdks#server"
+    icon="◇"
+    title="Node · Workers · Bun · Deno"
+    meta={
+      <>
+        <span>SSR · RSC · edge</span>
+      </>
+    }
+  >
+    `@shipeasy/sdk/server` works in any V8/Node-compatible runtime out of the box.
+  </Tile>
+  <Tile
+    href="/get-started/sdks#react"
+    icon="◈"
+    title="React, Vue, Svelte, Angular"
+    meta={
+      <>
+        <span>hooks · composables · stores</span>
+      </>
+    }
+  >
+    Per-framework adapters that wrap the browser SDK with idiomatic primitives.
+  </Tile>
+  <Tile
+    href="/get-started/sdks#mobile"
+    icon="✎"
+    title="React Native, iOS, Android"
+    meta={
+      <>
+        <span>no DOM</span>
+      </>
+    }
+  >
+    Use the server build — it has zero DOM dependencies.
+  </Tile>
+  <Tile
+    href="/get-started/sdks#ruby"
+    icon="✦"
+    title="Ruby, Python, Go"
+    meta={
+      <>
+        <span>gem published</span>
+        <span>·</span>
+        <span>py/go beta</span>
+      </>
+    }
+  >
+    The Ruby gem ships today. Python and Go are in beta — ping us for access.
+  </Tile>
+</TileGrid>
+
+## Edge runtimes & ESM
+
+The SDK is shipped as ESM-first with a CJS fallback for older Node. There are no Node built-ins on the hot path, so it runs unchanged on Cloudflare Workers, Vercel Edge, Deno Deploy, and Bun.
+
+<Callout type="info" title="Conditional exports cheat sheet">
+  - `import {shipeasy} from "@shipeasy/sdk/server"` — server build, picked automatically when
+  bundling for Node/Workers. - `import {shipeasy} from "@shipeasy/sdk/client"` — browser build,
+  picked when bundling for the browser. - `import "@shipeasy/sdk"` — re-exports both via conditional
+  resolution. Use this only if your bundler honours `exports`.
+</Callout>
+
+## Monorepo notes
+
+In a pnpm/yarn workspace, install `@shipeasy/sdk` in each app that uses it (don&apos;t hoist it into the root unless your tooling resolves hoisted deps). For shared internal libraries that import from the SDK, depend on it as a `peerDependency` so consumers control the version.
+
+If you depend on the SDK from a Cloudflare Worker built with `wrangler`, no special config is needed — `wrangler` honours `exports` and picks the right build.
+
+## Troubleshooting
+
+<Callout type="warn" title="Node 18 or older">
+  ShipEasy requires Node 20+. Older Node versions lack stable `fetch` and `AbortSignal.timeout`. Upgrade Node, or polyfill `fetch` and pass it explicitly via `shipeasy({ fetch: customFetch })`.
+</Callout>
+
+<Callout type="warn" title="Edge runtime build picks the wrong file">
+  Some bundlers misclassify edge targets as Node. Force the right build with the explicit subpath:
+  `import {shipeasy} from "@shipeasy/sdk/server"` — this works in every edge runtime we&apos;ve
+  tested.
+</Callout>
+
+<Callout type="warn" title='Vite says "process is not defined"'>
+  Use `import.meta.env.VITE_SHIPEASY_CLIENT_KEY` rather than `process.env.*` in Vite, and let Vite
+  inline it at build time. Don&apos;t pass `process.env.SHIPEASY_SERVER_KEY` to the client build —
+  that key belongs only on the server.
+</Callout>
+
+<ConvertCTA
+  eyebrow="NEXT"
+  title={
+    <>
+      Log in, then <em>ship a flag</em>.
+    </>
+  }
+  body="One command opens your browser, drops a credential file on disk, and you never think about API keys again — for interactive use. CI is one env var."
+  primaryHref="/get-started/authenticate"
+  primaryLabel="Authenticate"
+  secondaryHref="/configs/quickstart"
+  secondaryLabel="Ship your first flag"
+  cmds={[
+    { label: "Install the CLI", cmd: "npm install -g @shipeasy/cli" },
+    { label: "Then log in", cmd: "shipeasy login" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/get-started/how-it-works", title: "How it works" }}
+  next={{ href: "/get-started/authenticate", title: "Authenticate" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/get-started/install.mdx" />

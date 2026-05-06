@@ -1,25 +1,49 @@
 ---
 title: Events
-description: What `track()` actually does, what schema events have, and how they get aggregated.
+description: What `track()` actually does, the event schema, where events live, and how they get aggregated into metrics.
 ---
 
-An event is the raw signal that metrics are computed from. You log it with `track()`; the SDK forwards it to the edge worker (`POST /collect`); the worker writes it to Cloudflare Analytics Engine fire-and-forget. From there a daily cron aggregates events into metric values per user per day.
+<DocMeta
+  status="Production ready"
+  read="8 min read"
+  updated="May 3, 2026"
+  works="Server SDK · Browser SDK · Edge Worker"
+/>
+
+An event is the raw signal that metrics are computed from. You log it with `track()`; the SDK forwards it to the edge worker (`POST /collect`); the worker writes it to **Cloudflare Analytics Engine** fire-and-forget. From there a daily cron aggregates events into metric values per user per analysis window.
+
+This page is the reference for what `track()` accepts, what the platform does with it, and what to log (and what not to).
 
 ## Logging events
 
 ```ts
-// server
+// server (Node, edge, anywhere with a user_id)
+import { flags } from "@shipeasy/sdk/server";
 flags.track(user_id, "purchase", { value: 49.99, sku: "SHIRT-L-BLUE" });
 
 // browser
+import { client } from "@shipeasy/sdk/client";
 client.track("checkout_viewed", { source: "nav" });
 ```
 
-`track()` is **fire and forget** — it never throws, never blocks. The browser SDK batches events and flushes:
+`track()` is **fire and forget** — it never throws, never blocks, never returns a promise you need to await. If the network is unavailable, the browser SDK queues to memory; if the worker is down, the event is dropped (Analytics Engine has its own buffering, so this is rarer than you'd think).
 
-- After a small batch fills (default 20 events).
+The browser SDK batches events and flushes:
+
+- After a small batch fills (default `20` events).
 - On a 5-second timer.
-- On `pagehide` via `navigator.sendBeacon` so unloads don&apos;t lose data.
+- On `pagehide` via `navigator.sendBeacon` so unloads don't lose data.
+- Immediately on `flags.identify()` and `client.alias()` to make sure stitching has the freshest data.
+
+You can tune the batcher:
+
+```ts
+configureShipeasy({
+  apiKey,
+  env: "prod",
+  batch: { size: 50, intervalMs: 10_000, useBeacon: true },
+});
+```
 
 ## Event schema
 
@@ -27,16 +51,33 @@ client.track("checkout_viewed", { source: "nav" });
 | -------------- | -------- | ------------ | ----------------------------------------------------------------------- |
 | `event`        | `string` | yes          | The event name. Use snake_case: `purchase`, `signup_complete`.          |
 | `user_id`      | `string` | one of these | Pass on the server.                                                     |
-| `anonymous_id` | `string` | one of these | Auto-set by the browser SDK.                                            |
+| `anonymous_id` | `string` | one of these | Auto-set by the browser SDK; rotates on `client.reset()`.               |
 | `timestamp`    | `number` | no           | Defaults to "now". Pass a unix-ms timestamp to backfill.                |
 | `value`        | `number` | no           | Convenience for `sum`/`mean` metrics. Equivalent to `properties.value`. |
-| `properties`   | `object` | no           | Any string/number/boolean keys.                                         |
+| `properties`   | `object` | no           | Any string/number/boolean keys. Flat, ≤4 KB serialised.                 |
+| `context`      | `object` | no           | Auto-populated: locale, user agent, page URL, viewport.                 |
 
-A `properties` payload should be **flat** (no nested objects), bounded in size (≤4 KB serialised), and use stable keys. The platform indexes property keys for filtering and segmentation; an unbounded set of property keys (e.g. one key per dynamic value) hurts performance.
+A `properties` payload should be:
+
+- **Flat** — no nested objects. Cardinality on nested keys is unindexable.
+- **Bounded** in size (≤ 4 KB serialised). Larger payloads are rejected at the worker.
+- **Stable** in keys — the platform indexes property keys for filtering and segmentation. An unbounded set of keys (e.g. one key per dynamic value) hurts query performance and balloons the schema cache.
+
+### Picking event names
+
+Stable, low-cardinality event names. Snake_case. Past tense for things that happened, present continuous for state changes. Good and bad:
+
+| Good                   | Bad                      | Why                                                      |
+| ---------------------- | ------------------------ | -------------------------------------------------------- |
+| `purchase`             | `User Purchased Thing!!` | Casing, punctuation, instability.                        |
+| `signup_complete`      | `signup-complete`        | Convention. Pick one and stick to it.                    |
+| `cart_item_added`      | `cart_item_added_${sku}` | Cardinality lives in **properties**, not the event name. |
+| `page_view`            | `viewed_/products/123`   | Same.                                                    |
+| `subscription_started` | `subscriptionStarted`    | Snake_case, by convention.                               |
 
 ## Reserved event names
 
-Some event names are populated automatically and should not be logged manually:
+Some event names are populated automatically and should not be logged manually. They start with `$` to make accidental collisions obvious:
 
 | Event        | Source                                                                       |
 | ------------ | ---------------------------------------------------------------------------- |
@@ -44,6 +85,7 @@ Some event names are populated automatically and should not be logged manually:
 | `$page_view` | Browser SDK auto-tracks unless disabled.                                     |
 | `$identify`  | Logged by `client.identify()` and `flags.identify()`.                        |
 | `$alias`     | Logged when stitching anon → user.                                           |
+| `$session`   | Browser SDK rolls a new session id every 30 min of inactivity.               |
 
 You can opt out of auto-tracking in the SDK options:
 
@@ -51,39 +93,7 @@ You can opt out of auto-tracking in the SDK options:
 configureShipeasy({ apiKey, env: "prod", autoTrack: false });
 ```
 
-## Where events live
-
-Events are persisted to **Cloudflare Analytics Engine**, a time-series store. Retention depends on your plan:
-
-| Plan       | Retention |
-| ---------- | --------- |
-| Free       | 30 days   |
-| Pro        | 90 days   |
-| Enterprise | 365 days  |
-
-Aggregates (per-experiment, per-metric) are persisted to **D1** indefinitely. If you delete the underlying events, the aggregates remain.
-
-## Pulling raw events
-
-For debugging, the dashboard&apos;s **Events** tab streams the most recent events for the project. You can filter by event name, user, or property.
-
-Programmatically:
-
-```bash
-shipeasy events tail --event purchase --since 1h
-shipeasy events query --metric purchase_conversion --user u_4f2a
-```
-
-Raw events are not the place to do analytics — they&apos;re for "is the wiring correct?" and "what did this one user actually do?" checks. Use metrics for analysis.
-
-## Costs
-
-Events are billed per million per month. Rough orders of magnitude:
-
-- 10 events/user/day × 100k DAU ≈ 30M events/month → comfortably in Pro.
-- Tracking _every_ React render gets you to 10B events/month and a phone call from us.
-
-The browser SDK includes basic web-vitals auto-tracking by default. For high-traffic sites, disable what you don&apos;t use:
+Or selectively:
 
 ```ts
 configureShipeasy({
@@ -92,6 +102,117 @@ configureShipeasy({
   autoTrack: { pageView: true, webVitals: true, errors: false, fetch: false },
 });
 ```
+
+## Where events live
+
+Events are persisted to **Cloudflare Analytics Engine**, a columnar time-series store optimised for high-cardinality writes and aggregate queries. We picked AE on purpose:
+
+- **Writes are cheap and non-blocking.** Cloudflare doesn't bill us per write the way Postgres charges you per insert; we can accept billions of events without backing pressure on the request that triggered them.
+- **D1 would be a terrible fit.** D1 is SQLite-on-the-edge, optimised for OLTP. Pumping 30M events/month through SQLite would saturate the write lock, and the cost model isn't designed for the workload.
+- **Analytics Engine queries match the read shape.** Daily cron does aggregate scans (`SELECT user_id, count(*), sum(value) ... GROUP BY user_id`), which is exactly what AE was built for.
+
+Retention depends on your plan — events older than the retention window are no longer queryable from AE, but the **aggregates** computed by daily analysis are persisted to D1 indefinitely:
+
+| Plan       | AE retention | D1 aggregate retention |
+| ---------- | ------------ | ---------------------- |
+| Free       | 30 days      | unlimited              |
+| Pro        | 90 days      | unlimited              |
+| Enterprise | 365 days     | unlimited              |
+
+This means: if you delete the underlying events, the metric values for past windows remain — they were already collapsed into per-(experiment, metric, group, day) rows. Past results don't disappear when retention rolls.
+
+## What an aggregation pass looks like
+
+Conceptually, every night the cron runs something close to this for each (experiment, metric):
+
+```sql
+-- Pseudo-SQL. Actual implementation uses AE's query API + a Workers consumer.
+SELECT
+  exp.user_id,
+  exp.group,
+  COUNT(ev.id)                        AS event_count,    -- for `count`
+  COALESCE(MAX(1), 0)                 AS converted,      -- for `conversion`
+  COALESCE(SUM(ev.value), 0)          AS sum_value       -- for `sum`/`mean`
+FROM exposures exp
+LEFT JOIN events ev
+  ON  ev.user_id   = exp.user_id
+  AND ev.event     = $metric_event
+  AND ev.timestamp >= exp.exposed_at
+  AND ev.timestamp <  exp.exposed_at + $window
+WHERE exp.experiment = $experiment
+  AND exp.exposed_at >= $window_start
+  AND exp.exposed_at <  $window_end
+GROUP BY exp.user_id, exp.group;
+```
+
+The crucial join condition is `ev.timestamp >= exp.exposed_at` — events before the exposure don't count. That's what makes the analysis causal. See [How analysis works](/experiments/analysis#exposure-stitching) for the full pipeline.
+
+## Identity & stitching
+
+Most apps have anonymous users who later log in. The flow is:
+
+```ts
+// before login: browser SDK auto-assigns an anonymous_id
+client.track("page_view");
+
+// at login:
+client.identify(user_id); // future events use user_id
+client.alias(anonymous_id, user_id); // stitch past anon events to user_id
+```
+
+`alias` writes a small mapping row that the analysis cron applies retroactively when joining: events tagged with `anonymous_id = a` are attributed to `user_id = u` when reading from AE. This means an exposure that happened anonymously can still be matched to a conversion that happens after login — the user who looked at the variant is the same user who bought.
+
+## Pulling raw events
+
+For debugging, the dashboard's **Events** tab streams the most recent events for the project. You can filter by event name, user, or property.
+
+Programmatically:
+
+```bash
+shipeasy events tail --event purchase --since 1h
+shipeasy events query --metric purchase_conversion --user u_4f2a
+shipeasy events query --event purchase --where 'value>100' --since 24h
+```
+
+Raw events are **not the place to do analytics** — they're for _"is the wiring correct?"_ and _"what did this one user actually do?"_ checks. Use metrics for analysis. The platform's aggregates already handle all the joins, the deduplication, and the stats; rebuilding any of that from raw events is reinventing what we already give you.
+
+## Costs
+
+Events are billed per million per month. Rough orders of magnitude:
+
+- 10 events/user/day × 100k DAU ≈ 30M events/month → comfortably in Pro.
+- 100 events/user/day × 1M DAU ≈ 3B events/month → Enterprise; talk to us.
+- Tracking _every_ React render gets you to 10B events/month and a phone call from us.
+
+The browser SDK includes basic web-vitals auto-tracking by default. For high-traffic sites, disable what you don't use:
+
+```ts
+configureShipeasy({
+  apiKey,
+  env: "prod",
+  autoTrack: { pageView: true, webVitals: true, errors: false, fetch: false },
+});
+```
+
+### Sampling
+
+For very high-volume events (`page_view` on a busy site), sampling at the SDK is cheaper than rejecting at the worker:
+
+```ts
+client.track("page_view", {}, { sample: 0.1 }); // keep ~10%
+```
+
+The platform compensates for the sampling rate when computing metrics — `count` and `sum` are scaled by `1/sample`. `conversion` is unaffected (it's binary per user). Sample rates below `0.01` are rejected: at that point you're not measuring anything reliably.
+
+## PII rules
+
+Don't put personally identifiable information in event properties. Specifically:
+
+- **Never log raw email addresses, phone numbers, full names, addresses, or government IDs as property values.** Use a hashed user id instead. The dashboard will refuse to render properties that look like emails.
+- **Don't put credit card numbers or auth tokens in properties, ever.** AE is not PCI-DSS scope and we are not interested in becoming so on your behalf.
+- **Free-text user input** (chat messages, search queries) is fine in aggregate but think twice about per-event logging — it's a regulatory liability and the cost adds up.
+
+If you need to log something sensitive for debugging, log a hash (`sha256(value).slice(0, 16)`) and keep the mapping table on your own system.
 
 ## Idempotency
 
@@ -105,4 +226,67 @@ if (!alreadyTracked(eventId)) {
 }
 ```
 
-For the daily-aggregation case this almost never matters; for billing-grade event streams, keep your own dedup ledger.
+For the daily-aggregation case this almost never matters — `conversion` collapses any number of `purchase` events into a single `1` per user. For `count` and `sum`, double-counting matters; for billing-grade event streams, keep your own dedup ledger.
+
+## API · `flags.track`
+
+<ApiTable>
+  <ApiRow
+    name="user_id"
+    required
+    type="string"
+    desc={
+      <>
+        Stable user identifier. Or pass <code>anonymous_id</code> from the browser SDK.
+      </>
+    }
+  />
+  <ApiRow
+    name="event"
+    required
+    type="string"
+    desc="Snake_case event name. Avoid `$`-prefixed names — those are reserved."
+  />
+  <ApiRow
+    name="properties"
+    optional
+    type="Record<string, string|number|boolean>"
+    desc="Flat, ≤4 KB serialised."
+  />
+  <ApiRow
+    name="options"
+    optional
+    type="{ timestamp?: number; sample?: number }"
+    desc={
+      <>
+        Override defaults. <code>timestamp</code> for backfill, <code>sample</code> for per-call
+        sampling.
+      </>
+    }
+  />
+</ApiTable>
+
+<ConvertCTA
+  eyebrow="NEXT"
+  title={
+    <>
+      Read the <em>stats</em>.
+    </>
+  }
+  body="You've got events flowing and metrics defined. The last piece is what the daily cron does to those numbers — and how to read the result rows without lying to yourself."
+  primaryHref="/experiments/analysis"
+  primaryLabel="How analysis works"
+  secondaryHref="/experiments/metrics"
+  secondaryLabel="Back to metrics"
+  cmds={[
+    { label: "Tail events", cmd: "shipeasy events tail --event purchase --since 1h" },
+    { label: "Inspect a user", cmd: "shipeasy events query --user u_4f2a" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/experiments/metrics", title: "Metrics" }}
+  next={{ href: "/experiments/analysis", title: "How analysis works" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/experiments/events.mdx" />

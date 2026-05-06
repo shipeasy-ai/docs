@@ -1,57 +1,166 @@
 ---
-title: Introduction
-description: Localized labels and AI-assisted translations — discovered from your code, served from the edge.
+title: Polylang — localize as easy as asking Claude
+description: Localized labels and AI-assisted translations — discovered from your code, served from the edge in seconds.
 icon: Languages
 ---
 
-ShipEasy **String Manager** treats translations like configuration. You discover keys from source, store them on the project, generate translations (manually or via AI), review, and publish. New copy goes live worldwide in seconds via Cloudflare KV — no redeploy.
+<Hero
+  eyebrow="ShipEasy · Polylang"
+  title={
+    <>
+      Localize your product, <em>as easy as asking Claude</em>.
+    </>
+  }
+  subtitle="Polylang plugs into your codebase, finds every user-facing string, and ships translations that read like a human wrote them — because Claude did. From npm install to a fully translated build in five minutes."
+  primaryHref="/i18n/quickstart"
+  primaryLabel="Quickstart"
+  secondaryHref="#how-it-works"
+  secondaryLabel="How it works"
+/>
 
-## What it does
+<DocMeta
+  status="Production ready"
+  read="6 min read"
+  updated="May 3, 2026"
+  works="Next, Vite, Remix, Astro, Expo"
+/>
 
-<CardGrid>
-  <Card href="/i18n/keys" eyebrow="Discovery" title="Auto-discover keys">
-    Scan your repo for `t("hero.title")` calls and pull every key into the dashboard.
-  </Card>
-  <Card href="/i18n/profiles" eyebrow="Profiles" title="Locale × environment">
-    `en:prod`, `fr:prod`, `de:staging`. Each profile is a versioned manifest of keys and values.
-  </Card>
-  <Card href="/i18n/drafts" eyebrow="Drafts" title="Review before publish">
-    Translations live as drafts. AI-generated or manual. Reviewable inline before they go live.
-  </Card>
-  <Card href="/i18n/translations" eyebrow="AI" title="AI translations">
-    Anthropic Claude generates a draft for missing keys. You proofread, you approve, you publish.
-  </Card>
-</CardGrid>
+ShipEasy **Polylang** treats translations like configuration. You discover keys from source, store them on the project, generate translations (manually or via AI), review, and publish. New copy goes live worldwide in seconds via Cloudflare KV — no redeploy.
 
-## How copy gets to the user
+## The 5-minute path
+
+<Quickstart title="From hardcoded English to 12 languages" time="~5 minutes">
+  <QuickstartStep
+    num={1}
+    label="INSTALL"
+    title="Install the loader"
+    cmd="shipeasy i18n install-loader --profile en:prod"
+  >
+    A 1.4kB gzipped script tag — patched into your framework&apos;s entry file automatically.
+  </QuickstartStep>
+  <QuickstartStep
+    num={2}
+    label="DISCOVER"
+    title="Codemod + push keys"
+    cmd="shipeasy i18n scan ./src --rewrite"
+  >
+    JSX/TSX strings get rewritten to <code>t("key")</code> calls. Vue, Svelte, plain HTML get listed
+    for manual wrap.
+  </QuickstartStep>
+  <QuickstartStep
+    num={3}
+    label="TRANSLATE"
+    title="AI draft, you approve, publish"
+    cmd="shipeasy i18n translate --profile fr:prod --ai"
+  >
+    Claude drafts every missing key with your tone and glossary. Review in the dashboard, click
+    publish.
+  </QuickstartStep>
+</Quickstart>
+
+## What Polylang does
+
+<TileGrid>
+  <Tile
+    href="/i18n/keys"
+    icon="✓"
+    title="Auto-discover keys"
+    meta={
+      <>
+        <span>
+          <b>~94%</b> auto-extract
+        </span>
+        <span>·</span>
+        <span>JSX, TSX, MDX</span>
+      </>
+    }
+  >
+    Scan your repo for <code>t("hero.title")</code> calls — or let the codemod find raw English
+    strings and rewrite them automatically.
+  </Tile>
+  <Tile
+    href="/i18n/profiles"
+    icon="◇"
+    title="Locale × environment profiles"
+    meta={
+      <>
+        <span>
+          <b>versioned</b>
+        </span>
+        <span>·</span>
+        <span>roll back any time</span>
+      </>
+    }
+  >
+    <code>en:prod</code>, <code>fr:prod</code>, <code>de:staging</code>. Each profile is a manifest
+    of keys and values you can publish, diff and revert.
+  </Tile>
+  <Tile
+    href="/i18n/drafts"
+    icon="✎"
+    title="Drafts & inline review"
+    meta={
+      <>
+        <span>
+          <b>side-by-side</b> diff
+        </span>
+        <span>·</span>
+        <span>RBAC ready</span>
+      </>
+    }
+  >
+    Translations live as drafts before they ship. AI-generated or hand-written — both reviewable
+    inline by anyone with edit access.
+  </Tile>
+  <Tile
+    href="/i18n/translations"
+    icon="✦"
+    title="AI translations with brand voice"
+    meta={
+      <>
+        <span>
+          <b>tone</b> + glossary
+        </span>
+        <span>·</span>
+        <span>per-locale overrides</span>
+      </>
+    }
+  >
+    Anthropic Claude generates a draft for missing keys. Your tone and glossary are read on every
+    call — never marketing-speak unless you ask.
+  </Tile>
+</TileGrid>
+
+## How copy gets to the user [#how-it-works]
 
 <Steps>
   <Step title="Codemod or scan">
-    `shipeasy i18n scan ./src` (or the MCP `i18n_codemod_apply`) discovers strings and rewrites them as `t("key")`.
+    `shipeasy i18n scan ./src` (or the MCP `i18n_codemod_apply`) discovers strings and rewrites them as `t("key")`. Skipped strings (dynamic interpolations, rich HTML) land in `i18n-codemod-review.json` for manual review.
   </Step>
   <Step title="Push keys">
-    Discovered keys are pushed to a source profile (e.g. `en:prod`). Each key has a value and an optional description.
+    Discovered keys are pushed to a source profile (e.g. `en:prod`). Each key has a value, an optional description, and a stable hash so re-scans don&apos;t shuffle ordering.
   </Step>
   <Step title="Translate">
-    Create a target profile (`fr:prod`). Run `i18n translate --ai` to generate a draft. Review in the dashboard.
+    Create a target profile (`fr:prod`). Run `i18n translate --ai` to draft missing values. Claude reads your tone and glossary on every call. Review side-by-side in the dashboard.
   </Step>
   <Step title="Publish">
-    `i18n publish --profile fr:prod` writes the merged label set to KV in chunks. The CDN serves them with infinite TTL.
+    `i18n publish --profile fr:prod` writes the merged label set to KV in **chunks** (so single-key edits don&apos;t invalidate the whole bundle) and purges the relevant CDN URLs.
   </Step>
   <Step title="Loader fetches at the edge">
-    A small loader script `<script>` in your HTML fetches the right chunks for the active locale. Zero JS dependencies, zero round-trips before paint.
+    A small `<script>` in your HTML fetches the right chunks for the active locale. Zero JS dependencies. Infinite CDN TTL — sub-millisecond from anywhere.
   </Step>
 </Steps>
 
-## Quickstart
+## Quick install
+
+<InstallTabs npm="npm install -g @shipeasy/cli" />
 
 ```bash
-npm install -g @shipeasy/cli
 shipeasy login
 
 shipeasy i18n install-loader --profile en:prod  # injects the script tag
-shipeasy i18n scan ./src                         # discovers t("…") calls
-shipeasy i18n push ./i18n/en.json --profile en:prod
+shipeasy i18n scan ./src --rewrite               # discovers & rewrites t("…") calls
+shipeasy i18n push --profile en:prod
 shipeasy i18n profiles create --name fr:prod --locale fr
 shipeasy i18n translate --profile fr:prod --ai   # AI draft
 # review the draft in the dashboard, then:
@@ -60,13 +169,153 @@ shipeasy i18n publish --profile fr:prod
 
 Detailed walkthrough at [Quickstart](/i18n/quickstart).
 
+<Callout type="info" title="BYOK or hosted, your call">
+  Polylang works with your own Anthropic API key (zero markup, zero data retention) **or** the
+  hosted plan with a generous free tier. Switch any time in the project settings — translations stay
+  in your KV either way.
+</Callout>
+
+## Configure
+
+The config file is plain TypeScript — no YAML, no JSON gymnastics. Most teams ship the defaults and never touch it again.
+
+```ts
+// shipeasy.config.ts
+import { defineConfig } from "@shipeasy/sdk";
+
+export default defineConfig({
+  i18n: {
+    source: "en",
+    targets: ["es", "fr", "de", "ja", "pt-BR"],
+    files: ["app/**/*.{ts,tsx}", "content/**/*.md"],
+
+    // Brand voice — Claude reads this on every translation.
+    tone: "warm, technical, never marketing-speak",
+    glossary: {
+      ShipEasy: "ShipEasy", // never translate
+      ship: "deploy", // disambiguate
+    },
+
+    provider: { kind: "anthropic", model: "claude-haiku-4-5" },
+  },
+});
+```
+
+## API · `i18n` config
+
+<ApiTable>
+  <ApiRow
+    name="source"
+    required
+    type="Locale"
+    desc={
+      <>
+        The language your source code is written in. Usually <code>"en"</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="targets"
+    required
+    type="Locale[]"
+    desc={
+      <>
+        BCP-47 codes to translate into. Use region tags (<code>pt-BR</code>) when register matters.
+      </>
+    }
+  />
+  <ApiRow
+    name="files"
+    optional
+    type="string[]"
+    desc="Globs to scan for user-facing strings. Defaults to your framework's source dirs."
+  />
+  <ApiRow
+    name="tone"
+    optional
+    type="string"
+    desc="One-line voice guide. Claude reads this every translation. Keep it short — tonal, not exhaustive."
+  />
+  <ApiRow
+    name="glossary"
+    optional
+    type="Record<string,string>"
+    desc={
+      <>
+        Terms to lock or remap. Map a term to itself to mark <em>do-not-translate</em>.
+      </>
+    }
+  />
+  <ApiRow
+    name="provider"
+    optional
+    type="Provider"
+    desc={
+      <>
+        Defaults to hosted. Swap to{" "}
+        <code>{`{ kind: "anthropic", apiKey: env.ANTHROPIC_KEY }`}</code> for BYOK.
+      </>
+    }
+  />
+</ApiTable>
+
+## Use it in your app
+
+Polylang ships a thin runtime — about 1.4 kB gzipped. The `useT` hook reads the active locale from your router and returns translations from the bundle generated at build time.
+
+```tsx
+// app/(marketing)/page.tsx
+import { useT } from "@shipeasy/sdk/react";
+
+export default function Page() {
+  const t = useT();
+  return (
+    <section>
+      <h1>{t("Localize, as easy as asking Claude.")}</h1>
+      <p>{t("Ship in 12 languages without ever leaving your editor.")}</p>
+    </section>
+  );
+}
+```
+
+There is no `en.json` you wrote by hand, no string keys, no `i18n.t("hero.title")`. The English **is** the source of truth and the key. Polylang generates a stable hash and keeps every locale&apos;s bundle in sync.
+
+<Callout type="warn" title="Don't translate user-generated content this way">
+  `useT` is for static UI strings extracted at build time. For UGC (chat messages, reviews, support
+  tickets), use the runtime `/translate` endpoint with the streaming SDK.
+</Callout>
+
 ## Why a separate product
 
-You could store labels as a [dynamic JSON config](/configs/values) — and for tiny apps, you should. String Manager exists because real-world i18n hits problems configs aren&apos;t built for:
+You could store labels as a [dynamic JSON config](/configs/values) — and for tiny apps, you should. Polylang exists because real-world i18n hits problems configs aren&apos;t built for:
 
-- **Volume**: tens of thousands of keys; one JSON blob is unworkable.
+- **Volume**: tens of thousands of keys. One JSON blob is unworkable.
 - **Workflow**: translators are not engineers and shouldn&apos;t need access to flag tooling.
 - **Discovery**: keys come and go with code; manual sync drifts immediately.
 - **Performance**: chunking + lazy loading by route is critical at the upper end.
+- **Stats**: you want to know which keys are unused, which translations are stale, which locales lag behind.
 
-String Manager handles all of that and exposes a dead-simple SDK for the runtime side.
+Polylang handles all of that and exposes a dead-simple SDK for the runtime side.
+
+<ConvertCTA
+  eyebrow="READY?"
+  title={
+    <>
+      Stop reading. <em>Start localizing.</em>
+    </>
+  }
+  body="The fastest way to feel Polylang is to run it on your own repo. Five thousand strings on us — no card, no email gate, runs in your terminal."
+  primaryHref="/i18n/quickstart"
+  primaryLabel="Run quickstart"
+  secondaryHref="/llms/i18n-strings"
+  secondaryLabel="Hand it to an AI agent"
+  cmds={[
+    { label: "One command", cmd: "npx shipeasy i18n init" },
+    { label: "Then translate", cmd: "shipeasy i18n translate --to es,fr,de,ja" },
+  ]}
+  note="Detects framework · respects glossary · streams to disk"
+/>
+
+<DocNav next={{ href: "/i18n/quickstart", title: "Quickstart" }} />
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/i18n/index.mdx" />

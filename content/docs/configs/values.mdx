@@ -1,55 +1,119 @@
 ---
 title: Dynamic values
-description: Typed configs that change instantly without a redeploy.
+description: Typed config values — strings, numbers, booleans, JSON — that change instantly without a redeploy. Schema-validated, versioned, per-environment.
 ---
 
-A **dynamic value** is a typed key/value pair stored on your project. Use one when the answer to _"what should this be right now?"_ is not boolean — pricing, copy, limits, feature options, etc.
+<DocMeta
+  status="Production ready"
+  read="8 min read"
+  updated="May 3, 2026"
+  works="Server SDK · Browser SDK · Edge KV"
+/>
 
-Unlike gates, dynamic values are **global per environment**: every user sees the same value. To vary by user, gate the code that reads the value, or use a [structured config](#structured-configs) with one key per cohort.
+A **dynamic value** is a typed key/value pair stored on your project. Use one when the answer to <em>&quot;what should this be right now?&quot;</em> is not boolean — pricing, copy, limits, feature options, API endpoints, model names, anything you&apos;d otherwise hard-code as a constant or stash in an environment variable.
+
+Unlike gates, dynamic values are **global per environment**: every user in `prod` sees the same value. To vary by user, gate the code that reads the value, or use a [structured config](#structured-configs) with one key per cohort.
 
 ## Types
 
-| Type      | Example value                   | Use it for                                                          |
-| --------- | ------------------------------- | ------------------------------------------------------------------- |
-| `string`  | `"v2"`, `"USD"`                 | Copy, theme name, feature variant.                                  |
-| `number`  | `9.99`, `100`                   | Limits, prices, timeouts.                                           |
-| `boolean` | `true`                          | Site-wide on/off, separate from a gate when no targeting is needed. |
-| `json`    | `{ "limit": 5, "tier": "pro" }` | Structured config — see below.                                      |
+<ApiTable>
+  <ApiRow
+    name="string"
+    required
+    type="string"
+    desc={
+      <>
+        Copy, theme name, feature variant. Example: <code>&quot;v2&quot;</code>,{" "}
+        <code>&quot;USD&quot;</code>, <code>&quot;claude-haiku-4-5&quot;</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="number"
+    required
+    type="number"
+    desc={
+      <>
+        Limits, prices, timeouts. Example: <code>9.99</code>, <code>100</code>, <code>30000</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="boolean"
+    required
+    type="boolean"
+    desc="Site-wide on/off, separate from a gate when no targeting is needed."
+  />
+  <ApiRow
+    name="json"
+    required
+    type="object | array"
+    desc={
+      <>
+        Structured config — see <a href="#structured-configs">below</a>. Up to 256 KB per value
+        (Enterprise).
+      </>
+    }
+  />
+</ApiTable>
 
 ## Reading a value
 
 ```ts
-import { flags } from "@shipeasy/sdk/server";
+import { configureShipeasy, flags } from "@shipeasy/sdk/server";
 
-const limit = flags.config<number>("rate-limit") ?? 100;
-const theme = flags.config<string>("default-theme") ?? "light";
-const cfg = flags.config<{ tier: string; limit: number }>("plan-defaults");
+configureShipeasy({ apiKey: process.env.SHIPEASY_SERVER_KEY!, env: "prod" });
+await flags.init();
+
+const limit = flags.value<number>("rate-limit") ?? 100;
+const theme = flags.value<string>("default-theme") ?? "light";
+const cfg = flags.value<{ tier: string; limit: number }>("plan-defaults");
 ```
 
-The optional generic types the return value. Always provide a fallback — your code should never crash because the SDK hasn&apos;t initialised yet.
+The optional generic types the return value. **Always provide a fallback** — your code should never crash because the SDK hasn&apos;t initialised yet, or because someone deleted the value in the dashboard.
 
 Browser:
 
 ```ts
-const cfg = client.getConfig<{ tier: string; limit: number }>("plan-defaults");
+import { configureShipeasy } from "@shipeasy/sdk/client";
+const client = configureShipeasy({ apiKey, env: "prod" });
+const cfg = client.getValue<{ tier: string; limit: number }>("plan-defaults");
 ```
+
+<Callout type="info" title="value() is synchronous, like gate()">
+  Same plumbing as{" "}
+  <a href="/configs/gates">
+    <code>flags.gate()</code>
+  </a>{" "}
+  — the bundle is in memory after <code>init()</code>, so reads are a hash table lookup. There is no
+  async, no Promise, no fetch.
+</Callout>
 
 ## Updating a value
 
-Dashboard: **Configs → Dynamic values → click → edit value → Save**. The change is in KV in &lt;100ms and visible to your SDK on the next poll (default 30s; faster on Pro).
+Dashboard: **Configs &rarr; Dynamic values &rarr; click &rarr; edit value &rarr; Save**. The change is in KV in &lt;100 ms and visible to your SDK on the next poll (default 30s; faster on Pro).
 
 CLI:
 
 ```bash
-shipeasy config set rate-limit 200
-shipeasy config set plan-defaults --json '{"tier":"pro","limit":50}'
+shipeasy values set rate-limit 200
+shipeasy values set default-theme "dark"
+shipeasy values set plan-defaults --json '{"tier":"pro","limit":50}'
 ```
 
-A new value creates a **revision**; you can roll back from the dashboard at any time.
+A new value creates a **revision**; you can roll back from the dashboard at any time. Every revision records the author, source (dashboard / CLI / API), and a diff against the previous value.
+
+```bash
+# View revision history
+shipeasy values history rate-limit
+
+# Roll back to a specific revision
+shipeasy values rollback rate-limit --revision 7
+```
 
 ## Structured configs [#structured-configs]
 
-A single JSON config can encode an entire decision tree. This is great for things like plan limits, where the answer is "a struct" rather than "a value":
+A single JSON value can encode an entire decision tree. This is great for things like plan limits, where the answer is &quot;a struct&quot; rather than &quot;a value&quot;:
 
 ```json title="plan-defaults"
 {
@@ -60,47 +124,127 @@ A single JSON config can encode an entire decision tree. This is great for thing
 ```
 
 ```ts
-const cfg =
-  flags.config<Record<string, { max_seats: number | null; history_days: number }>>("plan-defaults");
+type PlanCfg = Record<string, { max_seats: number | null; history_days: number }>;
+const cfg = flags.value<PlanCfg>("plan-defaults");
 const seats = cfg?.[user.plan]?.max_seats ?? 3;
 ```
 
-This collapses N flags into one JSON config that&apos;s atomically updated — no race conditions where the user sees half a new config and half the old one.
+This collapses N flags into one JSON config that&apos;s **atomically updated** — no race conditions where the user sees half a new config and half the old one. The KV write is a single object, and the SDK either has the old version or the new one.
+
+Other classic shapes:
+
+```json title="ai-models"
+{
+  "default": "claude-haiku-4-5",
+  "premium": "claude-opus-4-7",
+  "fallback": "claude-haiku-4-5",
+  "timeout_ms": 30000
+}
+```
+
+```json title="copy/hero"
+{
+  "headline": "Ship features 10× faster",
+  "sub": "Flags, configs, and experiments — one SDK.",
+  "cta_label": "Start free"
+}
+```
 
 ## Validation
 
-When you create a config you can attach a **schema**:
+When you create a value you can attach a **schema**:
 
 - Type: one of `string` / `number` / `boolean` / `json`.
-- For `json`: optionally a Zod schema, stored as a JSON Schema document.
+- For `json`: optionally a Zod schema, stored as a JSON Schema document on the project.
 
-If a write would violate the schema, the dashboard rejects it. The SDK still applies a runtime decoder you supply:
+If a write would violate the schema, the dashboard, the CLI, and the API all reject it before it reaches KV. Bad config never goes live.
+
+The SDK still applies a runtime decoder you supply, as a defence-in-depth:
 
 ```ts
 import { z } from "zod";
 
 const Schema = z.object({ tier: z.string(), limit: z.number() });
-const cfg = flags.config("plan-defaults", (raw) => Schema.parse(raw));
+
+const cfg = flags.value("plan-defaults", {
+  decode: (raw) => Schema.parse(raw),
+});
 ```
 
-Pass a `decode` function as the second argument and the SDK calls it once per fetched blob — invalid payloads are dropped (with a console warning) and the previous good value is kept.
+The SDK calls `decode` once per fetched blob — invalid payloads are dropped (with a console warning) and the previous good value is kept. Your code never sees a malformed config.
 
-## When to use a config vs. a gate
+<Callout type="success" title="Schema-validated, atomically updated, versioned">
+  Three properties together that JSON-on-disk doesn&apos;t give you. A bad value never reaches
+  production. A good value is in production in seconds. A great value can be reverted in one click.
+</Callout>
 
-| Question                           | Use                                                         |
-| ---------------------------------- | ----------------------------------------------------------- |
-| Should I show feature X?           | Gate.                                                       |
-| What should the value of N be?     | Dynamic value.                                              |
-| Different value per user / cohort? | Gate around the read, or structured config keyed by cohort. |
-| Different value per environment?   | Always — values are environment-aware by default.           |
-| Need an audit trail?               | Both. Every write is versioned.                             |
+## Per-environment values
+
+Like gates, every value holds an independent record per environment:
+
+| Key             | dev                           | staging                           | prod                      |
+| --------------- | ----------------------------- | --------------------------------- | ------------------------- |
+| `rate-limit`    | 1000                          | 200                               | 100                       |
+| `default-theme` | `dark`                        | `light`                           | `light`                   |
+| `api-base-url`  | `https://api-dev.example.com` | `https://api-staging.example.com` | `https://api.example.com` |
+
+The SDK pins to one environment at boot — see [Environments](/configs/environments).
+
+## When to use a value vs. a gate
+
+| Question                           | Use                                                        |
+| ---------------------------------- | ---------------------------------------------------------- |
+| Should I show feature X?           | [Gate](/configs/gates).                                    |
+| What should the value of N be?     | Dynamic value.                                             |
+| Different value per user / cohort? | Gate around the read, or structured value keyed by cohort. |
+| Different value per environment?   | Always — values are environment-aware by default.          |
+| Need an audit trail?               | Both. Every write is versioned.                            |
+| Need a kill-switch?                | Gate (or a value with a `null`-equivalent fallback).       |
+
+A useful rule: if you&apos;d say <em>&quot;show feature X&quot;</em>, gate it. If you&apos;d say <em>&quot;set feature X to value Y&quot;</em>, use a dynamic value.
+
+## CI snippet
+
+Validate every value reference in your code resolves on the project:
+
+```bash title=".github/workflows/ci.yml"
+- name: Validate dynamic values
+  run: shipeasy values validate ./src --env prod
+```
+
+This catches typos like `rate_limit` vs `rate-limit` and stale references after a value has been deleted.
 
 ## Limits
 
-| Plan       | Configs per project | JSON size per value |
-| ---------- | ------------------- | ------------------- |
-| Free       | 25                  | 4 KB                |
-| Pro        | 250                 | 64 KB               |
-| Enterprise | Unlimited           | 256 KB              |
+| Plan       | Values per project | JSON size per value |
+| ---------- | ------------------ | ------------------- |
+| Free       | 25                 | 4 KB                |
+| Pro        | 250                | 64 KB               |
+| Enterprise | Unlimited          | 256 KB              |
 
-If your JSON is approaching the limit, you&apos;re probably storing data that belongs in a database, not a config.
+If your JSON is approaching the limit, you&apos;re probably storing data that belongs in a database, not a config. Configs are designed for &quot;a few KB of decisions per project&quot;, not &quot;the user&apos;s shopping cart&quot;.
+
+<ConvertCTA
+  eyebrow="NEXT"
+  title={
+    <>
+      Add <em>targeting rules</em> to a gate.
+    </>
+  }
+  body="Now that you've seen typed values, see how gates layer rules and rollout to vary behaviour per user — deterministically, with no flicker."
+  primaryHref="/configs/targeting"
+  primaryLabel="Targeting & rollouts"
+  secondaryHref="/configs/environments"
+  secondaryLabel="Environments"
+  cmds={[
+    { label: "Set a value", cmd: "shipeasy values set rate-limit 200" },
+    { label: "Roll one back", cmd: "shipeasy values rollback rate-limit --revision 7" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/configs/gates", title: "Gates" }}
+  next={{ href: "/configs/targeting", title: "Targeting & rollouts" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/configs/values.mdx" />

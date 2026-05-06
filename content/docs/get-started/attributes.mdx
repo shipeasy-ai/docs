@@ -1,7 +1,14 @@
 ---
 title: User attributes
-description: Pass everything you know about the user — ShipEasy uses it for targeting, holdouts, and analysis breakdowns.
+description: The shape of the eval context — pass everything you know about the user, and ShipEasy uses it for targeting, holdouts, and analysis breakdowns.
 ---
+
+<DocMeta
+  status="Production ready"
+  read="7 min read"
+  updated="May 3, 2026"
+  works="Server SDK · Browser SDK · Targeting · Experiments"
+/>
 
 A **user attribute** is any key/value pair you attach to a user when calling the SDK. ShipEasy uses attributes for three things:
 
@@ -11,47 +18,200 @@ A **user attribute** is any key/value pair you attach to a user when calling the
 
 The richer your attribute payload, the more precise your targeting and analysis. Most teams under-invest here on day one and regret it.
 
+## The eval context
+
+Every SDK call that resolves a flag, config, or experiment takes an **eval context** — the user object plus any attributes you want available to the rule engine.
+
+```ts
+const ctx = {
+  user_id: "u_4f2a", // required for deterministic bucketing
+  anonymous_id: "anon_xyz", // optional, auto-managed in the browser
+
+  // Custom attributes — flat top-level keys
+  plan: "pro",
+  country: "US",
+  beta_tester: true,
+  team_size: 18,
+  signup_at: "2026-01-12T00:00:00Z",
+};
+
+flags.gate("new-checkout", ctx);
+```
+
+Server SDKs take the context on every call. The browser SDK is identify-once: you call `shipeasy.identify(ctx)` once after login and the same context is reused for every subsequent evaluation until you identify again.
+
 ## Reserved attributes
 
-Two attributes are special:
+Two keys are special:
 
-| Attribute      | Meaning                                                                                                                      |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `user_id`      | Stable identifier for a logged-in user. Pass it as soon as the user authenticates.                                           |
-| `anonymous_id` | Stable identifier before login. The browser SDK auto-generates and persists this in a cookie; on the server, you provide it. |
+<ApiTable>
+  <ApiRow
+    name="user_id"
+    required
+    type="string"
+    desc={
+      <>
+        Stable identifier for a logged-in user. Used as the default bucketing key. Pass it as soon
+        as the user authenticates.
+      </>
+    }
+  />
+  <ApiRow
+    name="anonymous_id"
+    optional
+    type="string"
+    desc={
+      <>
+        Stable identifier before login. The browser SDK auto-generates and persists this in a
+        cookie; on the server, you provide it.
+      </>
+    }
+  />
+</ApiTable>
 
-ShipEasy bucketing uses `user_id ?? anonymous_id` — so a user gets a stable assignment before _and_ after login. When a user logs in, call `client.alias(anonymous_id, user_id)` to stitch their pre-login events to their post-login identity.
+ShipEasy bucketing uses `user_id ?? anonymous_id` — so a user gets a stable assignment before _and_ after login. When the user authenticates, call `shipeasy.alias(anonymous_id, user_id)` to stitch their pre-login exposures to their post-login identity. Without this stitch, exposure events from before login show up as a separate user in analysis.
+
+<Callout type="warn" title="`user_id` is required for deterministic bucketing">
+  Without a stable id, every evaluation gets a fresh random bucket — rollouts oscillate, experiment
+  variants flip between page loads, and analysis falls apart. Pass `user_id` as soon as you have it;
+  pass `anonymous_id` for the pre-login window.
+</Callout>
 
 ## Custom attributes
 
-Everything else lives at the **top level** of the user object. There is no `custom: { … }` wrapper.
+Everything else lives at the **top level** of the context object. There is no `custom: { … }` wrapper.
 
 ```ts
-client.identify({
+shipeasy.identify({
   user_id: "u_4f2a",
   plan: "pro",
   country: "US",
   signup_at: "2026-01-12T00:00:00Z",
   beta_tester: true,
   team_size: 18,
+  roles: ["admin", "billing"],
 });
 ```
 
-Supported value types: `string`, `number`, `boolean`, and `string[]`. (Arrays are useful with the `in` and `contains` operators.) Nested objects are not supported — flatten them with dot-notation if you need to.
+Supported value types:
 
-## Server vs browser
+<ApiTable>
+  <ApiRow
+    name="string"
+    required
+    type="primitive"
+    desc={<>Equality, regex, contains. Most attributes are strings.</>}
+  />
+  <ApiRow
+    name="number"
+    required
+    type="primitive"
+    desc={
+      <>
+        Numeric comparisons (<code>gt</code>, <code>lte</code>, …) and equality.
+      </>
+    }
+  />
+  <ApiRow name="boolean" required type="primitive" desc={<>Equality only.</>} />
+  <ApiRow
+    name="string[]"
+    required
+    type="array"
+    desc={
+      <>
+        Use with <code>contains</code> for membership, or <code>in</code> for the inverse.
+      </>
+    }
+  />
+</ApiTable>
 
-On the **server**, you pass the user object on every call:
+Nested objects are not supported — flatten them with dot-notation if you need to (`org.tier` becomes a literal key `"org.tier"`).
 
-```ts
-flags.gate("new-ui", { user_id, plan, country });
-```
+## Standard attributes worth passing
 
-In the **browser**, you call `identify()` once after the user logs in and the same payload is reused for every subsequent `getFlag` / `getConfig` / `track` / experiment assignment until you `identify()` again.
+Most projects benefit from a few standard fields. Set them up once and your future targeting + analysis is much easier.
 
-```ts
-await client.identify({ user_id, plan, country });
-```
+<TileGrid>
+  <Tile
+    href="#identity"
+    icon="◇"
+    title="Identity"
+    meta={
+      <>
+        <span>stable IDs</span>
+        <span>·</span>
+        <span>no email</span>
+      </>
+    }
+  >
+    `user_id` (UUID created at signup), `anonymous_id` (auto). Avoid email or username — they
+    change.
+  </Tile>
+  <Tile
+    href="#monetization"
+    icon="✦"
+    title="Monetisation"
+    meta={
+      <>
+        <span>plan + revenue</span>
+      </>
+    }
+  >
+    `plan` (`free` / `pro` / `enterprise`) and `mrr_band` (`0` / `1-99` / `100+`). Most experiment
+    lift questions cut along money.
+  </Tile>
+  <Tile
+    href="#cohort"
+    icon="◈"
+    title="Cohort"
+    meta={
+      <>
+        <span>age + size</span>
+      </>
+    }
+  >
+    `signup_at`, `tenure_days`, `team_size`. Powerful for segmenting by maturity.
+  </Tile>
+  <Tile
+    href="#geo"
+    icon="✎"
+    title="Geography & locale"
+    meta={
+      <>
+        <span>country · locale</span>
+      </>
+    }
+  >
+    `country` (ISO-2), `locale` (BCP-47). Lets you regionalise rollouts and stops you running an
+    EU-wide test on a US-only feature.
+  </Tile>
+  <Tile
+    href="#device"
+    icon="⌗"
+    title="Device"
+    meta={
+      <>
+        <span>platform · version</span>
+      </>
+    }
+  >
+    `platform` (`web` / `ios` / `android`), `app_version`. The browser SDK fills `platform`
+    automatically; you fill `app_version`.
+  </Tile>
+  <Tile
+    href="#org"
+    icon="◇"
+    title="B2B hierarchy"
+    meta={
+      <>
+        <span>account · role</span>
+      </>
+    }
+  >
+    `account_id`, `org_id`, `role`. For B2B, bucket experiments by `account_id` so all teammates see
+    the same variant.
+  </Tile>
+</TileGrid>
 
 ## Registering attributes in the dashboard
 
@@ -62,47 +222,65 @@ Go to **Project → User attributes → Register** and declare the attributes yo
 
 Unregistered attributes still work — they just won&apos;t appear in pickers.
 
-## Operators
+## Targeting operators
 
 Targeting rules use these operators against attribute values:
 
-| Operator                    | Works on                         | Meaning                        |
-| --------------------------- | -------------------------------- | ------------------------------ |
-| `eq` / `neq`                | any                              | Strict equality.               |
-| `in` / `not_in`             | scalar vs array                  | _"is this value in the list"_. |
-| `gt` / `gte` / `lt` / `lte` | numbers                          | Numeric comparison.            |
-| `contains`                  | string in string, value in array | Substring or membership.       |
-| `regex`                     | string                           | JS regex match.                |
+<ApiTable>
+  <ApiRow name="eq / neq" required type="any" desc={<>Strict equality.</>} />
+  <ApiRow
+    name="in / not_in"
+    required
+    type="scalar vs array"
+    desc={
+      <>
+        <em>"is this value in the list"</em>. Use the inverse to negate.
+      </>
+    }
+  />
+  <ApiRow name="gt / gte / lt / lte" required type="number" desc={<>Numeric comparison.</>} />
+  <ApiRow
+    name="contains"
+    required
+    type="string ⊂ string · value ⊂ array"
+    desc={<>Substring or membership.</>}
+  />
+  <ApiRow name="regex" required type="string" desc={<>JS regex match. Anchor your patterns.</>} />
+</ApiTable>
 
-Multiple rules on a gate are **AND**ed. Use `in` with a list to express OR.
+Multiple rules on a gate are **AND**ed. Use `in` with a list to express OR. Rule order doesn&apos;t matter — there is no fall-through.
 
-## Patterns that pay off
+## Server vs browser
 
-<CardGrid>
-  <Card href="#identity" eyebrow="Identity" title="Stable IDs early">
-    Use a UUID created at signup. Avoid email or username — they change. Avoid client-generated IDs
-    for cross-device experiments.
-  </Card>
-  <Card href="#monetization" eyebrow="Monetization" title="Plan + revenue tier">
-    Pass `plan` (`free` / `pro` / `enterprise`) and `mrr_band` (`0` / `1-99` / `100+`). Most
-    experiment lift questions cut along money.
-  </Card>
-  <Card href="#cohort" eyebrow="Cohort" title="Account age, team size">
-    `signup_at`, `tenure_days`, `team_size`. Powerful for segmenting by maturity.
-  </Card>
-  <Card href="#geo" eyebrow="Geography & locale" title="Country + locale">
-    `country`, `locale`. Lets you regionalise rollouts and stops you from running an EU-wide test on
-    a US-only feature.
-  </Card>
-  <Card href="#device" eyebrow="Device" title="Platform + version">
-    `platform` (`web` / `ios` / `android`), `app_version`. The browser SDK fills `platform`
-    automatically; you fill `app_version`.
-  </Card>
-  <Card href="#org" eyebrow="B2B" title="Organisation hierarchy">
-    `account_id`, `org_id`, `role`. For B2B, bucket experiments by `account_id` so all teammates see
-    the same variant.
-  </Card>
-</CardGrid>
+On the **server**, you pass the context on every call:
+
+```ts
+flags.gate("new-ui", { user_id, plan, country });
+```
+
+In the **browser**, you call `identify()` once after the user logs in and the same context is reused for every subsequent `gate` / `config` / `track` / experiment assignment until you identify again.
+
+```ts
+await shipeasy.identify({ user_id, plan, country });
+
+if (shipeasy.gate("new-ui")) {
+  // …
+}
+```
+
+## Anonymous IDs
+
+Before login, the browser SDK auto-generates an `anonymous_id` and persists it in a cookie. The cookie is `Lax`, `Secure` (in production), and scoped to your domain.
+
+On the server, generate an anonymous ID yourself — a UUID stored in `AsyncStorage` (React Native) or a session cookie (server-rendered apps) is the right pattern. The SDK doesn&apos;t care where the value comes from, only that it&apos;s stable per browser/device.
+
+When the user logs in:
+
+```ts
+shipeasy.alias(anonymous_id, user_id);
+```
+
+This call writes a single row to D1 mapping the two IDs. The next analysis run merges their exposures into one user.
 
 ## Bucketing by an attribute
 
@@ -122,12 +300,81 @@ flags.gate(
 
 Or set the experiment-level `bucket_by` in the dashboard. The same identity is then used for both assignment and exposure stitching.
 
-## Privacy
+## Privacy & PII
 
-ShipEasy stores attributes you send as part of exposure events for analysis. Don&apos;t send PII you wouldn&apos;t want in your analytics warehouse:
+ShipEasy stores attributes you send as part of exposure events for analysis. **Don&apos;t send PII you wouldn&apos;t want in your analytics warehouse.**
 
-- Pass user **IDs**, not emails.
-- Pass `country`, not full IP.
-- Hash anything sensitive on your side first.
+<Callout type="warn" title="Hard rules">
+  - Pass user **IDs**, not emails. Emails are PII and they change. - Pass `country`, not full IP.
+  ShipEasy already derives a coarse geo from the request. - Hash anything sensitive on your side
+  first — names, phone numbers, account secrets. - Never put an API token, password, or session
+  cookie into an attribute.
+</Callout>
 
-You can set per-attribute retention in **Project → Privacy** (default 90 days for Pro, 30 days for Free).
+A handful of fields are auto-treated:
+
+<ApiTable>
+  <ApiRow
+    name="email"
+    optional
+    type="string"
+    desc={
+      <>
+        Auto-hashed before write. Only the hash is stored. Useful only for cohort lookup, never for
+        targeting on substrings.
+      </>
+    }
+  />
+  <ApiRow
+    name="ip"
+    optional
+    type="string"
+    desc={<>Coarsened to country + region. Full IP is dropped before write.</>}
+  />
+  <ApiRow
+    name="user_id"
+    required
+    type="string"
+    desc={<>Stored as-is. Use a UUID, not an email.</>}
+  />
+</ApiTable>
+
+You can set per-attribute retention in **Project → Privacy** (default 90 days for Pro, 30 days for Free). After retention, exposure rows are aggregated and the per-user attribute payload is dropped.
+
+## Troubleshooting
+
+<Callout type="warn" title="Targeting rules don't match">
+  Two common causes: type mismatch (`"5"` is not `5`) and missing attribute (an undefined attribute
+  fails every comparison except `not_in` against a list that contains it). Check the
+  dashboard&apos;s **Test rules** panel — paste a sample context, see exactly which rules pass.
+</Callout>
+
+<Callout type="warn" title="Experiment assignments flip between page loads">
+  You&apos;re evaluating without a stable `user_id`. Either pass `user_id` (preferred) or pass a
+  stable `anonymous_id` for the pre-login window.
+</Callout>
+
+<ConvertCTA
+  eyebrow="NEXT"
+  title={
+    <>
+      Ship your <em>first flag</em>.
+    </>
+  }
+  body="The shortest path from install to a flag in production. Five minutes, no card."
+  primaryHref="/configs/quickstart"
+  primaryLabel="Configs quickstart"
+  secondaryHref="/experiments/quickstart"
+  secondaryLabel="Or run an experiment"
+  cmds={[
+    { label: "Create a gate", cmd: "shipeasy gate create new-checkout" },
+    { label: "Roll out to 5%", cmd: "shipeasy gate rollout new-checkout --percent 5" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/get-started/mcp", title: "MCP server" }}
+  next={{ href: "/configs", title: "Configs — flags & values" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/get-started/attributes.mdx" />

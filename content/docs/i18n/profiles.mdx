@@ -1,83 +1,275 @@
 ---
 title: Profiles
-description: Versioned, named manifests of label keys for one locale × one environment.
+description: Versioned, named manifests of label keys for one locale and one environment — the unit you publish, diff, and roll back.
 ---
 
-A **profile** is a named, versioned manifest of label keys for a specific locale and environment combination. It&apos;s the unit you publish, version, and roll back.
+<DocMeta
+  status="Reference"
+  read="8 min read"
+  updated="May 3, 2026"
+  works="Next, Vite, Remix, Astro, Expo"
+/>
+
+A **profile** is a named, versioned manifest of label keys for a specific locale and environment combination. It is the unit you publish, version, diff, and roll back. Everything else in Polylang — drafts, AI translations, the loader script, validation in CI — pivots around the profile.
+
+If gates and configs are "one row per setting", profiles are "one snapshot per `(locale, env)` per publish". Every publish is immutable; revert is just "republish version N".
 
 ## Naming
 
 Profiles use `locale:environment`:
 
-| Profile      | Meaning             |
-| ------------ | ------------------- |
-| `en:prod`    | English, production |
-| `fr:prod`    | French, production  |
-| `de:staging` | German, staging     |
-| `ja:dev`     | Japanese, dev       |
+| Profile      | Meaning                          |
+| ------------ | -------------------------------- |
+| `en:prod`    | English, production              |
+| `fr:prod`    | French, production               |
+| `de:staging` | German, staging                  |
+| `ja:dev`     | Japanese, dev                    |
+| `pt-BR:prod` | Brazilian Portuguese, production |
 
-The locale is BCP-47 (`en`, `fr`, `pt-BR`). The environment is one of `dev`, `staging`, `prod`. You can&apos;t use other names — the SDK and dashboard rely on this format.
+The locale is BCP-47 (`en`, `fr`, `pt-BR`, `zh-Hant`). The environment is one of `dev`, `staging`, `prod`. You cannot use other names — the SDK loader, dashboard URLs, and CDN keys all rely on this format.
+
+<Callout type="info" title="Why region tags matter">
+  Use a region tag (`pt-BR`, `es-MX`, `zh-Hant`) whenever register, vocabulary, or script differs
+  from the base language. The AI translator switches its system prompt based on the region tag —
+  `es-MX` produces different copy than `es-ES`, and `zh-Hant` writes traditional characters where
+  `zh-Hans` writes simplified.
+</Callout>
+
+## Anatomy of a profile
+
+Every profile is a small JSON manifest in D1 plus a published bundle in KV:
+
+```json
+{
+  "id": "prof_01HZ...",
+  "name": "fr:prod",
+  "locale": "fr",
+  "environment": "prod",
+  "role": "target",
+  "source_profile_id": "prof_01HZ_en_prod",
+  "current_version": 17,
+  "key_count": 1284,
+  "missing_count": 12,
+  "stale_count": 4,
+  "published_at": "2026-05-02T11:42:18Z",
+  "loader_url": "https://cdn.shipeasy.ai/i18n/v1/proj_abc/fr_prod/v17/index.json"
+}
+```
+
+The `loader_url` is what the runtime hits. It is pinned to the current version, served from KV through the CDN with infinite TTL, and explicitly purged on every publish.
 
 ## Lifecycle
 
 <Steps>
   <Step title="Create">
     ```bash
-    shipeasy i18n profiles create --name fr:prod --locale fr --environment prod
+    shipeasy i18n profiles create \
+      --name fr:prod \
+      --locale fr \
+      --environment prod
     ```
+
+    On creation the profile is empty (`key_count: 0`, no version). It is registered in D1 but nothing is written to KV until the first publish.
+
   </Step>
-  <Step title="Translate">
-    Either populate it via codemod (for the source locale) or via AI / manual translations (for target locales). See [Drafts](/i18n/drafts).
+
+  <Step title="Populate">
+    Either populate it via codemod (for the source locale) or via AI / manual translations (for target locales). See [Drafts](/i18n/drafts) for the full review flow.
+
+    ```bash
+    # Source profile — pushed from a code scan
+    shipeasy i18n push --profile en:prod --source codemod
+
+    # Target profile — drafted by the AI
+    shipeasy i18n translate --profile fr:prod --ai
+    ```
+
   </Step>
+
   <Step title="Publish">
-    Each publish creates a new **version**. The current version is what the loader serves from KV. Old versions stay in the dashboard for rollback.
+    Each publish creates a new immutable **version**. The current version is what the loader serves from KV. Old versions stay in the dashboard for rollback.
 
     ```bash
     shipeasy i18n publish --profile fr:prod
     ```
 
+    Publishing is two writes and one purge: write the chunked bundle to KV, write a new row to `i18n_profile_versions`, purge the CDN URL for the locale's `index.json`. End-to-end latency is typically under three seconds globally.
+
   </Step>
+
+  <Step title="Diff">
+    Before publishing — or after — compare any two versions:
+
+    ```bash
+    shipeasy i18n profiles diff --profile fr:prod --from v16 --to v17
+    ```
+
+    Output lists added, removed, and changed keys with old and new values. Same view is available in the dashboard's **Versions** tab.
+
+  </Step>
+
   <Step title="Roll back">
-    From the dashboard&apos;s **Profiles → fr:prod → Versions** tab, click any prior version → **Restore**. The selected version is republished — usually live in seconds.
+    From **Profiles → fr:prod → Versions**, click any prior version → **Restore**. The selected version is republished as the new current version (so v17 → restore v15 → produces v18 with v15's contents). This keeps history append-only and roll-forward-only.
+
+    ```bash
+    shipeasy i18n profiles rollback --profile fr:prod --to v15
+    ```
+
+    Rollback typically goes live in under five seconds — same path as a normal publish.
+
   </Step>
 </Steps>
 
 ## Source vs target
 
-ShipEasy doesn&apos;t hard-code English as "the" source. The first profile you create on a project is implicitly the **source**: it&apos;s where the codemod pushes discovered keys, and it&apos;s the basis the AI translates _from_.
+Polylang does not hard-code English as "the" source. The first profile you create on a project is implicitly the **source**: it is where the codemod pushes discovered keys, and it is the basis the AI translates _from_.
 
-Other profiles are **targets**: they hold translations of the source&apos;s keys.
+Other profiles are **targets**: they hold translations of the source's keys. You can switch the source profile in **Project → Polylang → Settings**, but in practice every team picks one and sticks with it.
 
-You can switch the source profile in **Project → String Manager → Settings**, but in practice every team picks one and sticks with it.
+<TileGrid>
+  <Tile
+    icon="◇"
+    title="Source profile"
+    meta={
+      <>
+        <span>
+          <b>one</b> per project
+        </span>
+        <span>·</span>
+        <span>writable by code</span>
+      </>
+    }
+  >
+    Holds the canonical key list. Keys are added by <code>shipeasy i18n push</code> from a code
+    scan. Values are the strings developers wrote in code.
+  </Tile>
+  <Tile
+    icon="✦"
+    title="Target profile"
+    meta={
+      <>
+        <span>
+          <b>many</b> per project
+        </span>
+        <span>·</span>
+        <span>translation only</span>
+      </>
+    }
+  >
+    One per <code>(locale, env)</code> you ship. Values come from AI drafts, human translators, or
+    imported XLIFF. Keys are read-only — they mirror the source.
+  </Tile>
+</TileGrid>
 
-## Profile inheritance
+## Profile inheritance and fallback
 
-When a key is missing from a target profile:
+When a key is missing from a target profile the loader falls back to the source profile for that environment:
 
 ```
 loader requests fr:prod label "checkout.cta"
   ↓ fr:prod has no value
-  ↓ falls back to the source profile (en:prod)
+  ↓ falls back to source profile (en:prod)
   ↓ returns "Pay"
 ```
 
-This means an in-progress French translation never breaks the page — visitors see English for the missing strings until you publish translations. Fallbacks are also visible in the dashboard so you can target what to translate next.
+This means an in-progress French translation never breaks the page — visitors see English for the missing strings until you publish translations. Fallbacks are also visible in the dashboard so you can target what to translate next; the **Coverage** column shows `1272 / 1284 (99.1%)` per target profile.
+
+The fallback only crosses **locale**, never environment. `fr:staging` does not fall back to `fr:prod` — staging is meant to be the place where bad translations are caught.
 
 ## Per-environment profiles
 
 Why not just one profile per locale? Because:
 
-- Translators can work in `fr:staging` while `fr:prod` keeps serving last week&apos;s strings.
-- New keys land in `en:dev` first; you don&apos;t need to translate them until they&apos;re promoted to staging or prod.
-- An emergency copy fix in `en:prod` doesn&apos;t require redoing translation review for development branches.
+- Translators can work in `fr:staging` while `fr:prod` keeps serving last week's strings.
+- New keys land in `en:dev` first; you do not need to translate them until they are promoted to staging or prod.
+- An emergency copy fix in `en:prod` does not require redoing translation review for development branches.
+- Preview deployments (Vercel, Cloudflare Pages branch previews) can pin themselves to `:dev` or `:staging` so QA sees the unreviewed copy without it leaking to users.
 
-The CLI&apos;s `promote` command copies a profile&apos;s values forward:
+The CLI's `promote` command copies a profile's values forward:
 
 ```bash
 shipeasy i18n promote --from fr:staging --to fr:prod
 ```
 
-This is the recommended flow: write & translate in `staging`, validate, promote to `prod`.
+This is the recommended flow: write and translate in `staging`, validate, promote to `prod`. Promotion creates a draft on the destination so you still get one final review before it ships.
+
+## Pinning a build to a version
+
+By default the loader fetches `loader_url`, which always points at the current version. For deterministic builds (a snapshot deploy, a marketing landing page that should not change copy after launch), pin to a specific version:
+
+```html
+<script
+  src="https://cdn.shipeasy.ai/i18n/loader.js"
+  data-profile="fr:prod"
+  data-version="17"
+  data-key="pk_live_..."
+></script>
+```
+
+Subsequent publishes do not affect that page until you bump `data-version`. Useful for compliance pages, signed contracts, and translation review sign-offs.
+
+## API
+
+The same operations are available over HTTPS for programmatic use; the CLI is a thin wrapper over these.
+
+<ApiTable>
+  <ApiRow
+    name="POST /i18n/profiles"
+    required
+    type="endpoint"
+    desc={
+      <>
+        Create a profile. Body: <code>{`{ name, locale, environment, role? }`}</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="GET /i18n/profiles"
+    required
+    type="endpoint"
+    desc="List profiles for the project. Returns id, name, current version, key/missing/stale counts."
+  />
+  <ApiRow
+    name="GET /i18n/profiles/:name"
+    required
+    type="endpoint"
+    desc="Profile detail with current version and loader URL."
+  />
+  <ApiRow
+    name="POST /i18n/profiles/:name/publish"
+    required
+    type="endpoint"
+    desc="Publish current draft set. Returns new version id and CDN purge status."
+  />
+  <ApiRow
+    name="POST /i18n/profiles/:name/rollback"
+    required
+    type="endpoint"
+    desc={
+      <>
+        Republish a prior version. Body: <code>{`{ version }`}</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="GET /i18n/profiles/:name/versions"
+    optional
+    type="endpoint"
+    desc="List versions kept under the current plan."
+  />
+  <ApiRow
+    name="GET /i18n/profiles/:name/diff"
+    optional
+    type="endpoint"
+    desc={
+      <>
+        Diff between two versions. Query: <code>?from=v15&amp;to=v17</code>.
+      </>
+    }
+  />
+</ApiTable>
+
+All endpoints take a personal access token or a CI key. The runtime SDK key cannot create or publish profiles — it is read-only against the loader URL.
 
 ## Limits
 
@@ -86,3 +278,43 @@ This is the recommended flow: write & translate in `staging`, validate, promote 
 | Free       | 5                    | 1,000            | 10            |
 | Pro        | 50                   | 50,000           | 100           |
 | Enterprise | Unlimited            | Unlimited        | Unlimited     |
+
+Hitting a limit does not break published profiles — it blocks new publishes until you upgrade or prune. Old versions past the retention window are deleted from KV; the metadata row stays so you can see what was deleted.
+
+<Callout type="warn" title="Deleting a profile is not reversible">
+  Deleting a profile removes its KV bundle, all versions, and all drafts. The CDN purge is instant
+  but in-flight loader requests may still receive a stale 404 for up to a minute. Always rename or
+  stop traffic before deleting.
+</Callout>
+
+<ConvertCTA
+  eyebrow="NEXT"
+  title={
+    <>
+      Now <em>fill them with keys</em>.
+    </>
+  }
+  body="Profiles are empty until you push keys. The codemod finds them automatically — and the schema decides how the AI translates each one."
+  primaryHref="/i18n/keys"
+  primaryLabel="How keys work"
+  secondaryHref="/i18n/quickstart"
+  secondaryLabel="Back to quickstart"
+  cmds={[
+    {
+      label: "Create source",
+      cmd: "shipeasy i18n profiles create --name en:prod --locale en --environment prod",
+    },
+    {
+      label: "Create target",
+      cmd: "shipeasy i18n profiles create --name fr:prod --locale fr --environment prod",
+    },
+  ]}
+  note="Versioned · CDN-pinned · rollback in seconds"
+/>
+
+<DocNav
+  prev={{ href: "/i18n/quickstart", title: "Quickstart" }}
+  next={{ href: "/i18n/keys", title: "Label keys" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/i18n/profiles.mdx" />

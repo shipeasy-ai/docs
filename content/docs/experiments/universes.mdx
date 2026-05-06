@@ -3,40 +3,119 @@ title: Universes & holdouts
 description: Group experiments to keep them from stepping on each other, and reserve a clean slice of users as a global control.
 ---
 
-A **universe** is the world an experiment lives in. It owns:
+<DocMeta
+  status="Production ready"
+  read="7 min read"
+  updated="May 3, 2026"
+  works="Server SDK · Edge Worker"
+/>
 
-- A **holdout** — a fixed percentage of users excluded from every experiment in the universe. This holdout becomes a clean global control you can compare aggregate behaviour against.
-- An optional **mutual exclusion** rule — at most one experiment in the universe assigns each user.
+A **universe** is the world an experiment lives in. Every experiment belongs to exactly one universe, and the universe owns two of the most important guarantees the platform offers:
 
-Most projects start with a single `default` universe and never need another. You add universes when experiments start interfering with each other, or when you want a long-term holdout to measure the cumulative effect of all the experimentation you&apos;re doing.
+- A **holdout** — a fixed percentage of users excluded from every experiment in the universe. This becomes a clean global control you can compare aggregate behaviour against.
+- An optional **mutual exclusion** rule — at most one experiment in the universe assigns each user, so two experiments touching the same surface can never confound each other.
+
+Most projects start with a single `default` universe and never need another. You add universes when experiments start interfering with each other, or when you want a long-term holdout to measure the cumulative effect of all the experimentation you're doing.
+
+## The mental model
+
+Think of a universe as a population: every eligible user is sliced into one of three buckets the moment they enter.
+
+<TileGrid>
+  <Tile
+    href="#holdouts"
+    icon="◇"
+    title="Holdout"
+    meta={
+      <>
+        <span>
+          <b>0–20%</b>
+        </span>
+        <span>·</span>
+        <span>persistent</span>
+      </>
+    }
+  >
+    Pinned to the legacy code path forever. Never sees an experiment in this universe.
+  </Tile>
+  <Tile
+    href="#mutual-exclusion"
+    icon="◈"
+    title="In an experiment"
+    meta={
+      <>
+        <span>
+          at most <b>one</b>
+        </span>
+        <span>·</span>
+        <span>if mutex is on</span>
+      </>
+    }
+  >
+    Bucketed into one running experiment based on a stable per-user hash and the experiments'
+    allocation weights.
+  </Tile>
+  <Tile
+    href="#targeting-gates-on-universes"
+    icon="✎"
+    title="Untargeted / unallocated"
+    meta={
+      <>
+        <span>no exposure</span>
+        <span>·</span>
+        <span>not in analysis</span>
+      </>
+    }
+  >
+    Either ineligible (failed the universe's targeting gate) or in the leftover slice of unallocated
+    traffic. Sees the default code path.
+  </Tile>
+</TileGrid>
+
+Bucketing is deterministic: the same `user_id` always lands in the same bucket for the same universe, even across processes and across deploys, because the hash function is `hash(universe_salt, user_id)` and the salt is set when the universe is created.
 
 ## Holdouts
 
-A 5% holdout in the `checkout` universe means: 5% of users are pinned to never see _any_ experiment in that universe. They always get the legacy code path. You can:
+A 5% holdout in the `checkout` universe means: 5% of users are pinned to never see _any_ experiment in that universe. They always get the legacy code path. With a holdout you can:
 
-- Compare conversion among holdout users to non-holdout users to estimate the **net effect** of all your checkout experimentation over time.
-- Trust that an experiment whose results look strong _is actually carrying signal_ — because the holdout shows what would have happened without it.
-- Roll back instantly: kill the universe and the next poll, every user falls into the holdout.
+- **Measure aggregate program lift.** Compare the conversion rate of holdout users vs non-holdout users to estimate the **net effect** of all your checkout experimentation over time. This is the only honest way to answer _"is the experimentation program collectively worth it?"_
+- **Trust individual results more.** When an experiment looks strong, the holdout is the sanity check that the broader population is also moving — a real win shows up in aggregate, not just inside the variant.
+- **Roll back instantly.** Kill the universe and on the next poll cycle (≤ plan poll interval, typically 30s–5min), every user falls into the holdout's code path.
 
-Holdouts are persistent: a user assigned to the holdout stays in it, across experiments and across time.
+Holdouts are **persistent**: a user assigned to the holdout stays in it across experiments and across time, as long as the universe's salt and holdout percentage don't change.
 
 ```bash
 shipeasy universes create checkout --holdout 5
 ```
 
-You can change the holdout size later, but realise that bumping it up reshuffles bucketing — some users move in, some out. Avoid changing it during an active experiment.
+You can change the holdout size later, but realise that bumping it up reshuffles bucketing — some users move in, some out — which invalidates the long-term holdout comparison for that period. Avoid changing it during an active experiment.
+
+<Callout type="info" title="Why a holdout, when each experiment already has a control?">
+  An experiment's `control` group still uses every other experiment that's running. The holdout is
+  the only group that uses **none** of them. It answers a different question: _"is everything we're
+  shipping, taken together, doing anything?"_
+</Callout>
 
 ## Mutual exclusion
 
 When you flip mutual exclusion **on** in a universe, ShipEasy guarantees a user is assigned to **at most one running experiment** in that universe. The bucket they fall into determines which experiment.
 
-This is important because two experiments touching the same surface can _confound_ each other — if `checkout-cta` and `checkout-layout` overlap on users, you can&apos;t tell which experiment moved the metric.
-
-Mutual exclusion makes the universe a fixed-pie model: experiments compete for the same allocation, you can&apos;t over-allocate.
+Two experiments that touch the same surface can _confound_ each other — if `checkout-cta` and `checkout-layout` overlap on the same users, you can't tell which experiment moved the metric. Mutual exclusion makes the universe a fixed-pie model: experiments compete for the same allocation, you can't over-allocate, and the analysis stays clean.
 
 ```bash
 shipeasy universes create checkout --holdout 5 --mutex
 ```
+
+### How allocation slots work under mutex
+
+With mutex on, the post-holdout traffic is sliced into a single number line `[0, 1)`. Each running experiment claims a contiguous slice equal to its allocation %. A user's hash maps to a single point on the line; whichever slice contains it is the experiment they get.
+
+```
+| holdout 5% | exp A 30% | exp B 20% | exp C 10% | unallocated 35% |
+0           .05         .35         .55         .65               1.0
+```
+
+Stop experiment A and the slice between `.05` and `.35` becomes unallocated on the next poll. Add experiment D with 15% allocation and it gets appended to the right of the last allocated slice. Allocations don't reshuffle when other experiments start or stop, which keeps user assignments stable.
 
 ## Targeting gates on universes
 
@@ -45,15 +124,16 @@ A universe can carry a **targeting gate** — a regular [gate](/configs/gates) t
 - _"Logged-in users only"_ — `attr: user_id, op: neq, value: ""`.
 - _"Pro plan only"_ — `attr: plan, op: eq, value: "pro"`.
 - _"Specific country"_ — `attr: country, op: in, value: ["US","CA"]`.
+- _"Internal accounts excluded"_ — `attr: email, op: not_ends_with, value: "@yourcompany.com"`.
 
-Users not eligible for the universe never enter the holdout, never see any experiment, and never count toward analysis.
+Users not eligible for the universe never enter the holdout, never see any experiment, and never count toward analysis. This is the safe place to exclude bots, internal staff, and bad-actor accounts — they vanish from every result row in the universe at once.
 
 ## When to add a universe
 
 <Callout type="info" title="A useful default">
   Start with one universe per **product surface**: `checkout`, `onboarding`, `pricing`. Inside each,
-  run experiments freely. Across them, you&apos;re free to overlap because users on the pricing page
-  aren&apos;t the same population as users at checkout.
+  run experiments freely. Across them, you're free to overlap because users on the pricing page
+  aren't the same population as users at checkout.
 </Callout>
 
 A pattern that works well at scale:
@@ -63,14 +143,127 @@ A pattern that works well at scale:
 | `default`    | 0%      | off   | Catch-all for cheap tests on different surfaces.                            |
 | `onboarding` | 5%      | on    | High-leverage area; long-term holdout to measure cumulative lift.           |
 | `checkout`   | 5%      | on    | Same.                                                                       |
-| `pricing`    | 0%      | on    | No holdout because we don&apos;t want users with weird prices for too long. |
+| `pricing`    | 0%      | on    | No holdout because we don't want users with weird prices for too long.      |
+| `growth`     | 10%     | on    | Long-term holdout for marketing surfaces; report quarterly to the business. |
+
+Rules of thumb:
+
+- **Mutex on** by default for any surface where experiments could plausibly overlap. The cost is a smaller addressable population per experiment; the benefit is interpretable results.
+- **Holdout 5%** is the sweet spot for most teams: large enough to detect aggregate lift over a quarter, small enough that you're not parking 1-in-10 users on legacy code.
+- **Holdout 0%** is fine when the surface is short-lived (a single launch), when traffic is too low to detect aggregate lift, or when keeping any user on legacy code is unacceptable (pricing, billing).
 
 ## Reading the holdout
 
-In analysis, the holdout shows up as a synthetic group named `holdout` on every experiment in the universe. You can compare any variant against the holdout (instead of against `control`) for an end-to-end "_did our experimentation help, vs not experimenting at all"_ readout.
+In analysis, the holdout shows up as a synthetic group named `holdout` on every experiment in the universe. You can compare any variant against the holdout (instead of against `control`) for an end-to-end _"did our experimentation help, vs not experimenting at all?"_ readout.
 
-This is the single best argument for keeping a holdout: it&apos;s the only way to detect when your experimentation program collectively doesn&apos;t move the needle.
+A typical universe-level summary in the dashboard:
+
+```
+checkout universe · last 30 days
+  holdout (5%)        N=18,402   purchase_rate=4.6%   AOV=$48.10
+  non-holdout (95%)   N=349,671  purchase_rate=5.1%   AOV=$49.40
+
+  Aggregate lift vs holdout:
+    purchase_rate   +10.9%   p=0.003   CI [+3.8%, +18.0%]
+    AOV             +2.7%    p=0.142   CI [-0.9%,  +6.3%]
+```
+
+This is the single best argument for keeping a holdout: it's the only way to detect when your experimentation program collectively doesn't move the needle.
+
+## API · `universes.create`
+
+<ApiTable>
+  <ApiRow
+    name="name"
+    required
+    type="string"
+    desc={
+      <>
+        Stable identifier. Used in URLs and result rows. Snake-case or kebab-case, e.g.{" "}
+        <code>checkout</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="holdout"
+    optional
+    type="number"
+    desc={
+      <>
+        Holdout percentage, <code>0</code>–<code>20</code>. Defaults to <code>0</code>. Bumping
+        later reshuffles bucketing — set it once and leave it.
+      </>
+    }
+  />
+  <ApiRow
+    name="mutex"
+    optional
+    type="boolean"
+    desc={
+      <>
+        If <code>true</code>, at most one running experiment per user in this universe. Defaults to{" "}
+        <code>false</code>.
+      </>
+    }
+  />
+  <ApiRow
+    name="targeting_gate"
+    optional
+    type="string"
+    desc={
+      <>
+        Name of a gate that decides eligibility. Users for whom the gate returns <code>false</code>{" "}
+        are excluded entirely (no holdout, no experiment, not in analysis).
+      </>
+    }
+  />
+  <ApiRow
+    name="salt"
+    optional
+    type="string"
+    desc={
+      <>
+        Custom hash salt. Defaults to the universe name. Change only when you want to deliberately
+        reshuffle every bucket — irreversible for ongoing analyses.
+      </>
+    }
+  />
+</ApiTable>
 
 ## Switching a user out of the holdout
 
-Don&apos;t. The point is stability. If a specific user (e.g. an internal account) needs to bypass the holdout, use a [gate override](/configs/gates#overrides) on the universe&apos;s targeting gate to exclude them — they&apos;ll then be eligible for experiments normally.
+Don't. The point is stability. If a specific user (e.g. an internal account) needs to bypass the holdout, use a [gate override](/configs/gates#overrides) on the universe's targeting gate to exclude them — they'll then be eligible for experiments normally. Manually moving users in and out of the holdout breaks the comparability of every aggregate measurement and is not exposed in the API on purpose.
+
+<Callout type="warn" title="Don't change the universe salt mid-experiment">
+  Changing the salt rebuckets every user. Any in-flight experiment in the universe will see its
+  assignments reshuffle, the t-test will mix two populations, and results become uninterpretable. If
+  you absolutely must reshuffle, stop every experiment in the universe first.
+</Callout>
+
+<ConvertCTA
+  eyebrow="NEXT"
+  title={
+    <>
+      Pick a <em>metric</em> worth moving.
+    </>
+  }
+  body="Universes give you a clean playing field. Metrics are how you score the game — primary, guardrail, and the outlier handling that keeps the numbers honest."
+  primaryHref="/experiments/metrics"
+  primaryLabel="Read about metrics"
+  secondaryHref="/experiments/quickstart"
+  secondaryLabel="Back to quickstart"
+  cmds={[
+    { label: "Create a universe", cmd: "shipeasy universes create checkout --holdout 5 --mutex" },
+    {
+      label: "Then create an experiment in it",
+      cmd: "shipeasy experiments create checkout-cta --universe checkout",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/experiments/quickstart", title: "Quickstart" }}
+  next={{ href: "/experiments/metrics", title: "Metrics" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/experiments/universes.mdx" />
