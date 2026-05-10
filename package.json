@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "type-check": "fumadocs-mdx && tsc --noEmit",
+    "gen-api-reference": "tsx scripts/generate-api-reference.ts",
     "deploy": "next build && wrangler deploy",
     "preview": "next build && wrangler dev"
   },
@@ -15,6 +16,7 @@
     "@shipeasy/shared": "workspace:*",
     "fumadocs-core": "^16.7.16",
     "fumadocs-mdx": "^14.3.0",
+    "fumadocs-openapi": "^10.8.1",
     "fumadocs-ui": "^16.7.16",
     "next": "16.2.3",
     "react": "^19.2.0",
@@ -27,6 +29,7 @@
     "@types/react-dom": "^19.2.0",
     "eslint": "^9",
     "eslint-config-next": "15.4.6",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.4",
     "wrangler": "^4.83.0"
   }

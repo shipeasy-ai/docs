@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { InferPageType } from "fumadocs-core/source";
 import { DocsPage, DocsBody, DocsTitle, DocsDescription } from "fumadocs-ui/page";
 import defaultMdxComponents from "fumadocs-ui/mdx";
+import { APIPage } from "@/lib/openapi";
 import { getPage, getPages } from "@/lib/source";
 import {
   ApiRow,
@@ -35,6 +36,7 @@ interface Props {
 
 const components = {
   ...defaultMdxComponents,
+  APIPage,
   ApiRow,
   ApiTable,
   Callout,

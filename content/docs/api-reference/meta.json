@@ -1,0 +1,3 @@
+{
+  "pages": ["listGates", "createGate", "updateGate", "deleteGate", "enableGate", "disableGate"]
+}
