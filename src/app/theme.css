@@ -521,11 +521,9 @@ article h2 {
 .se-hero {
   position: relative;
   isolation: isolate;
-  padding: 56px 24px 48px;
-  border: 1px solid var(--se-line);
-  border-radius: 16px;
-  background: linear-gradient(180deg, var(--se-bg-2), var(--se-bg-1) 80%);
-  overflow: hidden;
+  padding: 56px 0 48px;
+  background: transparent;
+  overflow: visible;
   margin-bottom: 24px;
 }
 .se-hero::before {
@@ -533,18 +531,11 @@ article h2 {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    radial-gradient(
-      600px 280px at 50% -60px,
-      color-mix(in oklab, var(--se-accent) 26%, transparent) 0%,
-      transparent 70%
-    ),
-    linear-gradient(transparent 95.5%, var(--se-line) 95.5%),
-    linear-gradient(90deg, transparent 95.5%, var(--se-line) 95.5%);
-  background-size:
-    auto,
-    44px 44px,
-    44px 44px;
+  background: radial-gradient(
+    600px 280px at 50% -60px,
+    color-mix(in oklab, var(--se-accent) 26%, transparent) 0%,
+    transparent 70%
+  );
   z-index: -1;
 }
 .se-hero-eyebrow {
@@ -674,6 +665,19 @@ main {
    - llms              → purple
    - get-started / *   → default (green/teal)
    ────────────────────────────────────────────────────────────── */
+html[data-section="flags-experiments"] {
+  --se-accent: oklch(0.78 0.17 155);
+  --se-accent-fg: #07140e;
+}
+html[data-section="translations"] {
+  --se-accent: oklch(0.74 0.17 245);
+  --se-accent-fg: #07101e;
+}
+html[data-section="feedback"] {
+  --se-accent: oklch(0.78 0.16 35);
+  --se-accent-fg: #1a0d08;
+}
+/* Legacy section accents kept for back-compat while old MDX still resolves. */
 html[data-section="i18n"] {
   --se-accent: oklch(0.74 0.17 245);
   --se-accent-fg: #07101e;
@@ -686,12 +690,1022 @@ html[data-section="llms"] {
   --se-accent: oklch(0.72 0.18 295);
   --se-accent-fg: #14081a;
 }
+html[data-section="flags-experiments"],
+html[data-section="translations"],
+html[data-section="feedback"],
 html[data-section="i18n"],
 html[data-section="experiments"],
 html[data-section="configs"],
 html[data-section="llms"],
 html[data-section="get-started"] {
   --se-accent-soft: color-mix(in oklch, var(--se-accent) 16%, transparent);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Decision picker — compact 2×2 alternative to the mermaid tree.
+   Each cell answers a single question, links to the primitive.
+   ────────────────────────────────────────────────────────────── */
+.se-picker {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 28px 0;
+}
+@media (max-width: 700px) {
+  .se-picker {
+    grid-template-columns: 1fr;
+  }
+}
+.se-picker-cell {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 8px;
+  padding: 18px 18px 16px;
+  border: 1px solid var(--se-line);
+  border-radius: 12px;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--se-accent) 4%, var(--se-bg-1)), var(--se-bg-1) 80%);
+  text-decoration: none !important;
+  color: var(--se-fg);
+  transition:
+    border-color 0.15s,
+    transform 0.1s,
+    background 0.15s;
+  overflow: hidden;
+  isolation: isolate;
+}
+.se-picker-cell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    280px 120px at 0% 0%,
+    color-mix(in oklab, var(--se-accent) 14%, transparent) 0%,
+    transparent 70%
+  );
+  z-index: -1;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+.se-picker-cell:hover {
+  border-color: color-mix(in oklab, var(--se-accent) 60%, transparent);
+  transform: translateY(-1px);
+}
+.se-picker-cell:hover::before {
+  opacity: 1;
+}
+.se-picker-cell .q {
+  font-family: var(--se-mono);
+  font-size: 11px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--se-fg-3);
+}
+.se-picker-cell .row {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.se-picker-cell .name {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--se-fg);
+}
+.se-picker-cell .tag {
+  font-family: var(--se-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--se-accent);
+  padding: 2px 7px;
+  border: 1px solid color-mix(in oklab, var(--se-accent) 35%, transparent);
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--se-accent) 8%, transparent);
+}
+.se-picker-cell .body {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--se-fg-2);
+}
+.se-picker-cell .arrow {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  color: var(--se-fg-3);
+  font-size: 16px;
+  transition:
+    color 0.15s,
+    transform 0.15s;
+}
+.se-picker-cell:hover .arrow {
+  color: var(--se-accent);
+  transform: translateX(3px);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   API reference list — single-page Stripe-style endpoint reference
+   with multi-language samples and inline "Try it" panel.
+   ────────────────────────────────────────────────────────────── */
+.se-api-main {
+  min-width: 0;
+  margin-top: 24px;
+}
+.se-api-group + .se-api-group {
+  margin-top: 48px;
+}
+.se-api-group-h {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  margin: 0 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--se-line);
+  color: var(--se-fg);
+}
+.se-api-op {
+  border: 1px solid var(--se-line);
+  border-radius: 12px;
+  padding: 20px 22px;
+  margin-bottom: 24px;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--se-accent) 2%, var(--se-bg-1)), var(--se-bg-1) 70%);
+  scroll-margin-top: 80px;
+}
+.se-api-op-head {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.se-api-op-head-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+.se-api-op-head-row .se-api-path {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.se-api-method {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--se-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 4px 8px;
+  border-radius: 5px;
+  border: 1px solid currentColor;
+  background: color-mix(in oklab, currentColor 10%, transparent);
+}
+.se-method-get { color: oklch(0.78 0.16 195); }
+.se-method-post { color: oklch(0.78 0.17 155); }
+.se-method-patch { color: oklch(0.82 0.14 75); }
+.se-method-delete { color: oklch(0.74 0.16 25); }
+
+.se-api-path {
+  font-family: var(--se-mono);
+  font-size: 14px;
+  color: var(--se-fg);
+  background: var(--se-bg-2);
+  padding: 4px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--se-line);
+}
+.se-api-summary {
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--se-fg);
+  margin: 0;
+  letter-spacing: -0.005em;
+}
+.se-api-desc {
+  margin: 0 0 14px;
+  display: grid;
+  gap: 10px;
+}
+.se-api-desc p {
+  color: var(--se-fg-2);
+  margin: 0;
+  line-height: 1.6;
+  font-size: 14px;
+}
+.se-api-desc strong {
+  color: var(--se-fg);
+  font-weight: 600;
+}
+.se-api-desc code {
+  font-family: var(--se-mono);
+  font-size: 12.5px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--se-bg-3);
+  border: 1px solid var(--se-line);
+  color: var(--se-fg);
+}
+.se-api-usecase {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-left: 2px solid var(--se-accent);
+  background: color-mix(in oklab, var(--se-accent) 5%, var(--se-bg-2));
+  border-radius: 0 6px 6px 0;
+}
+.se-api-usecase-tag {
+  flex-shrink: 0;
+  font-family: var(--se-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--se-accent);
+  padding-top: 2px;
+  white-space: nowrap;
+}
+.se-api-usecase-body {
+  color: var(--se-fg-2);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.se-api-usecase-body code {
+  font-family: var(--se-mono);
+  font-size: 12px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--se-bg-3);
+  border: 1px solid var(--se-line);
+  color: var(--se-fg);
+}
+.se-api-usecase-body strong {
+  color: var(--se-fg);
+}
+.se-api-params h4,
+.se-api-response-head,
+.se-api-try-toggle {
+  font-family: var(--se-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--se-fg-3);
+  margin: 16px 0 8px;
+}
+.se-api-params table {
+  width: 100%;
+  font-size: 13px;
+  border-collapse: collapse;
+}
+.se-api-params th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--se-fg-3);
+  padding: 6px 10px 6px 0;
+  border-bottom: 1px solid var(--se-line);
+}
+.se-api-params td {
+  padding: 8px 10px 8px 0;
+  border-bottom: 1px solid color-mix(in oklab, var(--se-line) 50%, transparent);
+  vertical-align: top;
+  color: var(--se-fg-2);
+}
+.se-api-params td code {
+  color: var(--se-fg);
+  font-size: 12.5px;
+}
+.se-api-params td .req {
+  display: block;
+  margin: 2px 0 0;
+  font-family: var(--se-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: oklch(0.74 0.16 25);
+}
+.se-api-default {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 11px;
+  color: var(--se-fg-3, var(--se-fg-2));
+  white-space: nowrap;
+}
+.se-api-default code {
+  font-size: 11px;
+}
+
+.se-api-uc-toggle {
+  font-family: var(--se-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--se-line);
+  background: transparent;
+  color: var(--se-fg-2);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.se-api-uc-toggle:hover {
+  background: color-mix(in oklab, var(--se-line) 30%, transparent);
+  color: var(--se-fg);
+}
+.se-api-uc-toggle[aria-expanded="true"] {
+  background: color-mix(in oklab, var(--se-line) 50%, transparent);
+  color: var(--se-fg);
+}
+.se-api-uc-example td {
+  background: color-mix(in oklab, var(--se-line) 25%, transparent);
+  padding: 10px 12px;
+}
+.se-api-uc-example pre {
+  margin: 0;
+  font-size: 12px;
+  background: var(--se-bg-2, transparent);
+  border: 1px solid var(--se-line);
+  border-radius: 6px;
+  padding: 10px 12px;
+  overflow-x: auto;
+}
+.se-api-uc-summary {
+  margin: 0;
+  font-size: 12px;
+  color: var(--se-fg-2);
+}
+.se-api-uc-example-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 8px;
+}
+.se-api-uc-try {
+  flex-shrink: 0;
+  font-family: var(--se-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--se-accent, oklch(0.74 0.16 250));
+  background: color-mix(in oklab, var(--se-accent, oklch(0.74 0.16 250)) 14%, transparent);
+  color: var(--se-fg);
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.se-api-uc-try:hover {
+  background: color-mix(in oklab, var(--se-accent, oklch(0.74 0.16 250)) 28%, transparent);
+}
+.se-api-usecases table {
+  table-layout: fixed;
+}
+.se-api-usecases th:nth-child(1),
+.se-api-usecases td:nth-child(1) {
+  width: 18%;
+}
+.se-api-usecases th:nth-child(3),
+.se-api-usecases td:nth-child(3) {
+  width: 90px;
+  text-align: right;
+}
+
+.se-api-code-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--se-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  color: var(--se-fg-2);
+  background: var(--se-bg-2);
+  border: 1px solid var(--se-line);
+  border-radius: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    border-color 0.15s,
+    background 0.15s;
+}
+.se-api-code-btn:hover {
+  color: var(--se-accent);
+  border-color: var(--se-accent);
+  background: color-mix(in oklab, var(--se-accent) 8%, var(--se-bg-2));
+}
+.se-api-code-btn span[aria-hidden] {
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+.se-api-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 24px;
+  animation: se-fade-in 0.12s ease-out;
+}
+@keyframes se-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.se-api-dialog {
+  width: min(820px, 100%);
+  max-height: min(80vh, 720px);
+  background: var(--se-bg-1);
+  border: 1px solid var(--se-line);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.6);
+}
+.se-api-dialog-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--se-line);
+}
+.se-api-dialog-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.se-api-dialog-title .se-api-path {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.se-api-dialog-close {
+  background: transparent;
+  border: 1px solid var(--se-line);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--se-fg-2);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.se-api-dialog-close:hover {
+  color: var(--se-fg);
+  border-color: var(--se-accent);
+}
+.se-api-dialog-tabs {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--se-line);
+  background: var(--se-bg-2);
+}
+.se-api-dialog-copy {
+  margin-left: auto;
+  font-family: var(--se-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--se-fg-2);
+  background: var(--se-bg-1);
+  border: 1px solid var(--se-line);
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.se-api-dialog-copy:hover {
+  color: var(--se-accent);
+  border-color: var(--se-accent);
+}
+.se-api-dialog-code {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: #0d1117 !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  overflow: auto !important;
+  flex: 1;
+  min-height: 0;
+  border-radius: 0 !important;
+}
+.se-api-dialog-code code,
+.se-api-dialog-code pre {
+  font-family: var(--se-mono) !important;
+  background: transparent !important;
+  color: var(--se-fg);
+  white-space: pre;
+}
+.se-api-dialog-code.se-shiki pre,
+.se-api-dialog-code.se-shiki .shiki {
+  margin: 0 !important;
+  padding: 16px 18px !important;
+  background: #0d1117 !important;
+  overflow: auto;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.se-api-dialog-code.se-shiki pre code {
+  font-family: var(--se-mono) !important;
+}
+/* fallback raw <pre> while shiki loads */
+.se-api-dialog > pre.se-api-dialog-code {
+  padding: 16px 18px !important;
+}
+
+/* Inline tab buttons (legacy) — still used inside the dialog */
+.se-api-tabs {
+  display: flex;
+  gap: 4px;
+  margin-top: 14px;
+  border-bottom: 1px solid var(--se-line);
+}
+.se-api-tab {
+  font-family: var(--se-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: var(--se-fg-3);
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: none;
+  padding: 7px 12px;
+  border-radius: 7px 7px 0 0;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.se-api-tab:hover {
+  color: var(--se-fg);
+}
+.se-api-tab.active {
+  color: var(--se-accent);
+  background: color-mix(in oklab, var(--se-accent) 10%, var(--se-bg-2));
+  border-color: var(--se-line);
+}
+
+.se-api-code {
+  position: relative;
+  background: var(--se-bg-3);
+  border: 1px solid var(--se-line);
+  border-top: none;
+  border-radius: 0 7px 7px 7px;
+  overflow: hidden;
+}
+.se-api-code pre {
+  margin: 0 !important;
+  padding: 14px 16px !important;
+  background: transparent !important;
+  font-size: 12.5px;
+  line-height: 1.55;
+  overflow-x: auto;
+}
+.se-api-code pre code {
+  font-family: var(--se-mono);
+  background: transparent !important;
+  padding: 0 !important;
+  color: var(--se-fg);
+}
+.se-api-code-toggle {
+  display: block;
+  width: 100%;
+  background: var(--se-bg-2);
+  color: var(--se-fg-2);
+  border: none;
+  border-top: 1px solid var(--se-line);
+  padding: 8px;
+  font-family: var(--se-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.se-api-code-toggle:hover {
+  background: var(--se-bg-3);
+  color: var(--se-fg);
+}
+
+.se-api-response {
+  margin-top: 16px;
+  border: 1px solid var(--se-line);
+  border-radius: 7px;
+  overflow: hidden;
+}
+.se-api-response-head {
+  background: var(--se-bg-2);
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--se-line);
+  margin: 0;
+}
+.se-api-response-head code {
+  color: oklch(0.78 0.17 155);
+  font-size: 12px;
+}
+.se-api-response pre {
+  margin: 0 !important;
+  padding: 12px 14px !important;
+  background: var(--se-bg-3) !important;
+  font-size: 12px;
+  line-height: 1.55;
+  overflow-x: auto;
+}
+
+.se-api-try {
+  margin-top: 16px;
+  border-top: 1px dashed var(--se-line);
+  padding-top: 14px;
+}
+.se-api-try-toggle {
+  background: transparent;
+  border: 1px solid var(--se-line);
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-family: var(--se-mono);
+  font-size: 11px;
+  color: var(--se-fg-2);
+  cursor: pointer;
+  margin: 0;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  transition: border-color 0.15s, color 0.15s;
+}
+.se-api-try-toggle:hover {
+  border-color: var(--se-accent);
+  color: var(--se-accent);
+}
+.se-api-try-body {
+  margin-top: 12px;
+  padding: 14px;
+  background: color-mix(in oklab, var(--se-accent) 4%, var(--se-bg-2));
+  border: 1px solid color-mix(in oklab, var(--se-accent) 25%, var(--se-line));
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+}
+.se-api-try-warn {
+  font-size: 12px;
+  color: oklch(0.78 0.13 60);
+}
+.se-api-try-fields {
+  display: grid;
+  gap: 8px;
+}
+.se-api-try-field {
+  display: grid;
+  gap: 4px;
+}
+.se-api-try-field span,
+.se-api-try-body-field span {
+  font-family: var(--se-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--se-fg-3);
+}
+.se-api-try-field input,
+.se-api-try-body-field textarea {
+  font-family: var(--se-mono);
+  font-size: 12.5px;
+  background: var(--se-bg-1);
+  border: 1px solid var(--se-line);
+  border-radius: 5px;
+  padding: 7px 9px;
+  color: var(--se-fg);
+}
+.se-api-try-field input:focus,
+.se-api-try-body-field textarea:focus {
+  outline: 1px solid var(--se-accent);
+  outline-offset: -1px;
+}
+.se-api-try-go {
+  align-self: start;
+  background: var(--se-accent);
+  color: var(--se-accent-fg);
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-family: var(--se-mono);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: transform 0.1s, opacity 0.15s;
+}
+.se-api-try-go:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.se-api-try-go:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.se-api-try-result {
+  border-radius: 6px;
+  border: 1px solid var(--se-line);
+  overflow: hidden;
+}
+.se-api-try-result[data-ok="false"] {
+  border-color: oklch(0.74 0.16 25);
+}
+.se-api-try-result-head {
+  font-family: var(--se-mono);
+  font-size: 11px;
+  padding: 6px 10px;
+  background: var(--se-bg-3);
+  border-bottom: 1px solid var(--se-line);
+  color: var(--se-fg-2);
+}
+.se-api-try-result-head code {
+  color: var(--se-fg);
+}
+.se-api-try-result pre {
+  margin: 0 !important;
+  padding: 10px 12px !important;
+  background: var(--se-bg-1) !important;
+  font-size: 12px !important;
+  max-height: 320px;
+  overflow: auto;
+}
+
+.se-api-side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 13px;
+  min-height: 0;
+}
+.se-api-side .se-api-side-card {
+  flex-shrink: 0;
+}
+.se-api-side .se-api-side-nav {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  /* fade out top + bottom edges so nav doesn't appear glued to the card */
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 12px,
+    #000 calc(100% - 12px),
+    transparent 100%
+  );
+}
+.se-api-side-card {
+  border: 1px solid var(--se-line);
+  border-radius: 10px;
+  padding: 14px;
+  background: var(--se-bg-2);
+}
+.se-api-side-card h4 {
+  font-family: var(--se-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--se-fg-3);
+  margin: 0 0 4px;
+}
+.se-api-side-card p {
+  font-size: 12px;
+  color: var(--se-fg-2);
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+.se-api-side-card label {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.se-api-side-card label span {
+  font-family: var(--se-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--se-fg-3);
+}
+.se-api-side-card label input {
+  font-family: var(--se-mono);
+  font-size: 12px;
+  background: var(--se-bg-1);
+  border: 1px solid var(--se-line);
+  border-radius: 5px;
+  padding: 6px 8px;
+  color: var(--se-fg);
+}
+.se-api-side-card label input:focus {
+  outline: 1px solid var(--se-accent);
+  outline-offset: -1px;
+}
+.se-api-side-warn {
+  font-size: 11px;
+  color: var(--se-fg-3);
+  border-top: 1px solid var(--se-line);
+  padding-top: 10px;
+  margin: 4px 0 0 !important;
+}
+.se-method-pill {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 5px;
+  border-radius: 3px;
+  border: 1px solid currentColor;
+  min-width: 44px;
+  text-align: center;
+}
+.se-api-side-nav {
+  border: 1px solid var(--se-line);
+  border-radius: 10px;
+  padding: 6px;
+  background: var(--se-bg-2);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.se-api-side-section + .se-api-side-section {
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--se-line);
+}
+.se-api-side-section-h {
+  display: block;
+  padding: 6px 8px 4px;
+  font-family: var(--se-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--se-fg);
+  text-decoration: none;
+  border-radius: 5px;
+  transition: color 0.15s, background 0.15s;
+}
+.se-api-side-section-h:hover {
+  color: var(--se-accent);
+  background: var(--se-bg-3);
+}
+.se-api-side-section .se-api-side-endpoint {
+  margin-left: 6px;
+  border-left: 1px solid color-mix(in oklab, var(--se-line) 50%, transparent);
+  padding: 6px 8px 4px 10px;
+}
+.se-api-side-section .se-api-side-endpoint + .se-api-side-endpoint {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 6px;
+}
+.se-api-side-endpoint {
+  padding: 8px 8px 6px;
+  border-radius: 7px;
+}
+.se-api-side-endpoint + .se-api-side-endpoint {
+  border-top: 1px solid color-mix(in oklab, var(--se-line) 50%, transparent);
+  margin-top: 4px;
+  padding-top: 10px;
+}
+.se-api-side-endpoint-path {
+  font-family: var(--se-mono);
+  font-size: 11px;
+  color: var(--se-fg-3);
+  padding: 0 4px 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.se-api-side-endpoint-path code {
+  background: transparent;
+  color: var(--se-fg-2);
+  padding: 0;
+  font-size: 11px;
+}
+.se-api-side-endpoint ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 2px;
+}
+.se-api-side-endpoint a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: 5px;
+  text-decoration: none;
+  color: var(--se-fg-2);
+  transition: background 0.15s, color 0.15s;
+}
+.se-api-side-endpoint a:hover {
+  background: var(--se-bg-3);
+  color: var(--se-fg);
+}
+.se-api-side-endpoint a.active {
+  background: color-mix(in oklab, var(--se-accent) 14%, var(--se-bg-3));
+  color: var(--se-fg);
+  box-shadow: inset 2px 0 0 var(--se-accent);
+}
+.se-api-side-endpoint a.active .label {
+  color: var(--se-accent);
+}
+.se-api-side-endpoint .label {
+  flex: 1;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Hide sidebar collapse / re-open buttons — sidebar is always shown. */
+button[aria-label="Collapse Sidebar"],
+button[aria-label="Open Sidebar"] {
+  display: none !important;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Mermaid diagram container + node styling.
+   ────────────────────────────────────────────────────────────── */
+.se-mermaid {
+  position: relative;
+  margin: 32px 0;
+  padding: 28px 24px 24px;
+  border: 1px solid var(--se-line);
+  border-radius: 14px;
+  background:
+    radial-gradient(
+      900px 320px at 50% -120px,
+      color-mix(in oklab, var(--se-accent) 14%, transparent) 0%,
+      transparent 70%
+    ),
+    linear-gradient(180deg, color-mix(in oklab, var(--se-accent) 3%, var(--se-bg-1)), var(--se-bg-1) 70%);
+  overflow-x: auto;
+  display: flex;
+  justify-content: center;
+}
+.se-mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+/* Decision-tree leaf nodes (the four primitive choices) — accent */
+.se-mermaid .node[id*="-EXP-"] rect,
+.se-mermaid .node[id*="-KS-"] rect,
+.se-mermaid .node[id*="-CFG-"] rect,
+.se-mermaid .node[id*="-GATE-"] rect {
+  fill: color-mix(in oklab, var(--se-accent) 9%, #0a0f0c) !important;
+  stroke: var(--se-accent) !important;
+  stroke-width: 1.6px !important;
+}
+.se-mermaid .node[id*="-EXP-"]:hover rect,
+.se-mermaid .node[id*="-KS-"]:hover rect,
+.se-mermaid .node[id*="-CFG-"]:hover rect,
+.se-mermaid .node[id*="-GATE-"]:hover rect {
+  fill: color-mix(in oklab, var(--se-accent) 18%, #0a0f0c) !important;
+  cursor: pointer;
+  filter: drop-shadow(0 0 12px color-mix(in oklab, var(--se-accent) 35%, transparent));
+}
+.se-mermaid .node rect,
+.se-mermaid .node polygon {
+  rx: 8;
+  ry: 8;
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.4));
+}
+.se-mermaid .nodeLabel {
+  font-family: var(--se-font-sans, ui-sans-serif), system-ui, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  line-height: 1.35;
+}
+.se-mermaid .edgeLabel {
+  font-family: var(--se-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--se-fg-2);
+  background: var(--se-bg-1) !important;
+  padding: 2px 6px !important;
+  border-radius: 4px;
+}
+.se-mermaid .edgeLabel rect {
+  fill: var(--se-bg-1) !important;
+}
+.se-mermaid .flowchart-link {
+  stroke-width: 1.5px;
+}
+.se-mermaid marker path {
+  fill: var(--se-fg-3);
+  stroke: var(--se-fg-3);
+}
+.se-mermaid-error {
+  border: 1px solid color-mix(in oklab, #f87171 60%, transparent);
+  border-radius: 8px;
+  background: color-mix(in oklab, #f87171 8%, var(--se-bg-1));
+  color: var(--se-fg-2);
+  font-family: var(--se-mono);
+  font-size: 12px;
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -704,6 +1718,11 @@ html[data-section="get-started"] {
   align-items: center;
   gap: 6px;
   margin-left: 2px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.se-product-switcher .se-ps-current {
+  white-space: nowrap;
 }
 .se-product-switcher .se-ps-sep {
   color: var(--se-fg-4);

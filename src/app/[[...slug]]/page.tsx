@@ -4,6 +4,9 @@ import { DocsPage, DocsBody, DocsTitle, DocsDescription } from "fumadocs-ui/page
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import { APIPage } from "@/lib/openapi";
 import { getPage, getPages } from "@/lib/source";
+import { Mermaid } from "@/components/mermaid";
+import { ApiList, ApiProvider } from "@/components/api-list";
+import { ApiDocsPage } from "@/components/api-docs-page";
 import {
   ApiRow,
   ApiTable,
@@ -11,6 +14,7 @@ import {
   Card,
   CardGrid,
   ConvertCTA,
+  DecisionPicker,
   DocFeedback,
   DocMeta,
   DocNav,
@@ -37,17 +41,20 @@ interface Props {
 const components = {
   ...defaultMdxComponents,
   APIPage,
+  ApiList,
   ApiRow,
   ApiTable,
   Callout,
   Card,
   CardGrid,
   ConvertCTA,
+  DecisionPicker,
   DocFeedback,
   DocMeta,
   DocNav,
   Hero,
   InstallTabs,
+  Mermaid,
   Out,
   Pill,
   Prompt,
@@ -68,9 +75,13 @@ export default async function Page({ params }: Props) {
 
   const MDX = page.data.body;
   const isRoot = !slug || slug.length === 0;
+  // API reference page replaces the default heading TOC with the nested
+  // endpoint nav rendered by `<ApiSidebar />` (and shares state with the
+  // body via `ApiProvider`).
+  const isApi = !!slug && slug[slug.length - 1] === "api";
 
-  return (
-    <DocsPage toc={page.data.toc} tableOfContent={isRoot ? { enabled: false } : undefined}>
+  const inner = (
+    <>
       {!isRoot ? <DocsTitle>{page.data.title}</DocsTitle> : null}
       {!isRoot && page.data.description ? (
         <DocsDescription>{page.data.description}</DocsDescription>
@@ -78,6 +89,23 @@ export default async function Page({ params }: Props) {
       <DocsBody>
         <MDX components={components} />
       </DocsBody>
+    </>
+  );
+
+  if (isApi) {
+    return (
+      <ApiProvider>
+        <ApiDocsPage toc={page.data.toc}>{inner}</ApiDocsPage>
+      </ApiProvider>
+    );
+  }
+
+  return (
+    <DocsPage
+      toc={page.data.toc}
+      tableOfContent={isRoot ? { enabled: false } : undefined}
+    >
+      {inner}
     </DocsPage>
   );
 }

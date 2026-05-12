@@ -1,0 +1,43 @@
+---
+title: Which primitive should I use?
+description: Decision tree — map your goal to gates, configs, killswitches, or experiments.
+---
+
+You have a change to ship. Which ShipEasy primitive fits? Walk the tree.
+
+<DecisionPicker />
+
+## Cheat sheet
+
+<TileGrid>
+  <Tile href="/flags-experiments/gates" icon="⌗" title="Gate">
+    *"Show v2 of checkout to 5% of EU users."* Boolean output. Targeting rules + rollout %.
+  </Tile>
+  <Tile href="/flags-experiments/configs" icon="⚙" title="Config">
+    *"Set the homepage hero copy to '...' in production, '...' in staging."* Typed value. Per-env
+    drafts.
+  </Tile>
+  <Tile href="/flags-experiments/killswitches" icon="⏻" title="Killswitch">
+    *"Stop sending emails. Right now."* One bit, big red button. Auditable in the activity log.
+  </Tile>
+  <Tile href="/flags-experiments/experiments" icon="◈" title="Experiment">
+    *"Does v2 actually convert better than v1, with p &lt; 0.05?"* Variant split + automated stats.
+  </Tile>
+</TileGrid>
+
+## Common mistakes
+
+<Callout type="warn" title="Using a gate when you should be using a config">
+  If your code reads `if (gate) value = 'A' else value = 'B'`, you've smuggled a value through a
+  boolean. Use a **config** — schema-validated, typed, supports more than two values.
+</Callout>
+
+<Callout type="warn" title="Using a gate when you should be using an experiment">
+  If you're using a 50% rollout to "see if v2 is better", you have no statistical guarantee. Use an
+  **experiment** — same UX, but you get a p-value and a confidence interval back.
+</Callout>
+
+<Callout type="warn" title="Using a gate when you should be using a killswitch">
+  Page-at-3am gates blur incident response. Killswitches sit in their own list, default to "on", and
+  don't have ramp percentages to fat-finger.
+</Callout>

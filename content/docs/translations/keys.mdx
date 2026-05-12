@@ -1,6 +1,6 @@
 ---
 title: Label keys
-description: How Polylang names, hashes, chunks, describes, and deletes the strings your code references.
+description: How ShipEasy Translations names, hashes, chunks, describes, and deletes the strings your code references.
 ---
 
 <DocMeta
@@ -12,7 +12,7 @@ description: How Polylang names, hashes, chunks, describes, and deletes the stri
 
 A **label key** is a stable identifier for a translatable string. It is what your code references; the value (the actual translation) varies per profile. Keys are the contract between your codebase and every locale you ship.
 
-Polylang's job is to make keys feel invisible: you write English in code, the codemod hashes it, the AI translates it, and the runtime resolves it back. But understanding what a key actually is — and how it survives renames, refactors, and re-scans — is what stops your localization from drifting six months in.
+ShipEasy Translations's job is to make keys feel invisible: you write English in code, the codemod hashes it, the AI translates it, and the runtime resolves it back. But understanding what a key actually is — and how it survives renames, refactors, and re-scans — is what stops your localization from drifting six months in.
 
 ## Schema
 
@@ -145,7 +145,7 @@ Explicit keys are forever-ish — they are referenced from code, drafted, transl
 - **Snake_case the leaf**: `cta_label`, not `ctaLabel` or `cta-label`.
 - **Describe role, not content**: `header.cta_primary` ages better than `header.start_free_trial` (the copy will change; the role won't).
 - **Don't embed the language**: `welcome_en` is wrong; `welcome` is right.
-- **Don't embed the environment**: keys are scoped to a profile, not duplicated per env.
+- **Don't embed the locale into the key**: keys are scoped to a profile, not duplicated per env.
 
 A loose convention that scales well: `<surface>.<component>.<role>`. So `checkout.summary.cta_primary`, `settings.billing.heading`, `auth.signup.subtitle`.
 
@@ -190,8 +190,8 @@ The CLI discovers keys two ways:
 Either way, the key set in your source profile should match the keys actually referenced in code. Use `shipeasy i18n validate` in CI to enforce that — it fails the build if a `t("…")` call has no matching key in the profile.
 
 ```bash
-shipeasy i18n scan ./src --rewrite --profile en:prod
-shipeasy i18n validate --profile en:prod ./src
+shipeasy i18n scan ./src --rewrite --profile en
+shipeasy i18n validate --profile en ./src
 ```
 
 The codemod skips strings it cannot safely rewrite — anything with embedded JSX, dynamic interpolation in a non-template position, or suspicious-looking content (URLs, emails, all-numeric). Skipped candidates land in `i18n-codemod-review.json` at the project root with file, line, and reason.
@@ -218,7 +218,7 @@ t("invite_status", { gender: "f", name: "Anna" });
 // → "She invited Anna."
 ```
 
-Pluralization rules follow CLDR — Polylang preserves the structure across translation. The AI is instructed to fill out every plural category required by the target locale (Russian needs `one / few / many / other`; Arabic needs `zero / one / two / few / many / other`). Categories the source locale does not use are filled by analogy.
+Pluralization rules follow CLDR — ShipEasy Translations preserves the structure across translation. The AI is instructed to fill out every plural category required by the target locale (Russian needs `one / few / many / other`; Arabic needs `zero / one / two / few / many / other`). Categories the source locale does not use are filled by analogy.
 
 <Callout type="warn" title="Validate your plural categories">
   Always spot-check plural keys in low-resource locales after AI translation. Claude is good at this
@@ -282,7 +282,7 @@ You can also set descriptions inline in code with a comment that the codemod pic
 By default every key in a profile is served in one bundle. For large apps (≥5k keys), split into chunks so the loader fetches only what each route needs.
 
 ```ts
-const labels = await loadLabels({ profile: "en:prod", chunk: "checkout" });
+const labels = await loadLabels({ profile: "en", chunk: "checkout" });
 ```
 
 You define a chunk via:
@@ -325,10 +325,10 @@ The index is cached aggressively at the edge; chunk URLs are content-hashed in t
 
 ## Stale keys and re-translation
 
-Polylang detects when a source value changes (the hash changes) and marks every target translation as **stale**. Stale keys still serve their old value at the loader — nothing breaks — but they show up in the dashboard with a yellow flag and are eligible for re-translation.
+ShipEasy Translations detects when a source value changes (the hash changes) and marks every target translation as **stale**. Stale keys still serve their old value at the loader — nothing breaks — but they show up in the dashboard with a yellow flag and are eligible for re-translation.
 
 ```bash
-shipeasy i18n translate --profile fr:prod --ai --stale-only
+shipeasy i18n translate --profile fr --ai --stale-only
 ```
 
 The AI run sees the previous source value, the new source value, and the previous translation, and proposes an updated value. Most edits are tiny ("Sign in" → "Sign in →") and the AI keeps the existing translation; meaningful edits get a new draft.
@@ -338,7 +338,7 @@ The AI run sees the previous source value, the new source value, and the previou
 Deletion is destructive — it removes the key from every profile, every active draft, every version going forward (old published versions still contain the key, since they are immutable).
 
 ```bash
-shipeasy i18n keys delete checkout.old_cta_label --profile en:prod
+shipeasy i18n keys delete checkout.old_cta_label --profile en
 ```
 
 In practice you should:
@@ -370,20 +370,20 @@ Drop `--dry-run` once you trust the list.
     </>
   }
   body="Every translation lands as a draft, never directly in a profile. Review side-by-side, edit inline, then merge."
-  primaryHref="/i18n/drafts"
+  primaryHref="/translations/drafts"
   primaryLabel="How drafts work"
-  secondaryHref="/i18n/translations"
+  secondaryHref="/translations/translations"
   secondaryLabel="AI translations"
   cmds={[
-    { label: "Validate keys", cmd: "shipeasy i18n validate --profile en:prod ./src" },
+    { label: "Validate keys", cmd: "shipeasy i18n validate --profile en ./src" },
     { label: "Prune unused", cmd: "shipeasy i18n keys prune --not-seen-in 30d" },
   ]}
   note="Stable hashes · stale detection · safe deletion"
 />
 
 <DocNav
-  prev={{ href: "/i18n/profiles", title: "Profiles" }}
-  next={{ href: "/i18n/drafts", title: "Drafts" }}
+  prev={{ href: "/translations/profiles", title: "Profiles" }}
+  next={{ href: "/translations/drafts", title: "Drafts" }}
 />
 
-<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/i18n/keys.mdx" />
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/translations/keys.mdx" />

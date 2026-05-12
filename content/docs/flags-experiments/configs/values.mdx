@@ -1,13 +1,13 @@
 ---
 title: Dynamic values
-description: Typed config values — strings, numbers, booleans, JSON — that change instantly without a redeploy. Schema-validated, versioned, per-environment.
+description: Typed config values — strings, numbers, booleans, JSON — that change instantly without a redeploy. Schema-validated, versioned.
 ---
 
 <DocMeta
   status="Production ready"
   read="8 min read"
   updated="May 3, 2026"
-  works="Server SDK · Browser SDK · Edge KV"
+  works="Server SDK · Browser SDK"
 />
 
 A **dynamic value** is a typed key/value pair stored on your project. Use one when the answer to <em>&quot;what should this be right now?&quot;</em> is not boolean — pricing, copy, limits, feature options, API endpoints, model names, anything you&apos;d otherwise hard-code as a constant or stash in an environment variable.
@@ -62,7 +62,7 @@ Unlike gates, dynamic values are **global per environment**: every user in `prod
 ```ts
 import { configureShipeasy, flags } from "@shipeasy/sdk/server";
 
-configureShipeasy({ apiKey: process.env.SHIPEASY_SERVER_KEY!, env: "prod" });
+configureShipeasy({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
 await flags.init();
 
 const limit = flags.value<number>("rate-limit") ?? 100;
@@ -76,7 +76,7 @@ Browser:
 
 ```ts
 import { configureShipeasy } from "@shipeasy/sdk/client";
-const client = configureShipeasy({ apiKey, env: "prod" });
+const client = configureShipeasy({ apiKey });
 const cfg = client.getValue<{ tier: string; limit: number }>("plan-defaults");
 ```
 
@@ -178,28 +178,15 @@ The SDK calls `decode` once per fetched blob — invalid payloads are dropped (w
   production. A good value is in production in seconds. A great value can be reverted in one click.
 </Callout>
 
-## Per-environment values
-
-Like gates, every value holds an independent record per environment:
-
-| Key             | dev                           | staging                           | prod                      |
-| --------------- | ----------------------------- | --------------------------------- | ------------------------- |
-| `rate-limit`    | 1000                          | 200                               | 100                       |
-| `default-theme` | `dark`                        | `light`                           | `light`                   |
-| `api-base-url`  | `https://api-dev.example.com` | `https://api-staging.example.com` | `https://api.example.com` |
-
-The SDK pins to one environment at boot — see [Environments](/configs/environments).
-
 ## When to use a value vs. a gate
 
 | Question                           | Use                                                        |
 | ---------------------------------- | ---------------------------------------------------------- |
-| Should I show feature X?           | [Gate](/configs/gates).                                    |
+| Should I show feature X?           | [Gate](/flags-experiments/gates).                          |
 | What should the value of N be?     | Dynamic value.                                             |
 | Different value per user / cohort? | Gate around the read, or structured value keyed by cohort. |
-| Different value per environment?   | Always — values are environment-aware by default.          |
 | Need an audit trail?               | Both. Every write is versioned.                            |
-| Need a kill-switch?                | Gate (or a value with a `null`-equivalent fallback).       |
+| Need a kill-switch?                | [Killswitch](/flags-experiments/killswitches).             |
 
 A useful rule: if you&apos;d say <em>&quot;show feature X&quot;</em>, gate it. If you&apos;d say <em>&quot;set feature X to value Y&quot;</em>, use a dynamic value.
 
@@ -209,7 +196,7 @@ Validate every value reference in your code resolves on the project:
 
 ```bash title=".github/workflows/ci.yml"
 - name: Validate dynamic values
-  run: shipeasy values validate ./src --env prod
+  run: shipeasy values validate ./src
 ```
 
 This catches typos like `rate_limit` vs `rate-limit` and stale references after a value has been deleted.
@@ -232,10 +219,10 @@ If your JSON is approaching the limit, you&apos;re probably storing data that be
     </>
   }
   body="Now that you've seen typed values, see how gates layer rules and rollout to vary behaviour per user — deterministically, with no flicker."
-  primaryHref="/configs/targeting"
+  primaryHref="/flags-experiments/configs/targeting"
   primaryLabel="Targeting & rollouts"
-  secondaryHref="/configs/environments"
-  secondaryLabel="Environments"
+  secondaryHref="/flags-experiments/decision"
+  secondaryLabel="Pick the right primitive"
   cmds={[
     { label: "Set a value", cmd: "shipeasy values set rate-limit 200" },
     { label: "Roll one back", cmd: "shipeasy values rollback rate-limit --revision 7" },

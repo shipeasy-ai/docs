@@ -7,7 +7,7 @@ description: Define what you measure — primary metrics, guardrails, outliers, 
   status="Production ready"
   read="9 min read"
   updated="May 3, 2026"
-  works="Server SDK · Daily cron"
+  works="Server SDK"
 />
 
 A **metric** is a number computed per user from a set of events. Every experiment has at least one **primary** metric (the thing you're trying to move) and ideally a couple of **guardrails** (things you don't want to break). Get these two choices right and most of your experimentation problems go away on their own.
@@ -266,7 +266,7 @@ The flip side of "how many users do I need" is "given the users I have, what's t
     title="Events"
     meta={
       <>
-        <span>Analytics Engine</span>
+        <span>events store</span>
         <span>·</span>
         <span>fire-and-forget</span>
       </>
@@ -280,7 +280,7 @@ The flip side of "how many users do I need" is "given the users I have, what's t
     title="How analysis works"
     meta={
       <>
-        <span>Welch t-test</span>
+        <span>statistical analysis</span>
         <span>·</span>
         <span>p · CI · lift</span>
       </>

@@ -1,0 +1,49 @@
+---
+title: CLI reference
+description: Every `shipeasy feedback` command for triaging bugs and feature requests.
+---
+
+```bash
+npm install -g @shipeasy/cli
+shipeasy login
+```
+
+## feedback bugs
+
+```text
+shipeasy feedback bugs <subcommand>
+```
+
+| Subcommand                  | What it does                          |
+| --------------------------- | ------------------------------------- |
+| `list`                      | List bug reports                      |
+| `create <title>`            | File a bug report                     |
+| `delete <id>`               | Delete a bug by id (or id prefix)     |
+
+```bash
+shipeasy feedback bugs list --json | jq '.[] | select(.status=="open")'
+shipeasy feedback bugs create "Checkout button overlaps footer" --page-url https://example.com/checkout
+shipeasy feedback bugs delete a1b2c3d
+```
+
+## feedback features
+
+```text
+shipeasy feedback features <subcommand>
+```
+
+| Subcommand                  | What it does                                     |
+| --------------------------- | ------------------------------------------------ |
+| `list`                      | List feature requests                            |
+| `create <title>`            | File a feature request                           |
+| `delete <id>`               | Delete a feature request by id (or id prefix)    |
+
+```bash
+shipeasy feedback features list --json
+shipeasy feedback features create "Dark mode dashboard" --importance important
+```
+
+## See also
+
+- [API reference](/feedback/api) — same surface over HTTP
+- [MCP reference](/feedback/mcp) — same surface as MCP tools for AI agents

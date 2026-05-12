@@ -1,0 +1,52 @@
+---
+title: Case studies
+description: Worked translation scenarios — from "first key" to "translating a whole site".
+---
+
+<TileGrid>
+  <Tile href="#first-key" icon="✎" title="Translate one button">
+    The minimal happy path. `t('cta.subscribe')` and ship.
+  </Tile>
+  <Tile href="#scan-existing" icon="◯" title="Translate an existing app">
+    Scan the repo, propose keys, draft + review, publish in batches.
+  </Tile>
+  <Tile href="#tone-of-voice" icon="◐" title="Per-locale tone & glossary">
+    Use profiles to keep "checkout" → "compra" not "compra" depending on register.
+  </Tile>
+  <Tile href="#contextual-strings" icon="◑" title="Disambiguate context">
+    "Open" the verb vs "Open" the adjective. Why context matters and how to provide it.
+  </Tile>
+  <Tile href="#cms-content" icon="◒" title="Long-form content from a CMS">
+    When *not* to put it in i18n — and how to integrate the CMS instead.
+  </Tile>
+</TileGrid>
+
+## Translate one button [#first-key]
+
+> _Stage-A stub._
+
+```tsx
+import { t } from "@shipeasy/sdk/server";
+<button>{t("cta.subscribe", { default: "Subscribe" })}</button>;
+```
+
+```bash
+shipeasy i18n push --keys cta.subscribe
+shipeasy i18n translate --locales fr,de,ja
+```
+
+## Translate an existing app [#scan-existing]
+
+> _Stage-A stub._
+
+## Per-locale tone & glossary [#tone-of-voice]
+
+> _Stage-A stub._
+
+## Disambiguate context [#contextual-strings]
+
+> _Stage-A stub._
+
+## Long-form CMS content [#cms-content]
+
+> _Stage-A stub._

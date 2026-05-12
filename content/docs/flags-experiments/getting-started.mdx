@@ -1,0 +1,73 @@
+---
+title: Getting started
+description: Install the SDK, configure once, ship a flag — under five minutes.
+---
+
+<Quickstart title="Flags & Experiments in 5 minutes" time="~5 minutes · no card required">
+  <QuickstartStep
+    num={1}
+    label="INSTALL"
+    title="Add the SDK and CLI"
+    cmd="npm i @shipeasy/sdk && npm i -g @shipeasy/cli"
+  >
+    One package, server + browser. The CLI logs in via your browser — no env tokens.
+  </QuickstartStep>
+
+  <QuickstartStep
+    num={2}
+    label="LOGIN"
+    title="Authenticate"
+    cmd="shipeasy login"
+  >
+    Opens your browser, mints an admin SDK key, stores it in `~/.config/shipeasy/`.
+  </QuickstartStep>
+
+  <QuickstartStep
+    num={3}
+    label="WIRE"
+    title="Configure once, use everywhere"
+    cmd="// app/layout.tsx
+import { shipeasy } from '@shipeasy/sdk/server';
+await shipeasy({ apiKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY! });"
+  >
+    Gates, configs, experiments, and killswitches all share this single `apiKey`.
+  </QuickstartStep>
+
+  <QuickstartStep
+    num={4}
+    label="SHIP"
+    title="Create your first gate"
+    cmd="shipeasy gate create checkout-v2 --rollout 5"
+  >
+    Changes you make are visible to your SDK worldwide in under a second.
+  </QuickstartStep>
+
+  <QuickstartStep
+    num={5}
+    label="USE"
+    title="Gate code in your app"
+    cmd="import { gate } from '@shipeasy/sdk/server';
+if (await gate('checkout-v2', { userId })) {
+  return renderCheckoutV2();
+}"
+  >
+    Sub-millisecond evaluation. No per-request network call from your code.
+  </QuickstartStep>
+</Quickstart>
+
+## Where to next
+
+<CardGrid>
+  <Card href="/flags-experiments/decision" eyebrow="Pick the right tool" title="Which primitive?">
+    Decision tree mapping "I want to do X" to gate vs config vs killswitch vs experiment.
+  </Card>
+  <Card href="/flags-experiments/gates" eyebrow="Deep dive" title="Gates — boolean flags">
+    Targeting rules, rollout percentages, hashing, sticky bucketing.
+  </Card>
+  <Card href="/flags-experiments/experiments" eyebrow="Deep dive" title="Experiments — A/B tests">
+    Universes, holdouts, metrics, and how daily statistical analysis works.
+  </Card>
+  <Card href="/flags-experiments/cli" eyebrow="Reference" title="CLI commands">
+    Every gate / config / experiment / killswitch verb the CLI exposes.
+  </Card>
+</CardGrid>

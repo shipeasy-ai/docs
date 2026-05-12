@@ -1,0 +1,56 @@
+---
+title: CLI reference
+description: Every `shipeasy i18n` command for scanning, drafting, and publishing translations.
+---
+
+```bash
+npm install -g @shipeasy/cli
+shipeasy login
+```
+
+## i18n
+
+```text
+shipeasy i18n <subcommand>
+```
+
+| Subcommand                  | What it does                                                                                |
+| --------------------------- | ------------------------------------------------------------------------------------------- |
+| `install-loader`            | Inject the ShipEasy i18n loader script into your project                                    |
+| `scan [paths...]`           | Find translatable strings in source files (wrapped `t('key')` calls + unwrapped JSX text)   |
+| `push <file>`               | Push key/value pairs from a JSON file to the i18n profile (existing keys skipped)           |
+| `publish`                   | Publish a profile chunk to the CDN (rebuild KV manifest, purge cache)                       |
+| `validate [paths...]`       | Check that all `t('key', …)` references in code exist on the server                         |
+| `profiles <subcommand>`     | Manage i18n locale profiles                                                                 |
+
+```bash
+# Discover untranslated strings in your repo
+shipeasy i18n scan ./apps/web
+
+# Push a flat key map you already have
+shipeasy i18n push ./en.json
+
+# Translate to FR / DE / JA via AI
+shipeasy i18n profiles draft --locales fr,de,ja
+
+# Publish approved drafts to the CDN
+shipeasy i18n publish
+```
+
+## codemod — bulk source rewrites
+
+```text
+shipeasy codemod <subcommand>
+```
+
+The `codemod` command (top-level, not under `i18n`) automates extracting hardcoded strings into
+`t('key')` calls. Useful when retrofitting an existing codebase.
+
+```bash
+shipeasy codemod --help
+```
+
+## See also
+
+- [API reference](/translations/api) — same surface over HTTP
+- [MCP reference](/translations/mcp) — same surface as MCP tools for AI agents

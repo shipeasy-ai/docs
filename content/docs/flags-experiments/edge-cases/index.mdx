@@ -1,0 +1,71 @@
+---
+title: Edge cases
+description: Things that bite you once and never again — sticky bucketing, holdouts, SRM, KV propagation, and more.
+---
+
+The patterns below are the ones you wish someone told you on day one.
+
+<TileGrid>
+  <Tile href="#sticky-bucketing" icon="◯" title="Sticky bucketing across devices">
+    Same `userId` should see the same variant on web and mobile. Hashing strategy matters.
+  </Tile>
+  <Tile href="#holdout-overlap" icon="◐" title="Holdouts that overlap experiments">
+    Run a global 10% holdout *and* per-experiment splits. How allocation composes.
+  </Tile>
+  <Tile href="#srm" icon="!" title="Sample ratio mismatch (SRM) detection">
+    Your 50/50 split is actually 51/49. The platform flags it; here's what to do.
+  </Tile>
+  <Tile href="#kv-propagation" icon="◔" title="Write propagation latency">
+    Why a flip is sub-second 99% of the time and what to do for the 1%.
+  </Tile>
+  <Tile href="#ssr-flicker" icon="◑" title="Avoiding SSR/CSR flicker">
+    Pass server-evaluated flags to the client to skip the hydration mismatch.
+  </Tile>
+  <Tile href="#fallback" icon="✓" title="Fail-safe defaults when KV is unreachable">
+    What `gate()` returns and how to override per-call.
+  </Tile>
+</TileGrid>
+
+## Sticky bucketing across devices [#sticky-bucketing]
+
+> _Stage-A stub — full prose coming next._
+
+The hash key controls stickiness. Use a stable identifier (signed-in `userId`) when you have one;
+fall back to a cookie-stored anonymous id otherwise. Switching keys mid-experiment re-buckets users.
+
+## Holdouts that overlap experiments [#holdout-overlap]
+
+> _Stage-A stub._
+
+A holdout reserves N% of users from *all* experiments in a universe — they always see baseline.
+Useful for measuring long-term cumulative impact. Allocation composes: a 10% holdout + a 50/50
+experiment sees 90% × 50% = 45% in each treatment.
+
+## Sample ratio mismatch (SRM) [#srm]
+
+> _Stage-A stub._
+
+If your 50/50 split lands at 49/51, it's almost always a logging bug, not bad luck. Daily analysis
+flags SRM with a chi-squared test; treat it as a bug, not a stats problem.
+
+## Write propagation latency [#kv-propagation]
+
+> _Stage-A stub._
+
+Changes you make are visible to your SDK worldwide in under a second. For changes that *must* be
+instant globally, gate the relevant call behind a server-side check at request time so you can
+fall back gracefully if your SDK hasn't picked up the new value yet.
+
+## SSR/CSR flicker [#ssr-flicker]
+
+> _Stage-A stub._
+
+Evaluate flags server-side, serialize them into the page, hydrate the client SDK with the same
+values. Skip the hydration round trip and you skip the flicker.
+
+## Fail-safe defaults [#fallback]
+
+> _Stage-A stub._
+
+`gate()` falls back to `false` if KV is unreachable. Configs return last-known-good. Override per
+call with `gate(name, ctx, { defaultValue: true })` when "off" is the dangerous answer.

@@ -12,7 +12,7 @@ description: Translation proposals — manual or AI — that land as a reviewabl
 
 Translations don't go straight into a profile. They land first as a **draft**: a set of proposed values for one profile, attributable to a source (you, an AI run, an imported XLIFF file) and reviewable inline. Merging promotes the draft into the profile. Publishing — a separate, deliberate step — pushes the profile to KV and the CDN.
 
-This separation is the single most important guardrail in Polylang. AI translations are good but not perfect; merging without review is how you ship "Confirmer" as a button label that overflows on mobile in three locales for two weeks before anyone notices.
+This separation is the single most important guardrail in ShipEasy Translations. AI translations are good but not perfect; merging without review is how you ship "Confirmer" as a button label that overflows on mobile in three locales for two weeks before anyone notices.
 
 ## Lifecycle
 
@@ -54,16 +54,16 @@ A profile can have one open draft per source at a time. Multiple sources in para
 
 ### From AI
 
-The most common path. The CLI calls Anthropic Claude (using your project's API key — see [Translations](/i18n/translations) for setup) and creates a draft with proposed values for every key missing from the target profile.
+The most common path. The CLI calls Anthropic Claude (using your project's API key — see [Translations](/translations/translations) for setup) and creates a draft with proposed values for every key missing from the target profile.
 
 ```bash
-shipeasy i18n translate --profile fr:prod --ai
+shipeasy i18n translate --profile fr --ai
 ```
 
 Existing values are not overwritten unless you pass `--reflow`. Filter by chunk for a smaller, faster run:
 
 ```bash
-shipeasy i18n translate --profile fr:prod --ai --chunk checkout
+shipeasy i18n translate --profile fr --ai --chunk checkout
 ```
 
 The dashboard streams progress live — keys translated, keys remaining, current cost, ETA.
@@ -74,26 +74,26 @@ If you already have translations (a contractor delivered a file, you exported fr
 
 ```bash
 # Flat JSON map: { "key": "value" }
-shipeasy i18n translate --profile fr:prod --import ./french-translations.json
+shipeasy i18n translate --profile fr --import ./french-translations.json
 
 # XLIFF 2.1 (industry-standard exchange format)
-shipeasy i18n translate --profile fr:prod --import ./fr.xlf
+shipeasy i18n translate --profile fr --import ./fr.xlf
 
 # CSV with key,value columns
-shipeasy i18n translate --profile fr:prod --import ./fr.csv
+shipeasy i18n translate --profile fr --import ./fr.csv
 ```
 
 The import becomes a draft, not a direct merge. You still review it; row-by-row attribution shows the import file as the source.
 
 ### Manual entry
 
-In the dashboard, **Polylang → Drafts → New** opens an empty draft for the chosen profile. You can paste keys and values, or use the inline editor. Useful for quick fixes ("change the FR CTA from 'Régler' to 'Payer'") that don't merit a full AI run.
+In the dashboard, **ShipEasy Translations → Drafts → New** opens an empty draft for the chosen profile. You can paste keys and values, or use the inline editor. Useful for quick fixes ("change the FR CTA from 'Régler' to 'Payer'") that don't merit a full AI run.
 
 ## Reviewing a draft
 
-Open **Polylang → Drafts → fr:prod**. You see a four-column view:
+Open **ShipEasy Translations → Drafts → fr**. You see a four-column view:
 
-| Source (en:prod)  | Current (fr:prod)  | Proposed (draft)    | Decision               |
+| Source (en)  | Current (fr)  | Proposed (draft)    | Decision               |
 | ----------------- | ------------------ | ------------------- | ---------------------- |
 | Welcome back      | Bon retour         | Bienvenue à nouveau | ✓ Approve              |
 | Pay               | _(empty)_          | Régler              | ✗ Reject (edit inline) |
@@ -156,7 +156,7 @@ Roles control what each teammate can do on a draft:
     }
   >
     All translator powers, plus can merge drafts into the profile. Cannot publish to{" "}
-    <code>:prod</code> environments — that needs admin.
+    <code>:prod</code> profiles — that needs admin.
   </Tile>
   <Tile
     icon="✦"
@@ -171,7 +171,7 @@ Roles control what each teammate can do on a draft:
       </>
     }
   >
-    All reviewer powers, plus publish to any environment, create/delete profiles, manage roles,
+    All reviewer powers, plus publish to any locale, create/delete profiles, manage roles,
     configure tone and glossary.
   </Tile>
 </TileGrid>
@@ -185,10 +185,10 @@ When you're satisfied, click **Merge draft**. Approved values are promoted into 
 **Merging does not publish.** This is deliberate — merging is "I've reviewed; the profile is internally correct". Publishing is "this version is going to users". Decoupling them lets you stage a complete merge (often dozens of keys at once) and publish atomically:
 
 ```bash
-shipeasy i18n publish --profile fr:prod
+shipeasy i18n publish --profile fr
 ```
 
-You can also auto-publish on merge in **Project → Polylang → Settings → Auto-publish on merge** if you trust the review step entirely. Most teams turn this on for `:dev` and `:staging` but leave `:prod` manual.
+You can also auto-publish on merge in **Project → ShipEasy Translations → Settings → Auto-publish on merge** if you trust the review step entirely. Most teams turn this on for `:dev` and `:staging` but leave `:prod` manual.
 
 ## Side-by-side review and back-translation
 
@@ -210,14 +210,14 @@ Back-translation is on-demand (one extra Claude call per row) so it doesn't bloa
 
 If two open drafts touch the same key, the latest merge wins; the other draft's row for that key is marked **conflicted** and you re-decide on next review. The dashboard surfaces conflicts at the top of the draft view with a banner — no one can merge a conflicted draft without acknowledging it.
 
-A typical scenario: a translator is hand-editing `fr:prod` while a nightly cron runs `--ai` on new keys. The cron's draft has a row for `checkout.cta_label`; the translator's draft also touched it. On merge of one, the other gets flagged.
+A typical scenario: a translator is hand-editing `fr` while a nightly cron runs `--ai` on new keys. The cron's draft has a row for `checkout.cta_label`; the translator's draft also touched it. On merge of one, the other gets flagged.
 
 ## CI integration
 
 For teams running translation contracts, the `--ci` mode generates a draft, prints a summary, and exits non-zero if the draft is empty (nothing to translate) — handy in scheduled cron jobs that translate any new keys nightly.
 
 ```bash
-shipeasy i18n translate --profile fr:prod --ai --ci
+shipeasy i18n translate --profile fr --ai --ci
 ```
 
 A common GitHub Actions setup:
@@ -234,7 +234,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: npm i -g @shipeasy/cli
       - run: shipeasy login --token $SHIPEASY_TOKEN
-      - run: shipeasy i18n translate --profile fr:prod --ai --ci
+      - run: shipeasy i18n translate --profile fr --ai --ci
         env: { SHIPEASY_TOKEN: ${{ secrets.SHIPEASY_TOKEN }} }
 ```
 
@@ -262,20 +262,20 @@ Or from the dashboard. Abandoning frees the profile for a new draft. The abandon
     </>
   }
   body="Drafts are only as good as the prompt behind them. Configure tone, glossary, and per-locale overrides so the AI sounds like your brand from the first run."
-  primaryHref="/i18n/translations"
+  primaryHref="/translations/translations"
   primaryLabel="AI translations"
-  secondaryHref="/i18n/profiles"
+  secondaryHref="/translations/profiles"
   secondaryLabel="Back to profiles"
   cmds={[
-    { label: "AI draft", cmd: "shipeasy i18n translate --profile fr:prod --ai" },
-    { label: "Publish merged", cmd: "shipeasy i18n publish --profile fr:prod" },
+    { label: "AI draft", cmd: "shipeasy i18n translate --profile fr --ai" },
+    { label: "Publish merged", cmd: "shipeasy i18n publish --profile fr" },
   ]}
   note="Side-by-side review · RBAC · back-translation"
 />
 
 <DocNav
-  prev={{ href: "/i18n/keys", title: "Label keys" }}
-  next={{ href: "/i18n/translations", title: "AI translations" }}
+  prev={{ href: "/translations/keys", title: "Label keys" }}
+  next={{ href: "/translations/translations", title: "AI translations" }}
 />
 
-<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/i18n/drafts.mdx" />
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/translations/drafts.mdx" />

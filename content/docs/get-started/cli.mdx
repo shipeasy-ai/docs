@@ -138,7 +138,7 @@ shipeasy gate create new-ui \
 | `shipeasy value delete <name>`             | Permanent.                                                             |
 
 ```bash
-shipeasy value set pricing '{"base":9.99,"currency":"USD"}' --env prod
+shipeasy value set pricing '{"base":9.99,"currency":"USD"}'
 ```
 
 ## Experiments
@@ -260,7 +260,7 @@ See [MCP server](/get-started/mcp) for the tool inventory.
     type="string"
     desc={
       <>
-        Override the edge worker base URL (default <code>https://edge.shipeasy.dev</code>).
+        Override the ShipEasy base URL (default <code>https://edge.shipeasy.dev</code>).
       </>
     }
   />

@@ -1,7 +1,6 @@
 ---
 title: Experiments — A/B tests with stats built in
-description: A/B and multivariate experiments with managed stats. Welch's t-test, holdouts, segmentation — out of the box.
-icon: FlaskConical
+description: A/B and multivariate experiments with managed stats. statistical analysis, holdouts, segmentation — out of the box.
 ---
 
 <Hero
@@ -11,7 +10,7 @@ icon: FlaskConical
       Was the new thing <em>actually better?</em>
     </>
   }
-  subtitle="Define a metric, ship a variant, get a defensible answer the next morning. Welch's t-test, lift, p-value and 95% CI — written back to your project as plain rows."
+  subtitle="Define a metric, ship a variant, get a defensible answer the next morning. statistical analysis, lift, p-value and 95% CI — written back to your project."
   primaryHref="/experiments/quickstart"
   primaryLabel="Quickstart"
   secondaryHref="#building-blocks"
@@ -22,7 +21,7 @@ icon: FlaskConical
   status="Production ready"
   read="6 min read"
   updated="May 3, 2026"
-  works="Server SDK · Edge Worker · Daily cron"
+  works="Server SDK"
 />
 
 ShipEasy **Experiments** lets you ask _"is the new thing actually better?"_ and get a defensible answer.
@@ -87,13 +86,13 @@ You define what you want to measure (a **metric**), set up variant payloads (the
     title="Events"
     meta={
       <>
-        <span>Analytics Engine</span>
+        <span>events store</span>
         <span>·</span>
         <span>fire-and-forget</span>
       </>
     }
   >
-    Anything you <code>track()</code>. Stored in Cloudflare Analytics Engine, aggregated into metric
+    Anything you <code>track()</code>. Stored in events store, aggregated into metric
     values daily.
   </Tile>
   <Tile
@@ -110,7 +109,7 @@ You define what you want to measure (a **metric**), set up variant payloads (the
       </>
     }
   >
-    Welch&apos;s t-test, lift, p-value, 95% CI. Computed once per day, written back to D1, surfaced
+    statistical analysis, lift, p-value, 95% CI. Computed once per day, persisted to your project, surfaced
     in the dashboard.
   </Tile>
 </TileGrid>
@@ -158,7 +157,7 @@ A practical workflow is to gate first (so the rollout is safe), then **promote t
     title="assign + track"
     cmd="experiments.assign('checkout-cta', user)"
   >
-    First call logs an exposure. <code>flags.track()</code> on conversion. Daily cron does the math.
+    First call logs an exposure. <code>flags.track()</code> on conversion. Daily aggregation does the math.
   </QuickstartStep>
 </Quickstart>
 
@@ -169,7 +168,7 @@ A practical workflow is to gate first (so the rollout is safe), then **promote t
 ```ts
 import { configureShipeasy, flags, experiments } from "@shipeasy/sdk/server";
 
-configureShipeasy({ apiKey: process.env.SHIPEASY_SERVER_KEY!, env: "prod" });
+configureShipeasy({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
 await flags.init();
 
 const result = experiments.assign<{ label: string }>("checkout-cta", {
@@ -230,18 +229,18 @@ The return shape:
 
 <Steps>
   <Step title="Cron enqueues a job per project">
-    A scheduled trigger on the Edge Worker fans out one queue message per project that has running
+    A scheduled trigger on the ShipEasy fans out one queue message per project that has running
     experiments.
   </Step>
-  <Step title="Consumer scans Analytics Engine">
+  <Step title="Consumer scans events store">
     For each project, the consumer pulls yesterday&apos;s exposures and events from Analytics
     Engine, joins by <code>user_id</code>, and aggregates per metric × group.
   </Step>
-  <Step title="Welch's t-test">
+  <Step title="statistical analysis">
     Lift, two-sided p-value, 95% CI. Per metric, per group, vs. the control group.
   </Step>
-  <Step title="Write back to D1">
-    Results land as plain rows in D1, scoped to the project. The dashboard reads them; you can
+  <Step title="Persist results">
+    Results are persisted to your project, scoped to the project. The dashboard reads them; you can
     export them.
   </Step>
 </Steps>

@@ -101,12 +101,12 @@ That&apos;s the whole runway from zero to working. Everything below is detail.
     # bun add @shipeasy/sdk
     ```
 
-    The package ships **both** server (Node, Cloudflare Workers, Bun, Deno) and browser builds via conditional exports. Your bundler picks the right one automatically; you can also import the explicit subpath (`/server`, `/client`) when you want to be unambiguous (e.g. inside a monorepo with a shared util used from both).
+    The package ships **both** server (Node, ShipEasy, Bun, Deno) and browser builds via conditional exports. Your bundler picks the right one automatically; you can also import the explicit subpath (`/server`, `/client`) when you want to be unambiguous (e.g. inside a monorepo with a shared util used from both).
 
   </Step>
 
   <Step title="Server initialisation">
-    For Next.js, put this in your root `layout.tsx` so it runs once per cold start. For an Express or Hono app, call it during startup. For RSC, the SDK persists state across the async-context boundary so you don&apos;t need a Provider on the server side.
+    For Next.js, put this in your root `layout.tsx` so it runs once per cold start. For an Express or  app, call it during startup. For RSC, the SDK persists state across the async-context boundary so you don&apos;t need a Provider on the server side.
 
     ```ts
     import { shipeasy } from "@shipeasy/sdk/server";
@@ -127,7 +127,6 @@ That&apos;s the whole runway from zero to working. Everything below is detail.
 
     shipeasy({
       apiKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY!,
-      env: "prod",
     });
 
     // Once you know who the user is:
@@ -232,7 +231,7 @@ The SDK reads the following from `process.env` (and `import.meta.env` in Vite). 
     type="string"
     desc={
       <>
-        Override the edge worker base URL. Defaults to <code>https://edge.shipeasy.dev</code>.
+        Override the ShipEasy base URL. Defaults to <code>https://edge.shipeasy.dev</code>.
       </>
     }
   />
@@ -305,7 +304,7 @@ The SDK reads the following from `process.env` (and `import.meta.env` in Vite). 
 
 ## Edge runtimes & ESM
 
-The SDK is shipped as ESM-first with a CJS fallback for older Node. There are no Node built-ins on the hot path, so it runs unchanged on Cloudflare Workers, Vercel Edge, Deno Deploy, and Bun.
+The SDK is shipped as ESM-first with a CJS fallback for older Node. There are no Node built-ins on the hot path, so it runs unchanged on ShipEasy, Vercel Edge, Deno Deploy, and Bun.
 
 <Callout type="info" title="Conditional exports cheat sheet">
   - `import {shipeasy} from "@shipeasy/sdk/server"` — server build, picked automatically when
@@ -318,7 +317,7 @@ The SDK is shipped as ESM-first with a CJS fallback for older Node. There are no
 
 In a pnpm/yarn workspace, install `@shipeasy/sdk` in each app that uses it (don&apos;t hoist it into the root unless your tooling resolves hoisted deps). For shared internal libraries that import from the SDK, depend on it as a `peerDependency` so consumers control the version.
 
-If you depend on the SDK from a Cloudflare Worker built with `wrangler`, no special config is needed — `wrangler` honours `exports` and picks the right build.
+If you depend on the SDK from a Cloudflare Worker built with `CLI`, no special config is needed — `CLI` honours `exports` and picks the right build.
 
 ## Troubleshooting
 

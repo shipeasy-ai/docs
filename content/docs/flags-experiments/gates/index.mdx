@@ -7,7 +7,7 @@ description: Boolean feature flags with targeting rules, percentage rollouts, ki
   status="Production ready"
   read="9 min read"
   updated="May 3, 2026"
-  works="Server SDK · Browser SDK · Edge KV"
+  works="Server SDK · Browser SDK"
 />
 
 A **gate** is a single boolean answer for a single user. It is the unit of <em>&quot;should I do the new thing?&quot;</em> in your code. Gates are evaluated locally — the SDK keeps the bundle in process and the call is a hash table lookup, not a network round trip.
@@ -144,7 +144,7 @@ That order matters: rules are evaluated **before** the rollout. <em>&quot;100% o
 ```ts
 import { configureShipeasy, flags } from "@shipeasy/sdk/server";
 
-configureShipeasy({ apiKey: process.env.SHIPEASY_SERVER_KEY!, env: "prod" });
+configureShipeasy({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
 await flags.init();
 
 const enabled = flags.gate("new-checkout-flow", {
@@ -159,7 +159,7 @@ const enabled = flags.gate("new-checkout-flow", {
 ```ts
 import { configureShipeasy } from "@shipeasy/sdk/client";
 
-const client = configureShipeasy({ apiKey, env: "prod" });
+const client = configureShipeasy({ apiKey });
 await client.identify({ user_id, plan, country });
 
 if (client.getFlag("new-checkout-flow")) {

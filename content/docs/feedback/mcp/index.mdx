@@ -1,0 +1,57 @@
+---
+title: MCP reference
+description: MCP tools for AI agents — file bugs, file feature requests, triage, all from the assistant.
+---
+
+The feedback MCP surface is intentionally small: an agent can file and triage bugs and feature
+requests on your behalf. Most teams use this to wire "User said X in chat" → "filed a feature
+request automatically".
+
+## Install
+
+The MCP server ships inside the `@shipeasy/cli` package as the `mcp` subcommand.
+
+```bash
+npm install -g @shipeasy/cli
+shipeasy mcp install
+```
+
+Or wire manually:
+
+```json
+{
+  "mcpServers": {
+    "shipeasy": {
+      "command": "shipeasy",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+## Tools
+
+> Status: in design. The current MCP server doesn't ship feedback tools yet — the CLI is the
+> production interface. Tracking them here so the agent prompt examples make sense once they land.
+
+| Tool                          | What it does                                                |
+| ----------------------------- | ----------------------------------------------------------- |
+| `feedback_create_bug`         | File a bug report                                           |
+| `feedback_list_bugs`          | List bugs (filterable by status)                            |
+| `feedback_update_bug_status`  | Move a bug through the status flow                          |
+| `feedback_create_feature`     | File a feature request                                      |
+| `feedback_list_features`      | List feature requests                                       |
+| `feedback_update_feature_status` | Move a feature request through the status flow           |
+
+## Example agent prompt
+
+> "User just said 'the dashboard freezes when I open the export menu'. File a bug for that, page
+> URL https://app.shipeasy.ai/dashboard."
+
+The agent calls `feedback_create_bug` with the title and URL, returns the bug id. You see it in
+the dashboard within seconds.
+
+## See also
+
+- [API reference](/feedback/api) — same surface over HTTP
+- [CLI reference](/feedback/cli) — same surface as terminal commands

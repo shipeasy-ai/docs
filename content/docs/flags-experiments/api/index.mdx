@@ -1,0 +1,35 @@
+---
+title: API reference
+description: REST endpoints for gates, configs, killswitches, experiments, and universes — with live request samples in cURL, JavaScript, and Python.
+---
+
+The Admin API is the same surface the dashboard, CLI, and MCP server use. Every request:
+
+- authenticates with `Authorization: Bearer sdk_admin_…`
+- scopes to a project via `X-Project-Id: <projectId>`
+- speaks JSON, returns conventional HTTP status codes
+
+```bash
+curl https://shipeasy.ai/api/admin/gates \
+  -H "Authorization: Bearer sdk_admin_..." \
+  -H "X-Project-Id: prj_..."
+```
+
+Mint admin keys via `POST /api/admin/keys` with `type: "admin"`. Keys expire after 90 days; rotate
+with the `revoke` action.
+
+## Common patterns
+
+**Pagination.** List endpoints return `{ data: [...], next_cursor: "..." }`. Pass
+`?cursor=<next_cursor>` and `?limit=<n>` to page.
+
+**Errors.** All errors share a single envelope:
+
+```json
+{ "error": { "code": "not_found", "message": "Gate 'foo' not found" } }
+```
+
+**Idempotency.** `POST` writes that create resources accept `Idempotency-Key: <uuid>` and replay
+the same response if you retry within 24h.
+
+<ApiList />

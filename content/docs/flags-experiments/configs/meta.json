@@ -1,5 +1,4 @@
 {
   "title": "Configs",
-  "root": true,
-  "pages": ["index", "quickstart", "gates", "values", "targeting", "environments"]
+  "pages": ["index", "quickstart", "values", "targeting"]
 }

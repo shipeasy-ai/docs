@@ -1,0 +1,22 @@
+{
+  "title": "Flags & Experiments",
+  "description": "Gates, configs, killswitches & A/B tests",
+  "pages": [
+    "index",
+    "getting-started",
+    "decision",
+    "---",
+    "gates",
+    "configs",
+    "killswitches",
+    "experiments",
+    "metrics",
+    "---",
+    "case-studies",
+    "edge-cases",
+    "---",
+    "api",
+    "cli",
+    "mcp"
+  ]
+}

@@ -1,0 +1,56 @@
+---
+title: API reference
+description: REST endpoints for bug reports and feature requests.
+---
+
+The feedback API lives under `/api/admin/bugs/*` and `/api/admin/feature-requests/*`. Same auth
+model: `Authorization: Bearer sdk_admin_…` + `X-Project-Id: <projectId>`.
+
+```bash
+curl https://shipeasy.ai/api/admin/bugs \
+  -H "Authorization: Bearer sdk_admin_..." \
+  -H "X-Project-Id: prj_..."
+```
+
+## Resources
+
+<TileGrid>
+  <Tile href="#bugs" icon="◉" title="Bugs">
+    `GET / POST / DELETE /api/admin/bugs[/{id}]` and `PATCH .../{id}/status`.
+  </Tile>
+  <Tile href="#feature-requests" icon="✦" title="Feature requests">
+    `GET / POST / DELETE /api/admin/feature-requests[/{id}]`, `PATCH .../{id}/status`, vote endpoints.
+  </Tile>
+  <Tile href="#capture" icon="↗" title="Capture endpoints">
+    Public ingest: `POST /collect/feedback/{bug,feature}`. Used by the browser SDK; rate-limited
+    per IP.
+  </Tile>
+</TileGrid>
+
+<Callout type="info" title="OpenAPI coverage">
+  Auto-generated OpenAPI pages for feedback are in progress. The CLI consumes these endpoints
+  today; the docs build will surface them once the schema is ported into the `@shipeasy/admin-api`
+  resource registry.
+</Callout>
+
+## Bug payload
+
+```json
+{
+  "title": "Checkout button overlaps footer on iOS Safari",
+  "pageUrl": "https://example.com/checkout",
+  "stackTrace": "TypeError: ...",   // optional
+  "screenshotUrl": "https://...",  // optional
+  "userId": "u_abc"                 // optional, server-derived from session if omitted
+}
+```
+
+## Feature request payload
+
+```json
+{
+  "title": "Dark mode for the dashboard",
+  "importance": "important",
+  "userId": "u_abc"
+}
+```

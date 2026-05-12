@@ -1,0 +1,15 @@
+{
+  "title": "Bugs & Requests",
+  "description": "Bug reports & feature requests",
+  "pages": [
+    "index",
+    "getting-started",
+    "---",
+    "case-studies",
+    "edge-cases",
+    "---",
+    "api",
+    "cli",
+    "mcp"
+  ]
+}

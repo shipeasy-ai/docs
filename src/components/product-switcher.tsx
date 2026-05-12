@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 type Product = {
   slug: string;
@@ -14,32 +14,25 @@ type Product = {
 
 const PRODUCTS: Product[] = [
   {
-    slug: "i18n",
-    name: "Polylang",
-    href: "/i18n",
+    slug: "flags-experiments",
+    name: "Flags & Experiments",
+    href: "/flags-experiments",
+    desc: "Gates, configs, killswitches & A/B tests",
+    color: "oklch(0.78 0.17 155)",
+  },
+  {
+    slug: "translations",
+    name: "Translations",
+    href: "/translations",
     desc: "Localized labels & AI translations",
     color: "oklch(0.74 0.17 245)",
   },
   {
-    slug: "experiments",
-    name: "Experiments",
-    href: "/experiments",
-    desc: "A/B tests, universes & metrics",
-    color: "oklch(0.78 0.17 155)",
-  },
-  {
-    slug: "configs",
-    name: "Configs",
-    href: "/configs",
-    desc: "Feature flags & dynamic values",
-    color: "oklch(0.82 0.15 85)",
-  },
-  {
-    slug: "llms",
-    name: "AI Agents",
-    href: "/llms",
-    desc: "MCP server & agent guides",
-    color: "oklch(0.72 0.18 295)",
+    slug: "feedback",
+    name: "Bugs & Requests",
+    href: "/feedback",
+    desc: "Bug reports & feature requests",
+    color: "oklch(0.78 0.16 35)",
   },
 ];
 
@@ -51,6 +44,7 @@ function sectionFromPath(pathname: string | null): string {
 
 export function ProductSwitcher() {
   const pathname = usePathname();
+  const router = useRouter();
   const section = sectionFromPath(pathname);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -80,18 +74,32 @@ export function ProductSwitcher() {
     color: "oklch(0.78 0.17 155)",
   };
 
+  // Switcher renders inside fumadocs' brand `<a href="/">`. Without
+  // preventDefault on every interaction inside, clicks bubble to the parent
+  // anchor and the browser navigates to "/" instead of toggling the menu or
+  // following the per-product link. Stop the bubbling and route programmatically.
+  const swallow = (e: React.SyntheticEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   return (
     <span
       className="se-product-switcher"
       data-open={open ? "true" : "false"}
       ref={ref}
       style={{ position: "relative" }}
+      onClick={swallow}
+      onMouseDown={swallow}
     >
       <span className="se-ps-sep">/</span>
       <button
         type="button"
         className="se-ps-current"
-        onClick={() => setOpen((v) => !v)}
+        onClick={(e) => {
+          swallow(e);
+          setOpen((v) => !v);
+        }}
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -100,7 +108,13 @@ export function ProductSwitcher() {
       </button>
       {open ? (
         <>
-          <div className="se-ps-backdrop" onClick={() => setOpen(false)} />
+          <div
+            className="se-ps-backdrop"
+            onClick={(e) => {
+              swallow(e);
+              setOpen(false);
+            }}
+          />
           <div className="se-ps-menu" role="menu">
             {PRODUCTS.map((p) => (
               <a
@@ -108,7 +122,11 @@ export function ProductSwitcher() {
                 href={p.href}
                 className={`se-ps-item ${p.slug === current.slug ? "active" : ""}`}
                 style={{ color: p.color }}
-                onClick={() => setOpen(false)}
+                onClick={(e) => {
+                  swallow(e);
+                  setOpen(false);
+                  router.push(p.href);
+                }}
               >
                 <span className="swatch" style={{ background: p.color }} />
                 <span className="body">

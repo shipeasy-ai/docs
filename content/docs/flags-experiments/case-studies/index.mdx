@@ -1,0 +1,90 @@
+---
+title: Case studies
+description: Real scenarios — when to reach for a gate vs config vs killswitch vs experiment.
+---
+
+Each case below picks one primitive, names a real-feeling scenario, and shows the code. Use them as
+templates when you're stuck choosing.
+
+<TileGrid>
+  <Tile href="#new-checkout" icon="⌗" title="Roll out a redesigned checkout">
+    **Gate** — targeted by country, ramp 5%→25%→100% over a week. Sticky bucketing per `userId`.
+  </Tile>
+  <Tile href="#hero-copy" icon="⚙" title="Change homepage hero copy">
+    **Config** — typed string, no code change to swap copy.
+  </Tile>
+  <Tile href="#kill-emails" icon="⏻" title="Pause outbound emails during incident">
+    **Killswitch** — single bit, default-on, audited, paged via webhook on flip.
+  </Tile>
+  <Tile href="#paywall" icon="◈" title="Test a new paywall vs the old one">
+    **Experiment** — 50/50 split inside a universe, conversion as the goal metric, p&lt;0.05 to ship.
+  </Tile>
+  <Tile href="#beta-feature" icon="⌗" title="Open a beta to allow-listed accounts">
+    **Gate** — targeting rule on `account.plan IN ['beta-tester']`, no rollout %.
+  </Tile>
+  <Tile href="#search-relevance" icon="◈" title="Tune search ranking weights">
+    **Experiment** + **Config** — config supplies the weights, experiment splits which weight set
+    each user gets.
+  </Tile>
+</TileGrid>
+
+## Roll out a redesigned checkout [#new-checkout]
+
+> _Coming up next: full prose draft._ Stage-A stub.
+
+**The choice:** ship the rewrite progressively without a redeploy each ramp step.
+**The primitive:** Gate.
+**Why not experiment?** You already know v2 is the future. You just don't want to break carts on
+the way. No statistical question — you're ramping for safety, not for an answer.
+
+```ts
+import { gate } from "@shipeasy/sdk/server";
+if (await gate("checkout-v2", { userId, country })) {
+  return renderCheckoutV2();
+}
+return renderCheckoutV1();
+```
+
+```bash
+# Day 1
+shipeasy gate update checkout-v2 --rule "country IN ['US','CA']" --rollout 5
+# Day 3
+shipeasy gate update checkout-v2 --rollout 25
+# Day 5
+shipeasy gate update checkout-v2 --rollout 100
+```
+
+## Change homepage hero copy [#hero-copy]
+
+> _Coming up next: full prose draft._ Stage-A stub.
+
+**The primitive:** Config.
+**Why not gate?** Gates are boolean. The thing you actually want to change is the *string*.
+
+```ts
+import { config } from "@shipeasy/sdk/server";
+const hero = await config<string>("home.hero.title");
+```
+
+## Pause outbound emails during incident [#kill-emails]
+
+> _Coming up next: full prose draft._ Stage-A stub.
+
+**The primitive:** Killswitch.
+**Why not gate?** A 3am on-call shouldn't have to think about rollout percentages. Killswitches
+have one switch.
+
+## Test a new paywall vs the old one [#paywall]
+
+> _Coming up next: full prose draft._ Stage-A stub.
+
+**The primitive:** Experiment.
+**Why not gate?** You don't know the answer yet. You need a confidence interval to decide.
+
+## Open a beta to allow-listed accounts [#beta-feature]
+
+> _Coming up next: full prose draft._ Stage-A stub.
+
+## Tune search ranking weights [#search-relevance]
+
+> _Coming up next: full prose draft._ Stage-A stub.

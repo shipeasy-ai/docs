@@ -1,0 +1,76 @@
+---
+title: Getting started
+description: Wire a "Report bug" button into your app in two minutes.
+---
+
+<Quickstart title="Bugs & Requests in 2 minutes" time="~2 minutes">
+  <QuickstartStep
+    num={1}
+    label="INSTALL"
+    title="Add the SDK"
+    cmd="npm i @shipeasy/sdk"
+  >
+    Same SDK as flags + translations. No separate package, no separate API key.
+  </QuickstartStep>
+
+  <QuickstartStep
+    num={2}
+    label="WIRE"
+    title="Configure once, use everywhere"
+    cmd="// app/layout.tsx
+import { shipeasy } from '@shipeasy/sdk/server';
+await shipeasy({ apiKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY! });"
+  >
+    Same `shipeasy()` boot as the rest of the platform.
+  </QuickstartStep>
+
+  <QuickstartStep
+    num={3}
+    label="REPORT"
+    title="File a bug from the browser"
+    cmd="import { shipeasy } from '@shipeasy/sdk/client';
+
+await shipeasy.feedback.bug({
+  title: 'Checkout button overlaps footer on iOS Safari',
+  pageUrl: window.location.href,
+});"
+  >
+    Returns `202 accepted` and shows up in the dashboard within seconds.
+  </QuickstartStep>
+
+  <QuickstartStep
+    num={4}
+    label="REQUEST"
+    title="Capture a feature request"
+    cmd="await shipeasy.feedback.feature({
+  title: 'Dark mode for the dashboard',
+  importance: 'important',
+});"
+  >
+    Other signed-in users can up-vote the same request from the dashboard.
+  </QuickstartStep>
+
+  <QuickstartStep
+    num={5}
+    label="TRIAGE"
+    title="From the CLI"
+    cmd="shipeasy feedback bugs list
+shipeasy feedback features list"
+  >
+    Or use the dashboard. Either way the records live in your project.
+  </QuickstartStep>
+</Quickstart>
+
+## Where to next
+
+<CardGrid>
+  <Card href="/feedback/case-studies" eyebrow="Worked examples" title="Case studies">
+    "Forward bugs to Slack", "Wire votes to a public roadmap", "Auto-attach session replay".
+  </Card>
+  <Card href="/feedback/api" eyebrow="Reference" title="API reference">
+    `POST /api/admin/bugs`, `POST /api/admin/feature-requests`, listing, status updates.
+  </Card>
+  <Card href="/feedback/cli" eyebrow="Reference" title="CLI commands">
+    Every `shipeasy feedback …` verb.
+  </Card>
+</CardGrid>

@@ -41,7 +41,7 @@ If you&apos;d rather hand this to an AI agent, the [LLM guide](/llms/configs) de
 - A **server SDK key** scoped to your environment. Find it in **Project &rarr; SDK keys &rarr; Create &rarr; server**, or generate one from the CLI:
 
 ```bash
-shipeasy keys create --kind server --env prod
+shipeasy keys create --kind server
 ```
 
 - The SDK installed in your project:
@@ -57,7 +57,7 @@ shipeasy keys create --kind server --env prod
 
     configureShipeasy({
       apiKey: process.env.SHIPEASY_SERVER_KEY!,
-      env: process.env.NODE_ENV === "production" ? "prod" : "dev",
+      
     });
 
     export const ready = flags.init();
@@ -166,7 +166,7 @@ shipeasy keys create --kind server --env prod
 
     ```bash title=".github/workflows/ci.yml"
     - name: Validate flags
-      run: shipeasy flags validate ./src --env prod
+      run: shipeasy flags validate ./src
     ```
 
     This catches typos (`new-checkut-flow`) and stale references after a flag has been deleted.
@@ -176,14 +176,11 @@ shipeasy keys create --kind server --env prod
 
 ## What just happened
 
-When you flipped that rollout from `25` to `100`, the dashboard:
+When you flipped that rollout from `25` to `100`, ShipEasy propagated the change worldwide. Within
+the SDK's poll interval (default 30s, 10s on Pro, push on Enterprise), every server saw the new
+value.
 
-1. Updated the project&apos;s flag row in **D1** (source of truth).
-2. Rebuilt the project&apos;s `:flags` blob in **Cloudflare KV**.
-3. **Purged** the affected URLs from the CDN explicitly.
-4. Within the SDK&apos;s poll interval (default 30s, 10s on Pro, push on Enterprise), every server worldwide saw the new value.
-
-No deploy. No restart. No backend round-trip on the read. The hot path in your code is a hash table lookup.
+No deploy. No restart. No backend round-trip on the read.
 
 <Callout type="success" title="What you just got for free">
   An audit log of every change, side-by-side dashboards for the affected gate, deterministic
@@ -210,7 +207,7 @@ No deploy. No restart. No backend round-trip on the read. The hot path in your c
     <em>&quot;100% of plan=pro in country=US&quot;</em>.
   </Tile>
   <Tile
-    href="/configs/values"
+    href="/flags-experiments/configs/values"
     icon="◫"
     title="Tune values without code"
     meta={
@@ -219,28 +216,28 @@ No deploy. No restart. No backend round-trip on the read. The hot path in your c
           <b>JSON</b>
         </span>
         <span>·</span>
-        <span>per-environment</span>
+        <span>typed access</span>
       </>
     }
   >
     <code>pricing.base = 9.99</code> can be a config, not a constant.
   </Tile>
   <Tile
-    href="/configs/environments"
-    icon="◇"
-    title="Promote dev → prod"
+    href="/flags-experiments/killswitches"
+    icon="⏻"
+    title="Add a killswitch"
     meta={
       <>
-        <span>dev · staging · prod</span>
+        <span>1-click</span>
         <span>·</span>
-        <span>one-click</span>
+        <span>auditable</span>
       </>
     }
   >
-    Stage rollout plans in <code>staging</code>, promote to <code>prod</code> when ready.
+    Wrap critical paths so you can disable them instantly during an incident.
   </Tile>
   <Tile
-    href="/experiments/quickstart"
+    href="/flags-experiments/experiments/quickstart"
     icon="✦"
     title="Measure, don't guess"
     meta={

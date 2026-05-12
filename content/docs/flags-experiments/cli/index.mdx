@@ -1,0 +1,108 @@
+---
+title: CLI reference
+description: Every `shipeasy` CLI command for gates, configs, killswitches, experiments, and universes.
+---
+
+The same CLI binary serves all of ShipEasy. Install once:
+
+```bash
+npm install -g @shipeasy/cli
+shipeasy login
+```
+
+Every command below scopes to the project bound in your current directory (via `shipeasy bind`)
+unless you pass `--project <id>` to override.
+
+## flags — feature flags / gates
+
+```text
+shipeasy flags <subcommand>
+```
+
+| Subcommand                     | What it does                                     |
+| ------------------------------ | ------------------------------------------------ |
+| `list`                         | List all feature flags                           |
+| `create <name>`                | Create a new feature flag                        |
+| `enable <name>`                | Enable a feature flag                            |
+| `disable <name>`               | Disable a feature flag                           |
+| `rollout <name> <pct>`         | Set rollout percentage (0–100) for a flag        |
+| `delete <name>`                | Delete a feature flag                            |
+
+```bash
+shipeasy flags create checkout-v2
+shipeasy flags rollout checkout-v2 25
+shipeasy flags disable checkout-v2
+```
+
+## killswitch (alias `ks`) — break-glass
+
+```text
+shipeasy killswitch <subcommand>
+```
+
+| Subcommand                                    | What it does                                                      |
+| --------------------------------------------- | ----------------------------------------------------------------- |
+| `list`                                        | List all killswitches                                             |
+| `create <name>`                               | Create a killswitch (`folder.name`)                               |
+| `update <name>`                               | Update default value, switches map, or description                |
+| `delete <name>`                               | Delete a killswitch                                               |
+| `set <name> <switch_key> <value>`             | Set a switch entry on one env (default `prod`)                    |
+| `unset <name> <switch_key>`                   | Remove a switch entry from one env                                |
+
+```bash
+shipeasy ks create email.outbound
+shipeasy ks set email.outbound off true
+```
+
+## experiments — A/B tests
+
+```text
+shipeasy experiments <subcommand>
+```
+
+| Subcommand              | What it does                                |
+| ----------------------- | ------------------------------------------- |
+| `list`                  | List experiments                            |
+| `create <name>`         | Create a new experiment                     |
+| `update <name>`         | Update an experiment                        |
+| `delete <name>`         | Delete an experiment                        |
+| `start <name>`          | Start an experiment                         |
+| `stop <name>`           | Stop a running experiment                   |
+| `archive <name>`        | Archive a stopped experiment                |
+| `reanalyze <name>`      | Re-run analysis pass                        |
+| `status <name>`         | Show status and latest results              |
+
+## configs — typed remote configs
+
+```text
+shipeasy configs <subcommand>
+```
+
+| Subcommand            | What it does                                                                   |
+| --------------------- | ------------------------------------------------------------------------------ |
+| `list`                | List all configs                                                               |
+| `get <name>`          | Show a config by name                                                          |
+| `create <name>`       | Create a new config (JSON validated against a JSON Schema)                     |
+| `update <name>`       | Update a config's value (legacy flat update; prefer `draft` + `publish`)       |
+| `draft <name>`        | Save a draft value for the given env                                           |
+| `publish <name>`      | Publish the saved draft for the given env                                      |
+| `activity <name>`     | Show recent activity for a config                                              |
+| `delete <name>`       | Delete a config                                                                |
+
+## universes — experiment containers
+
+```text
+shipeasy universes <subcommand>
+```
+
+| Subcommand          | What it does                              |
+| ------------------- | ----------------------------------------- |
+| `list`              | List universes                            |
+| `create <name>`     | Create a universe                         |
+| `update <name>`     | Update a universe's holdout range         |
+| `delete <name>`     | Delete a universe                         |
+
+## See also
+
+- [API reference](/flags-experiments/api) — same surface over HTTP
+- [MCP reference](/flags-experiments/mcp) — same surface as MCP tools for AI agents

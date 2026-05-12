@@ -7,7 +7,7 @@ description: From raw events to lift, p-value, and CI — exactly what the platf
   status="Production ready"
   read="11 min read"
   updated="May 3, 2026"
-  works="Daily cron · Edge Worker · D1"
+  works="Daily analysis"
 />
 
 Analysis is the part of an experiment platform that is most often hand-waved. This page is a precise description of what ShipEasy computes for you, in language that doesn't require a stats degree, and an honest description of the assumptions behind it.
@@ -15,35 +15,32 @@ Analysis is the part of an experiment platform that is most often hand-waved. Th
 ## The pipeline
 
 <Steps>
-  <Step title="Daily cron fires">
-    Once per day (default 03:00 UTC, configurable per project), a Cloudflare cron trigger on the
-    edge worker enqueues one analysis job per active experiment into the `ANALYSIS_QUEUE`. Workers
-    Queues handles retries and DLQ; if a job fails it's retried up to 3× with backoff, then parked
-    in the DLQ for inspection.
+  <Step title="Daily aggregation fires">
+    Once per day (default 03:00 UTC, configurable per project), ShipEasy starts an analysis pass
+    for every active experiment. Failed runs are retried automatically.
   </Step>
   <Step title="Per-user aggregation">
-    For each (experiment, user) pair, the consumer pulls all matching events from the analysis
-    window from Analytics Engine, joins them against the exposure timestamp, and computes the metric
-    value per user. Events that happened **before** exposure don't count — that's the rule that
-    makes results causal.
+    For each (experiment, user) pair, ShipEasy joins the user's events to their exposure timestamp
+    and computes the metric value. Events that happened **before** exposure don't count — that's
+    the rule that makes results causal.
   </Step>
   <Step title="Per-group statistics">
-    For each (metric, group), the job computes mean, variance, and N. Outlier handling
-    (winsorisation or capping) is applied here, symmetrically across all groups in the comparison.
+    For each (metric, group), ShipEasy computes mean, variance, and N. Outlier handling
+    (winsorisation or capping) is applied symmetrically across all groups in the comparison.
   </Step>
   <Step title="Welch's t-test">
     For each variant against the control group (and against the universe holdout, when one exists),
-    ShipEasy runs Welch's t-test and computes lift, two-sided p-value, and 95% confidence interval.
+    ShipEasy runs Welch's t-test and computes lift, two-sided p-value, and 95% confidence
+    interval.
   </Step>
-  <Step title="Write back to D1">
-    Results are written as plain rows to the project's D1, one row per (experiment, metric, group,
-    segment, day). The dashboard reads from these rows; the CLI does too. Nothing is locked away in
-    a vendor format — `wrangler d1 execute` against your own database returns the same numbers the
-    dashboard shows.
+  <Step title="Persist results">
+    Results are persisted to your project, one row per (experiment, metric, group, segment, day).
+    The dashboard reads from these rows; the CLI does too. Export anytime via the API.
   </Step>
 </Steps>
 
-The whole pipeline is idempotent on the (experiment, metric, group, day) key — if a job retries, it overwrites the row, never duplicates it.
+The whole pipeline is idempotent on the (experiment, metric, group, day) key — if an analysis pass
+retries, it overwrites the row, never duplicates it.
 
 ## What a result row contains
 
@@ -185,10 +182,10 @@ curl -H "Authorization: Bearer $SHIPEASY_API_KEY" \
   https://shipeasy.ai/api/experiments/checkout-cta/results
 ```
 
-Or read directly from D1 if you've enabled the read-replica binding on your project:
+Or read via the API if you've enabled the read access on your project:
 
 ```bash
-wrangler d1 execute YOUR_DB --command \
+CLI d1 execute YOUR_DB --command \
   "SELECT * FROM experiment_results WHERE experiment='checkout-cta' AND day >= date('now','-7 days')"
 ```
 

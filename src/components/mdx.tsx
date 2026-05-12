@@ -485,3 +485,63 @@ export function DocMeta({
     </div>
   );
 }
+
+/**
+ * Compact 2×2 picker for "which Flags & Experiments primitive should I use?".
+ * Each cell answers a single question — no nested decision tree, no mermaid.
+ */
+export function DecisionPicker() {
+  const cells: {
+    href: string;
+    q: string;
+    name: string;
+    tag: string;
+    body: string;
+  }[] = [
+    {
+      href: "/flags-experiments/gates",
+      q: "if / else by user?",
+      name: "Gate",
+      tag: "boolean",
+      body: "Targeting rules + percentage rollout. The default tool for shipping behind a flag.",
+    },
+    {
+      href: "/flags-experiments/configs",
+      q: "what value?",
+      name: "Config",
+      tag: "typed",
+      body: "String, number, boolean, JSON — schema-validated. Change without a redeploy.",
+    },
+    {
+      href: "/flags-experiments/killswitches",
+      q: "kill it now?",
+      name: "Killswitch",
+      tag: "incident",
+      body: "One switch, no rollout %. The lever you pull at 3am during an incident.",
+    },
+    {
+      href: "/flags-experiments/experiments",
+      q: "is X better than Y?",
+      name: "Experiment",
+      tag: "stats",
+      body: "A/B test with automated p-values + 95% confidence intervals. Daily updates.",
+    },
+  ];
+  return (
+    <div className="se-picker not-prose">
+      {cells.map((c) => (
+        <a key={c.href} href={c.href} className="se-picker-cell">
+          <span className="q">{c.q}</span>
+          <span className="row">
+            <span className="name">{c.name}</span>
+            <span className="tag">{c.tag}</span>
+          </span>
+          <span className="body">{c.body}</span>
+          <span className="arrow" aria-hidden>
+            →
+          </span>
+        </a>
+      ))}
+    </div>
+  );
+}

@@ -1,0 +1,42 @@
+---
+title: Edge cases
+description: Pluralization, RTL, fallback chains, and the things that break translations in practice.
+---
+
+<TileGrid>
+  <Tile href="#plurals" icon="◯" title="Pluralization across locales">
+    English has 2 forms, Russian has 4, Arabic has 6. ICU MessageFormat saves you.
+  </Tile>
+  <Tile href="#fallback-chain" icon="◐" title="Locale fallback">
+    `pt-BR` → `pt` → `en`. How requests resolve and where to override.
+  </Tile>
+  <Tile href="#rtl" icon="◑" title="Right-to-left layout">
+    What changes besides `dir="rtl"` — punctuation, mirrored icons, justification.
+  </Tile>
+  <Tile href="#variable-injection" icon="◒" title="Variables, formatting & dates">
+    `{count}`, `{user.name}`, currency and date formatting per locale.
+  </Tile>
+  <Tile href="#missing-key" icon="!" title="What happens when a key is missing">
+    The fallback to source string + how to surface unstranslated copy in CI.
+  </Tile>
+</TileGrid>
+
+## Pluralization [#plurals]
+
+> _Stage-A stub._
+
+## Locale fallback [#fallback-chain]
+
+> _Stage-A stub._
+
+## RTL layout [#rtl]
+
+> _Stage-A stub._
+
+## Variable injection & formatting [#variable-injection]
+
+> _Stage-A stub._
+
+## Missing keys [#missing-key]
+
+> _Stage-A stub._

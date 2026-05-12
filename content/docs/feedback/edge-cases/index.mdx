@@ -1,0 +1,35 @@
+---
+title: Edge cases
+description: Spam, dedup, PII, anonymous users, and other things that bite in production.
+---
+
+<TileGrid>
+  <Tile href="#spam" icon="!" title="Spam & abuse">
+    Per-IP rate limiting, hCaptcha for anonymous reporters, auto-mute repeat offenders.
+  </Tile>
+  <Tile href="#dedup" icon="◯" title="Dedup duplicate reports">
+    Same bug from 1000 users shouldn't be 1000 rows. Hashing strategy.
+  </Tile>
+  <Tile href="#pii" icon="◐" title="PII in bug payloads">
+    Users paste API keys into "what's broken?". Redaction patterns + retention.
+  </Tile>
+  <Tile href="#anonymous" icon="◑" title="Anonymous vs signed-in reporters">
+    What you can collect anonymously without GDPR pain.
+  </Tile>
+</TileGrid>
+
+## Spam & abuse [#spam]
+
+> _Stage-A stub._
+
+## Dedup [#dedup]
+
+> _Stage-A stub._
+
+## PII [#pii]
+
+> _Stage-A stub._
+
+## Anonymous reporters [#anonymous]
+
+> _Stage-A stub._

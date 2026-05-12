@@ -1,0 +1,88 @@
+---
+title: Flags & Experiments
+description: One product, four primitives. Pick the right one for the change you're shipping.
+---
+
+<Hero
+  eyebrow="ShipEasy · Flags & Experiments"
+  title={
+    <>
+      Ship behind a flag, measure with stats, kill instantly — <em>no redeploy</em>.
+    </>
+  }
+  subtitle="Four primitives that share one SDK and one API key: gates for ramps, configs for typed values, killswitches for break-glass, experiments for A/B tests with automated p-values."
+  primaryHref="/flags-experiments/getting-started"
+  primaryLabel="Getting started"
+  secondaryHref="/flags-experiments/decision"
+  secondaryLabel="Which primitive?"
+/>
+
+<DocMeta
+  status="Production ready"
+  read="3 min read"
+  updated="May 10, 2026"
+  works="Server SDK · Browser SDK"
+/>
+
+## Four primitives, one mental model
+
+<TileGrid>
+  <Tile
+    href="/flags-experiments/gates"
+    icon="⌗"
+    title="Gates — boolean flags"
+    meta={<><span><b>~1ms</b> evaluation</span><span>·</span><span>no per-request fetch</span></>}
+  >
+    Targeted rollouts: enable for `country=US`, ramp `5% → 100%`. The default tool when you want to
+    ship code without showing it to everyone.
+  </Tile>
+  <Tile
+    href="/flags-experiments/configs"
+    icon="⚙"
+    title="Configs — typed values"
+    meta={<><span><b>JSON</b> schema-validated</span><span>·</span><span>typed access</span></>}
+  >
+    String, number, boolean, JSON values you change without a redeploy. Use when the question is
+    *"what value?"* not *"on or off?"*.
+  </Tile>
+  <Tile
+    href="/flags-experiments/killswitches"
+    icon="⏻"
+    title="Killswitches — break-glass"
+    meta={<><span><b>1-click</b> disable</span><span>·</span><span>auditable</span></>}
+  >
+    A flag with a single job: disable a system in an incident. Separate from gates so on-call
+    doesn't have to think about rollout percentages at 3am.
+  </Tile>
+  <Tile
+    href="/flags-experiments/experiments"
+    icon="◈"
+    title="Experiments — A/B tests"
+    meta={<><span><b>p-values</b> + 95% CIs</span><span>·</span><span>daily updates</span></>}
+  >
+    Universes, holdouts, multivariate variants. Automated p-values and 95% confidence intervals
+    delivered to the dashboard each day.
+  </Tile>
+</TileGrid>
+
+<Callout type="info" title="Not sure which to use?">
+  See the [decision tree](/flags-experiments/decision) — one diagram that maps "I want to do X" to
+  the right primitive.
+</Callout>
+
+## How it works
+
+Every primitive is read by your SDK with sub-millisecond latency — no round-trip on the hot path.
+Writes you make in the dashboard or CLI propagate worldwide in under a second.
+
+<CardGrid>
+  <Card href="/flags-experiments/getting-started" eyebrow="Step 1" title="Install & configure">
+    `npm install @shipeasy/sdk` and one `shipeasy()` call.
+  </Card>
+  <Card href="/flags-experiments/gates/quickstart" eyebrow="Step 2" title="Ship your first gate">
+    Five-minute walkthrough. Create, gate code, ramp.
+  </Card>
+  <Card href="/flags-experiments/experiments/quickstart" eyebrow="Step 3" title="Run an experiment">
+    Pick a metric, define a variant, watch the p-value.
+  </Card>
+</CardGrid>

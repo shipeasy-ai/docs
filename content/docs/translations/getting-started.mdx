@@ -1,0 +1,71 @@
+---
+title: Getting started
+description: Scan, draft, publish — translated copy live worldwide in five minutes.
+---
+
+<Quickstart title="Translations in 5 minutes" time="~5 minutes">
+  <QuickstartStep
+    num={1}
+    label="INSTALL"
+    title="Add the SDK and CLI"
+    cmd="npm i @shipeasy/sdk && npm i -g @shipeasy/cli"
+  >
+    Same SDK + CLI as flags. No separate i18n package, no separate API key.
+  </QuickstartStep>
+
+  <QuickstartStep
+    num={2}
+    label="WIRE"
+    title="One configure call"
+    cmd="// app/layout.tsx
+import { shipeasy } from '@shipeasy/sdk/server';
+await shipeasy({ apiKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY! });"
+  >
+    Same `shipeasy()` boot as flags. The SDK exposes `t()` once configured.
+  </QuickstartStep>
+
+  <QuickstartStep
+    num={3}
+    label="SCAN"
+    title="Discover strings in your repo"
+    cmd="shipeasy i18n scan ./apps/web"
+  >
+    Walks your code, finds untranslated user-facing copy, proposes keys, and uploads them as drafts.
+  </QuickstartStep>
+
+  <QuickstartStep
+    num={4}
+    label="TRANSLATE"
+    title="AI drafts → human review"
+    cmd="shipeasy i18n translate --locales fr,de,ja --review"
+  >
+    Drafts ride through the review queue in the dashboard. Approve and publish when you're happy.
+  </QuickstartStep>
+
+  <QuickstartStep
+    num={5}
+    label="USE"
+    title="Render in your app"
+    cmd="import { t } from '@shipeasy/sdk/server';
+<h1>{t('home.hero.title')}</h1>"
+  >
+    Reads happen at the edge. New keys live within a second of publish.
+  </QuickstartStep>
+</Quickstart>
+
+## Where to next
+
+<CardGrid>
+  <Card href="/translations/keys" eyebrow="Concept" title="Keys & namespaces">
+    How keys are structured, namespaced, and resolved.
+  </Card>
+  <Card href="/translations/drafts" eyebrow="Concept" title="Drafts & review">
+    How AI translations move through review and publish.
+  </Card>
+  <Card href="/translations/profiles" eyebrow="Reference" title="Profiles">
+    Per-locale tone, glossary, voice — applied to every AI draft.
+  </Card>
+  <Card href="/translations/cli" eyebrow="Reference" title="CLI commands">
+    Every `shipeasy i18n …` verb the CLI exposes.
+  </Card>
+</CardGrid>

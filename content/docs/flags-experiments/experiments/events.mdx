@@ -7,10 +7,11 @@ description: What `track()` actually does, the event schema, where events live, 
   status="Production ready"
   read="8 min read"
   updated="May 3, 2026"
-  works="Server SDK · Browser SDK · Edge Worker"
+  works="Server SDK · Browser SDK"
 />
 
-An event is the raw signal that metrics are computed from. You log it with `track()`; the SDK forwards it to the edge worker (`POST /collect`); the worker writes it to **Cloudflare Analytics Engine** fire-and-forget. From there a daily cron aggregates events into metric values per user per analysis window.
+An event is the raw signal that metrics are computed from. You log it with `track()`. ShipEasy
+collects the event and rolls it up into a metric value during the daily analysis window.
 
 This page is the reference for what `track()` accepts, what the platform does with it, and what to log (and what not to).
 
@@ -26,7 +27,7 @@ import { client } from "@shipeasy/sdk/client";
 client.track("checkout_viewed", { source: "nav" });
 ```
 
-`track()` is **fire and forget** — it never throws, never blocks, never returns a promise you need to await. If the network is unavailable, the browser SDK queues to memory; if the worker is down, the event is dropped (Analytics Engine has its own buffering, so this is rarer than you'd think).
+`track()` is **fire and forget** — it never throws, never blocks, never returns a promise you need to await. If the network is unavailable, the browser SDK queues to memory; if the worker is down, the event is dropped (events store has its own buffering, so this is rarer than you'd think).
 
 The browser SDK batches events and flushes:
 
@@ -40,7 +41,6 @@ You can tune the batcher:
 ```ts
 configureShipeasy({
   apiKey,
-  env: "prod",
   batch: { size: 50, intervalMs: 10_000, useBeacon: true },
 });
 ```
@@ -90,7 +90,7 @@ Some event names are populated automatically and should not be logged manually. 
 You can opt out of auto-tracking in the SDK options:
 
 ```ts
-configureShipeasy({ apiKey, env: "prod", autoTrack: false });
+configureShipeasy({ apiKey, autoTrack: false });
 ```
 
 Or selectively:
@@ -98,54 +98,32 @@ Or selectively:
 ```ts
 configureShipeasy({
   apiKey,
-  env: "prod",
   autoTrack: { pageView: true, webVitals: true, errors: false, fetch: false },
 });
 ```
 
-## Where events live
+## Retention
 
-Events are persisted to **Cloudflare Analytics Engine**, a columnar time-series store optimised for high-cardinality writes and aggregate queries. We picked AE on purpose:
+Raw events are kept for a window that depends on your plan. The **aggregates** computed by daily
+analysis are persisted indefinitely:
 
-- **Writes are cheap and non-blocking.** Cloudflare doesn't bill us per write the way Postgres charges you per insert; we can accept billions of events without backing pressure on the request that triggered them.
-- **D1 would be a terrible fit.** D1 is SQLite-on-the-edge, optimised for OLTP. Pumping 30M events/month through SQLite would saturate the write lock, and the cost model isn't designed for the workload.
-- **Analytics Engine queries match the read shape.** Daily cron does aggregate scans (`SELECT user_id, count(*), sum(value) ... GROUP BY user_id`), which is exactly what AE was built for.
+| Plan       | Raw event retention | Aggregate retention |
+| ---------- | ------------------- | ------------------- |
+| Free       | 30 days             | unlimited           |
+| Pro        | 90 days             | unlimited           |
+| Enterprise | 365 days            | unlimited           |
 
-Retention depends on your plan — events older than the retention window are no longer queryable from AE, but the **aggregates** computed by daily analysis are persisted to D1 indefinitely:
+If raw events age out, your past metric values are not affected — they were already collapsed into
+per-(experiment, metric, group, day) rows.
 
-| Plan       | AE retention | D1 aggregate retention |
-| ---------- | ------------ | ---------------------- |
-| Free       | 30 days      | unlimited              |
-| Pro        | 90 days      | unlimited              |
-| Enterprise | 365 days     | unlimited              |
+## How aggregation works
 
-This means: if you delete the underlying events, the metric values for past windows remain — they were already collapsed into per-(experiment, metric, group, day) rows. Past results don't disappear when retention rolls.
+Once a day, ShipEasy joins each exposure to events that happened **after** the user was exposed to
+the experiment (events before exposure don't count — that's what makes the analysis causal). The
+result is one metric value per (user, group, day) which then feeds the statistical test.
 
-## What an aggregation pass looks like
-
-Conceptually, every night the cron runs something close to this for each (experiment, metric):
-
-```sql
--- Pseudo-SQL. Actual implementation uses AE's query API + a Workers consumer.
-SELECT
-  exp.user_id,
-  exp.group,
-  COUNT(ev.id)                        AS event_count,    -- for `count`
-  COALESCE(MAX(1), 0)                 AS converted,      -- for `conversion`
-  COALESCE(SUM(ev.value), 0)          AS sum_value       -- for `sum`/`mean`
-FROM exposures exp
-LEFT JOIN events ev
-  ON  ev.user_id   = exp.user_id
-  AND ev.event     = $metric_event
-  AND ev.timestamp >= exp.exposed_at
-  AND ev.timestamp <  exp.exposed_at + $window
-WHERE exp.experiment = $experiment
-  AND exp.exposed_at >= $window_start
-  AND exp.exposed_at <  $window_end
-GROUP BY exp.user_id, exp.group;
-```
-
-The crucial join condition is `ev.timestamp >= exp.exposed_at` — events before the exposure don't count. That's what makes the analysis causal. See [How analysis works](/experiments/analysis#exposure-stitching) for the full pipeline.
+You don't write any of this — define the metric, log the events, read the results. See
+[How analysis works](/flags-experiments/experiments/analysis) for the full pipeline.
 
 ## Identity & stitching
 
@@ -160,7 +138,10 @@ client.identify(user_id); // future events use user_id
 client.alias(anonymous_id, user_id); // stitch past anon events to user_id
 ```
 
-`alias` writes a small mapping row that the analysis cron applies retroactively when joining: events tagged with `anonymous_id = a` are attributed to `user_id = u` when reading from AE. This means an exposure that happened anonymously can still be matched to a conversion that happens after login — the user who looked at the variant is the same user who bought.
+`alias` tells ShipEasy that two ids are the same person, so the daily analysis attributes events
+tagged with `anonymous_id = a` to `user_id = u`. An exposure that happened anonymously can still be
+matched to a conversion that happens after login — the user who looked at the variant is the same
+user who bought.
 
 ## Pulling raw events
 
@@ -189,7 +170,6 @@ The browser SDK includes basic web-vitals auto-tracking by default. For high-tra
 ```ts
 configureShipeasy({
   apiKey,
-  env: "prod",
   autoTrack: { pageView: true, webVitals: true, errors: false, fetch: false },
 });
 ```
@@ -273,7 +253,7 @@ For the daily-aggregation case this almost never matters — `conversion` collap
       Read the <em>stats</em>.
     </>
   }
-  body="You've got events flowing and metrics defined. The last piece is what the daily cron does to those numbers — and how to read the result rows without lying to yourself."
+  body="You've got events flowing and metrics defined. The last piece is what the daily aggregation does to those numbers — and how to read the result rows without lying to yourself."
   primaryHref="/experiments/analysis"
   primaryLabel="How analysis works"
   secondaryHref="/experiments/metrics"

@@ -1,239 +1,79 @@
 ---
-title: Configs — flags & dynamic values
-description: Feature flags and dynamic config values, served from the edge with no redeploy.
-icon: ToggleLeft
+title: Configs — typed values
+description: Typed config values you can change without a redeploy.
 ---
 
 <Hero
   eyebrow="ShipEasy · Configs"
   title={
     <>
-      Flip a flag, ship a value — <em>without a redeploy</em>.
+      Ship a value — <em>without a redeploy</em>.
     </>
   }
-  subtitle="Boolean gates with targeting and rollouts. Typed JSON values. Stored in Cloudflare KV with infinite CDN TTL and surgically purged on change. A flip you make in the dashboard is visible to your SDK in seconds, worldwide."
-  primaryHref="/configs/quickstart"
+  subtitle="Typed key/value configs (string, number, boolean, JSON) you can change without shipping code. Schema-validated. Sub-millisecond evaluation in your SDK with no per-request fetch."
+  primaryHref="/flags-experiments/configs/quickstart"
   primaryLabel="Quickstart"
-  secondaryHref="#mental-model"
-  secondaryLabel="Mental model"
+  secondaryHref="#when-to-use"
+  secondaryLabel="When to use"
 />
 
 <DocMeta
   status="Production ready"
   read="5 min read"
-  updated="May 3, 2026"
-  works="Server SDK · Browser SDK · Edge KV"
+  updated="May 10, 2026"
+  works="Server SDK · Browser SDK"
 />
 
-ShipEasy **Configs** gives you two primitives:
+A **config** is a typed key/value you can change without a redeploy. Use one when the answer to
+*"what should this be right now?"* is not boolean — pricing, copy, limits, feature options,
+endpoint paths, model names, anything you'd otherwise hard-code as a constant.
 
-- **Gates** — boolean feature flags with optional targeting rules and percentage rollouts.
-- **Dynamic values** — typed key/value configs (string, number, boolean, JSON) you can change without shipping code.
-
-Both are stored in Cloudflare KV with infinite CDN TTL and surgically purged on change. A flag flip you make in the dashboard is visible to your SDK in seconds, worldwide, with **no per-request network call** from your code.
-
-## Mental model [#mental-model]
+## When to use a config [#when-to-use]
 
 <TileGrid>
-  <Tile
-    href="/configs/gates"
-    icon="⌗"
-    title="Gates — boolean answers"
-    meta={
-      <>
-        <span>
-          <b>targeted</b>
-        </span>
-        <span>·</span>
-        <span>%-rolled out</span>
-      </>
-    }
-  >
-    <em>"Should I show feature X to this user?"</em> Yes / no. Targeting rules, rollout %,
-    killswitch, environment-aware.
+  <Tile href="#values" icon="◫" title="Typed values">
+    `string`, `number`, `boolean`, or `json`. Schema-validated when you create the config and again
+    every time you change it.
   </Tile>
-  <Tile
-    href="/configs/values"
-    icon="◫"
-    title="Dynamic values — typed payloads"
-    meta={
-      <>
-        <span>
-          <b>JSON</b>
-        </span>
-        <span>·</span>
-        <span>per-environment</span>
-      </>
-    }
-  >
-    <em>"What should the value of X be right now?"</em> String, number, boolean, or JSON. Use a gate
-    to vary by user; values are global per environment.
+  <Tile href="#access" icon="◔" title="Typed access in your code">
+    `await config<number>('home.hero.duration')` returns a typed value with the right TS type, not
+    `unknown`.
   </Tile>
-  <Tile
-    href="/configs/targeting"
-    icon="⌥"
-    title="Targeting — the rules engine"
-    meta={
-      <>
-        <span>id · attribute · %</span>
-        <span>·</span>
-        <span>deterministic</span>
-      </>
-    }
-  >
-    Match by user ID, attributes, or rolled-out percentage. Bucketing is deterministic by ID — same
-    user, same answer, every time.
+  <Tile href="#fallback" icon="✓" title="Fail-safe defaults">
+    Configs return last-known-good if our service is unreachable. Override with `defaultValue` per
+    call when "off" is the dangerous answer.
   </Tile>
-  <Tile
-    href="/configs/environments"
-    icon="◇"
-    title="Environments"
-    meta={
-      <>
-        <span>dev · staging · prod</span>
-        <span>·</span>
-        <span>promote per env</span>
-      </>
-    }
-  >
-    Each flag holds a value per environment. SDKs pin to one. Promote between them from the
-    dashboard.
+  <Tile href="#audit" icon="◑" title="Audit log">
+    Every change records who, what, and when. Linkable in your incident timeline.
   </Tile>
 </TileGrid>
 
-## The 5-minute path
-
-<Quickstart title="Your first gate" time="~5 minutes">
-  <QuickstartStep
-    num={1}
-    label="CREATE"
-    title="Create the gate"
-    cmd="shipeasy gate create new-checkout-flow"
-  >
-    Default off. Targeting and rollout % are optional — a gate with neither is a kill-switch.
-  </QuickstartStep>
-  <QuickstartStep
-    num={2}
-    label="WIRE"
-    title="Read it in code"
-    cmd={`flags.gate("new-checkout-flow", ctx)`}
-  >
-    The SDK keeps the bundle in process; evaluation is local and synchronous.
-  </QuickstartStep>
-  <QuickstartStep
-    num={3}
-    label="ROLL OUT"
-    title="Bump the percentage"
-    cmd="shipeasy gate rollout new-checkout-flow --percent 25"
-  >
-    Watch your dashboards. Bump again. Or kill it instantly with <code>--percent 0</code>.
-  </QuickstartStep>
-</Quickstart>
-
-## Wire the SDK
-
-<InstallTabs npm="npm install @shipeasy/sdk" />
+## Reading a config
 
 ```ts
-import { configureShipeasy, flags } from "@shipeasy/sdk/server";
+import { config } from "@shipeasy/sdk/server";
 
-configureShipeasy({ apiKey: process.env.SHIPEASY_SERVER_KEY!, env: "prod" });
-await flags.init();
-
-if (flags.gate("new-checkout-flow", { user_id })) {
-  // new path
-} else {
-  // old path
-}
+const heroTitle = await config<string>("home.hero.title");
+const promoActive = await config<boolean>("promo.active");
+const limits = await config<{ maxItems: number; maxPrice: number }>("checkout.limits");
 ```
 
-## API · `flags.gate`
+Sub-millisecond evaluation — no per-request fetch from your code.
 
-<ApiTable>
-  <ApiRow
-    name="name"
-    required
-    type="string"
-    desc="The gate name. Stable identifier — used in the dashboard, the CLI, and as the KV key suffix."
-  />
-  <ApiRow
-    name="ctx"
-    required
-    type="EvalContext"
-    desc={
-      <>
-        The evaluation context. Must contain at least <code>user_id</code> for deterministic
-        bucketing. Add attributes used by your targeting rules (<code>plan</code>,{" "}
-        <code>country</code>, …).
-      </>
-    }
-  />
-  <ApiRow
-    name="defaultValue"
-    optional
-    type="boolean"
-    desc="Returned when the gate is missing from the bundle (e.g. SDK not initialised). Defaults to false — fail closed."
-  />
-</ApiTable>
+## Configs vs gates
 
-The return is a plain `boolean`. There is no async, no Promise, no fetch — the bundle is in memory.
+Both are typed values you can change without a redeploy. Pick by the **shape of the answer**:
 
-## Why edge KV
+| Question                 | Gate                   | Config                                 |
+| ------------------------ | ---------------------- | -------------------------------------- |
+| Output                   | boolean                | `string` / `number` / `boolean` / JSON |
+| Targeting rules?         | yes                    | no — values are global                 |
+| Rollout percentage?      | yes                    | no                                     |
+| Use case                 | "is feature X on?"     | "what value should X be?"              |
 
-<Steps>
-  <Step title="Reads are free">
-    The SDK polls a KV blob in the background and evaluates locally. No round-trip per request, no
-    rate limits, no per-evaluation cost.
-  </Step>
-  <Step title="Writes are surgical">
-    Flipping a gate in the dashboard rebuilds one KV blob (per project, per env) and explicitly
-    purges the CDN URL. The next request anywhere on Earth sees the new value.
-  </Step>
-  <Step title="Plan-driven poll interval">
-    Free tier polls every 60s. Pro tier every 10s. Enterprise: streaming push. The SDK handles the
-    difference; your code is identical.
-  </Step>
-</Steps>
+## See also
 
-<Callout type="info" title="Configs and Polylang share KV">
-  Both products write to the same Cloudflare KV namespace (scoped per project). That&apos;s why a
-  translation publish and a gate flip both go live in seconds — the same edge plumbing, the same
-  purge mechanism.
-</Callout>
-
-## Gate vs. dynamic value — pick one
-
-| Question                            | Gate | Dynamic value |
-| ----------------------------------- | ---- | ------------- |
-| Is the answer boolean?              | ✓    | –             |
-| Does the answer depend on the user? | ✓    | –             |
-| Do you need a typed JSON payload?   | –    | ✓             |
-| Do you want global rollout %?       | ✓    | –             |
-| Is this configuration vs. behavior? | –    | ✓             |
-
-A useful rule: if you&apos;d say _"show feature X"_, gate it. If you&apos;d say _"set feature X to value Y"_, use a dynamic value.
-
-<ConvertCTA
-  eyebrow="READY?"
-  title={
-    <>
-      Ship your <em>first flag</em>.
-    </>
-  }
-  body="A complete walk-through: install the SDK, create a gate in the dashboard, gate code, flip it on for 5%."
-  primaryHref="/configs/quickstart"
-  primaryLabel="Open the quickstart"
-  secondaryHref="/experiments"
-  secondaryLabel="Promote to experiment"
-  cmds={[
-    { label: "Create the gate", cmd: "shipeasy gate create new-checkout-flow" },
-    { label: "Roll out to 5%", cmd: "shipeasy gate rollout new-checkout-flow --percent 5" },
-  ]}
-/>
-
-<DocNav
-  prev={{ href: "/", title: "Platform overview" }}
-  next={{ href: "/configs/quickstart", title: "Quickstart" }}
-/>
-
-<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/configs/index.mdx" />
+- [Quickstart](/flags-experiments/configs/quickstart) — create your first config in 5 minutes
+- [Values](/flags-experiments/configs/values) — schema validation, JSON shapes, complex configs
+- [Targeting](/flags-experiments/configs/targeting) — when you need targeting, reach for a gate
+- [Decision tree](/flags-experiments/decision) — gate vs config vs killswitch vs experiment

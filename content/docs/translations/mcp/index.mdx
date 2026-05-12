@@ -1,0 +1,72 @@
+---
+title: MCP reference
+description: MCP tools for AI agents — translate strings, scan code, and publish chunks from the assistant.
+---
+
+The translations tools let an AI agent walk a fresh codebase, propose keys, draft translations,
+and publish them — without you typing a single CLI command.
+
+## Install
+
+The MCP server ships inside the `@shipeasy/cli` package as the `mcp` subcommand.
+
+```bash
+npm install -g @shipeasy/cli
+shipeasy mcp install     # writes config to ~/.claude/settings.json + ~/.cursor/mcp.json
+```
+
+Or wire manually:
+
+```json
+{
+  "mcpServers": {
+    "shipeasy": {
+      "command": "shipeasy",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+## Tools
+
+All tools are namespaced `mcp__shipeasy__*`.
+
+### Discovery
+
+| Tool                          | What it does                                                |
+| ----------------------------- | ----------------------------------------------------------- |
+| `i18n_discover_site`          | Crawl a deployed site and inventory user-facing strings     |
+| `i18n_scan_code`              | Walk source files for `t('key')` calls + unwrapped strings  |
+| `i18n_install_loader`         | Inject the loader script into your project                  |
+
+### Authoring
+
+| Tool                          | What it does                                                |
+| ----------------------------- | ----------------------------------------------------------- |
+| `i18n_create_key`             | Create a translation key                                    |
+| `i18n_push_keys`              | Bulk push key/value pairs from a JSON map                   |
+| `i18n_create_profile`         | Create a per-locale profile (tone, glossary, voice)         |
+| `i18n_translate_draft`        | Generate AI drafts for a locale                             |
+| `i18n_validate_keys`          | Verify all `t('key')` references resolve on the server      |
+| `i18n_publish_profile`        | Publish a profile chunk to the CDN                          |
+
+### Codemods
+
+| Tool                          | What it does                                                |
+| ----------------------------- | ----------------------------------------------------------- |
+| `i18n_codemod_preview`        | Preview a source rewrite (extract hardcoded strings)        |
+| `i18n_codemod_apply`          | Apply the rewrite                                           |
+
+## Example agent prompt
+
+> "Add Japanese translations to my checkout flow. Wrap any unwrapped strings first."
+
+The agent calls `i18n_scan_code` → `i18n_codemod_preview` → `i18n_codemod_apply` →
+`i18n_translate_draft` (locale `ja`) → `i18n_publish_profile`. You review the diff, the agent
+publishes.
+
+## See also
+
+- [API reference](/translations/api) — same surface over HTTP
+- [CLI reference](/translations/cli) — same surface as terminal commands

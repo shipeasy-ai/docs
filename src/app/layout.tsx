@@ -15,11 +15,9 @@ export const metadata: Metadata = {
 };
 
 const PRODUCT_DESCRIPTIONS: Record<string, string> = {
-  "Get started": "Install, authenticate, and ship",
-  Configs: "Feature flags & dynamic values",
-  Experiments: "A/B tests, universes & metrics",
-  Polylang: "Localized labels & AI translations",
-  "AI Agents": "MCP server & agent guides",
+  "Flags & Experiments": "Gates, configs, killswitches & A/B tests",
+  Translations: "Localized labels & AI translations",
+  "Bugs & Requests": "Bug reports & feature requests",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

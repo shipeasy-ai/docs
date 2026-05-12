@@ -1,0 +1,55 @@
+---
+title: Case studies
+description: Bug & feature request workflows — from "report bug" button to Linear sync.
+---
+
+<TileGrid>
+  <Tile href="#report-bug-button" icon="◉" title="Add a 'Report bug' button">
+    Two-minute integration. Captures URL, optional screenshot, ships to dashboard.
+  </Tile>
+  <Tile href="#voting-roadmap" icon="✦" title="Public voting roadmap">
+    Surface feature requests on a marketing page so users can up-vote without signing in.
+  </Tile>
+  <Tile href="#linear-sync" icon="↗" title="Forward triaged bugs to Linear">
+    Webhook on `status: triaged` → create Linear issue with the bug payload.
+  </Tile>
+  <Tile href="#session-replay" icon="◔" title="Auto-attach session replay">
+    Glue Sentry / FullStory session URL onto each bug at capture time.
+  </Tile>
+</TileGrid>
+
+## Add a 'Report bug' button [#report-bug-button]
+
+> _Stage-A stub._
+
+```tsx
+"use client";
+import { shipeasy } from "@shipeasy/sdk/client";
+
+export function ReportBug() {
+  return (
+    <button
+      onClick={async () => {
+        const title = window.prompt("What's broken?");
+        if (!title) return;
+        await shipeasy.feedback.bug({ title, pageUrl: window.location.href });
+        alert("Thanks!");
+      }}
+    >
+      Report bug
+    </button>
+  );
+}
+```
+
+## Public voting roadmap [#voting-roadmap]
+
+> _Stage-A stub._
+
+## Forward triaged bugs to Linear [#linear-sync]
+
+> _Stage-A stub._
+
+## Auto-attach session replay [#session-replay]
+
+> _Stage-A stub._

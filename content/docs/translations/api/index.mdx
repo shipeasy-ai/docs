@@ -1,0 +1,45 @@
+---
+title: API reference
+description: REST endpoints for translation keys, drafts, profiles, and publishing.
+---
+
+The translations Admin API lives under `/api/admin/translations/*`. Same auth model as the rest of the
+platform (`Authorization: Bearer sdk_admin_…` + `X-Project-Id: <projectId>`).
+
+```bash
+curl https://shipeasy.ai/api/admin/translations/keys \
+  -H "Authorization: Bearer sdk_admin_..." \
+  -H "X-Project-Id: prj_..."
+```
+
+## Resources
+
+<TileGrid>
+  <Tile href="#keys" icon="✎" title="Keys">
+    Create, list, update, delete translation keys. Namespaced by dot-path (`home.hero.title`).
+  </Tile>
+  <Tile href="#drafts" icon="◑" title="Drafts">
+    AI-generated translations awaiting review. Approve / reject in batches.
+  </Tile>
+  <Tile href="#profiles" icon="◐" title="Profiles">
+    Per-locale tone, glossary, voice. Applied to every AI draft.
+  </Tile>
+  <Tile href="#publish" icon="↗" title="Publish">
+    Promote approved drafts to live. Triggers chunked CDN propagation.
+  </Tile>
+</TileGrid>
+
+<Callout type="info" title="OpenAPI coverage">
+  Auto-generated OpenAPI pages for the translations API are in progress. The endpoints are stable
+  and consumed by the CLI today; the docs build will surface them once the schema is ported into
+  the `@shipeasy/admin-api` resource registry.
+</Callout>
+
+## Common patterns
+
+**Locales** are BCP-47 codes (`en`, `pt-BR`, `zh-Hant`).
+
+**Chunking.** Published label sets are sharded by namespace prefix to keep CDN payloads small.
+Pass `?chunk=<prefix>` to read a specific chunk.
+
+**Errors** follow the same envelope as the rest of the Admin API.

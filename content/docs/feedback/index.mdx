@@ -1,0 +1,61 @@
+---
+title: Bugs & Feature Requests
+description: Capture user-reported bugs and feature requests, prioritize them, route to the right channel.
+---
+
+<Hero
+  eyebrow="ShipEasy · Feedback"
+  title={
+    <>
+      Hear what users actually want — <em>before</em> you ship the wrong thing.
+    </>
+  }
+  subtitle="Capture bug reports and feature requests directly from your product. Prioritize, triage, and route them to your bug tracker — without forcing users into a 12-field Jira form."
+  primaryHref="/feedback/getting-started"
+  primaryLabel="Getting started"
+  secondaryHref="#how-it-works"
+  secondaryLabel="How it works"
+/>
+
+<DocMeta
+  status="Beta"
+  read="3 min read"
+  updated="May 10, 2026"
+  works="Server SDK · Browser SDK"
+/>
+
+## Two record types
+
+<TileGrid>
+  <Tile href="#bugs" icon="◎" title="Bugs — what's broken">
+    Title, page URL, optional stack trace and screenshot. Status flow: `open` → `triaged` →
+    `resolved`.
+  </Tile>
+  <Tile href="#feature-requests" icon="✦" title="Feature requests — what's missing">
+    Title, importance (`nice-to-have` / `important` / `critical`), votes from other users. Status
+    flow: `open` → `planned` → `shipped`.
+  </Tile>
+</TileGrid>
+
+## How it works [#how-it-works]
+
+A user hits **Report bug** in your app. The SDK sends the report to ShipEasy. You see it in the
+dashboard within seconds. Optional webhooks forward it to Slack / Linear / Jira so you don't have
+to live in a second tool.
+
+## Where to next
+
+<CardGrid>
+  <Card href="/feedback/getting-started" eyebrow="Step 1" title="Wire up the SDK">
+    Two lines for bugs, two for feature requests. Server or browser.
+  </Card>
+  <Card href="/feedback/case-studies" eyebrow="Worked examples" title="Case studies">
+    "Add a 'Report bug' button in two minutes", "Wire user votes to a roadmap page", and more.
+  </Card>
+  <Card href="/feedback/api" eyebrow="Reference" title="API reference">
+    REST endpoints for `bugs` and `feature-requests`.
+  </Card>
+  <Card href="/feedback/cli" eyebrow="Reference" title="CLI commands">
+    `shipeasy feedback bugs …` and `shipeasy feedback features …`.
+  </Card>
+</CardGrid>

@@ -1,6 +1,6 @@
 ---
 title: Quickstart
-description: Onboard a project to Polylang in 10 minutes — scan, codemod, translate, publish.
+description: Onboard a project to ShipEasy Translations in 10 minutes — scan, codemod, translate, publish.
 ---
 
 <DocMeta
@@ -19,7 +19,7 @@ If you'd rather have an AI agent do this for you, see the [LLM Guide](/llms/i18n
     num={1}
     label="LOADER"
     title="Install the loader"
-    cmd="shipeasy i18n install-loader --profile en:prod"
+    cmd="shipeasy i18n install-loader --profile en"
   />
   <QuickstartStep
     num={2}
@@ -31,7 +31,7 @@ If you'd rather have an AI agent do this for you, see the [LLM Guide](/llms/i18n
     num={3}
     label="PUBLISH"
     title="AI draft, review, ship"
-    cmd="shipeasy i18n publish --profile fr:prod"
+    cmd="shipeasy i18n publish --profile fr"
   />
 </Quickstart>
 
@@ -51,7 +51,7 @@ shipeasy login
     The loader is a tiny `<script>` that fetches your published label bundle at runtime. It has zero JS dependencies and benefits from infinite CDN caching.
 
     ```bash
-    shipeasy i18n install-loader --profile en:prod
+    shipeasy i18n install-loader --profile en
     ```
 
     The CLI auto-detects your framework and patches the right file:
@@ -70,10 +70,10 @@ shipeasy login
   </Step>
 
   <Step title="Create the source profile">
-    A profile is a `locale:environment` pair. Create the one matching the language already in your code:
+    A profile is a `locale` pair. Create the one matching the language already in your code:
 
     ```bash
-    shipeasy i18n profiles create --name en:prod --locale en --environment prod
+    shipeasy i18n profiles create --name en --locale en
     ```
 
     For non-English source, use the right BCP-47 code (`fr`, `de`, `ja`, …).
@@ -84,7 +84,7 @@ shipeasy login
     Discover strings in your source files. For JSX/TSX we can rewrite them automatically — _codemod_:
 
     ```bash
-    shipeasy i18n scan ./src --rewrite --profile en:prod
+    shipeasy i18n scan ./src --rewrite --profile en
     ```
 
     The codemod replaces:
@@ -107,10 +107,10 @@ shipeasy login
 
   <Step title="Push keys">
     ```bash
-    shipeasy i18n push --profile en:prod --source codemod
+    shipeasy i18n push --profile en --source codemod
     ```
 
-    Pushes every discovered key to the dashboard. Verify in **Polylang → Label keys**.
+    Pushes every discovered key to the dashboard. Verify in **ShipEasy Translations → Label keys**.
 
   </Step>
 
@@ -118,16 +118,16 @@ shipeasy login
     Say you want French and German:
 
     ```bash
-    shipeasy i18n profiles create --name fr:prod --locale fr --environment prod
-    shipeasy i18n profiles create --name de:prod --locale de --environment prod
+    shipeasy i18n profiles create --name fr --locale fr
+    shipeasy i18n profiles create --name de --locale de
     ```
 
   </Step>
 
   <Step title="Generate AI translations">
     ```bash
-    shipeasy i18n translate --profile fr:prod --ai
-    shipeasy i18n translate --profile de:prod --ai
+    shipeasy i18n translate --profile fr --ai
+    shipeasy i18n translate --profile de --ai
     ```
 
     Each command creates a **draft** in the dashboard with proposed translations for every key missing from the target profile. The AI uses the source value, the project tone, the glossary, and any descriptions you've added on each key.
@@ -135,7 +135,7 @@ shipeasy login
   </Step>
 
   <Step title="Review">
-    Open **Polylang → Drafts → fr:prod**. You see every key, the source value, and the proposed translation, side by side. Edit any value inline. When you're satisfied, click **Merge draft**.
+    Open **ShipEasy Translations → Drafts → fr**. You see every key, the source value, and the proposed translation, side by side. Edit any value inline. When you're satisfied, click **Merge draft**.
 
     Merging promotes the values to the profile. It does **not** publish — that's a separate, deliberate step.
 
@@ -143,8 +143,8 @@ shipeasy login
 
   <Step title="Publish">
     ```bash
-    shipeasy i18n publish --profile fr:prod
-    shipeasy i18n publish --profile de:prod
+    shipeasy i18n publish --profile fr
+    shipeasy i18n publish --profile de
     ```
 
     Each publish writes the chunked label bundle to KV and purges the relevant CDN URLs. New copy is live worldwide in seconds.
@@ -169,7 +169,7 @@ shipeasy login
 In CI, fail the build if any code reference is missing from the source profile:
 
 ```bash
-shipeasy i18n validate --profile en:prod ./src
+shipeasy i18n validate --profile en ./src
 ```
 
 Add this to your pre-merge checks and you'll never ship an "untranslated string" bug.
@@ -183,21 +183,21 @@ Add this to your pre-merge checks and you'll never ship an "untranslated string"
 
 <TileGrid>
   <Tile
-    href="/i18n/profiles"
+    href="/translations/profiles"
     icon="◇"
     title="Profiles"
     meta={
       <>
-        <span>locale × env</span>
+        <span>locale</span>
         <span>·</span>
         <span>versioned</span>
       </>
     }
   >
-    Each <code>locale:env</code> pair is its own publishable manifest. Roll back any time.
+    Each <code>locale</code> pair is its own publishable manifest. Roll back any time.
   </Tile>
   <Tile
-    href="/i18n/keys"
+    href="/translations/keys"
     icon="✓"
     title="Keys"
     meta={
@@ -211,7 +211,7 @@ Add this to your pre-merge checks and you'll never ship an "untranslated string"
     Stable hashes for every string. Re-scans don&apos;t shuffle ordering.
   </Tile>
   <Tile
-    href="/i18n/translations"
+    href="/translations/translations"
     icon="✦"
     title="AI translations"
     meta={
@@ -225,7 +225,7 @@ Add this to your pre-merge checks and you'll never ship an "untranslated string"
     Claude reads your brand voice on every call. Use our key or yours.
   </Tile>
   <Tile
-    href="/i18n/drafts"
+    href="/translations/drafts"
     icon="✎"
     title="Drafts"
     meta={
@@ -259,8 +259,8 @@ Add this to your pre-merge checks and you'll never ship an "untranslated string"
 />
 
 <DocNav
-  prev={{ href: "/i18n", title: "Polylang overview" }}
-  next={{ href: "/i18n/profiles", title: "Profiles" }}
+  prev={{ href: "/i18n", title: "ShipEasy Translations overview" }}
+  next={{ href: "/translations/profiles", title: "Profiles" }}
 />
 
-<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/i18n/quickstart.mdx" />
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/translations/quickstart.mdx" />

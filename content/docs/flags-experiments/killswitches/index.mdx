@@ -1,0 +1,78 @@
+---
+title: Killswitches
+description: A flag with a single job — disable a system instantly during an incident.
+---
+
+<DocMeta
+  status="Production ready"
+  read="4 min read"
+  updated="May 10, 2026"
+  works="Server SDK · Browser SDK"
+/>
+
+A **killswitch** is a boolean flag with one purpose: be the lever you pull when something is on
+fire. It looks like a [gate](/flags-experiments/gates) but lives in its own list, has no rollout
+percentage, and defaults to the *safe* position so on-call doesn't have to think.
+
+## Why a separate primitive?
+
+Gates have targeting rules, ramps, and dozens of them per project. Killswitches have one switch and
+a name. Mixing them is dangerous — at 3am you do not want to fat-finger a `--rollout 100` instead of
+`--off`.
+
+<Callout type="warn" title="Rule of thumb">
+  If a junior on-call engineer needs to flip this in five seconds without reading the docs, it's a
+  killswitch. Not a gate.
+</Callout>
+
+## Anatomy
+
+<TileGrid>
+  <Tile href="#switch" icon="⏻" title="switch — the only state">
+    Boolean. `on` means the system runs. `off` means it's killed. There is no rollout percentage by
+    design.
+  </Tile>
+  <Tile href="#default" icon="✓" title="default — fail-safe">
+    What `gate('killswitch-name')` returns if the SDK can't reach our service. Default `true`
+    (system runs) for most cases; `false` for new features still being qualified.
+  </Tile>
+  <Tile href="#audit" icon="◔" title="audit — who flipped what">
+    Every flip is recorded with actor + timestamp in the activity log. Linkable in your incident
+    timeline.
+  </Tile>
+  <Tile href="#alerting" icon="!" title="alerting — page someone">
+    Wire the `killswitch.flipped` webhook to your alerting so the team knows when production is in
+    degraded mode.
+  </Tile>
+</TileGrid>
+
+## Lifecycle
+
+1. **Create.** `shipeasy killswitch create email-sender --description "Disables outbound email"`
+2. **Wire it in.** Wrap the call in your code:
+   ```ts
+   if (!(await gate("email-sender"))) return; // killed
+   await sendEmail(payload);
+   ```
+3. **Page-time.** Flip it instantly:
+   ```bash
+   shipeasy killswitch off email-sender --reason "PagerDuty #4912"
+   ```
+4. **Recover.** Once the incident is closed, flip it back and post-mortem the audit log.
+
+## Killswitch vs gate vs config
+
+| Question                | Killswitch                   | Gate                | Config                                |
+| ----------------------- | ---------------------------- | ------------------- | ------------------------------------- |
+| Output                  | boolean                      | boolean             | typed value (string/number/json/bool) |
+| Targeting rules?        | no                           | yes                 | yes (per-env)                         |
+| Rollout percentage?     | no                           | yes                 | n/a                                   |
+| Default if unreachable? | configurable, usually `true` | `false`             | last-known-good                       |
+| Use case                | break-glass during incident  | progressive rollout | non-boolean values                    |
+
+## See also
+
+- [Gates](/flags-experiments/gates) — the everyday rollout primitive
+- [Decision tree](/flags-experiments/decision) — pick the right primitive for the change you're shipping
+- [API reference](/flags-experiments/api) — `POST /api/admin/killswitches` etc.
+- [CLI](/flags-experiments/cli) — `shipeasy killswitch …` commands

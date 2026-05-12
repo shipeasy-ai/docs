@@ -1,5 +1,20 @@
 {
-  "title": "Polylang",
-  "root": true,
-  "pages": ["index", "quickstart", "profiles", "keys", "drafts", "translations"]
+  "title": "Translations",
+  "description": "Localized labels & AI translations",
+  "pages": [
+    "index",
+    "getting-started",
+    "---",
+    "keys",
+    "drafts",
+    "translations",
+    "profiles",
+    "---",
+    "case-studies",
+    "edge-cases",
+    "---",
+    "api",
+    "cli",
+    "mcp"
+  ]
 }

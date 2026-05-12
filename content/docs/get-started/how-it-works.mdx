@@ -1,6 +1,6 @@
 ---
 title: How it works
-description: A tour of the moving pieces — two Cloudflare Workers, one shared D1, KV at the edge, and an SDK that never blocks your request.
+description: A tour of the moving pieces — two ShipEasy, one shared D1, KV at the edge, and an SDK that never blocks your request.
 ---
 
 <Hero
@@ -10,7 +10,7 @@ description: A tour of the moving pieces — two Cloudflare Workers, one shared 
       Fast reads, <em>explicit writes</em>, no surprises in your hot path.
     </>
   }
-  subtitle="ShipEasy splits the world into two runtimes — a Next.js admin app and an edge worker — sharing one D1 database and a handful of KV blobs. Reading a flag, an experiment, or a translation is a local memory lookup. Changing one purges a single CDN URL and propagates worldwide in under a second."
+  subtitle="ShipEasy splits the world into two runtimes — a Next.js admin app and an ShipEasy — sharing one D1 database and a handful of config blobs. Reading a flag, an experiment, or a translation is a local memory lookup. Changing one purges a single CDN URL and propagates worldwide in under a second."
   primaryHref="/get-started/install"
   primaryLabel="Install the SDK"
   secondaryHref="#two-runtimes"
@@ -21,12 +21,12 @@ description: A tour of the moving pieces — two Cloudflare Workers, one shared 
   status="Production ready"
   read="7 min read"
   updated="May 3, 2026"
-  works="Cloudflare Workers · D1 · KV · Analytics Engine · Queues"
+  works="ShipEasy · KV · events store · Queues"
 />
 
 ShipEasy is built around one rule: **the read path is fast and the write path is explicit.** Reading a flag, an experiment assignment, or a translation should never block your request. Changing one should be visible globally within a second of the dashboard click.
 
-That single rule decides almost every architectural choice — no Durable Objects, no SSE, no per-request fetches, no TTL-based invalidation. Just KV blobs at the edge, polled in the background, and surgically purged on change.
+That single rule decides almost every architectural choice — no Durable Objects, no SSE, no per-request fetches, no TTL-based invalidation. Just config blobs at the edge, polled in the background, and updated on change.
 
 ## The two-runtime split [#two-runtimes]
 
@@ -51,7 +51,7 @@ That single rule decides almost every architectural choice — no Durable Object
   <Tile
     href="#edge-worker"
     icon="◈"
-    title="Edge worker — Hono"
+    title="Edge worker — "
     meta={
       <>
         <span>
@@ -79,7 +79,7 @@ That single rule decides almost every architectural choice — no Durable Object
       </>
     }
   >
-    D1 is the row store. KV is the read cache. Analytics Engine is the event store. All three are
+    D1 is the row store. KV is the read cache. events store is the event store. All three are
     scoped per project.
   </Tile>
   <Tile
@@ -114,10 +114,10 @@ Writes never go straight to KV from the dashboard. They go to D1 first (the row 
 
 ### Edge worker [#edge-worker]
 
-`packages/worker` is a Hono app deployed as a separate Worker. It is read-mostly and stateless. The two endpoint groups that matter:
+`packages/worker` is a  app deployed as a separate Worker. It is read-mostly and stateless. The two endpoint groups that matter:
 
-- **`/sdk/*`** — what your SDK polls. Returns the KV blob unchanged. Cached at the edge with a long TTL; the admin&apos;s purge step is what makes the cache eventually-consistent.
-- **`/collect`** — fire-and-forget event intake. Writes to Analytics Engine. Returns 202 immediately. Your code path doesn&apos;t wait on it.
+- **`/sdk/*`** — what your SDK polls. Returns the config blob unchanged. Cached at the edge with a long TTL; the admin&apos;s purge step is what makes the cache eventually-consistent.
+- **`/collect`** — fire-and-forget event intake. Writes to events store. Returns 202 immediately. Your code path doesn&apos;t wait on it.
 
 The same worker also handles the CLI device-auth flow (`/auth/device/*`) and runs the cron + queue pipeline.
 
@@ -148,7 +148,7 @@ The same worker also handles the CLI device-auth flow (`/auth/device/*`) and run
     }
   />
   <ApiRow
-    name="Analytics Engine"
+    name="events store"
     required
     type="event store"
     desc={<>Append-only telemetry. Written from the worker only, never from the admin app.</>}
@@ -176,10 +176,10 @@ When you flip a flag, six things happen — all within about a second.
     the dashboard does — there is no second API.
   </Step>
   <Step title="The admin app writes the row to D1">
-    D1 is the source of truth. Every other surface (KV blob, daily analysis row, dashboard table) is
+    D1 is the source of truth. Every other surface (config blob, daily analysis row, dashboard table) is
     derived from a D1 row.
   </Step>
-  <Step title="The KV blob is rebuilt">
+  <Step title="The config blob is rebuilt">
     The rebuild helper assembles the full project blob — every gate, every config, every targeting
     rule — into a single JSON payload. Rebuild is cheap because the project is small; we don&apos;t
     do partial updates.
@@ -219,7 +219,7 @@ The other direction is much shorter — and on purpose.
     — same user, same answer, every time.
   </Step>
   <Step title="A background poll keeps the bundle fresh">
-    A worker thread (Node) or `setInterval` (browser) re-fetches the KV blob on the plan-driven
+    A worker thread (Node) or `setInterval` (browser) re-fetches the config blob on the plan-driven
     cadence. If the body is unchanged the SDK does nothing; if it changed, the in-memory rule set
     swaps atomically.
   </Step>

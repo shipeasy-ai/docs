@@ -7,7 +7,7 @@ description: Run your first A/B test from scratch — define a metric, create th
   status="Tutorial"
   read="8 min read"
   updated="May 3, 2026"
-  works="Server SDK · Daily cron"
+  works="Server SDK"
 />
 
 This walks through a complete experiment end to end: a button-label test on the checkout CTA. We'll set up a conversion metric, create the experiment with two variants at 50/50, instrument the SDK, and read results.
@@ -79,7 +79,7 @@ This walks through a complete experiment end to end: a button-label test on the 
     ```ts
     import { configureShipeasy, flags, experiments } from "@shipeasy/sdk/server";
 
-    configureShipeasy({ apiKey: process.env.SHIPEASY_SERVER_KEY!, env: "prod" });
+    configureShipeasy({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
     await flags.init();
     ```
 
@@ -104,7 +104,7 @@ This walks through a complete experiment end to end: a button-label test on the 
     flags.track(user_id, "purchase", { value: orderTotal });
     ```
 
-    The event lands in Analytics Engine. The daily analysis job scans events and joins them against exposures by `user_id`.
+    The event lands in events store. The daily analysis job scans events and joins them against exposures by `user_id`.
 
   </Step>
 
@@ -203,7 +203,7 @@ This walks through a complete experiment end to end: a button-label test on the 
     title="How analysis works"
     meta={
       <>
-        <span>Welch t-test</span>
+        <span>statistical analysis</span>
         <span>·</span>
         <span>p · CI · lift</span>
       </>
@@ -217,7 +217,7 @@ This walks through a complete experiment end to end: a button-label test on the 
     title="Events"
     meta={
       <>
-        <span>Analytics Engine</span>
+        <span>events store</span>
         <span>·</span>
         <span>fire-and-forget</span>
       </>

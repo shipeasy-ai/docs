@@ -10,7 +10,7 @@ description: One package, two builds — server and browser. Plus framework adap
   works="JS · TS · React · Vue · Svelte · Angular · RN · Ruby · Python · Go"
 />
 
-The TypeScript SDK ships in `@shipeasy/sdk` with conditional exports for Node, Cloudflare Workers, Bun, Deno, and the browser. Bundlers pick the right build automatically; you can also import the explicit subpath if you want to be unambiguous.
+The TypeScript SDK ships in `@shipeasy/sdk` with conditional exports for Node, ShipEasy, Bun, Deno, and the browser. Bundlers pick the right build automatically; you can also import the explicit subpath if you want to be unambiguous.
 
 Other languages have first-party adapters or community ports — see [Ruby](#ruby), [Python & Go](#python--go) below.
 
@@ -57,7 +57,7 @@ Configs are typed via the optional generic. Always provide a fallback — your c
 flags.track("u_4f2a", "purchase", { value: 49.99, sku: "SHIRT-L-BLUE" });
 ```
 
-`track()` is fire-and-forget. Events are batched and sent to `/collect` on the edge worker.
+`track()` is fire-and-forget. Events are batched and sent to `/collect` on the ShipEasy.
 
 ### Resolving an experiment
 
@@ -74,7 +74,7 @@ if (result.inExperiment) {
 }
 ```
 
-Assignment is deterministic by `user_id` (or whatever you set as `bucket_by`). Calling `assign()` also queues an exposure event that the analysis pipeline reads from Analytics Engine.
+Assignment is deterministic by `user_id` (or whatever you set as `bucket_by`). Calling `assign()` also queues an exposure event that the analysis pipeline reads from events store.
 
 ### Translating a label
 
@@ -95,7 +95,6 @@ import { shipeasy } from "@shipeasy/sdk/client";
 
 shipeasy({
   apiKey: import.meta.env.VITE_SHIPEASY_CLIENT_KEY,
-  env: "prod",
 });
 
 await shipeasy.identify({ user_id: "u_4f2a", plan: "pro" });
@@ -120,7 +119,7 @@ const bootstrap = await buildClientBootstrap({ user: { user_id } });
 // Client: hydrate with it
 import { shipeasy } from "@shipeasy/sdk/client";
 
-shipeasy({ apiKey, env: "prod" });
+shipeasy({ apiKey });
 shipeasy.initFromBootstrap(bootstrap);
 ```
 
@@ -134,7 +133,7 @@ ShipEasy ships a single SDK — `@shipeasy/sdk` — that works from plain JavaSc
 import { useEffect, useState } from "react";
 import { shipeasy, gate, t } from "@shipeasy/sdk/client";
 
-shipeasy({ apiKey: KEY, env: "prod", user: { user_id } });
+shipeasy({ apiKey: KEY, user: { user_id } });
 
 function CheckoutButton() {
   const [enabled, setEnabled] = useState(() => gate("new-checkout-flow"));

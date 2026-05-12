@@ -217,14 +217,14 @@ Indispensable when a customer says &quot;I should be in the beta, why am I not?&
   eyebrow="NEXT"
   title={
     <>
-      Pin to an <em>environment</em>.
+      Promote to an <em>experiment</em>.
     </>
   }
-  body="Your dev cluster shouldn't see the prod rollout, and your prod cluster shouldn't see dev experiments. Environments are the pin."
-  primaryHref="/configs/environments"
-  primaryLabel="Environments"
-  secondaryHref="/experiments"
-  secondaryLabel="Promote to experiment"
+  body="When you want a defensible answer (not just a ramp), turn the gate into an A/B test and let ShipEasy run the statistics."
+  primaryHref="/flags-experiments/experiments"
+  primaryLabel="Experiments"
+  secondaryHref="/flags-experiments/decision"
+  secondaryLabel="Pick the right primitive"
   cmds={[
     { label: "Set rules", cmd: "shipeasy flags rules set my-flag --json '[…]'" },
     { label: "Eval locally", cmd: "shipeasy flags eval my-flag --ctx '{…}'" },
@@ -232,8 +232,8 @@ Indispensable when a customer says &quot;I should be in the beta, why am I not?&
 />
 
 <DocNav
-  prev={{ href: "/configs/values", title: "Dynamic values" }}
-  next={{ href: "/configs/environments", title: "Environments" }}
+  prev={{ href: "/flags-experiments/configs/values", title: "Dynamic values" }}
+  next={{ href: "/flags-experiments/experiments", title: "Experiments" }}
 />
 
 <DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/configs/targeting.mdx" />
