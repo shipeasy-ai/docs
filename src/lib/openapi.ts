@@ -17,7 +17,7 @@ import { rehypeUseCases } from "./rehype-use-cases";
  * generated MDX references resolve correctly.
  */
 export const openapi = createOpenAPI({
-  input: [join(process.cwd(), "../../packages/admin-api/openapi.json")],
+  input: [join(process.cwd(), "../../packages/openapi/openapi.json")],
 });
 
 function rehypeReact(this: { compiler?: (tree: Root) => ReactNode }) {
