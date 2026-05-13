@@ -1,4 +1,3 @@
-import { join } from "node:path";
 import type { ReactNode } from "react";
 import { remark } from "remark";
 import remarkGfm from "remark-gfm";
@@ -16,8 +15,10 @@ import { rehypeUseCases } from "./rehype-use-cases";
  * `<APIPage>` component must read the spec from the same path so the
  * generated MDX references resolve correctly.
  */
+export const OPENAPI_SPEC_PATH = "../../packages/openapi/openapi.json";
+
 export const openapi = createOpenAPI({
-  input: [join(process.cwd(), "../../packages/openapi/openapi.json")],
+  input: [OPENAPI_SPEC_PATH],
 });
 
 function rehypeReact(this: { compiler?: (tree: Root) => ReactNode }) {
