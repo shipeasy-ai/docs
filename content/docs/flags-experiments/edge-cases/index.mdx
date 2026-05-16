@@ -28,44 +28,185 @@ The patterns below are the ones you wish someone told you on day one.
 
 ## Sticky bucketing across devices [#sticky-bucketing]
 
-> _Stage-A stub — full prose coming next._
+Bucketing is `hash(experimentSalt + identityKey) % 10_000`. The same `identityKey` always maps to
+the same bucket, so the same user lands in the same variant on every device, in every session,
+forever — as long as the key stays stable.
 
-The hash key controls stickiness. Use a stable identifier (signed-in `userId`) when you have one;
-fall back to a cookie-stored anonymous id otherwise. Switching keys mid-experiment re-buckets users.
+That stability is the whole trick. Pick the wrong key and "sticky" silently means "sticky per
+device", "sticky per session", or "sticky until the cookie clears". Pick it once and pick it for
+real:
+
+```ts
+import { gate } from "@shipeasy/sdk/server";
+
+// Good — stable across devices and sessions
+await gate("checkout-v2", { userId: session.user.id });
+
+// Acceptable for logged-out — survives across sessions on one device
+await gate("checkout-v2", { userId: anonymousIdFromCookie() });
+
+// Bad — re-buckets every request, every reload, every tab
+await gate("checkout-v2", { userId: crypto.randomUUID() });
+```
+
+If a visitor signs in mid-experiment they will re-bucket: anon cookie ID → real user ID changes
+the hash input. That's almost always what you want (you'd rather attribute the conversion to the
+signed-in user than to a throwaway), but it does mean you can't compare _the same user_ across the
+sign-in boundary. If you need that — e.g. measuring sign-up rate itself — bucket on a stable
+device id that survives auth, and pass `userId` separately for analytics only.
+
+The platform never mutates the salt for you. If you regenerate it (delete + recreate the
+experiment, rename it in a way that changes the hash input), every user re-buckets and your
+running results are invalid. Don't.
 
 ## Holdouts that overlap experiments [#holdout-overlap]
 
-> _Stage-A stub._
+A holdout is a slice of traffic that **never sees any treatment in the universe** — they always
+get baseline, for as long as the holdout runs. It's how you measure the _cumulative_ lift of all
+the experiments you shipped this quarter, not just the lift of each one in isolation.
 
-A holdout reserves N% of users from *all* experiments in a universe — they always see baseline.
-Useful for measuring long-term cumulative impact. Allocation composes: a 10% holdout + a 50/50
-experiment sees 90% × 50% = 45% in each treatment.
+Allocation composes multiplicatively. With a 10% holdout and a 50/50 experiment:
+
+| Bucket                | Share | Sees                  |
+| --------------------- | ----- | --------------------- |
+| Holdout               | 10%   | Baseline (always)     |
+| Experiment, control   | 45%   | Baseline (this round) |
+| Experiment, treatment | 45%   | Treatment             |
+
+That has two consequences worth internalising:
+
+1. **Power drops.** A 10% holdout removes 10% of your sample from every experiment. A 50/50 split
+   that used to need 14 days now needs ~15.5 to hit the same MDE. Run holdouts when you care more
+   about the long-term answer than about shipping one extra experiment a quarter.
+2. **"Treatment" in the experiment is not "treatment overall."** The 45% control group sees today's
+   baseline, which already includes everything _previous_ experiments shipped. The holdout sees
+   the pre-quarter baseline. Quarterly readout = holdout vs. everyone-else, not control vs.
+   treatment.
+
+Holdouts live on the **universe**, not on individual experiments. That's deliberate — it's the only
+way the holdout slice stays the same across experiments and quarters; tying it per-experiment
+would re-bucket users every time you launched something new.
 
 ## Sample ratio mismatch (SRM) [#srm]
 
-> _Stage-A stub._
+You asked for 50/50. You're getting 49/51 with p&lt;0.001 on a chi-squared. That is _not_ bad luck
+at 100k users — the chance of seeing a 49/51 split by random sampling on n=100,000 is roughly 1
+in 10⁶. Something assigned users non-uniformly.
 
-If your 50/50 split lands at 49/51, it's almost always a logging bug, not bad luck. Daily analysis
-flags SRM with a chi-squared test; treat it as a bug, not a stats problem.
+The daily analysis job runs chi-squared on the observed assignment counts and flags SRM on the
+experiment status page. When you see the flag, **stop reading the results.** The lift number is
+no longer trustworthy: whatever caused the imbalance is almost certainly also correlated with the
+metric.
+
+The usual suspects, in order of how often we see them:
+
+- **Logging racing assignment.** The SDK assigns synchronously; the analytics call is async. A
+  page that navigates away before the event flushes loses one variant more than the other (the
+  treatment renders slower, the tab closes mid-render, the event never lands).
+- **Bot filtering on one variant only.** Bots are deterministic — they always hash into the same
+  bucket. If your bot filter runs _after_ assignment but _before_ the event hits Analytics Engine,
+  the bot-heavy variant gets cut.
+- **Caching at the edge.** A page is cached without the variant in the cache key, and one variant
+  is served from cache (no assignment event) while the other re-renders (assignment event fires).
+- **Sticky bucketing leak.** Logged-out users on a country page use IP-based identity; the IP
+  changes per request behind a corporate NAT; one variant happens to be cached.
+
+Treat SRM as a bug in the logging or assignment path, not as a stats problem to round away.
 
 ## Write propagation latency [#kv-propagation]
 
-> _Stage-A stub._
+Edits in the dashboard write to D1, rebuild the KV blob, and explicit-purge the CDN edge cache.
+P99 end-to-end is under a second; P50 is ~150ms. The SDK reads the KV blob, which is cached at the
+nearest edge with an infinite TTL until purged — that's how the hot path stays sub-10ms.
 
-Changes you make are visible to your SDK worldwide in under a second. For changes that *must* be
-instant globally, gate the relevant call behind a server-side check at request time so you can
-fall back gracefully if your SDK hasn't picked up the new value yet.
+The 1% case is when an edge node you're hitting hasn't seen the purge yet and serves the previous
+blob. For most flags, that's fine: a user evaluates one extra request against the old value, then
+the next evaluation has the new one. For _killswitches in an active incident_, "one extra request"
+might be a thousand emails sent or a million dollars charged.
+
+For instant-kill semantics, evaluate server-side at request time and short-circuit on the
+killswitch before doing the dangerous thing:
+
+```ts
+import { gate } from "@shipeasy/sdk/server";
+
+export async function POST(req: Request) {
+  if (!(await gate("emails-enabled"))) {
+    return new Response("paused", { status: 503 });
+  }
+  return sendEmail(await req.json());
+}
+```
+
+The SDK has a small in-memory cache (default 10s) on top of the KV read. If you cannot tolerate
+even that, pass `{ maxAge: 0 }` and pay one KV round-trip per call.
 
 ## SSR/CSR flicker [#ssr-flicker]
 
-> _Stage-A stub._
+The default client-side `gate()` returns `false` on first render (no value yet), then the real
+value on hydration. On a page where the flag controls a visible component, that's a flash of the
+control variant before the treatment appears — exactly the flicker we don't want.
 
-Evaluate flags server-side, serialize them into the page, hydrate the client SDK with the same
-values. Skip the hydration round trip and you skip the flicker.
+The fix is to evaluate on the server, ship the result down with the page, and hand it to the
+client SDK so the first client render already has the right value:
+
+```tsx
+// app/page.tsx (Server Component)
+import { gate } from "@shipeasy/sdk/server";
+import { ShipeasyProvider } from "@/components/shipeasy-provider";
+
+export default async function Page() {
+  const flags = {
+    "checkout-v2": await gate("checkout-v2", { userId }),
+    "hero.title": await config<string>("hero.title"),
+  };
+  return (
+    <ShipeasyProvider initial={flags}>
+      <Page />
+    </ShipeasyProvider>
+  );
+}
+```
+
+```tsx
+// components/shipeasy-provider.tsx (Client Component)
+"use client";
+import { shipeasy } from "@shipeasy/sdk/client";
+import { useEffect } from "react";
+
+export function ShipeasyProvider({ initial, children }) {
+  useEffect(() => {
+    shipeasy({
+      apiKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY!,
+      initial,
+    });
+  }, [initial]);
+  return children;
+}
+```
+
+First client render reads `initial.checkout-v2`, matches the SSR output, no hydration mismatch. The
+SDK takes over for subsequent evaluations.
 
 ## Fail-safe defaults [#fallback]
 
-> _Stage-A stub._
+If KV is unreachable (network blip, cold start, transient edge issue), the SDK returns:
 
-`gate()` falls back to `false` if KV is unreachable. Configs return last-known-good. Override per
-call with `gate(name, ctx, { defaultValue: true })` when "off" is the dangerous answer.
+- `gate(name)` → `false`
+- `config(name)` → last-known-good from the in-memory cache, else `undefined`
+- `experiment(name).variant` → `"control"` (the universe baseline)
+
+That's the safe default for **the common case**, where "feature off" is benign. The dangerous case
+is when _off_ is the failure mode — a killswitch that defaults to `false` would un-pause emails
+during an incident. Override per call:
+
+```ts
+// "off" is dangerous — default open, fail closed
+await gate("emails-enabled", ctx, { defaultValue: true });
+
+// "treatment" is dangerous — pin to control on read failure
+await experiment("paywall-test", ctx, { fallbackVariant: "control" });
+```
+
+Set defaults at the call site, not in a wrapper. The defaultValue is the contract of "what does
+this code do if Shipeasy is dead?" and it should be readable next to the code that depends on it.

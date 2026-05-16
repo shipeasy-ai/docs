@@ -17,7 +17,8 @@ templates when you're stuck choosing.
     **Killswitch** — single bit, default-on, audited, paged via webhook on flip.
   </Tile>
   <Tile href="#paywall" icon="◈" title="Test a new paywall vs the old one">
-    **Experiment** — 50/50 split inside a universe, conversion as the goal metric, p&lt;0.05 to ship.
+    **Experiment** — 50/50 split inside a universe, conversion as the goal metric, p&lt;0.05 to
+    ship.
   </Tile>
   <Tile href="#beta-feature" icon="⌗" title="Open a beta to allow-listed accounts">
     **Gate** — targeting rule on `account.plan IN ['beta-tester']`, no rollout %.
@@ -30,12 +31,19 @@ templates when you're stuck choosing.
 
 ## Roll out a redesigned checkout [#new-checkout]
 
-> _Coming up next: full prose draft._ Stage-A stub.
+You finished the checkout rewrite. It passes QA, the team is convinced. Now you have to ship it to
+real money-spending users without redeploying twelve times and without one rare browser quirk
+torching your conversion rate for a day before you notice.
 
 **The choice:** ship the rewrite progressively without a redeploy each ramp step.
 **The primitive:** Gate.
 **Why not experiment?** You already know v2 is the future. You just don't want to break carts on
 the way. No statistical question — you're ramping for safety, not for an answer.
+
+A gate gives you two knobs: a targeting rule (who's eligible at all) and a rollout percentage (of
+the eligible, how many actually get the new path). Target safe geographies first — countries
+where you control the payment integration end-to-end — then ramp the percentage as your dashboards
+stay green. Each step is a dashboard click, not a deploy.
 
 ```ts
 import { gate } from "@shipeasy/sdk/server";
@@ -56,35 +64,151 @@ shipeasy gate update checkout-v2 --rollout 100
 
 ## Change homepage hero copy [#hero-copy]
 
-> _Coming up next: full prose draft._ Stage-A stub.
+Marketing wants to swap the hero headline on Tuesday. Engineering does not want to ship a build on
+Tuesday. Solve once: read the string from a config, let marketing edit it in the dashboard, never
+touch the deploy pipeline again.
 
 **The primitive:** Config.
-**Why not gate?** Gates are boolean. The thing you actually want to change is the *string*.
+**Why not gate?** Gates are boolean. The thing you actually want to change is the _string_.
 
 ```ts
 import { config } from "@shipeasy/sdk/server";
-const hero = await config<string>("home.hero.title");
+
+export default async function Home() {
+  const title = await config<string>("home.hero.title", { default: "Ship faster." });
+  const cta = await config<string>("home.hero.cta", { default: "Get started" });
+  return (
+    <section>
+      <h1>{title}</h1>
+      <Button>{cta}</Button>
+    </section>
+  );
+}
 ```
+
+Always pass a `default` — it's what renders if the SDK can't reach KV, and it's the value your
+local dev environment will read until you've created the config. Treat the defaults as the
+source-of-truth copy; the dashboard value as the _override_.
+
+If the copy needs translation, don't store strings in a config — use the i18n module. Configs are
+for values that vary across environments or experiments; translations are for values that vary
+across locales. Different problem, different tool.
 
 ## Pause outbound emails during incident [#kill-emails]
 
-> _Coming up next: full prose draft._ Stage-A stub.
+3am. The transactional-email provider is having an outage and your retry queue is now sending the
+same "your order has shipped" email seven times. You need one switch to stop the bleeding while
+you call the vendor.
 
 **The primitive:** Killswitch.
 **Why not gate?** A 3am on-call shouldn't have to think about rollout percentages. Killswitches
-have one switch.
+have one switch — on or off — and they're audited so you have a paper trail of who flipped what
+when.
+
+```ts
+import { gate } from "@shipeasy/sdk/server";
+
+export async function sendOrderEmail(order: Order) {
+  if (!(await gate("emails-enabled", undefined, { defaultValue: true }))) {
+    logger.warn("emails paused via killswitch", { orderId: order.id });
+    return;
+  }
+  await mailer.send(order);
+}
+```
+
+The `defaultValue: true` is load-bearing. If KV is unreachable during the same incident, you do
+not want the killswitch to silently default to `false` and amplify the outage by also halting
+emails. Default open, fail closed only when you explicitly flip the switch.
+
+Wire a webhook to the killswitch so when it flips, it pages the team and posts to your incident
+channel. The switch itself is one bit; the social signal that someone _flipped it_ is what makes
+this an actual incident response tool instead of a forgotten config field.
 
 ## Test a new paywall vs the old one [#paywall]
 
-> _Coming up next: full prose draft._ Stage-A stub.
+The old paywall converts. The new paywall _might_ convert better — the copy is clearer, the price
+anchor is moved, your designer is sure of it. You can't ship the new one as-is because if it's
+worse you've thrown away real revenue while you waited to notice.
 
 **The primitive:** Experiment.
 **Why not gate?** You don't know the answer yet. You need a confidence interval to decide.
 
+```ts
+import { experiment } from "@shipeasy/sdk/server";
+
+const { variant, log } = await experiment("paywall-v2", { userId });
+
+await log("paywall_viewed");
+const paywall = variant === "treatment" ? <PaywallV2 /> : <PaywallV1 />;
+
+// elsewhere, in the checkout success handler
+await log("paywall_converted", { revenueCents: order.totalCents });
+```
+
+Set the **primary metric** to `paywall_converted` and the universe split to 50/50. Let it run
+until the daily analysis page shows p&lt;0.05 _and_ the minimum-detectable-effect you committed to
+before launch. Don't peek; don't stop early on a "looking good" day-three reading. The whole point
+of running an experiment instead of a gate is the discipline of waiting for the answer.
+
+If the result comes back negative, ship `variant: "control"` to 100% (it already is) and write a
+short doc about why the hypothesis was wrong. That doc is worth more than the experiment.
+
 ## Open a beta to allow-listed accounts [#beta-feature]
 
-> _Coming up next: full prose draft._ Stage-A stub.
+A handful of design-partner customers want early access to a feature you're not ready to ramp to
+everyone. You don't want a deploy step every time you add or remove an account. You want a list
+you can edit.
+
+**The primitive:** Gate.
+**The trick:** targeting rule on an account attribute, rollout fixed at 100% of the matched set.
+
+```ts
+import { gate } from "@shipeasy/sdk/server";
+
+const ctx = {
+  userId: session.user.id,
+  account: { id: session.account.id, plan: session.account.plan, tier: session.account.tier },
+};
+
+if (await gate("new-analytics-dashboard", ctx)) {
+  return <AnalyticsV2 />;
+}
+return <AnalyticsV1 />;
+```
+
+In the dashboard, write the targeting rule against an attribute you actually maintain — e.g.
+`account.tier IN ['beta']` — and set rollout to 100%. Adding a customer to the beta becomes "set
+their tier to beta in your own database" (which you probably already have a workflow for) rather
+than "redeploy with a new array literal." When you graduate the feature, drop the gate; don't
+leave it sitting at 100% forever as dead conditional.
 
 ## Tune search ranking weights [#search-relevance]
 
-> _Coming up next: full prose draft._ Stage-A stub.
+Your search has three signals — recency, relevance score, popularity — combined as a weighted sum.
+You want to find weights that maximise click-through rate. That's a parameter-search problem, not a
+boolean ship/no-ship.
+
+**The primitive:** Experiment + Config (one config per variant).
+**Why this combo?** The experiment splits users between weight sets. The configs hold the
+weights — different configs per variant — so you can tune them without redeploying.
+
+```ts
+import { experiment, config } from "@shipeasy/sdk/server";
+
+const { variant, log } = await experiment("search-weights-v3", { userId });
+const weights = await config<{ recency: number; relevance: number; popularity: number }>(
+  `search.weights.${variant}`,
+);
+
+const results = ranked(query, weights);
+await log("search_results_shown", { hasResults: results.length > 0 });
+```
+
+Create three configs (`search.weights.control`, `search.weights.a`, `search.weights.b`) with three
+weight sets. Run the experiment with three variants. Daily analysis tells you which variant has the
+highest click-through; the _config_ tells you exactly what weights that variant used. Ship the
+winning config to `search.weights.control` once you're done.
+
+The pattern generalises: any time you have a thing-with-knobs that you want to A/B, put the knobs
+in configs and the assignment in the experiment.

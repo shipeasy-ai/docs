@@ -23,20 +23,169 @@ description: Pluralization, RTL, fallback chains, and the things that break tran
 
 ## Pluralization [#plurals]
 
-> _Stage-A stub._
+English has two plural forms (`1 item` / `N items`). Russian has four (one / few / many / other).
+Arabic has six (zero / one / two / few / many / other). Welsh has six in a different shape. If
+your code does `count === 1 ? "item" : "items"` it works in exactly one language and silently
+breaks in dozens of others — Russian "2 items" needs the "few" form, not the "other" form, and
+your translator can't fix that from the outside.
+
+The right move is to put the pluralisation rules in the _string_, where the translator can edit
+them, using ICU MessageFormat:
+
+```ts
+import { t } from "@shipeasy/sdk/server";
+
+t("cart.itemCount", {
+  count,
+  default: `{count, plural,
+    =0 {Your cart is empty}
+    one {# item in your cart}
+    other {# items in your cart}
+  }`,
+});
+```
+
+The English source defines `one` and `other`. The Russian translation will fill in `one`, `few`,
+`many`, `other` — the CLDR plural rules for each locale are baked into the SDK, so all the
+translator has to do is provide the right form for each category.
+
+Two practical rules:
+
+- **Always pass `count` as a number**, not a string. `"1"` looks like one but might match `other`
+  depending on the locale.
+- **The `=0` case is optional but worth filling in** for any UI-meaningful empty state. It avoids
+  awkward translations like "0 items" that read fine in English and stilted in everything else.
 
 ## Locale fallback [#fallback-chain]
 
-> _Stage-A stub._
+The user's browser sends `Accept-Language: pt-BR,pt;q=0.9,en;q=0.5`. Your key has translations for
+`en` and `pt`, but not `pt-BR`. The fallback chain is:
+
+```
+pt-BR  →  pt  →  en (project default)
+```
+
+Region-tagged locales fall back to the base language _first_, then to the project's default
+source locale. The SDK never returns an untranslated key — it returns the closest available
+translation and, in dev mode, logs a one-line warning so you know the fallback fired.
+
+You can override the chain per-call when the default is wrong:
+
+```ts
+t("cta.subscribe", { locale: "pt-BR", fallback: ["pt-PT", "en"] });
+```
+
+That's useful for projects with intentionally distinct PT-PT and PT-BR copy where falling back
+PT-BR to PT-PT is _less_ wrong than falling all the way back to English.
+
+The fallback resolves on read, not on publish. Adding a `pt-BR` translation later automatically
+takes precedence; you don't need to rebuild anything.
 
 ## RTL layout [#rtl]
 
-> _Stage-A stub._
+You translated to Arabic. The strings are right. The layout is broken. RTL is not just `dir="rtl"`
+— it touches:
+
+- **Iconography.** Arrows, chevrons, back buttons mirror. Logos, brand marks, anything _symbolic_
+  does not.
+- **Punctuation.** Arabic uses `،` instead of `,`. Numerals are sometimes Eastern Arabic (`٠١٢٣`),
+  sometimes Western (`0123`), depending on country.
+- **Justification.** Text justifies right by default in RTL; numerical columns in a table should
+  still right-align (numbers read left-to-right inside an RTL run).
+- **Bidi-mixed strings.** "Order #1234 confirmed" is mixed-direction in Arabic and _requires_
+  Unicode bidi controls (`⁨` … `⁩`) around the number to render correctly.
+
+Practical recipe:
+
+```tsx
+import { useLocale } from "@shipeasy/sdk/client";
+
+export function Root({ children }) {
+  const locale = useLocale();
+  const dir = ["ar", "he", "fa", "ur"].some((l) => locale.startsWith(l)) ? "rtl" : "ltr";
+  return (
+    <html dir={dir} lang={locale}>
+      {children}
+    </html>
+  );
+}
+```
+
+Then in CSS, use **logical properties** (`margin-inline-start`, `padding-inline-end`,
+`border-inline`) instead of `margin-left` / `padding-right`. Tailwind 4 ships these as `ms-*`,
+`me-*`, `ps-*`, `pe-*`. Components written with logical properties RTL-flip for free.
+
+For mirrored icons, the SDK's `<T />` component accepts a `dir` prop and you can flip your icon
+component on `dir === "rtl"`. Don't try to flip with `transform: scaleX(-1)` — that flips the
+visual but also flips any text inside the icon, which is worse.
 
 ## Variable injection & formatting [#variable-injection]
 
-> _Stage-A stub._
+Strings with numbers, dates, and currency are where most translation bugs live. The rule: never
+concatenate. Always interpolate, and let ICU format per locale:
+
+```ts
+t("order.confirmation", {
+  default: `Order #{orderId} for {amount, number, ::currency/USD} ships {ship, date, medium}`,
+  orderId: order.id,
+  amount: order.totalCents / 100,
+  ship: order.expectedShipDate,
+});
+```
+
+What this gives you:
+
+- **`{amount, number, ::currency/USD}`** renders as `$1,234.56` in `en-US`, `1.234,56 $` in
+  `de-DE`, `US$ 1.234,56` in `pt-BR`. The currency code is fixed; the formatting is per-locale.
+- **`{ship, date, medium}`** renders as `Nov 5, 2026` in `en-US`, `5 nov. 2026` in `fr-FR`,
+  `2026年11月5日` in `ja-JP`.
+- **No string concatenation.** Word order can change across locales (German often pushes verbs to
+  the end); concatenation locks in English word order and translators can't fix it.
+
+For currency that varies by user, pass the code as a variable:
+
+```ts
+t("order.total", {
+  default: `Total: {amount, number, ::currency/{currency}}`,
+  amount: order.totalCents / 100,
+  currency: user.preferredCurrency,
+});
+```
+
+Things that look like interpolation and aren't, watch out for: raw HTML inside the string
+(escape-or-error, never pass through), Markdown (the SDK has a `<T md />` mode for this — don't
+roll your own), and React components inside translation strings (use `<Trans />` with named
+slots; don't concat JSX).
 
 ## Missing keys [#missing-key]
 
-> _Stage-A stub._
+What happens when `t("foo.bar")` has no translation in any locale in the fallback chain:
+
+1. The SDK returns the `default` string you passed.
+2. If you didn't pass a `default`, it returns the key itself (`"foo.bar"`) so the UI doesn't break
+   — but a key showing through to a user is a clear visual bug.
+3. The miss is recorded against the project so you can see the list of _actually-requested_
+   missing keys in the dashboard, not just the keys you've declared.
+
+That recorded miss is the magic — it tells you which keys translators need to prioritise without
+you maintaining a manual list. The dashboard shows the count of missed evaluations per key per
+locale; sort by that, translate the top of the list, repeat.
+
+To surface missing keys in CI before they ship:
+
+```bash
+# Compares the keys used in your code against the keys published for the project
+shipeasy i18n validate --strict
+```
+
+Exits non-zero if any `t()` call references a key that doesn't exist in the project. Wire that
+into your pre-merge check and you'll never ship a key that wasn't created upstream.
+
+Two things to avoid:
+
+- **Don't `t("Some literal English text")`.** The default-as-key pattern looks ergonomic but makes
+  every minor copy edit a key change, which means every minor copy edit invalidates every existing
+  translation. Use semantic keys (`home.hero.title`) and the default for the source string.
+- **Don't catch the missing-key fallback with a try/catch.** The SDK does not throw on missing
+  keys; it returns the fallback. If you wrap `t()` in a try/catch you're catching unrelated bugs
+  and silencing them.

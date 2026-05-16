@@ -20,16 +20,110 @@ description: Spam, dedup, PII, anonymous users, and other things that bite in pr
 
 ## Spam & abuse [#spam]
 
-> _Stage-A stub._
+The moment a "report bug" endpoint is reachable by anonymous traffic, someone will discover it and
+fill your dashboard with garbage. The defaults are tuned for this:
+
+- **Per-IP rate limit.** 10 reports / 5 minutes / IP on the public ingest endpoint. Bursts return
+  `429`. The SDK retries with backoff; real users never notice.
+- **Per-session limit.** Even with a stable signed-in user, a UI bug that fires `bug()` in a render
+  loop can flood the table — the SDK debounces identical payloads (same `title + pageUrl`) within
+  60s on the client side.
+- **hCaptcha for anonymous reporters.** Configurable per project. Off by default for signed-in
+  users (you already know who they are); on by default for the unauthenticated `bug()` path. The
+  challenge token is verified server-side before the row lands in D1.
+
+Reports that trip the rate limit aren't dropped silently — they're written to a `feedback_rejected`
+counter in Analytics Engine so you can see if you're being attacked vs. just losing genuine
+reports to an aggressive limit.
+
+If you need to mute a specific reporter (one user filing the same complaint hourly), add their
+`userId` or IP to the project's blocklist in the dashboard. Mute is silent on the client side —
+the SDK returns success and the report goes to `/dev/null` so the muted user doesn't realise they
+were muted and don't escalate.
 
 ## Dedup [#dedup]
 
-> _Stage-A stub._
+A bug on the checkout page generates 200 reports the same morning, all saying "checkout broken."
+You want them collapsed into one row with a `count: 200` rather than 200 rows you have to triage
+individually.
+
+Dedup is keyed on `hash(normalisedTitle + pageUrl + browserFamily)`. Normalisation lowercases,
+strips punctuation, and collapses whitespace. So "Checkout broken!", "checkout broken", and
+"checkout broken." all hash to the same key.
+
+```ts
+// Incoming
+{ title: "Checkout broken", pageUrl: "/checkout", userAgent: "Chrome/120 ..." }
+// Dedup key
+hash("checkout broken" + "/checkout" + "Chrome")
+```
+
+Hit an existing key → increment `count`, append the `userId` to `affectedUsers` (capped at 1000),
+update `lastSeenAt`. New row only on cache miss. The dashboard shows the count and the unique
+affected users; the raw individual reports stay queryable in Analytics Engine if you need to drill
+in.
+
+Two reports the dedup intentionally does _not_ collapse: bugs with attached screenshots (each
+screenshot is unique evidence) and bugs filed via the CLI (which carry richer context — a
+stacktrace, repro steps — that survives the lossy `title` field).
 
 ## PII [#pii]
 
-> _Stage-A stub._
+Users will paste their API key into "what's broken?" They will paste their email, their address, a
+support ticket number, a credit-card number, your competitor's API key. You cannot prevent it; you
+can only manage the blast radius.
+
+Three layers of defence, in order:
+
+1. **Server-side redaction on ingest.** A regex pass runs before the report hits D1. Hits on
+   credit-card patterns (Luhn-validated), JWT-shaped tokens, AWS-style access keys, common email
+   addresses, and US SSN patterns are replaced with `[REDACTED:cc]` etc. The original is _not_
+   kept anywhere — the redacted string is what gets stored. False positives are an acceptable
+   cost; a real CC in a support row is not.
+2. **Field length cap.** `title` is capped at 200 chars, `description` at 5000. Most credential
+   leaks happen when someone pastes 4KB of console output; the cap forces a truncation that often
+   breaks the leaked token mid-string.
+3. **Short retention by default.** Bug payloads are retained 90 days, then hard-deleted (not
+   soft). Counts and aggregates persist; the raw `description` does not. Configurable per project,
+   down to 7 days for high-sensitivity workloads.
+
+If a customer reports that they leaked something specific into a bug report, the dashboard has a
+"purge this report" action that hard-deletes the D1 row _and_ the corresponding Analytics Engine
+samples in the same transaction. There's no soft-delete trash bin to leak from.
+
+Never log the raw report payload outside Shipeasy. Don't forward it to Slack in a webhook body —
+forward the dashboard URL.
 
 ## Anonymous reporters [#anonymous]
 
-> _Stage-A stub._
+You want a "report bug" button on your marketing site where the user isn't signed in. You also
+don't want a GDPR consultant in your inbox.
+
+What the anonymous SDK collects by default:
+
+- `pageUrl` (the page they were on)
+- `userAgent` (truncated to browser family + major version: `Chrome/120`, not the full string)
+- Coarse country derived from the request IP (`country: "DE"`, never the IP itself)
+- Whatever the user typed
+
+What it does **not** collect:
+
+- IP address (used for rate-limiting, then dropped before the D1 write)
+- Precise geolocation
+- Cookies, localStorage contents, or any cross-site identifier
+- Screen resolution, installed fonts, anything fingerprint-shaped
+
+That set is intentionally below the threshold for "personal data" in GDPR Art. 4 in most legal
+analyses, because none of it identifies the natural person — but you are not your own lawyer, and
+the surrounding context (what page, what they typed) can incidentally identify someone. The
+practical recipe:
+
+1. Put a one-line notice next to the bug-report button: _"Submitting includes the page URL and
+   browser. We don't store your IP."_ Linking to your privacy policy is enough.
+2. Don't pass a `userId` from your own auth into the SDK if the user is signed out. The SDK has no
+   way to know they're signed out unless you stop passing it.
+3. If you allow optional email ("we'll follow up"), treat that field as PII the moment a user
+   fills it in — it's now a personal-data row and your retention policy applies in full.
+
+Signed-in reports are the simpler case: you're already processing the user's identity for the
+product itself; adding a bug-report row is the same lawful basis.

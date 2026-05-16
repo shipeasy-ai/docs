@@ -23,7 +23,9 @@ description: Worked translation scenarios — from "first key" to "translating a
 
 ## Translate one button [#first-key]
 
-> _Stage-A stub._
+The minimum viable translation. One key, one component, three new locales. End-to-end in five
+minutes. The point is to prove the pipeline works on something tiny before you touch any of your
+real copy.
 
 ```tsx
 import { t } from "@shipeasy/sdk/server";
@@ -37,16 +39,142 @@ shipeasy i18n translate --locales fr,de,ja
 
 ## Translate an existing app [#scan-existing]
 
-> _Stage-A stub._
+Your app already has thousands of hardcoded English strings across hundreds of files. Going
+through them by hand to wrap each one in `t()` is a quarter of work nobody is going to volunteer
+for. The scan + codemod flow does it in two commands.
+
+```bash
+# 1. Scan: walk the repo, find JSX/TSX text nodes and ARIA strings, propose keys
+shipeasy i18n scan --root apps/ui/src
+
+# Output:
+#  ✔ Found 412 translatable strings in 87 files.
+#  ✔ Proposed key names (semantic, derived from component path).
+#  ✔ Wrote .shipeasy/scan-report.json — review before applying.
+
+# 2. Preview the codemod (does not modify files)
+shipeasy i18n codemod preview --report .shipeasy/scan-report.json
+
+# 3. Apply: wraps strings in t(), creates keys in the project
+shipeasy i18n codemod apply --report .shipeasy/scan-report.json
+```
+
+The scanner identifies translatable strings using heuristics: JSX text children, `aria-label`,
+`title`, `placeholder`, `alt`, and string literals passed to a small allow-listed set of toast /
+modal helpers. It skips strings that look like identifiers, URLs, file paths, error codes, single
+characters, or anything inside test files. False positives are flagged in the report; review
+before applying.
+
+Apply in batches. A 412-string diff in one commit is unreviewable; `--filter "src/components/cart/**"`
+narrows the codemod to one feature so each PR is a few dozen strings the reviewer can sanity-check
+in context.
+
+Once everything is wrapped, run `shipeasy i18n push` to upload the keys, then `shipeasy i18n
+translate --locales fr,de,ja,es` to draft. Drafts go to the dashboard for human review before
+publishing — see the translation review guide for how to invite native speakers.
 
 ## Per-locale tone & glossary [#tone-of-voice]
 
-> _Stage-A stub._
+The same word in English maps to different registers in other languages. "Sign in" can be casual
+("entrar") or formal ("iniciar sesión") in Spanish, and that choice should be consistent across
+hundreds of buttons in your app — not re-decided by whichever translator happens to look at each
+key.
+
+Profiles solve this. A profile is a per-locale style guide that gets passed to the translation
+draft model and that the dashboard surfaces to human reviewers. Each profile is a small piece of
+text:
+
+```bash
+shipeasy i18n profile create --locale es \
+  --name "Spanish (ES) — casual" \
+  --description "Use tú, not usted. Active voice. Avoid English loanwords ('email' → 'correo')."
+
+shipeasy i18n profile create --locale es-MX \
+  --name "Spanish (MX) — neutral" \
+  --description "Use usted in transactional flows. Allow common English loanwords ('email', 'login')."
+```
+
+Profiles inherit: `es-MX` falls back to the `es` profile for anything it doesn't override. The
+draft model applies the profile; the dashboard shows the profile next to every string under
+review so the human reviewer is reminded of the rules.
+
+Glossary entries pin specific terms:
+
+```bash
+shipeasy i18n glossary add --locale fr \
+  --term "checkout" --translation "paiement" --note "Never 'checkout', never 'caisse'."
+
+shipeasy i18n glossary add --locale fr \
+  --term "subscription" --translation "abonnement"
+```
+
+Glossary terms are enforced — the draft model uses the pinned translation, and the dashboard
+flags any human translation that contradicts the glossary. That's how you keep "checkout" as
+"paiement" across 400 keys without re-explaining yourself to each reviewer.
 
 ## Disambiguate context [#contextual-strings]
 
-> _Stage-A stub._
+English overloads short words. "Open" is a verb on a button (`<button>Open</button>`) and an
+adjective on a status label (`<Badge>Open</Badge>`). They translate to different words in most
+languages — German has `Öffnen` (the verb) and `Offen` (the adjective), and a translator looking
+at the string `"Open"` in isolation has a 50/50 chance of picking wrong.
+
+Two ways to disambiguate.
+
+**Option 1 — separate keys with context-bearing names.** The blunt fix, and usually the right one:
+
+```tsx
+<button>{t("dialog.open.action", { default: "Open" })}</button>
+<Badge>{t("ticket.status.open", { default: "Open" })}</Badge>
+```
+
+Same default string, different keys. Translators see the key path (`ticket.status.open`) and
+infer "this is a status label." The two strings can diverge translation-by-translation without
+either side breaking.
+
+**Option 2 — a `context` hint on a shared key.** Useful when you genuinely want one key reused
+across many places but each call site has slightly different meaning:
+
+```tsx
+t("Open", { context: "verb, action on a dialog" });
+t("Open", { context: "adjective, ticket status" });
+```
+
+The context string is shown to the translator next to the source string but is not part of the
+key — so two calls with the same source string and different contexts resolve to one translation
+slot per (source, context) pair. Use sparingly; nine times out of ten Option 1 is cleaner because
+the _key_ carries the intent and you don't need a parallel context vocabulary.
+
+Either way: **never rely on the source string alone to convey intent.** Translators don't see the
+JSX surrounding the string. They see a list of (key, source, optional context). Make sure that
+list is enough to translate from.
 
 ## Long-form CMS content [#cms-content]
 
-> _Stage-A stub._
+You have a 2000-word product description, a 30-page support center, or a marketing blog. _None of
+this belongs in i18n._ Shipeasy's translation module is built for UI strings — short, sentence-
+fragment-shaped content that ships with the code. Long-form content has different needs:
+
+- Editorial workflow (draft → review → publish), not key/value review.
+- Rich content (images, links, video embeds, tables).
+- Lives next to other long-form content of the same shape, not next to button labels.
+- Updated by writers, not engineers.
+
+A 2000-word string crammed into a translation key is hard to translate well (no per-paragraph
+review), hard to update (one typo invalidates the whole translation), and hard to render (line
+breaks vs. paragraphs vs. lists become string-formatting hacks).
+
+What to do instead:
+
+1. **Use a real headless CMS** (Sanity, Contentful, Strapi, Payload) for the long-form content. They
+   have localisation as a first-class feature, with editorial workflow, rich text, and version
+   history.
+2. **Use Shipeasy for the chrome** — the navigation, CTAs, error messages, form labels, footer.
+   Those are the strings that don't belong in the CMS because they aren't _content_, they're
+   product surface.
+3. **Cross-link the two by key**. The CMS holds `article.welcome.body` (rich text per locale).
+   Shipeasy holds `article.welcome.cta` (the "Get started" button below it). The page reads both.
+
+If you genuinely have a short blob — a one-paragraph marketing card, a single legal disclaimer —
+the boundary is fuzzy and you can use Shipeasy for it. The rule of thumb: if there's a non-engineer
+on your team who needs to edit it without a code review, it belongs in a CMS, not in i18n.

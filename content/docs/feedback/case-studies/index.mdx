@@ -20,7 +20,22 @@ description: Bug & feature request workflows — from "report bug" button to Lin
 
 ## Add a 'Report bug' button [#report-bug-button]
 
-> _Stage-A stub._
+The smallest possible integration: a button somewhere in the chrome of your app that captures
+"something is wrong on this page" in two clicks. No modal, no form schema, no triage UI to build.
+The dashboard handles the rest.
+
+What this gets you:
+
+- Page URL (so you know _where_ the bug was)
+- Browser family (so you know it's not a Chrome 60 quirk)
+- The user's free-text answer to "what's broken?"
+- The signed-in `userId` if `shipeasy()` was called with one
+- Server-side timestamp
+
+What this _doesn't_ get you, and that's fine for a first integration: screenshots, console logs,
+session replay, repro steps. Those upgrades come later; right now the goal is to shorten the
+loop between "a user notices something" and "you see it on the dashboard" from "they file a
+support ticket on Monday" to "you see it before they close the tab".
 
 ```tsx
 "use client";
@@ -44,12 +59,145 @@ export function ReportBug() {
 
 ## Public voting roadmap [#voting-roadmap]
 
-> _Stage-A stub._
+You're tired of hearing the same five feature requests in support and want to stack-rank them by
+actual demand instead of by who's loudest. A public, vote-on-able list does that _and_ doubles as
+a "we're listening" page that lowers support volume on its own.
+
+Mark a feedback item as `kind: "feature"` and `visibility: "public"` and it shows up at the
+project's public roadmap URL. Users can up-vote without signing in (one vote per IP, captcha after
+three votes in a session). You decide what gets promoted to the public list — nothing leaks
+without an explicit toggle in the dashboard.
+
+```tsx
+"use client";
+import { shipeasy } from "@shipeasy/sdk/client";
+
+export function RequestFeature() {
+  return (
+    <button
+      onClick={async () => {
+        const title = window.prompt("What would make this product better?");
+        if (!title) return;
+        await shipeasy.feedback.request({
+          title,
+          pageUrl: window.location.href,
+          allowPublic: true,
+        });
+      }}
+    >
+      Request a feature
+    </button>
+  );
+}
+```
+
+The public roadmap URL is `https://app.shipeasy.ai/roadmap/<projectSlug>` and is also embeddable
+as an iframe (`/embed/roadmap`) if you want it on your marketing page in your own chrome. Vote
+totals refresh every 5 minutes via the same KV path the SDK uses — no separate analytics integration
+needed.
+
+Two things you'll want to set before going public: a moderation rule (auto-hide items containing
+URLs, profanity, or competitor mentions — toggle in the dashboard) and a status field on each
+item (`planned` / `in-progress` / `shipped`) so users see motion and stop re-submitting the same
+thing.
 
 ## Forward triaged bugs to Linear [#linear-sync]
 
-> _Stage-A stub._
+You triage in Shipeasy (because that's where the dedup'd reports already live) but you ship in
+Linear (because that's where the rest of engineering lives). Don't make humans copy-paste; webhook
+the transition.
+
+In the Shipeasy dashboard, add a webhook on the event `feedback.status.changed` filtered to
+`status: triaged`. Point it at your own endpoint; that endpoint creates the Linear issue:
+
+```ts
+// app/api/webhooks/shipeasy/route.ts
+import { LinearClient } from "@linear/sdk";
+
+export async function POST(req: Request) {
+  const sig = req.headers.get("x-shipeasy-signature");
+  const body = await req.text();
+  if (!verifySignature(body, sig, process.env.SHIPEASY_WEBHOOK_SECRET!)) {
+    return new Response("bad sig", { status: 401 });
+  }
+
+  const event = JSON.parse(body);
+  if (event.type !== "feedback.status.changed" || event.feedback.status !== "triaged") {
+    return new Response("ignored", { status: 200 });
+  }
+
+  const linear = new LinearClient({ apiKey: process.env.LINEAR_API_KEY });
+  await linear.createIssue({
+    teamId: process.env.LINEAR_TEAM_ID!,
+    title: event.feedback.title,
+    description:
+      `${event.feedback.description}\n\n` +
+      `**Affected users:** ${event.feedback.affectedUserCount}\n` +
+      `**Page:** ${event.feedback.pageUrl}\n` +
+      `**Source:** ${event.dashboardUrl}`,
+    labelIds: [process.env.LINEAR_BUG_LABEL_ID!],
+  });
+
+  return new Response("ok", { status: 200 });
+}
+```
+
+Two practical details that bite if you skip them:
+
+- **Always verify the signature.** The webhook secret is rotated per project in the dashboard. If
+  you skip verification, anyone who guesses your URL can spam your Linear instance.
+- **Store the Linear issue ID back.** Use the dashboard's "external link" field on the feedback
+  item (or the `feedback.update` API) to write the Linear URL back. That closes the loop: triagers
+  can jump to Linear from the bug page, and the next dedup'd report against the same key shows the
+  existing Linear issue instead of creating a duplicate.
 
 ## Auto-attach session replay [#session-replay]
 
-> _Stage-A stub._
+A title and a URL is rarely enough to reproduce a bug. The user clicked something, then something
+broke, and the _something_ is what you actually need to see. If you already run a session-replay
+tool (Sentry, FullStory, LogRocket, Highlight), the integration is two lines.
+
+```tsx
+"use client";
+import { shipeasy } from "@shipeasy/sdk/client";
+import * as Sentry from "@sentry/nextjs";
+
+export function ReportBug() {
+  return (
+    <button
+      onClick={async () => {
+        const title = window.prompt("What's broken?");
+        if (!title) return;
+
+        const replayUrl = Sentry.getReplay()?.getReplayId()
+          ? `https://sentry.io/replays/${Sentry.getReplay()!.getReplayId()}`
+          : undefined;
+
+        await shipeasy.feedback.bug({
+          title,
+          pageUrl: window.location.href,
+          attachments: replayUrl ? [{ kind: "replay", url: replayUrl }] : [],
+        });
+      }}
+    >
+      Report bug
+    </button>
+  );
+}
+```
+
+`attachments` is a free-form list — `{ kind, url, label? }` — that renders as clickable links on
+the feedback item in the dashboard. Use `kind: "replay"` for replay URLs, `kind: "log"` for log
+viewer deeplinks, `kind: "screenshot"` for image URLs. The dashboard shows them inline.
+
+A few decisions:
+
+- **Don't store the replay payload in Shipeasy.** Store the URL. Replays are large, they have their
+  own retention story, and you don't want two systems holding the same blob. The dashboard
+  deeplinks; the replay stays in the replay tool.
+- **Sample-aware.** Most replay tools sample (e.g. 10% of sessions). If a user hits the bug button
+  and `getReplayId()` is `null`, the bug still files — just without a replay link. That's the
+  right behaviour; don't drop the report because there's no replay.
+- **Mind the access boundary.** A replay URL is a deeplink to whatever your replay tool considers
+  accessible. If you make feedback items public (e.g. the voting roadmap), strip `kind: "replay"`
+  from the attachments before they go public, or you'll expose internal session URLs.
