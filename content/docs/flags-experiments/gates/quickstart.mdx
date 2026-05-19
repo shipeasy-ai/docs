@@ -1,0 +1,170 @@
+---
+title: Quickstart
+description: Create a gate, wrap your code, ramp from 0% to 100% — end to end in five minutes.
+---
+
+<DocMeta
+  status="Tutorial"
+  read="5 min read"
+  updated="May 15, 2026"
+  works="Server SDK · Browser SDK · CLI"
+/>
+
+This walks you through shipping a real feature behind a gate. You'll create the gate, wrap a code
+path, and ramp it from 0% → 5% → 25% → 100%. By the end the feature is live for everyone, with no
+redeploys between ramp steps.
+
+<Quickstart title="The 5-minute path" time="install · create · gate · ramp">
+  <QuickstartStep
+    num={1}
+    label="INSTALL"
+    title="Install the SDK & log in"
+    cmd="npm install @shipeasy/sdk && npx shipeasy login"
+  />
+  <QuickstartStep
+    num={2}
+    label="CREATE"
+    title="Create a gate at 0%"
+    cmd="shipeasy flags create checkout-v2 --rollout 0"
+  />
+  <QuickstartStep
+    num={3}
+    label="WRAP"
+    title="Gate the new code path"
+    cmd="if (await gate('checkout-v2', { userId })) { ... }"
+  />
+  <QuickstartStep
+    num={4}
+    label="RAMP"
+    title="Bump to 5%, then 25%, then 100%"
+    cmd="shipeasy flags rollout checkout-v2 --percent 100"
+  />
+</Quickstart>
+
+## Prerequisites
+
+- A Shipeasy project. The free tier covers everything in this walkthrough.
+- A **server SDK key** for the environment you're deploying to:
+
+```bash
+shipeasy keys create --kind server
+```
+
+- The SDK in your project:
+
+<InstallTabs npm="npm install @shipeasy/sdk" />
+
+## 1. Initialise once at boot
+
+The SDK loads the flag bundle into memory and refreshes it in the background. No fetch on the hot
+path, no per-request latency. Configure once, use everywhere.
+
+```ts title="src/lib/shipeasy.ts"
+import { shipeasy } from "@shipeasy/sdk/server";
+
+await shipeasy({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
+```
+
+Call this once during boot (server entry, root layout, or worker startup). The same `shipeasy()`
+call covers flags, configs, experiments, and translations — you do not need separate init for each.
+
+## 2. Create the gate
+
+```bash
+shipeasy flags create checkout-v2 \
+  --description "New checkout flow rewrite" \
+  --rollout 0
+```
+
+`--rollout 0` means "no one sees it yet." The gate exists, the SDK knows about it, but every call
+returns `false`. Safe to deploy.
+
+Alternatively, create it in the dashboard: **Flags → New gate → Save**.
+
+## 3. Wrap the code path
+
+```ts title="app/checkout/page.tsx"
+import { gate } from "@shipeasy/sdk/server";
+
+export default async function CheckoutPage() {
+  const userId = await getUserId();
+
+  if (await gate("checkout-v2", { userId })) {
+    return <CheckoutV2 />;
+  }
+  return <CheckoutV1 />;
+}
+```
+
+Two things to note:
+
+- **Always pass a stable `userId`.** This is the bucketing key — same user, same answer, every
+  request. If you pass a random id, the user re-buckets every request and you'll see flicker.
+- **The call is synchronous in spirit.** `gate()` does a hash-table lookup against the in-memory
+  bundle. The `await` is there for the SDK's init guarantee, not for a network round-trip.
+
+Deploy this. With `--rollout 0`, every user sees `CheckoutV1`. The new path is shipped but dark.
+
+## 4. Ramp gradually
+
+When you're ready to start exposing real users:
+
+```bash
+# Day 1 — 5% of all users
+shipeasy flags rollout checkout-v2 --percent 5
+
+# Day 3 — 25%, after metrics look fine
+shipeasy flags rollout checkout-v2 --percent 25
+
+# Day 5 — full launch
+shipeasy flags rollout checkout-v2 --percent 100
+```
+
+Each ramp step propagates to every SDK in under a second. No redeploy, no env var change.
+
+The same gate can be ramped from the dashboard with a slider, or from the API with a `PATCH`:
+
+```bash
+curl -X PATCH https://api.shipeasy.ai/v1/gates/checkout-v2 \
+  -H "Authorization: Bearer $SHIPEASY_ADMIN_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"rolloutPct": 25}'
+```
+
+## 5. Kill it if something goes wrong
+
+If the new path breaks at 25%, flip the killswitch:
+
+```bash
+shipeasy flags disable checkout-v2 --killswitch \
+  --reason "Carts not finalising — PagerDuty #4912"
+```
+
+Every SDK serves `false` within the next poll (usually ~1s). Targeting rules and the rollout
+percentage are preserved — when you fix the bug, re-enabling restores the previous state exactly.
+
+See [Killswitches](/flags-experiments/killswitches) for the incident-grade variant that has no
+rollout knob and defaults to safe.
+
+## Where to next
+
+<TileGrid>
+  <Tile href="/flags-experiments/gates/targeting" icon="⌥" title="Add targeting rules">
+    Restrict eligibility — by country, plan tier, account attribute, or any field you pass in `ctx`.
+  </Tile>
+  <Tile href="/flags-experiments/gates/rollouts" icon="▦" title="Understand rollouts">
+    Sticky bucketing, deterministic hashing, multi-arm rollouts, salt — how the percentage actually
+    works.
+  </Tile>
+  <Tile href="/flags-experiments/gates/overrides" icon="◆" title="QA + dogfood overrides">
+    Force a gate on or off for specific user IDs without touching targeting or rollout.
+  </Tile>
+  <Tile href="/flags-experiments/case-studies" icon="⌗" title="Real scenarios">
+    Worked examples — checkout rollout, beta allow-list, regional rollout.
+  </Tile>
+</TileGrid>
+
+<DocNav
+  prev={{ href: "/flags-experiments/gates", title: "Gates overview" }}
+  next={{ href: "/flags-experiments/gates/targeting", title: "Targeting rules" }}
+/>

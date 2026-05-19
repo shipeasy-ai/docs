@@ -212,3 +212,302 @@ winning config to `search.weights.control` once you're done.
 
 The pattern generalises: any time you have a thing-with-knobs that you want to A/B, put the knobs
 in configs and the assignment in the experiment.
+
+## More scenarios
+
+The six cases below are deeper cuts of the same primitives — one per page in this section's
+sub-menu. Each shows a less obvious use of the tool, including the wiring that's easy to get
+wrong the first time.
+
+<TileGrid>
+  <Tile href="#progressive-region-rollout" icon="◇" title="Gates → progressive region rollout">
+    **Gate + targeting** — ramp by country list rather than percentage, expand the list weekly.
+  </Tile>
+  <Tile href="#sdk-version-gate" icon="◈" title="Gates → block stale mobile clients">
+    **Gate + semverGte** — disable a feature for app versions below a known-fixed build.
+  </Tile>
+  <Tile href="#pricing-config" icon="⚙" title="Configs → safe price changes">
+    **Config + audit log** — change prices without deploys, with full who-changed-what trail.
+  </Tile>
+  <Tile href="#typed-banner" icon="◉" title="Configs → typed announcement banner">
+    **Config (JSON) + Zod** — schema-validated payload that's safe to read on the hot path.
+  </Tile>
+  <Tile href="#quarterly-holdout" icon="◐" title="Experiments → quarterly holdout">
+    **Experiment + universe** — measure cumulative lift across an entire quarter of shipping.
+  </Tile>
+  <Tile href="#ctr-ratio-metric" icon="∑" title="Metrics → CTR as a ratio metric">
+    **Metric + ratio** — clicks per impression with correct variance via the delta method.
+  </Tile>
+</TileGrid>
+
+## Roll out by region progressively [#progressive-region-rollout]
+
+You've got a new shipping integration that's been built region-by-region. You don't want a global
+ramp — you want to expand the _country list_ as each region's integration is qualified, with the
+percentage fixed at 100% of the matched set.
+
+**The primitive:** Gate.
+**The mechanic:** ramp by widening the targeting rule, not by raising the rollout percentage.
+
+```bash
+# Day 1 — domestic only
+shipeasy flags update intl-shipping \
+  --rule 'country IN ["US","CA"]' --rollout 100
+
+# Week 2 — EU added after EU couriers qualified
+shipeasy flags update intl-shipping \
+  --rule 'country IN ["US","CA","GB","DE","FR","NL","IE"]' --rollout 100
+
+# Week 4 — APAC added
+shipeasy flags update intl-shipping \
+  --rule 'country IN ["US","CA","GB","DE","FR","NL","IE","JP","AU","SG"]' --rollout 100
+```
+
+The code never changes:
+
+```ts
+import { gate } from "@shipeasy/sdk/server";
+
+if (await gate("intl-shipping", { userId, country })) {
+  return renderInternationalShipping();
+}
+return renderDomesticOnly();
+```
+
+Why not a percentage rollout? Because the failure mode is _regional_. A 25% global rollout might
+catch your DE integration in a state where it's only ready for the US — a percentage doesn't help
+you. Targeting by country gives you explicit, auditable control of which regions are live.
+
+When the launch is complete, drop the rule entirely (`--rule ''`) and leave the gate at 100% as
+a kill-switch lever for incidents.
+
+## Block stale mobile clients [#sdk-version-gate]
+
+A bug in v2.4.1 of your mobile app sends malformed payment payloads. v2.4.2 is fixed and forced
+via the app store, but old clients are stuck. You need server-side enforcement: refuse the bad
+path on the API for clients below v2.4.2.
+
+**The primitive:** Gate with a `semverGte` rule on the client's reported version.
+
+```ts title="apps/api/checkout/route.ts"
+import { gate } from "@shipeasy/sdk/server";
+
+export async function POST(req: Request) {
+  const appVersion = req.headers.get("x-app-version") ?? "0.0.0";
+
+  if (!(await gate("checkout-v2-eligible", { userId, appVersion }))) {
+    return Response.json(
+      { error: "upgrade_required", message: "Please update to the latest app." },
+      { status: 426 },
+    );
+  }
+
+  return processCheckout(req);
+}
+```
+
+In the dashboard:
+
+```
+Rule: appVersion semverGte "2.4.2"
+Rollout: 100%
+```
+
+A user on v2.4.1 fails the rule → falls out of eligibility → gets the upgrade message. A user on
+v2.5.3 passes → flows through. No code change is needed when v2.4.3 ships; the gate stays at
+`semverGte 2.4.2` until you decide to raise the floor.
+
+The trick that's easy to miss: `semverGte` is in [Targeting rules](/flags-experiments/gates/targeting#operators).
+Use it instead of `gte` on a string — string comparison would mis-order `2.10.0` before `2.4.0`.
+
+## Change prices without a deploy [#pricing-config]
+
+Marketing wants to A/B price points across geos, run a temporary promo, and roll back instantly if
+the new price tanks conversion. Engineering does not want to deploy four times this week.
+
+**The primitive:** Config (typed number) with audit log.
+
+```ts title="lib/pricing.ts"
+import { config } from "@shipeasy/sdk/server";
+
+export async function priceForCountry(country: string, currency: string) {
+  const cents = await config<number>(`price.pro.${country}`, {
+    default: defaults[country] ?? defaults.US,
+  });
+  return { cents, currency };
+}
+```
+
+Now marketing edits the dashboard. Every change is logged with actor + timestamp + previous value,
+which matters for two reasons:
+
+1. **Compliance.** "Why was this customer charged $24 when our public price is $19?" → audit log
+   shows the override window precisely.
+2. **Rollback.** A bad price change is one click — the audit log's revert button restores the
+   previous value across all SDKs in under a second.
+
+What you _do not_ do: store prices in your code as constants and ship deploys to change them. The
+audit story is invisible, the rollback story is "redeploy and pray," and the experiment story is
+"branch the code, ship, branch the code, ship."
+
+For experiments on price (test $19 vs $24), wire the config into an experiment — see the
+[search ranking case](#search-relevance) above for the experiment-config combo pattern.
+
+## Typed announcement banner [#typed-banner]
+
+You want a site-wide announcement banner that ops can toggle on, with a structured payload
+(message, severity, link, expiry). You also want the SDK to refuse to render malformed payloads —
+so a typo in the dashboard JSON doesn't crash the page.
+
+**The primitive:** Config with a Zod schema.
+
+```ts title="lib/banner.ts"
+import { config } from "@shipeasy/sdk/server";
+import { z } from "zod";
+
+const BannerSchema = z
+  .object({
+    enabled: z.boolean(),
+    severity: z.enum(["info", "warn", "incident"]),
+    message: z.string().max(180),
+    linkHref: z.string().url().optional(),
+    linkLabel: z.string().max(40).optional(),
+    expiresAt: z.string().datetime().optional(),
+  })
+  .nullable();
+
+export async function getBanner() {
+  const raw = await config<unknown>("site.banner", { default: null });
+  const parsed = BannerSchema.safeParse(raw);
+  if (!parsed.success) {
+    console.error("Banner config failed schema check", parsed.error.flatten());
+    return null;
+  }
+  const banner = parsed.data;
+  if (!banner?.enabled) return null;
+  if (banner.expiresAt && Date.parse(banner.expiresAt) < Date.now()) return null;
+  return banner;
+}
+```
+
+The dashboard stores this as JSON:
+
+```json
+{
+  "enabled": true,
+  "severity": "warn",
+  "message": "Scheduled maintenance Saturday 02:00–04:00 UTC.",
+  "linkHref": "https://status.example.com/maint-2026-05-18",
+  "linkLabel": "Status page",
+  "expiresAt": "2026-05-19T00:00:00Z"
+}
+```
+
+The schema gives you two safety properties: a fat-fingered key in the dashboard doesn't render
+garbage (the schema check rejects it and the banner stays hidden), and `expiresAt` means ops can
+schedule the banner to disappear without needing to remember to turn it off.
+
+Don't reach for a gate for this. A gate is a boolean — you'd then need a _second_ config for the
+payload, and now two things must be in sync. One typed config is the smaller, more honest pattern.
+
+## Measure quarterly cumulative lift [#quarterly-holdout]
+
+You shipped 14 experiments last quarter. Each individually claimed a positive lift. You suspect
+they don't _all_ add up — at least one of them is probably overcounting because users were already
+in another experiment's treatment. You need a number for _the whole quarter's work_.
+
+**The primitive:** Experiment universe with a long-running holdout.
+
+The mechanic: 10% of users in the universe never see any treatment for the entire quarter.
+Compare them to the other 90% to get the cumulative lift of _everything_ you shipped.
+
+```bash
+shipeasy universes update product-decisions \
+  --holdout-pct 10 \
+  --holdout-window 90d
+```
+
+```ts title="route handlers"
+import { experiment } from "@shipeasy/sdk/server";
+
+// All your experiments live under this universe
+const { variant, log } = await experiment(
+  "paywall-v2",
+  { userId },
+  {
+    universe: "product-decisions",
+  },
+);
+
+await log("conversion");
+```
+
+At the end of the quarter, the universe page shows:
+
+```
+Holdout (10%):     baseline_metric = 0.182 conv
+Treated (90%):     baseline_metric = 0.207 conv
+Cumulative lift:   +13.7%  (95% CI [+9.1%, +18.4%])
+```
+
+That's the _actual_ compound effect of everything you shipped, including all the experiments that
+"won" and the second-order interactions you can't measure per-experiment.
+
+A few things to internalise:
+
+- **Power drops.** A 10% holdout removes 10% of every experiment's sample. Plan duration
+  accordingly. See [Edge cases — holdouts](/flags-experiments/edge-cases#holdout-overlap).
+- **The holdout slice must be stable.** Don't re-bucket between experiments — the universe-level
+  holdout exists for exactly this reason.
+- **Read the result honestly.** If cumulative lift is flat while every individual experiment
+  claimed a win, the wins were noise or the second-order effects cancelled.
+
+## CTR as a ratio metric [#ctr-ratio-metric]
+
+You want to measure click-through rate on a redesigned recommendation rail — clicks per impression
+shown. Naive instinct: log clicks, log impressions, compute the ratio in the dashboard. Wrong.
+
+**The primitive:** Ratio metric with the delta method for variance.
+
+```bash
+shipeasy metrics create rec_rail_ctr \
+  --type ratio \
+  --numerator-event rec_click \
+  --denominator-event rec_impression
+```
+
+```ts title="app/components/RecRail.tsx"
+"use client";
+import { shipeasy } from "@shipeasy/sdk/client";
+import { useEffect } from "react";
+
+export function RecRail({ items, userId }) {
+  useEffect(() => {
+    items.forEach((item) =>
+      shipeasy.track("rec_impression", { userId, itemId: item.id }),
+    );
+  }, [items, userId]);
+
+  return items.map((item) => (
+    <a
+      href={item.href}
+      key={item.id}
+      onClick={() => shipeasy.track("rec_click", { userId, itemId: item.id })}
+    >
+      {item.title}
+    </a>
+  ));
+}
+```
+
+Why not just compute `clicks / impressions` per user and use a `mean` metric? Because the math is
+wrong. A user with 10 impressions and 1 click contributes `0.1`. A user with 1 impression and 1
+click contributes `1.0`. Treating each as an equal data point inflates the apparent rate and
+under-counts the high-volume users.
+
+The ratio metric uses the **delta method** — variance is computed jointly on numerator and
+denominator means, accounting for their covariance. The dashboard's p-values, CIs, and lift
+numbers are all honest under this. Mean-of-ratios is not.
+
+See [Metrics — aggregation types](/flags-experiments/metrics/aggregations#ratio) for the formal
+treatment of why ratios need special handling.

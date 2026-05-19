@@ -1,0 +1,250 @@
+---
+title: Aggregation types
+description: Conversion, count, sum, mean, ratio — pick the right aggregation, set outlier handling, and avoid the variance traps that bite means and sums.
+---
+
+<DocMeta status="Production ready" read="7 min read" updated="May 15, 2026" works="Server SDK" />
+
+A **metric** is "events aggregated per user." The aggregation function turns each user's event
+stream into a single number that the analysis pipeline averages across the experiment arms. Pick
+the right one and your power calculations are honest; pick the wrong one and a single outlier can
+swing your result.
+
+## The five types
+
+| Type         | Per-user value                                | Best for                         | Variance behaviour                     |
+| ------------ | --------------------------------------------- | -------------------------------- | -------------------------------------- |
+| `conversion` | `1` if event happened at least once, else `0` | Did they buy? Did they retain?   | Bounded `p(1-p)` — friendliest.        |
+| `count`      | Number of events                              | Page views, sessions, clicks     | Long-tailed; outliers possible.        |
+| `sum`        | Sum of a numeric property                     | Revenue, time spent, items added | Heavy-tailed; outliers a real problem. |
+| `mean`       | Average of a numeric property                 | Order value, session length      | Same as sum, plus zero-handling.       |
+| `ratio`      | Numerator-event / denominator-event           | CTR, conversion per visit        | Delta-method variance — special.       |
+
+## Conversion
+
+The simplest and statistically the friendliest. Per user: did the event happen at least once
+during the analysis window?
+
+```bash
+shipeasy metrics create purchase_conversion \
+  --type conversion \
+  --event purchase
+```
+
+Each user contributes a `0` or `1`. The metric mean is the fraction who converted. Variance is
+bounded by `p(1-p)`, which caps at `0.25`. Power calculations are cheap; the t-test behaves; you
+can't have an outlier.
+
+Use this whenever the question is yes/no.
+
+## Count
+
+Per user: how many of the event happened?
+
+```bash
+shipeasy metrics create sessions_per_user \
+  --type count \
+  --event session_start
+```
+
+Each user contributes an integer ≥ 0. Means and variances behave reasonably for low-volume events
+(0–5 per user) and get long-tailed for high-volume ones (a power user with 200 sessions skews the
+mean). For long-tailed counts, consider:
+
+- Capping at a sensible ceiling (`--cap 50`).
+- Switching to `conversion` (did they have at least 1 session?) if the count distinction doesn't
+  drive your decision.
+
+## Sum
+
+Per user: sum a numeric property across all matching events.
+
+```bash
+shipeasy metrics create revenue_per_user \
+  --type sum \
+  --event purchase \
+  --property revenueCents
+```
+
+The classic "did this experiment make us more money per user." Each user contributes their total
+revenue. Non-purchasers contribute `0`.
+
+Sums are **heavy-tailed**. One $50,000 enterprise purchase can swing the mean for thousands of
+users. Always set outlier handling (see below) — the default winsorise at p99 is correct in most
+cases.
+
+## Mean
+
+Per user: average a numeric property across their events.
+
+```bash
+shipeasy metrics create avg_order_value \
+  --type mean \
+  --event purchase \
+  --property revenueCents
+```
+
+The trap with `mean` is **zero-handling**: should users with zero matching events count as `0`,
+or be dropped from the denominator entirely?
+
+- `--zero-handling include` (default) — non-purchasers contribute `0`. The metric answers "average
+  revenue per _exposed user_."
+- `--zero-handling drop` — non-purchasers don't contribute. The metric answers "average revenue
+  per _purchaser_."
+
+The two answer different questions. The first is what most business stakeholders mean. The second
+is what a product manager often asks for. Pick deliberately:
+
+```bash
+# Average across everyone exposed (the business question)
+shipeasy metrics create revenue_per_exposed_user \
+  --type mean --event purchase --property revenueCents \
+  --zero-handling include
+
+# Average among buyers only
+shipeasy metrics create average_basket_size \
+  --type mean --event purchase --property revenueCents \
+  --zero-handling drop
+```
+
+## Ratio
+
+Per user: numerator-event count divided by denominator-event count.
+
+```bash
+shipeasy metrics create click_through_rate \
+  --type ratio \
+  --numerator-event click \
+  --denominator-event impression
+```
+
+Use ratios for inherently-ratio questions: clicks per impression, conversions per visit, errors
+per request. **Don't** compute the ratio yourself and store it as a `mean` — the math is
+different.
+
+Why it matters: the naive ratio-of-means (mean of numerators divided by mean of denominators)
+under-states the variance. Shipeasy uses the **delta method** to compute the variance correctly
+— which means the p-values and confidence intervals you read on the dashboard are honest. If you
+had computed `clicks/impressions` yourself per user, then taken the mean, you'd be calculating
+the wrong thing.
+
+The dashboard shows numerator and denominator means alongside the ratio so the math is auditable.
+
+## Outlier handling
+
+Sums and means need outlier handling. Two options:
+
+**Winsorise** at a percentile. Anything above is clamped to the value at that percentile.
+
+```bash
+shipeasy metrics create revenue_per_user \
+  --type sum --event purchase --property revenueCents \
+  --winsorise p99
+```
+
+`p99` (default), `p99.5`, `p99.9`, `p95`. `p99` is rarely wrong: trims the rarest 1% to the value
+of the 99th percentile, keeps the body of the distribution intact.
+
+**Cap** at an absolute value:
+
+```bash
+shipeasy metrics create revenue_per_user \
+  --type sum --event purchase --property revenueCents \
+  --cap 100000   # $1,000 in cents
+```
+
+Use when there's a domain-specific ceiling — e.g. session length can't reasonably exceed 4 hours,
+revenue per user can't exceed your enterprise plan price.
+
+<Callout type="info" title="Symmetric across arms">
+  The cutoff is computed from the **combined** control + treatment sample, then applied to both
+  arms. This prevents the bug where one variant accidentally has its outliers preserved and looks
+  artificially better. You can verify in the dashboard: the "applied threshold" row shows the same
+  value across arms.
+</Callout>
+
+The trade-off: clamping reduces variance (good — narrower CI, easier to detect lift) at the cost
+of slightly understating the true effect when the variant genuinely moves the tail (rare).
+
+## Filters
+
+You can tighten what counts toward a metric with **filters**. Same shape as gate targeting rules,
+applied to the event's `properties` payload before aggregation:
+
+```bash
+shipeasy metrics create paid_organic_purchase \
+  --type conversion --event purchase \
+  --filter '[{"attr":"channel","op":"eq","value":"organic"}]'
+```
+
+Now only `purchase` events with `channel == "organic"` count. Multiple predicates are ANDed.
+
+Common shapes:
+
+```bash
+# Web only (exclude mobile app purchases)
+--filter '[{"attr":"platform","op":"eq","value":"web"}]'
+
+# Above a price floor (exclude $0 promo redemptions)
+--filter '[{"attr":"revenueCents","op":"gte","value":1000}]'
+
+# Geographic slice
+--filter '[{"attr":"country","op":"in","value":["US","CA","GB"]}]'
+
+# Multiple — ANDed
+--filter '[
+  {"attr":"platform","op":"eq","value":"web"},
+  {"attr":"country","op":"in","value":["US","CA"]}
+]'
+```
+
+Filters run cheaply during aggregation. You can have many metrics that share the same underlying
+event, each filtering differently — no need to log the same purchase twice with different names.
+
+## Direction
+
+For every metric, pick which direction is "good":
+
+```bash
+shipeasy metrics create error_rate \
+  --type conversion --event client_error \
+  --direction down
+
+shipeasy metrics create purchase_conversion \
+  --type conversion --event purchase \
+  --direction up
+```
+
+`--direction` is informational for primary metrics (colour-codes the lift), and **functional** for
+guardrails — a guardrail with `--direction down` flags as failed when it moves up. Pick the right
+direction; the dashboard's red/green and the alerting both depend on it.
+
+## When you don't have the event yet
+
+A metric definition can be created before any matching events exist. The pipeline picks them up
+once they start arriving. Use this to define metrics for an upcoming experiment ahead of time,
+then deploy the `track()` call as part of the same release.
+
+What you _can't_ do: create a metric, attach it to a running experiment, and have it back-fill
+against events from before the experiment started. Analysis runs forward from attachment time.
+
+## Inspecting a metric
+
+```bash
+# What does the metric definition look like?
+shipeasy metrics get purchase_conversion
+
+# What's the historical baseline distribution? (Powers the MDE calculator.)
+shipeasy metrics baseline purchase_conversion --window 30d
+
+# Dry-run aggregation against a recent sample
+shipeasy metrics preview purchase_conversion --sample 1000
+```
+
+The `baseline` command is the one to run before launching an experiment — it tells you the
+metric's variance, which feeds the power calculation directly.
+
+<DocNav
+  prev={{ href: "/flags-experiments/metrics/quickstart", title: "Quickstart" }}
+  next={{ href: "/flags-experiments/metrics/guardrails", title: "Guardrails" }}
+/>

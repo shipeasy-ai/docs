@@ -1,0 +1,149 @@
+---
+title: Overrides
+description: Force a gate on or off for specific user IDs — for QA, dogfood, demos, and customer-specific repros. Bypasses targeting and rollout.
+---
+
+<DocMeta
+  status="Production ready"
+  read="4 min read"
+  updated="May 15, 2026"
+  works="Server SDK · Browser SDK · CLI"
+/>
+
+An **override** is a per-user forced answer. It bypasses everything — targeting rules, rollout,
+killswitch, even `enabled = false`. Use it for the four cases below; don't reach for it as a
+general-purpose targeting tool.
+
+## When to use overrides
+
+- **QA accounts.** Force the new path on for QA users regardless of rollout state. You can fully
+  test a feature at 0% rollout because the QA accounts are always-on.
+- **Internal dogfood.** Your team always sees the latest version of every gate, ahead of customers.
+- **Customer demos.** A specific demo account sees the brand-new feature for the screenshare,
+  while everyone else stays on the stable path.
+- **Bug reproduction.** A single customer reports a bug behind a feature flag. Override them to
+  `on` so you can reproduce against their account without ramping the gate up.
+
+## When _not_ to use overrides
+
+If you're adding more than ~50 user IDs, you want a **targeting rule** on an attribute, not a
+literal list of IDs. Examples of things that should be rules, not overrides:
+
+- "All users on the `beta` plan." → Targeting rule on `plan eq "beta"`.
+- "All users from a specific company." → Targeting rule on `email contains "@company.com"`.
+- "All users in a country." → Targeting rule on `country in [...]`.
+
+Overrides are a row-per-user lookup in KV; rules are O(1) regardless of population size. Rules
+scale; overrides don't.
+
+## Adding an override
+
+In the dashboard: expand the gate, scroll to **Overrides**, add user IDs under **Always on** or
+**Always off**.
+
+From the CLI:
+
+```bash
+shipeasy flags override add checkout-v2 \
+  --user u_qa1 --user u_qa2 --user u_demo \
+  --decision true
+
+shipeasy flags override add checkout-v2 \
+  --user u_legacy_partner \
+  --decision false
+```
+
+Removing:
+
+```bash
+shipeasy flags override remove checkout-v2 --user u_qa1
+```
+
+## What overrides bypass
+
+For a call `gate(name, ctx)` where `ctx.userId` is in the overrides list:
+
+```
+1. killswitch ON                  → STILL returns override decision   ← bypassed
+2. enabled OFF                    → STILL returns override decision   ← bypassed
+3. userId ∈ overrides[true]       → true                                ← here
+4. userId ∈ overrides[false]      → false                               ← here
+5. rules                          → not evaluated
+6. rollout                        → not evaluated
+```
+
+The override sits at step 3–4 in [evaluation order](/flags-experiments/gates/rollouts#bucketing-key)
+and short-circuits everything below. Crucially, it also bypasses the killswitch — which is what
+you want for QA (you can still test a killed feature) but is dangerous for production users.
+
+<Callout type="warn" title="Production accounts in always-on overrides">
+  Don't override a real customer to `always_on` for a feature that isn't ready. The override ignores
+  the killswitch — if you hit "kill" during an incident, the overridden customer still sees the
+  broken path. Use rules with a `customer_email` predicate instead.
+</Callout>
+
+## Override scope
+
+- Overrides are keyed on **`ctx.userId`** only — literal string equality, no operators.
+- No attribute matching. `plan = pro` cannot be expressed as an override; that's a rule.
+- The list is scoped per-gate. A user being on the `always_on` list for `gate-a` says nothing
+  about `gate-b`.
+
+## Dashboard JSON shape
+
+The override block is part of the gate's stored config:
+
+```json
+{
+  "name": "checkout-v2",
+  "enabled": true,
+  "killswitch": false,
+  "rolloutPct": 2500,
+  "overrides": {
+    "always_on": ["u_qa1", "u_qa2", "u_demo_alpha"],
+    "always_off": ["u_legacy_partner_b"]
+  }
+}
+```
+
+You can `GET` and `PATCH` this shape directly via the admin API.
+
+## Limits
+
+| Plan       | Overrides per gate |
+| ---------- | ------------------ |
+| Free       | 100                |
+| Pro        | 10,000             |
+| Enterprise | Unlimited          |
+
+If you're approaching the limit, you're almost certainly using overrides where you should be using
+rules. Audit the list — most overrides are old QA accounts that should have been removed when the
+gate was launched.
+
+## Cleaning up after launch
+
+Once a gate is at 100% and the feature is fully shipped, the override list is dead weight. Two
+common patterns:
+
+1. **Delete the gate.** Once you remove the conditional from code and clean up the dead path,
+   delete the gate itself. The override list goes with it.
+2. **Clear overrides.** Keep the gate (if you might want to reuse the name for a follow-up
+   feature) but clear out the override list:
+   ```bash
+   shipeasy flags override clear checkout-v2
+   ```
+
+The dashboard's **Cleanup** view surfaces gates with stale overrides (overrides on a gate that's
+been at 100% for >30 days) so you don't have to remember.
+
+## Audit
+
+Every override change is recorded — who added it, who removed it, when, from what surface
+(dashboard, CLI, API). Find the audit trail under **Gate → History**. Particularly useful when a
+customer reports a feature they're "always seeing" — the history tells you whether they were
+overridden, by whom, and when.
+
+<DocNav
+  prev={{ href: "/flags-experiments/gates/rollouts", title: "Rollouts & bucketing" }}
+  next={{ href: "/flags-experiments/killswitches", title: "Killswitches" }}
+/>

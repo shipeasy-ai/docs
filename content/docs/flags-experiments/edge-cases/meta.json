@@ -1,0 +1,19 @@
+{
+  "title": "Edge cases",
+  "defaultOpen": false,
+  "pages": [
+    "index",
+    "[Sticky bucketing](/flags-experiments/edge-cases#sticky-bucketing)",
+    "[Holdouts overlap experiments](/flags-experiments/edge-cases#holdout-overlap)",
+    "[Sample ratio mismatch](/flags-experiments/edge-cases#srm)",
+    "[Write propagation latency](/flags-experiments/edge-cases#kv-propagation)",
+    "[SSR/CSR flicker](/flags-experiments/edge-cases#ssr-flicker)",
+    "[Fail-safe defaults](/flags-experiments/edge-cases#fallback)",
+    "[Gate sprawl](/flags-experiments/edge-cases#gate-sprawl)",
+    "[Config schema drift](/flags-experiments/edge-cases#config-schema-drift)",
+    "[Killswitch decay](/flags-experiments/edge-cases#killswitch-decay)",
+    "[Peeking & sequential](/flags-experiments/edge-cases#peeking)",
+    "[Low-traffic experiments](/flags-experiments/edge-cases#low-traffic)",
+    "[Cross-env flag drift](/flags-experiments/edge-cases#env-drift)"
+  ]
+}

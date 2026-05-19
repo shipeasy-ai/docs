@@ -199,7 +199,7 @@ export function QuickstartStep({
         {numStr} · {label}
       </span>
       <h4>{title}</h4>
-      {children ? <p>{children}</p> : null}
+      {children ? <div className="body">{children}</div> : null}
       {cmd ? (
         <div className="se-qs-snip">
           <span className="p">$</span>
@@ -312,7 +312,7 @@ export function Tile({
         {title}
         <span className="arrow">→</span>
       </h4>
-      {children ? <p>{children}</p> : null}
+      {children ? <div className="body">{children}</div> : null}
       {meta ? <div className="meta">{meta}</div> : null}
     </a>
   );

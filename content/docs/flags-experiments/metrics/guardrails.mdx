@@ -1,0 +1,164 @@
+---
+title: Guardrails
+description: Primary vs guardrail metrics — the role each plays, how the dashboard treats them, and the metrics every experiment should guard.
+---
+
+<DocMeta status="Production ready" read="5 min read" updated="May 15, 2026" works="Server SDK" />
+
+When you attach a metric to an experiment, you assign it a **role**: primary or guardrail. The
+role determines how the dashboard reads the result, what alerts fire, and what counts as a win.
+This is the single most important decision in experiment design — pick well and most of your
+experimentation problems go away on their own.
+
+## The two roles
+
+- **Primary.** The metric the experiment is judged by. "Did the change work?" is answered by
+  reading the primary metric's lift, CI, and p-value. Pick one. Two is fine if they're tightly
+  related. Five primaries means you haven't decided which question this experiment answers.
+
+- **Guardrail.** A metric that must _not_ regress. The experiment's primary metric might win and
+  ship; the guardrails are what stops a "win" from secretly breaking a core surface. The
+  dashboard flags any guardrail that moves significantly in the wrong direction, regardless of
+  what the primary did.
+
+The semantic difference: a win on the primary is the _goal_; a regression on a guardrail is a
+_veto_.
+
+## A worked example
+
+A checkout experiment looking to improve conversion:
+
+| Role      | Metric                | Direction | Why                                                   |
+| --------- | --------------------- | --------- | ----------------------------------------------------- |
+| Primary   | `purchase_conversion` | up        | The thing we're trying to move.                       |
+| Guardrail | `error_rate`          | down      | New flow shouldn't introduce errors.                  |
+| Guardrail | `p95_page_load_ms`    | down      | Don't tank perf in pursuit of conversion.             |
+| Guardrail | `support_ticket_rate` | down      | Don't break it so subtly we only hear about it later. |
+| Guardrail | `avg_basket_value`    | up        | Don't lift conversion by selling cheaper things.      |
+
+The primary answers "did checkout v2 lift conversion?" Each guardrail answers a different "but
+not at the cost of..." question. The fifth one — basket value — is the subtle one: a winning
+experiment that lifts conversion by 20% but cuts basket size by 25% is a _loss_ in revenue per
+user. Always guard against the metric your primary could secretly cannibalise.
+
+## Picking guardrails
+
+The default guardrails for almost every product experiment:
+
+1. **Error rate.** Some flavour of `error_rate`, `client_error_conversion`, or
+   `api_4xx_rate`. The new path could be subtly broken.
+2. **Performance.** A `p95_page_load_ms` or `time_to_interactive_ms`. A heavier component, a
+   poorly-cached API, or a re-renders-on-everything React tree could quietly degrade UX.
+3. **The metric your primary could cannibalise.** If your primary is `clicks`, guard against
+   `bounce_rate`. If your primary is `signup`, guard against `signup_quality` (does the user
+   actually use the product?).
+
+Optional but high-value when applicable:
+
+4. **Engagement, broadly.** `session_duration`, `sessions_per_user`, `dau`. A primary win that
+   cuts overall engagement is usually a primary loss in disguise.
+5. **Revenue.** If conversion isn't your primary, `revenue_per_user` is often the right
+   secondary guardrail — your "did we accidentally lose money" check.
+
+## What the dashboard does with each role
+
+For the **primary**, the dashboard:
+
+- Shows the lift, CI, and p-value at the top of the experiment page.
+- Indicates "ship-ready" once the lift reaches significance at your pre-set α (default 0.05) and
+  the MDE constraint is met.
+- Triggers the "experiment won" notification when the primary's lift is significant.
+
+For each **guardrail**, the dashboard:
+
+- Shows the lift, CI, and p-value in a separate section.
+- Flags the guardrail as **failed** when its lift is statistically significant _in the bad
+  direction_ (p < 0.05, moving against `--direction`). A failed guardrail blocks the "ship-ready"
+  badge even if the primary won.
+- Triggers a guardrail-alert webhook on transition into the failed state.
+
+So: primary green + guardrails not red = ship.
+
+## Configuring roles
+
+```bash
+# Attach as primary
+shipeasy experiments metric add paywall-v2 \
+  purchase_conversion --role primary
+
+# Attach as guardrail
+shipeasy experiments metric add paywall-v2 \
+  p95_page_load_ms --role guardrail
+shipeasy experiments metric add paywall-v2 \
+  client_error_rate --role guardrail
+```
+
+Or in the dashboard: **Experiment → Metrics → Add metric → Role: Primary | Guardrail**.
+
+You can change a metric's role on a running experiment, but think hard before doing so. If the
+primary is missing the lift target and you start promoting "secondary" metrics to primary, you're
+running into [HARKing](#harking) territory.
+
+## Asymmetric guardrails
+
+Sometimes you want a guardrail that only fires on a _large_ regression, not a small one — e.g.
+you accept that a 1% perf hit might be tolerable for a winning experiment, but a 10% one is not.
+
+```bash
+shipeasy experiments metric add paywall-v2 \
+  p95_page_load_ms \
+  --role guardrail \
+  --max-regression-pct 5
+```
+
+`--max-regression-pct 5` means: only flag as failed if the lift is more than 5% in the bad
+direction. Smaller regressions are surfaced (with a yellow chip) but don't block ship.
+
+This is the right knob for performance metrics, where some regression is expected and the
+question is "how much is too much."
+
+## HARKing — Hypothesising After Results are Known [#harking]
+
+The temptation: your primary didn't win, but if you slice the results by country, _one_ slice did.
+Don't ship based on that slice.
+
+With 10 segments and α = 0.05, you expect 1 false positive by chance alone. Combing through
+segments until you find one that looks significant is exactly that — finding noise, not signal.
+
+Two practices that prevent it:
+
+1. **Pre-register the segments you care about** before launching. If you genuinely expect the
+   effect to be different in EU vs US, declare that in the experiment's hypothesis up front. The
+   dashboard treats pre-registered segments differently from exploratory ones.
+2. **Treat exploratory segments as hypotheses for next time.** "Interesting, the lift was bigger
+   in mobile" → next experiment targets mobile explicitly. Not "ship based on the mobile slice."
+
+The Shipeasy dashboard labels segments as **declared** vs **exploratory** in the segment view.
+Declared segments are shown without a multiple-testing correction; exploratory segments are shown
+with a Benjamini-Hochberg adjustment. This is so you can look without lying to yourself.
+
+## Direction matters for the alert
+
+Guardrail alerts fire when the lift is significant _against_ the declared direction. So
+`--direction down` on a perf metric means "bad direction is up; alert when significantly up."
+
+Getting the direction wrong reverses the alert. Read every guardrail's direction out loud
+("lower is better for `p95_page_load_ms`, so direction is down") before saving.
+
+## When a guardrail fires
+
+The dashboard shows a red chip on the metric row. Three responses, in order:
+
+1. **Check if it's a real regression or a fluke.** Hover the metric for the CI. If the CI is
+   narrow and excludes zero in the bad direction, it's real.
+2. **If it's real, kill the experiment.** The killswitch on the experiment's universe sets all
+   users back to control instantly. Don't keep running while you investigate — the regression
+   compounds.
+3. **Investigate before re-launching.** A failed guardrail usually points at a specific bug — a
+   missing index in the new query path, a heavy component pulled in by default, a code path that
+   throws under a specific input. Fix the cause, not the test.
+
+<DocNav
+  prev={{ href: "/flags-experiments/metrics/aggregations", title: "Aggregation types" }}
+  next={{ href: "/flags-experiments/metrics/power", title: "Power & sample size" }}
+/>

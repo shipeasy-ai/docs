@@ -1,0 +1,19 @@
+{
+  "title": "Case studies",
+  "defaultOpen": false,
+  "pages": [
+    "index",
+    "[Redesigned checkout](/flags-experiments/case-studies#new-checkout)",
+    "[Homepage hero copy](/flags-experiments/case-studies#hero-copy)",
+    "[Pause outbound emails](/flags-experiments/case-studies#kill-emails)",
+    "[Paywall A/B](/flags-experiments/case-studies#paywall)",
+    "[Beta allow-list](/flags-experiments/case-studies#beta-feature)",
+    "[Search ranking weights](/flags-experiments/case-studies#search-relevance)",
+    "[Progressive region rollout](/flags-experiments/case-studies#progressive-region-rollout)",
+    "[Block stale clients](/flags-experiments/case-studies#sdk-version-gate)",
+    "[Price changes w/o deploy](/flags-experiments/case-studies#pricing-config)",
+    "[Typed announcement banner](/flags-experiments/case-studies#typed-banner)",
+    "[Quarterly holdout](/flags-experiments/case-studies#quarterly-holdout)",
+    "[CTR ratio metric](/flags-experiments/case-studies#ctr-ratio-metric)"
+  ]
+}

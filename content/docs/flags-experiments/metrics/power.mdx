@@ -1,0 +1,210 @@
+---
+title: Power & sample size
+description: Pre-flight check before launching an experiment — how many users do you need, what lift can you detect, and how long will it take.
+---
+
+<DocMeta status="Production ready" read="7 min read" updated="May 15, 2026" works="Server SDK" />
+
+You can't detect a 1% conversion lift with 100 users. The math doesn't care that you really
+want to — at low sample sizes, the noise is bigger than the signal you're hoping to find. This
+page is the pre-flight checklist: how many users you need, what lift you can realistically
+detect, and how long the experiment will take.
+
+## The two questions
+
+Power analysis answers either of:
+
+1. **"Given a lift I want to detect, how many users do I need?"** — sizing the experiment.
+2. **"Given the traffic I have, what's the smallest lift I can reliably detect?"** — bounding
+   what the experiment can tell you.
+
+Both use the same math; they're rearrangements of the formula.
+
+```
+n  ≈  16 · σ² / Δ²       (per arm, for an absolute lift Δ)
+```
+
+- `σ²` — variance of the metric in the control distribution.
+- `Δ` — the absolute lift you want to detect (`treatment_mean - control_mean`).
+- `16` — comes from α = 0.05 (two-sided) + 80% power. Roughly. The constant changes for other
+  values.
+
+For binary conversion metrics, `σ² = p(1-p)` where `p` is the baseline rate. For counts, sums,
+and means, the variance is whatever your historical data says — Shipeasy precomputes it.
+
+## Sample size rules of thumb
+
+For conversion metrics at 80% power, α = 0.05, two-sided, detecting a relative lift:
+
+| Baseline conversion | Detectable lift @ 80% power | Users per arm | Notes                                |
+| ------------------- | --------------------------- | ------------- | ------------------------------------ |
+| 1%                  | +10% relative               | ~155,000      | Low baselines need _a lot_ of users. |
+| 1%                  | +20% relative               | ~39,000       |                                      |
+| 5%                  | +5% relative                | ~25,000       |                                      |
+| 5%                  | +10% relative               | ~6,500        |                                      |
+| 10%                 | +5% relative                | ~13,000       |                                      |
+| 10%                 | +10% relative               | ~3,400        |                                      |
+| 20%                 | +5% relative                | ~5,500        |                                      |
+| 20%                 | +10% relative               | ~1,400        |                                      |
+| 50%                 | +5% relative                | ~1,600        |                                      |
+| 50%                 | +10% relative               | ~400          |                                      |
+
+Two patterns to internalise:
+
+1. **Lower baselines need more users.** A 1% conversion rate is hard to move detectably — you
+   need 25× the users compared to a 20% baseline for the same relative lift.
+2. **Smaller lifts need quadratically more users.** Halving the lift you want to detect requires
+   roughly 4× the users.
+
+For sums and means, the sample sizes are typically larger (variance is higher) and depend on the
+specific metric. Use the Shipeasy power calculator (below) for those.
+
+## The Shipeasy power calculator
+
+Every experiment page has a power-analysis tab that does the math against your _actual_ metric
+distribution:
+
+```bash
+shipeasy experiments power paywall-v2 \
+  --metric purchase_conversion \
+  --min-detectable-effect 0.05    # detect a 5% relative lift
+```
+
+Output:
+
+```
+metric:            purchase_conversion
+baseline mean:     0.048
+baseline variance: 0.0457
+mde (rel):         5%
+mde (abs):         +0.0024 (4.8% → 5.04%)
+α:                 0.05 (two-sided)
+power:             0.80
+
+required n / arm:   60,420
+current daily traffic / arm:  3,200
+expected duration:  19 days
+
+→  reduce MDE to 8% rel  →  duration: 7 days
+→  expand traffic 2x     →  duration: 10 days
+```
+
+The "expected duration" assumes traffic stays flat. The platform uses your last 28 days of
+exposure rate to estimate this.
+
+## MDE — minimum detectable effect
+
+If you don't get to set the sample size (you have what you have), the inverse question is: given
+the users I expect, what's the smallest lift I could _reliably_ detect?
+
+```
+MDE  ≈  4 · σ / √n        (absolute MDE)
+```
+
+The Shipeasy dashboard surfaces the **current MDE** alongside every running experiment, refreshed
+daily as more data lands. Two scenarios:
+
+- **Your observed lift > MDE, p < 0.05** — the experiment is powered. Decide based on the lift.
+- **Your observed lift < MDE, p > 0.05** — the experiment is underpowered. You **cannot conclude
+  the lift is zero.** It might be zero, or it might be smaller than MDE; you can't tell. Don't
+  call this a "neutral result and ship" — call it inconclusive.
+
+The dashboard explicitly tags an underpowered null result as `insufficient_power` to prevent the
+misreading.
+
+## What to do when power is bad
+
+Three levers:
+
+### 1. Accept a larger MDE
+
+You don't need to detect a 1% lift. A new checkout flow worth shipping should probably move
+conversion by at least 3-5% — anything smaller is below the noise floor of seasonality and not
+worth the integration cost. Bumping the target MDE up brings sample size down rapidly.
+
+### 2. Run longer
+
+The cheapest lever. A 19-day experiment becomes a 38-day experiment with double the sample. For
+seasonal effects, run at least one full cycle (a week for weekly seasonality, a month for
+monthly billing cycles).
+
+### 3. Expand traffic
+
+If the experiment is gated to one country or one cohort, expanding to more reduces duration
+proportionally. The trade-off: you might be targeting that cohort for a reason (e.g. only certain
+users will see the feature). Don't expand for power if it dilutes the question you're answering.
+
+## Variance reduction
+
+If you have a metric that's already correlated with the metric you're trying to lift, you can
+sometimes reduce variance via stratification or CUPED. Shipeasy supports the latter:
+
+```bash
+shipeasy metrics create purchase_conversion \
+  --type conversion --event purchase \
+  --cuped-covariate previous_28d_purchase_rate
+```
+
+CUPED ("Controlled experiments Using Pre-Experiment Data") subtracts predictable variance using
+the pre-exposure value of a correlated covariate. For conversion-type metrics with a
+moderately-correlated covariate, expect 10–30% variance reduction — equivalent to 10–30% more
+users.
+
+The covariate must be defined entirely _before_ exposure. Using a post-exposure feature would
+introduce treatment-induced bias, which is worse than the variance you saved.
+
+## Peeking and sequential testing
+
+The classical fixed-horizon t-test assumes you collect a pre-decided sample size and _then_ check
+the p-value. Peeking — checking the p-value daily and stopping the moment it hits 0.05 — inflates
+the false-positive rate dramatically (real false positive ≈ 0.30 with daily peeking on a 30-day
+experiment).
+
+Two ways to handle this honestly:
+
+1. **Pre-commit and don't peek.** Set the duration based on your power calculation, run it,
+   read the result. The dashboard's "ship-ready" badge only goes green at the planned end if
+   you've set a duration.
+
+2. **Use sequential testing.** Shipeasy supports the **mSPRT** sequential test, which gives you
+   valid p-values _at any time_, including continuous peeking. Enable per experiment:
+
+   ```bash
+   shipeasy experiments update paywall-v2 --analysis-mode sequential
+   ```
+
+   The trade-off: sequential tests are less powerful at the planned horizon than fixed-horizon
+   tests. If you don't need to peek, fixed-horizon is more efficient.
+
+## Stopping early — when to do it
+
+Even with sequential testing, _stopping for a win_ is asymmetric: you stop early when treatment
+wins, but you can't stop early for "definitely no effect" the same way. Two legitimate cases for
+early stopping:
+
+- **Safety stop on a guardrail regression.** Always justified. Kill the experiment immediately.
+- **Sequential analysis says ship.** mSPRT crossed the threshold. Decide deliberately —
+  particularly if the effect size is large, the practical move is sometimes to keep running
+  briefly to tighten the CI for the post-mortem.
+
+Stopping early because "we already know it's going to win" is the same as peeking. Don't.
+
+## Before you launch, run this checklist
+
+1. **Define the primary metric.** One. Two if tightly related.
+2. **Define guardrails.** At least error rate and performance. See
+   [Guardrails](/flags-experiments/metrics/guardrails).
+3. **Compute MDE.** `shipeasy experiments power <name> --metric <primary>`.
+4. **Decide duration.** Read the "expected duration" output, round up to the nearest whole week.
+5. **Decide α and analysis mode.** 0.05 fixed-horizon is the default. Switch to sequential only
+   if you genuinely need to peek.
+6. **Pre-register segments.** If you care about EU vs US, declare it in the experiment doc.
+
+If steps 3-4 say "240 days" — pick a different experiment. Long-tail experiments aren't worth
+running; either pick a higher-baseline metric, target a higher-traffic cohort, or commit to a
+hypothesis bigger than the noise floor.
+
+<DocNav
+  prev={{ href: "/flags-experiments/metrics/guardrails", title: "Guardrails" }}
+  next={{ href: "/flags-experiments/experiments", title: "Experiments" }}
+/>

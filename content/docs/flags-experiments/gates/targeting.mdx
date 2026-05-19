@@ -1,0 +1,215 @@
+---
+title: Targeting rules
+description: Decide who is eligible for a gate. Predicates against user, account, request, or any custom attribute — ANDed, evaluated locally, zero network cost.
+---
+
+<DocMeta
+  status="Production ready"
+  read="7 min read"
+  updated="May 15, 2026"
+  works="Server SDK · Browser SDK"
+/>
+
+A **targeting rule** narrows the population that can match a gate. Without rules, the rollout
+percentage applies to _everyone_ — every user who hits the SDK is a candidate. With rules, only the
+users matching every predicate are candidates; the rollout then samples within that filtered set.
+
+Rules let you say things like "100% of `plan=pro` users in `country IN ['US','CA']`" without ever
+touching code. The predicates evaluate against the `ctx` object you pass to `gate()`.
+
+## The shape
+
+A rule is a list of predicates:
+
+```ts
+{ attr: "plan",    op: "eq",  value: "pro" }
+{ attr: "country", op: "in",  value: ["US", "CA"] }
+{ attr: "signup",  op: "gte", value: "2025-01-01" }
+```
+
+Predicates are ANDed. To get `true` from the gate, a user must match **every** predicate **and**
+fall inside the rollout percentage.
+
+## Operators
+
+| Op           | Type             | Meaning                            | Example                                |
+| ------------ | ---------------- | ---------------------------------- | -------------------------------------- |
+| `eq`         | any              | Exact match                        | `plan eq "pro"`                        |
+| `neq`        | any              | Negation of `eq`                   | `plan neq "free"`                      |
+| `in`         | array            | Value is one of                    | `country in ["US","CA","GB"]`          |
+| `nin`        | array            | Value is none of                   | `region nin ["EU","CN"]`               |
+| `gt` / `gte` | number, ISO date | Greater than (or equal)            | `age gte 18`                           |
+| `lt` / `lte` | number, ISO date | Less than (or equal)               | `signup lte "2024-12-31"`              |
+| `contains`   | string           | Substring match (case-insensitive) | `email contains "@bigco.com"`          |
+| `startsWith` | string           | Prefix match                       | `path startsWith "/admin"`             |
+| `regex`      | string           | Regex match (RE2 syntax, anchored) | `email regex "^[a-z]+@example\\.com$"` |
+| `semverGte`  | semver string    | Semantic-version comparison        | `appVersion semverGte "2.4.0"`         |
+| `exists`     | n/a              | Attribute is present + non-null    | `experimentToken exists`               |
+
+`regex` is RE2, so no backreferences or lookarounds — but it's safe (no catastrophic backtracking).
+The pattern is anchored: use `.*` explicitly at start/end if you want partial matches.
+
+## Passing context to `gate()`
+
+The `ctx` object you pass at the call site is what gets matched against:
+
+```ts
+await gate("checkout-v2", {
+  userId: session.user.id,
+  plan: session.account.plan,
+  country: request.geo.country,
+  appVersion: request.headers.get("x-app-version"),
+  email: session.user.email,
+});
+```
+
+Three things to internalise:
+
+1. **`userId` is special — it's the bucketing key.** Required for sticky bucketing. The other
+   attributes are matched against rules.
+2. **Attributes are matched by name.** A rule against `plan` looks for `ctx.plan`. If you pass
+   `ctx.userPlan`, the rule misses and the user falls out of the eligible set.
+3. **Missing attributes never match.** A rule `country eq "US"` against a `ctx` with no `country`
+   key returns `false` for the predicate, dropping the user from eligibility. Pass `country: null`
+   and it still won't match — `eq` requires non-null equality.
+
+## Defining rules
+
+In the dashboard, expand a gate, add rules under **Targeting**. Each row is one predicate; rows
+are ANDed. From the CLI:
+
+```bash
+shipeasy flags rule add checkout-v2 \
+  --attr plan --op eq --value pro
+
+shipeasy flags rule add checkout-v2 \
+  --attr country --op in --value '["US","CA"]'
+```
+
+Or via the API:
+
+```bash
+curl -X POST https://api.shipeasy.ai/v1/gates/checkout-v2/rules \
+  -H "Authorization: Bearer $SHIPEASY_ADMIN_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "rules": [
+      { "attr": "plan", "op": "eq", "value": "pro" },
+      { "attr": "country", "op": "in", "value": ["US","CA"] }
+    ]
+  }'
+```
+
+## Common shapes
+
+### Beta allow-list
+
+A small set of accounts get the feature, no one else. Rule on an account attribute, rollout 100%
+of the matched set:
+
+```
+plan eq "beta-tier"   AND   rollout 100%
+```
+
+Adding an account to the beta becomes a database update on your side, not a config push on ours.
+
+### Regional progressive rollout
+
+Ramp safely by geography. Start with countries where you control the integrations end-to-end:
+
+```
+country in ["US","CA"]    AND   rollout 5%   →   25%   →   100%
+```
+
+Then expand the country set, not the percentage:
+
+```
+country in ["US","CA","GB","DE"]   AND   rollout 100%
+```
+
+### Internal-only feature
+
+Test in production with employees first. Use an attribute that's hard to spoof from outside your
+auth system:
+
+```
+email contains "@yourcompany.com"   AND   rollout 100%
+```
+
+Don't use `country eq "internal-test"` or anything fake — anyone can spoof their request headers.
+Use an attribute your auth system signs.
+
+### Power-user soft launch
+
+Roll out to high-engagement users first because they're more forgiving of UI changes:
+
+```
+sessionsPerWeek gte 10   AND   rollout 25%
+```
+
+This requires you to actually pass `sessionsPerWeek` in `ctx` — i.e. compute it server-side or
+pass it from your analytics layer.
+
+## Rule evaluation order
+
+For `gate(name, ctx)`, the SDK runs:
+
+```
+1. killswitch ON                                → false
+2. enabled OFF                                  → false
+3. ctx.userId ∈ overrides[true]                 → true
+4. ctx.userId ∈ overrides[false]                → false
+5. any rule predicate fails                     → false   ← rules
+6. hash(salt + bucketBy) % 10000 < rolloutPct   → true    ← rollout
+7. otherwise                                    → false
+```
+
+Rules run _before_ the rollout. "100% of `plan=pro`" means 100% of pro users — _not_ a global 100%
+bucket then filtered. If you want experiment-style sampling on top of targeting, set the rollout
+to the percentage you want _within the targeted set_.
+
+<Callout type="info" title="Rules apply per call, not per user">
+  The rule evaluates against the `ctx` you pass *at that call*. If a user's `plan` changes from
+  `free` to `pro`, the next gate call uses the new value. Sticky bucketing (point 6) is the only
+  thing held constant across calls — eligibility can change.
+</Callout>
+
+## Custom attributes
+
+You can pass anything into `ctx` — the SDK doesn't validate against a schema. Common patterns
+beyond user/account:
+
+```ts
+await gate("paywall-experiment", {
+  userId: user.id,
+  plan: account.plan, // identity
+  signupDays: daysSince(account.createdAt), // tenure
+  trialsUsed: account.trialsConsumed, // usage
+  cohort: account.cohortLabel, // bucketing tag
+  device: request.device.type, // request shape
+  feature: { betaTester: account.isBeta }, // nested
+});
+```
+
+For nested attributes, refer to them with dot paths in rules: `feature.betaTester eq true`.
+
+Keep `ctx` small. The SDK serialises it for sticky bucketing only when `bucketBy` references a
+nested path; everything else stays local. Still, payloads in the megabytes are wasteful — pass
+what your rules use, not your whole user record.
+
+## Debugging a rule
+
+When a user complains "I should be in this beta but I'm not," check four things in order:
+
+1. **Is the gate enabled?** `shipeasy flags get checkout-v2` shows `enabled` and `killswitch`.
+2. **Does the user match the rule?** `shipeasy flags eval checkout-v2 --ctx '{"userId":"u_4f2a","plan":"pro"}'`
+   returns the same answer the SDK does, with a breakdown.
+3. **Is there an override?** Overrides win over rules. Check **Gates → checkout-v2 → Overrides**.
+4. **Are you passing the attribute the rule expects?** A rule on `plan` won't match `ctx.userPlan`.
+
+The dashboard's **Evaluator** tab does the same as the CLI command, with a UI.
+
+<DocNav
+  prev={{ href: "/flags-experiments/gates/quickstart", title: "Quickstart" }}
+  next={{ href: "/flags-experiments/gates/rollouts", title: "Rollouts & bucketing" }}
+/>

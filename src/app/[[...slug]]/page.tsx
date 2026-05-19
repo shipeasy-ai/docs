@@ -69,12 +69,32 @@ const components = {
 
 export default async function Page({ params }: Props) {
   const { slug } = await params;
-  const page = getPage(slug ?? []) as Page | undefined;
+  const isRoot = !slug || slug.length === 0;
+
+  if (isRoot) {
+    const target = "/flags-experiments/";
+    return (
+      <>
+        <meta httpEquiv="refresh" content={`0; url=${target}`} />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.location.replace(${JSON.stringify(target)});`,
+          }}
+        />
+        <noscript>
+          <p>
+            Redirecting to <a href={target}>Flags &amp; Experiments</a>…
+          </p>
+        </noscript>
+      </>
+    );
+  }
+
+  const page = getPage(slug) as Page | undefined;
 
   if (!page) notFound();
 
   const MDX = page.data.body;
-  const isRoot = !slug || slug.length === 0;
   // API reference page replaces the default heading TOC with the nested
   // endpoint nav rendered by `<ApiSidebar />` (and shares state with the
   // body via `ApiProvider`).
@@ -101,15 +121,16 @@ export default async function Page({ params }: Props) {
   }
 
   return (
-    <DocsPage
-      toc={page.data.toc}
-      tableOfContent={isRoot ? { enabled: false } : undefined}
-    >
+    <DocsPage toc={page.data.toc} tableOfContent={isRoot ? { enabled: false } : undefined}>
       {inner}
     </DocsPage>
   );
 }
 
-export function generateStaticParams() {
-  return getPages().map((page) => ({ slug: page.slugs }));
+export function generateStaticParams(): Array<{ slug?: string[] }> {
+  const entries: Array<{ slug?: string[] }> = [{ slug: undefined }];
+  for (const page of getPages()) {
+    if (page.slugs.length > 0) entries.push({ slug: page.slugs });
+  }
+  return entries;
 }

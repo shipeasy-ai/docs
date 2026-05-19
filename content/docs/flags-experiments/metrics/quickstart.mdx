@@ -1,0 +1,175 @@
+---
+title: Quickstart
+description: Create your first metric, log the events it depends on, attach it to an experiment — five minutes, end to end.
+---
+
+<DocMeta status="Tutorial" read="5 min read" updated="May 15, 2026" works="Server SDK · CLI" />
+
+This walks you through the metric pipeline end to end: pick a metric, log the underlying events,
+create the metric definition, attach it to an experiment, and read the result. By the end you'll
+have a primary metric that drives a real ship/no-ship decision.
+
+<Quickstart title="The 5-minute path" time="define · log · attach · read">
+  <QuickstartStep
+    num={1}
+    label="DEFINE"
+    title="Create a conversion metric"
+    cmd="shipeasy metrics create purchase_conversion --type conversion --event purchase"
+  />
+  <QuickstartStep
+    num={2}
+    label="LOG"
+    title="Log the underlying event from your code"
+    cmd="await shipeasy.track('purchase', { revenueCents })"
+  />
+  <QuickstartStep
+    num={3}
+    label="ATTACH"
+    title="Attach to an experiment as the primary metric"
+    cmd="shipeasy experiments metric add paywall-v2 purchase_conversion --role primary"
+  />
+  <QuickstartStep
+    num={4}
+    label="READ"
+    title="Watch the lift + p-value on the dashboard"
+    cmd="open https://app.shipeasy.ai/experiments/paywall-v2"
+  />
+</Quickstart>
+
+## 1. Pick what to measure
+
+Before you create anything, answer one question: **what number tells you the experiment worked?**
+
+For a checkout-flow rewrite: probably `purchase_conversion` — did exposed users buy? For a new
+paywall: probably `subscription_conversion` — did they sign up? For a homepage redesign:
+typically `session_engagement` — did they click past the fold?
+
+Pick one. Two is fine if they're closely related. Five primary metrics means you haven't decided
+yet — go back and decide.
+
+The metric needs to be:
+
+- **Computable from events you already log** (or are willing to start logging).
+- **Specific to the change** — not "DAU," which moves for a hundred reasons. "Did _this exposed
+  user_ convert _after exposure_."
+- **Reasonable to detect** — a 1% conversion lift on 1,000 users a day will take a month. Check
+  the [power table](/flags-experiments/metrics/power#sample-size-rules-of-thumb) before
+  committing.
+
+## 2. Define the metric
+
+The simplest case — did event X happen for this user at least once?
+
+```bash
+shipeasy metrics create purchase_conversion \
+  --type conversion \
+  --event purchase
+```
+
+You now have a metric definition. It does nothing on its own; it tells the analysis pipeline how
+to aggregate the underlying events per user.
+
+For a revenue metric (sum the `revenueCents` property across `purchase` events per user):
+
+```bash
+shipeasy metrics create revenue_per_user \
+  --type sum \
+  --event purchase \
+  --property revenueCents
+```
+
+For more aggregation types, see [Aggregations](/flags-experiments/metrics/aggregations).
+
+## 3. Log the underlying events
+
+The metric is a _rule_ for aggregating events. The events themselves come from your code:
+
+```ts title="app/checkout/success/page.tsx"
+import { shipeasy } from "@shipeasy/sdk/server";
+
+export default async function CheckoutSuccess({ order }: { order: Order }) {
+  await shipeasy.track("purchase", {
+    userId: order.userId,
+    revenueCents: order.totalCents,
+    currency: order.currency,
+    channel: order.acquisitionChannel,
+  });
+  return <ThankYou />;
+}
+```
+
+A few rules that matter:
+
+- **`userId` is required for attribution.** Without it, the event can't be assigned to an
+  experiment exposure.
+- **Properties become filterable.** You can later add a metric like "paid purchases from organic
+  channel" by filtering on `channel`.
+- **`track()` is fire-and-forget.** It returns immediately; the event flushes asynchronously. Do
+  not await it on the hot path expecting a delivery guarantee — it's analytics, not transactional
+  state.
+
+Deploy this. Events start flowing. The metric definition will pick them up on the next analysis
+window (daily by default).
+
+## 4. Attach the metric to an experiment
+
+Now wire the metric into the experiment whose lift you want to read:
+
+```bash
+shipeasy experiments metric add paywall-v2 \
+  purchase_conversion --role primary
+
+# Add a guardrail too — don't tank page load while you're at it
+shipeasy metrics create p95_page_load_ms \
+  --type mean --event page_view --property loadTimeMs --direction down
+
+shipeasy experiments metric add paywall-v2 \
+  p95_page_load_ms --role guardrail
+```
+
+`--role primary` is the metric the experiment is judged by. `--role guardrail` is a metric that
+must _not_ regress, even if the primary moves. See [Guardrails](/flags-experiments/metrics/guardrails).
+
+## 5. Read the result
+
+The dashboard's experiment page shows lift, confidence interval, and p-value per metric, refreshed
+once per analysis window:
+
+```
+purchase_conversion        control   v1     lift     p       95% CI
+                            4.8%     5.2%   +8.3%    0.018   [1.2%, 15.6%]
+
+p95_page_load_ms (guard)   860 ms   862 ms  +0.2%    0.71    [-1.1%, 1.5%]
+```
+
+You read this as: paywall v1 lifted conversion by 8.3% (p=0.018, 95% CI excludes zero) and did
+not regress page-load time. Ship it.
+
+What if the result is flat or noisy? Two checks:
+
+1. **Are events actually landing?** Check the **Events** tab on the experiment — exposed users
+   should have non-trivial event counts. If the count is zero, your `track()` call isn't running
+   for the variant.
+2. **Is the experiment powered?** The dashboard shows MDE alongside the lift. If MDE is `±10%`
+   and the real lift is `+2%`, you can't tell — run longer or accept the null.
+
+See [Power & sample size](/flags-experiments/metrics/power).
+
+## Where to next
+
+<TileGrid>
+  <Tile href="/flags-experiments/metrics/aggregations" icon="∑" title="Aggregation types">
+    Conversion, count, sum, mean, ratio — what each does and when to pick it.
+  </Tile>
+  <Tile href="/flags-experiments/metrics/guardrails" icon="◐" title="Primary vs guardrail">
+    The two roles a metric can play in an experiment, and how the dashboard treats each.
+  </Tile>
+  <Tile href="/flags-experiments/metrics/power" icon="◯" title="Power & sample size">
+    Pre-flight check: do you have enough users to detect the lift you're hoping for?
+  </Tile>
+</TileGrid>
+
+<DocNav
+  prev={{ href: "/flags-experiments/metrics", title: "Metrics overview" }}
+  next={{ href: "/flags-experiments/metrics/aggregations", title: "Aggregation types" }}
+/>

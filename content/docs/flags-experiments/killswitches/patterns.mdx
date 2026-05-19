@@ -1,0 +1,149 @@
+---
+title: Patterns
+description: When a killswitch is the right answer — what to put behind one, fail-safe defaults, alerting, and the post-incident cleanup.
+---
+
+<DocMeta status="Production ready" read="6 min read" updated="May 15, 2026" works="Server SDK" />
+
+A killswitch is a flag with one job: be the lever you pull when something is on fire. That makes
+it the wrong tool for most things — most things don't need a 3am-grade pause button. This page is
+the decision guide: when to add one, what to put behind it, and how to keep them maintained.
+
+## What deserves a killswitch
+
+The rule of thumb: **if a junior engineer on-call would need to flip this in five seconds without
+reading the docs, it's a killswitch.** Otherwise it's a gate.
+
+Concrete examples that _do_ deserve one:
+
+- **Outbound side effects.** Email, SMS, push notifications, webhook fan-out. If your vendor goes
+  down or starts retrying spuriously, you want one switch to stop the volume.
+- **Paid third-party calls.** Anything that costs money per call — LLM inference, payment-provider
+  webhooks, fraud-scoring APIs. If their pricing goes weird or their service hangs, kill it.
+- **Write-heavy background workers.** Batch indexers, report generators, anything that mutates
+  data in bulk. If they're producing bad output, pausing is cheaper than rolling back.
+- **Risky new subsystems in the first month after launch.** A new payment integration, a new
+  recommender, a new auth path. You'll feel the absence of a killswitch in the first incident.
+
+Examples that should _not_ be killswitches:
+
+- **Feature rollouts.** That's what gates are for. A killswitch has no rollout percentage by
+  design — you can't ramp it.
+- **A/B variant selection.** Use an experiment. A killswitch can't express "50% see A, 50% see B."
+- **Permission checks.** Killswitches bypass on incident, which is the opposite of what you want
+  from an authz check.
+- **Anything you'd put behind a feature flag _and_ might never flip.** That's a config or a gate.
+
+## Fail-safe defaults
+
+Every killswitch has a "what happens when the SDK can't reach us" value. Pick it deliberately:
+
+| Killswitch                 | Default       | Reasoning                                                          |
+| -------------------------- | ------------- | ------------------------------------------------------------------ |
+| `emails-enabled`           | `true` (on)   | Email is a core feature. Outage of Shipeasy shouldn't break email. |
+| `experimental-recommender` | `false` (off) | New, unproven path. Outage of Shipeasy should fall back to safe.   |
+| `expensive-ai-summary`     | `false` (off) | Costs money per call. Fail closed to protect the budget.           |
+| `payment-fraud-check`      | `true` (on)   | Skipping fraud check costs more than dropping a sale. Stay strict. |
+| `audit-log-redaction`      | `true` (on)   | Compliance feature. Fail-open is a leak.                           |
+
+The pattern: **fail-open for things whose absence creates a worse failure than their presence.**
+If skipping the call is the dangerous outcome, default-on. If running the call is the dangerous
+outcome (cost, leakage, instability), default-off.
+
+```ts
+// Default-on (system normally runs):
+const enabled = await gate("emails-enabled", undefined, { defaultValue: true });
+
+// Default-off (system normally suppressed unless explicitly turned on):
+const enabled = await gate("experimental-recommender", undefined, { defaultValue: false });
+```
+
+Express the default at the call site, not just in the dashboard config. A future reader can see
+the contract without leaving the file.
+
+## Audit + alerting
+
+A killswitch flip is an incident-grade event. Two things should happen automatically when one
+flips:
+
+1. **A row gets written to the audit log.** Who flipped it, when, from what surface (dashboard,
+   CLI, API), and the reason string they passed.
+2. **A webhook fires.** Wire it to PagerDuty, Opsgenie, or your incident channel. The flip should
+   declare the incident, not require someone to remember to.
+
+```bash
+shipeasy webhooks add killswitch.flipped \
+  --url https://events.pagerduty.com/v2/enqueue \
+  --filter '{"direction":"off"}'   # only page on off, not on restore
+```
+
+For multi-tenant setups, scope the webhook to specific killswitches by name. You usually want
+PagerDuty to fire for the payment killswitch but only Slack for the experimental-feature one.
+
+## Naming
+
+Killswitch names appear in incident timelines and post-mortems. Pick names that read naturally in
+that context:
+
+- ✓ `emails-enabled`, `payments-enabled`, `recommender-enabled` — reads as "is this system on?"
+- ✗ `email-killswitch`, `payment-flag`, `disable-recs` — reads awkwardly, the verb-noun shape
+  hides whether `true` or `false` is "running."
+
+The convention: positive-sense, `<system>-enabled`. Then `gate("emails-enabled")` returning
+`true` reads as "yes, emails are enabled."
+
+## Post-incident cleanup
+
+A killswitch flipped during an incident, the team fixed the underlying bug, and the switch is
+back on. Two cleanup steps that often get skipped:
+
+1. **Verify the killswitch still works.** A flipped-then-restored killswitch sometimes drifts —
+   maybe someone removed the in-code gate during the fix, or the webhook moved. Re-rehearse the
+   flip in staging within a week.
+2. **Update the runbook.** What was the trigger for this flip? Add it to the on-call runbook so
+   the next engineer doesn't have to figure it out from scratch. The audit log entry is the raw
+   material — turn it into a sentence in the runbook.
+
+If a killswitch hasn't been flipped (even in staging) in 6 months, it might still work — but you
+don't know. Re-rehearse.
+
+## Killswitches in your tests
+
+A killswitch wraps a real side effect. Your tests almost certainly don't want to actually send
+emails, but they also shouldn't bypass the killswitch path in a way that hides bugs in the wrapper
+itself.
+
+The cleanest pattern: in test environments, run the SDK in **bundle-mock mode** with the killswitch
+set to whatever the test scenario needs:
+
+```ts title="test/setup.ts"
+import { shipeasy } from "@shipeasy/sdk/server";
+
+await shipeasy({
+  apiKey: "test-key",
+  bundle: {
+    flags: {
+      "emails-enabled": { kind: "killswitch", on: true },
+      "payments-enabled": { kind: "killswitch", on: false },
+    },
+  },
+});
+```
+
+The SDK never hits the network in this mode, the killswitch values are deterministic, and your
+test wraps the same `gate()` call your production code does — no special-case bypass.
+
+## The dashboard view
+
+The **Killswitches** page in the dashboard shows the current state of every killswitch in your
+project, who last touched it, and a one-click flip control with a required reason field. Keep this
+tab pinned during incidents — it's the central console.
+
+Hovering on a killswitch shows its recent flip history. If a switch has been flipped 5 times in
+the last week, that's a signal that the underlying system needs a real fix, not just a kill
+button.
+
+<DocNav
+  prev={{ href: "/flags-experiments/killswitches/quickstart", title: "Quickstart" }}
+  next={{ href: "/flags-experiments/experiments", title: "Experiments" }}
+/>

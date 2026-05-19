@@ -210,3 +210,322 @@ await experiment("paywall-test", ctx, { fallbackVariant: "control" });
 
 Set defaults at the call site, not in a wrapper. The defaultValue is the contract of "what does
 this code do if Shipeasy is dead?" and it should be readable next to the code that depends on it.
+
+## More edge cases
+
+The six below are the second wave — failure modes that bite once you've shipped a few experiments
+and a dozen gates, not on day one. One per primitive in this section's sub-menu.
+
+<TileGrid>
+  <Tile href="#gate-sprawl" icon="◇" title="Gates → flag sprawl">
+    Dead gates at 100% are technical debt. How to find them and rip them out without breaking code.
+  </Tile>
+  <Tile href="#config-schema-drift" icon="⚙" title="Configs → schema drift">
+    A dashboard value that no longer matches your code's expected shape. Schema validation +
+    rollback strategy.
+  </Tile>
+  <Tile href="#killswitch-decay" icon="◉" title="Killswitches → decay">
+    A killswitch that hasn't been flipped in 6 months might still work. Or it might not. Rehearsal
+    is the only way to know.
+  </Tile>
+  <Tile href="#peeking" icon="◐" title="Experiments → peeking">
+    Daily p-value checks blow the false-positive rate to ~30%. The honest options for early looks.
+  </Tile>
+  <Tile href="#low-traffic" icon="∑" title="Metrics → low-traffic experiments">
+    Underpowered tests look "neutral" — but neutral and "we can't tell" are different conclusions.
+  </Tile>
+  <Tile href="#env-drift" icon="◔" title="Cross-env flag drift">
+    Staging and prod versions of the same flag fall out of sync. How to find it before users do.
+  </Tile>
+</TileGrid>
+
+## Gate sprawl [#gate-sprawl]
+
+After 12 months of shipping, you have 187 gates. Half are at 100% and have been for months. The
+code that reads them is dead conditionals — a branch the linter still respects but no human will
+ever take.
+
+That's not aesthetic — it's a real cost:
+
+- Every `if (await gate(...))` adds a layer of indirection in code review. New engineers spend
+  time tracing why a 100% gate exists before realising it's dead.
+- Removed features that left their gates behind become Chesterton's-fence puzzles — was this
+  rolled back? Is it still in flight? Nobody remembers.
+- Stale gates are still polled. The KV bundle isn't _huge_, but every gate's targeting rules and
+  override list ship with every poll.
+
+The Shipeasy **Cleanup** view surfaces candidates: gates at 100% or 0% for more than 30 days,
+with no targeting rule changes in 60 days. Run through it monthly. For each candidate, three
+options:
+
+1. **Delete.** The default. The gate is at 100% (or 0%), the code branch behind it is settled —
+   rip out the conditional, delete the gate.
+2. **Convert to a killswitch.** If the gate is "at 100% but you want to keep the lever," promote
+   it to a killswitch. Different semantics, different sub-menu, signals to the team it's
+   incident-grade.
+3. **Document why it stays.** Rare — usually because of a planned future change. Add a note to
+   the gate description so a future cleanup pass doesn't axe it by mistake.
+
+Automate step 1 with the CLI:
+
+```bash
+# Every gate at 100% for >30 days
+shipeasy flags list --json \
+  | jq -r '.[] | select(.rolloutPct == 10000 and .stableForDays >= 30) | .name'
+
+# Validate the codebase no longer references each one
+shipeasy flags validate ./src --names dark-mode,checkout-v2,new-search
+
+# Once green, delete
+shipeasy flags delete dark-mode checkout-v2 new-search
+```
+
+The `validate` step is non-negotiable. Deleting a gate that's still referenced in code is fine
+(the SDK returns the `defaultValue`), but you want the dead conditional gone too — otherwise
+you've just moved the technical debt.
+
+## Config schema drift [#config-schema-drift]
+
+You stored a structured config — say a list of feature tiers with prices. Six months later, a
+new engineer adds a `description` field to the type, ships the code, and reads the config:
+
+```ts
+const tiers = await config<Tier[]>("plans.tiers");
+return tiers.map((t) => (
+  <Card key={t.id} title={t.name} desc={t.description}>...</Card>
+));
+```
+
+The dashboard JSON still has the old shape — no `description`. In dev, the cards render with
+`undefined` where the description should be. In prod the same.
+
+The cause: the _value_ in the dashboard is decoupled from the _shape_ in code. Adding a field to
+the TypeScript type doesn't add it to the dashboard. The SDK doesn't validate.
+
+Two patterns to defend against this:
+
+### 1. Validate on read
+
+Use a schema (Zod, Valibot, runtypes) and validate every read. Fall back to a safe default if
+the parse fails, _and log loudly_ so you find out about the drift:
+
+```ts
+import { z } from "zod";
+
+const TierSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().default(""),
+  priceCents: z.number().int().nonnegative(),
+});
+
+const tiers = await config<unknown>("plans.tiers", { default: [] });
+const parsed = z.array(TierSchema).safeParse(tiers);
+if (!parsed.success) {
+  reportToSentry("Config schema drift", { configName: "plans.tiers", issues: parsed.error.issues });
+  return DEFAULT_TIERS;
+}
+return parsed.data;
+```
+
+The schema _defaults_ (`description: z.string().default("")`) absorb additive changes without
+breaking. Removing a field still breaks — Zod's `strict()` would catch it.
+
+### 2. Version the config name
+
+When the shape changes incompatibly, rename:
+
+```ts
+// Old code path
+const tiers = await config<TierV1[]>("plans.tiers.v1");
+// New code path
+const tiers = await config<TierV2[]>("plans.tiers.v2");
+```
+
+Two configs co-exist briefly while you migrate. Old shape readers keep working; new shape readers
+look at the new name. When the migration's done, delete the old config. The dashboard treats them
+as unrelated, so a typo in v2 doesn't break v1.
+
+Use this for structural changes (renaming a field, changing a type). For additive changes, the
+schema-with-defaults pattern is enough.
+
+## Killswitches decay [#killswitch-decay]
+
+A killswitch is only useful if it works during the incident. A killswitch that hasn't been
+flipped in 6 months _probably_ still works — but you don't know.
+
+Three failure modes silently break a killswitch:
+
+1. **The wrapped code path was refactored.** Someone moved the dangerous call to a new function
+   and forgot the `if (!(await gate(...)))` wrapper. The killswitch still exists; flipping it
+   does nothing.
+2. **A new code path bypasses it.** A worker, a batch job, or a webhook handler was added later
+   that calls the same dangerous side effect without the wrapper. The killswitch covers the old
+   path; the new path is naked.
+3. **The webhook moved.** The PagerDuty integration URL changed, no one updated the
+   `killswitch.flipped` webhook, flipping the kill no longer pages.
+
+The fix is rehearsal. Once a quarter, run a drill in staging:
+
+```bash
+# Flip in staging
+shipeasy killswitch off emails-enabled --env staging --reason "drill 2026-Q2"
+
+# Run the canonical test that exercises every email-sending code path
+pnpm test:integration --grep email
+
+# Confirm zero emails went out, then restore
+shipeasy killswitch on emails-enabled --env staging --reason "drill complete"
+```
+
+If any test sent an email while the killswitch was off, you've found a naked code path. Fix
+_before_ you need the killswitch in production.
+
+The Shipeasy dashboard flags killswitches that haven't been flipped (in any env) in 90+ days
+with a yellow "stale" chip. Treat that chip as "drill overdue."
+
+## Peeking & sequential testing [#peeking]
+
+You launched an experiment with a 14-day plan. On day 3 you peek and the p-value is 0.04. Tempting
+to call it a win and ship. Don't.
+
+Daily peeking on a fixed-horizon t-test inflates the false-positive rate dramatically:
+
+| Peeks during experiment | True α | Effective false-positive rate |
+| ----------------------- | ------ | ----------------------------- |
+| 1 (planned end)         | 0.05   | 0.050                         |
+| 5 (weekly)              | 0.05   | ~0.14                         |
+| 14 (daily)              | 0.05   | ~0.28                         |
+| 30 (continuous)         | 0.05   | ~0.40                         |
+
+So a "p < 0.05" call from daily peeking is closer to a 28% false-positive rate. You'd be shipping
+random noise 1 in 4 times.
+
+Two honest options:
+
+### 1. Pre-commit to a duration and don't peek
+
+Set duration from your power calculation. Resist looking. The dashboard supports "show me only at
+T+plan" mode — enable it on an experiment to hide the running p-value entirely until the planned
+end:
+
+```bash
+shipeasy experiments update paywall-v2 --hide-interim-results
+```
+
+### 2. Use sequential testing
+
+Sequential tests (mSPRT, group-sequential bounds) compute _adjusted_ p-values that account for
+continuous looks. Peeking is fine; the math handles it.
+
+```bash
+shipeasy experiments update paywall-v2 --analysis-mode sequential
+```
+
+Sequential is less powerful at the planned horizon than fixed-horizon — you pay a small
+efficiency tax for the right to peek. If you don't need to peek, fixed-horizon is more efficient.
+If you do (e.g. safety-critical experiment where you want to stop the moment a regression is
+visible), sequential is the only honest choice.
+
+Either way: **don't peek under fixed-horizon and then claim significance.** That's the most
+common methodological error in industry A/B testing and the easiest one to spot in a post-mortem.
+
+## Low-traffic experiments [#low-traffic]
+
+You have 200 users a day. You want to test a checkout change. Baseline conversion is 4%. You want
+to detect a +10% relative lift.
+
+Per the [power table](/flags-experiments/metrics/power#sample-size-rules-of-thumb): you need
+~6,500 users per arm. At 100 users per arm per day (50/50 split), that's 65 days. Plus a week of
+ramp-up, plus weekly seasonality. Call it 90 days.
+
+Three failure modes when you ignore this:
+
+1. **You stop at 14 days "because the lift looks neutral."** Neutral _underpowered_ is not the
+   same as zero — your CI is `[-25%, +25%]`. You learned nothing.
+2. **You see a "win" at day 7 and ship.** That's noise (see [Peeking](#peeking) above) or
+   day-of-week effects.
+3. **You stop at 30 days because the dashboard says "trending positive."** Same noise problem.
+
+Three things you _can_ do with low traffic:
+
+### Loosen the MDE
+
+You don't need to detect a 10% lift. Detecting a 25% lift requires ~1,000 users per arm, or 10
+days. A 25% lift is also a more practically interesting hypothesis — small improvements aren't
+worth the org cost of running experiments at scale.
+
+```bash
+shipeasy experiments power paywall-v2 \
+  --metric purchase_conversion \
+  --min-detectable-effect 0.25
+```
+
+### CUPED for variance reduction
+
+If you have a pre-experiment covariate correlated with the metric, CUPED can shave 10–30% off the
+variance — equivalent to 10–30% more users.
+
+```bash
+shipeasy metrics create purchase_conversion \
+  --type conversion --event purchase \
+  --cuped-covariate previous_28d_purchase_rate
+```
+
+### Don't run an experiment
+
+The fourth option is the right one for many low-traffic shops: ramp the change as a _gate_ over
+two weeks, watch the dashboards for obvious regressions, and ship if nothing breaks. You forgo
+the rigorous "did this work" answer in exchange for actually getting features out. Sometimes the
+right trade.
+
+What you should _not_ do: run an underpowered experiment and tell the team "the result was
+neutral." It wasn't neutral; it was inconclusive. The dashboard tags this state as
+`insufficient_power` — read the tag.
+
+## Cross-env flag drift [#env-drift]
+
+You changed a gate in production. The same gate in staging is still on the old config. A week
+later, a new dev tests against staging, sees v1 behaviour, ships code that depends on v1,
+production breaks because production is on v2.
+
+The cause is straightforward: gate config is per-environment, and there's no automatic sync.
+
+Three patterns to keep envs aligned:
+
+### 1. Mirror writes via the CLI
+
+For everyday flag tweaks (rollout %, targeting rules), apply to both envs in the same script:
+
+```bash
+for env in staging production; do
+  shipeasy flags update checkout-v2 --rollout 100 --env "$env"
+done
+```
+
+Annoying. Worth it.
+
+### 2. Use the env-aware diff tool
+
+```bash
+shipeasy flags diff --env-a staging --env-b production
+```
+
+Outputs a table of every flag whose config differs between the two envs, with the diff. Run it in
+CI before merging to main, or as a weekly cron that posts the diff to your team channel.
+
+### 3. Promote rather than re-create
+
+For new flags, create in staging, qualify, then _promote_ to prod rather than re-creating:
+
+```bash
+shipeasy flags promote checkout-v2 --from staging --to production
+```
+
+Copies the full config (rules, rollout, overrides, salt) atomically. The two envs match exactly
+after the promote; subsequent edits drift again unless you mirror.
+
+The trade-off you're navigating: dev velocity (different states per env) vs. release safety
+(same behaviour everywhere). The right balance depends on whether your bugs tend to come from
+"flag config diverged" or "I couldn't test the new state in staging." Most teams over-correct one
+way or the other; pick consciously.

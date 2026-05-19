@@ -1,0 +1,4 @@
+{
+  "title": "Gates",
+  "pages": ["index", "quickstart", "targeting", "rollouts", "overrides"]
+}

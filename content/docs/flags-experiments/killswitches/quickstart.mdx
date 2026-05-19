@@ -1,0 +1,154 @@
+---
+title: Quickstart
+description: Wire a killswitch around a risky subsystem in five minutes — so the 3am on-call has one switch to flip.
+---
+
+<DocMeta status="Tutorial" read="4 min read" updated="May 15, 2026" works="Server SDK · CLI" />
+
+A killswitch is the lever you pull when something is on fire. This walkthrough takes you from zero
+to a wired-in killswitch around an outbound-email path. By the end, on-call can disable email
+sending in under five seconds without touching code.
+
+<Quickstart title="The 5-minute path" time="create · wire · test the flip">
+  <QuickstartStep
+    num={1}
+    label="CREATE"
+    title="Create the killswitch"
+    cmd="shipeasy killswitch create emails-enabled --default-on"
+  />
+  <QuickstartStep
+    num={2}
+    label="WIRE"
+    title="Wrap the dangerous path"
+    cmd="if (!(await gate('emails-enabled', undefined, { defaultValue: true }))) return;"
+  />
+  <QuickstartStep
+    num={3}
+    label="REHEARSE"
+    title="Flip it in staging, watch it stop"
+    cmd="shipeasy killswitch off emails-enabled --env staging"
+  />
+  <QuickstartStep
+    num={4}
+    label="ALERT"
+    title="Wire the webhook so flipping pages someone"
+    cmd="shipeasy webhooks add killswitch.flipped --url $SLACK_WEBHOOK"
+  />
+</Quickstart>
+
+## 1. Create the killswitch
+
+```bash
+shipeasy killswitch create emails-enabled \
+  --description "Disables outbound transactional email" \
+  --default-on
+```
+
+`--default-on` is the safe default for a "this system runs" switch: if the SDK can't reach Shipeasy
+during the incident itself, the local fallback returns `true` and your emails keep flowing. Use
+`--default-off` only for new, unproven features where "off" is the safer fallback.
+
+## 2. Wire it into the code path
+
+Wrap the dangerous call. The default is the same value as `--default-on`, expressed at the call
+site so a future reader doesn't have to look up the killswitch config:
+
+```ts title="src/lib/mailer.ts"
+import { gate } from "@shipeasy/sdk/server";
+
+export async function sendOrderEmail(order: Order) {
+  if (!(await gate("emails-enabled", undefined, { defaultValue: true }))) {
+    logger.warn("emails paused via killswitch", { orderId: order.id });
+    return;
+  }
+
+  await mailer.send(order);
+}
+```
+
+Three things to internalise:
+
+- **`undefined` for `ctx`.** Killswitches don't target — they're global. The second arg is just
+  there to keep the function signature aligned with `gate()`.
+- **`defaultValue: true` is load-bearing.** Don't omit it. If KV is unreachable during the very
+  incident that prompted the kill, you do not want the killswitch to silently default to `false`
+  and amplify the outage.
+- **Log the bypass.** When the killswitch is engaged, log a structured warn so post-mortem can
+  reconstruct what was suppressed.
+
+Deploy this. Killswitch is `on`, fallback is `true`, behaviour is unchanged from before.
+
+## 3. Rehearse the flip
+
+The most common reason a killswitch fails to help during an incident is that no one has ever
+flipped it before. Rehearse in staging:
+
+```bash
+# Flip off in staging
+shipeasy killswitch off emails-enabled --env staging --reason "drill"
+
+# Confirm via the API that the SDK sees it
+curl https://api.shipeasy.ai/v1/eval/emails-enabled?env=staging \
+  -H "Authorization: Bearer $SHIPEASY_SERVER_KEY"
+# → { "value": false, "reason": "killswitch_off" }
+
+# Verify no emails flow in staging
+# … run your normal email test path …
+
+# Re-enable
+shipeasy killswitch on emails-enabled --env staging --reason "drill complete"
+```
+
+Time how long it takes from "decide to flip" to "next email is suppressed." With the default 1-second
+poll interval, you should see the next call return `false` within ~1s of running the off command.
+
+## 4. Page someone when the killswitch flips
+
+A killswitch is a _social_ signal as much as a technical one. Flipping it should announce itself
+on the team's incident channel and create a paper trail.
+
+```bash
+shipeasy webhooks add killswitch.flipped \
+  --url "$SLACK_WEBHOOK" \
+  --filter '{"name": "emails-enabled"}'
+```
+
+The webhook payload includes who flipped it, when, from what surface, and the reason string. Wire
+this into your incident channel and your runbook ("if you see this, page primary on-call within
+2 minutes").
+
+For production-grade pages, point the webhook at PagerDuty or Opsgenie instead of Slack — that
+way flipping the killswitch _is_ declaring the incident, which is usually the right move.
+
+## What you have now
+
+- A killswitch in the dashboard at **Killswitches → emails-enabled**.
+- A wrapped code path that respects it on every call.
+- A rehearsed flip-and-restore drill that took < 5 seconds.
+- An alert on the flip event so the team knows when production is in degraded mode.
+
+That's the whole pattern. Repeat for every system whose pause-button you'd want on the lock screen
+of your phone.
+
+## Where to next
+
+<TileGrid>
+  <Tile href="/flags-experiments/killswitches/patterns" icon="◐" title="When to add a killswitch">
+    Which subsystems deserve one — and which should stay gates.
+  </Tile>
+  <Tile href="/flags-experiments/gates" icon="⏻" title="Gates vs killswitches">
+    Same primitive at the wire level, different ergonomics. When to reach for which.
+  </Tile>
+  <Tile
+    href="/flags-experiments/case-studies#kill-emails"
+    icon="◈"
+    title="Worked example: paused emails"
+  >
+    The walkthrough from the case-studies page, with more context on the incident.
+  </Tile>
+</TileGrid>
+
+<DocNav
+  prev={{ href: "/flags-experiments/killswitches", title: "Killswitches overview" }}
+  next={{ href: "/flags-experiments/killswitches/patterns", title: "Patterns" }}
+/>
