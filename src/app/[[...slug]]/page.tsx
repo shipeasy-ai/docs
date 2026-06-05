@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import type { InferPageType } from "fumadocs-core/source";
 import { DocsPage, DocsBody, DocsTitle, DocsDescription } from "fumadocs-ui/page";
 import defaultMdxComponents from "fumadocs-ui/mdx";
@@ -125,6 +126,27 @@ export default async function Page({ params }: Props) {
       {inner}
     </DocsPage>
   );
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  if (!slug || slug.length === 0) return {};
+
+  const page = getPage(slug) as Page | undefined;
+  if (!page) return {};
+
+  return {
+    title: page.data.title,
+    description: page.data.description,
+    openGraph: {
+      title: page.data.title,
+      description: page.data.description ?? undefined,
+      url: `https://docs.shipeasy.ai/${slug.join("/")}`,
+    },
+    alternates: {
+      canonical: `https://docs.shipeasy.ai/${slug.join("/")}`,
+    },
+  };
 }
 
 export function generateStaticParams(): Array<{ slug?: string[] }> {

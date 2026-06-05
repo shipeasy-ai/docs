@@ -4,13 +4,13 @@ description: URL-addressable runbooks an AI coding assistant can follow end-to-e
 ---
 
 <Hero
-  eyebrow="ShipEasy · LLM Guides"
+  eyebrow="Shipeasy · LLM Guides"
   title={
     <>
       Hand it to an <em>AI agent</em>. Done in minutes.
     </>
   }
-  subtitle="Plain-MDX runbooks at stable URLs, designed to be followed by Claude Code, Cursor, Windsurf, OpenCode, and anything else that speaks MCP. The agent calls typed ShipEasy tools — never your shell, never your secrets — and stops only when a human is required."
+  subtitle="Plain-MDX runbooks at stable URLs, designed to be followed by Claude Code, Cursor, Windsurf, OpenCode, and anything else that speaks MCP. The agent calls typed Shipeasy tools — never your shell, never your secrets — and stops only when a human is required."
   primaryHref="/llms/i18n-strings"
   primaryLabel="Open the i18n runbook"
   secondaryHref="#how-it-works"
@@ -24,7 +24,7 @@ description: URL-addressable runbooks an AI coding assistant can follow end-to-e
   works="Claude Code · Cursor · Windsurf · OpenCode"
 />
 
-ShipEasy ships every product behind a typed **MCP server** (`shipeasy-mcp`). The CLI installs it into your AI assistant's config, the agent discovers the tools, and these guides tell the agent the right sequence of calls to make for a given workflow. You answer one browser auth prompt; the agent does the rest.
+Shipeasy ships every product behind a typed **MCP server** (`shipeasy-mcp`). The CLI installs it into your AI assistant's config, the agent discovers the tools, and these guides tell the agent the right sequence of calls to make for a given workflow. You answer one browser auth prompt; the agent does the rest.
 
 ## Why URL-addressable runbooks
 
@@ -117,14 +117,14 @@ ShipEasy ships every product behind a typed **MCP server** (`shipeasy-mcp`). The
     shipeasy login
     ```
 
-    The CLI runs an OAuth device-code flow against the ShipEasy worker (`/auth/device/*`) and stores a long-lived credential at `~/.shipeasy/credentials`. The MCP server reads from the same file. **The agent never sees your token** — every tool call attaches the credential server-side.
+    The CLI runs an OAuth device-code flow against the Shipeasy worker (`/auth/device/*`) and stores a long-lived credential at `~/.shipeasy/credentials`. The MCP server reads from the same file. **The agent never sees your token** — every tool call attaches the credential server-side.
 
   </Step>
 
   <Step title="Hand the agent a guide URL">
     Open your AI assistant in your project and say something like:
 
-    > _"Follow https://docs.shipeasy.ai/llms/i18n-strings to onboard this project to ShipEasy."_
+    > _"Follow https://docs.shipeasy.ai/llms/i18n-strings to onboard this project to Shipeasy."_
 
     The agent fetches the page, reads the steps, and starts calling the appropriate `mcp__shipeasy__*` tools in order. It pauses for human input only at the points the runbook marks with <code>STOP</code> (typically: browser auth, ambiguous codemod cases).
 
@@ -205,7 +205,7 @@ The `shipeasy-mcp` binary advertises a typed tool surface grouped by product. Ev
 </ApiTable>
 
 <Callout type="info" title="No tool runs your shell">
-  MCP tools mutate ShipEasy state through the public API. Anything that touches your filesystem (the
+  MCP tools mutate Shipeasy state through the public API. Anything that touches your filesystem (the
   codemod, the loader install) runs the local CLI binary, which prints what it&apos;s about to do
   and respects <code>--dry-run</code>. There is no <code>exec_arbitrary_command</code> tool.
 </Callout>
@@ -289,7 +289,7 @@ These are scaffolded against the same MCP surface and ship as the underlying pro
       </>
     }
   >
-    Statsig flags + experiments → ShipEasy gates + universes. Preserves bucketing where possible
+    Statsig flags + experiments → Shipeasy gates + universes. Preserves bucketing where possible
     (deterministic by user_id) and flags any incompatible targeting expressions for human review.
   </Tile>
 </TileGrid>

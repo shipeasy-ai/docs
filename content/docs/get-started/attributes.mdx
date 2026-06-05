@@ -1,6 +1,6 @@
 ---
 title: User attributes
-description: The shape of the eval context — pass everything you know about the user, and ShipEasy uses it for targeting, holdouts, and analysis breakdowns.
+description: The shape of the eval context — pass everything you know about the user, and Shipeasy uses it for targeting, holdouts, and analysis breakdowns.
 ---
 
 <DocMeta
@@ -10,7 +10,7 @@ description: The shape of the eval context — pass everything you know about th
   works="Server SDK · Browser SDK · Targeting · Experiments"
 />
 
-A **user attribute** is any key/value pair you attach to a user when calling the SDK. ShipEasy uses attributes for three things:
+A **user attribute** is any key/value pair you attach to a user when calling the SDK. Shipeasy uses attributes for three things:
 
 1. **Targeting rules** on gates — _"only enable this for `plan = pro`"_.
 2. **Variant assignment** in experiments — _"assign by `account_id` so all teammates see the same thing"_.
@@ -69,7 +69,7 @@ Two keys are special:
   />
 </ApiTable>
 
-ShipEasy bucketing uses `user_id ?? anonymous_id` — so a user gets a stable assignment before _and_ after login. When the user authenticates, call `shipeasy.alias(anonymous_id, user_id)` to stitch their pre-login exposures to their post-login identity. Without this stitch, exposure events from before login show up as a separate user in analysis.
+Shipeasy bucketing uses `user_id ?? anonymous_id` — so a user gets a stable assignment before _and_ after login. When the user authenticates, call `shipeasy.alias(anonymous_id, user_id)` to stitch their pre-login exposures to their post-login identity. Without this stitch, exposure events from before login show up as a separate user in analysis.
 
 <Callout type="warn" title="`user_id` is required for deterministic bucketing">
   Without a stable id, every evaluation gets a fresh random bucket — rollouts oscillate, experiment
@@ -284,7 +284,7 @@ This call writes a single row to D1 mapping the two IDs. The next analysis run m
 
 ## Bucketing by an attribute
 
-By default ShipEasy buckets users by `user_id`. To bucket by something else (typical for B2B: bucket by account so teammates align):
+By default Shipeasy buckets users by `user_id`. To bucket by something else (typical for B2B: bucket by account so teammates align):
 
 ```ts
 flags.gate(
@@ -302,11 +302,11 @@ Or set the experiment-level `bucket_by` in the dashboard. The same identity is t
 
 ## Privacy & PII
 
-ShipEasy stores attributes you send as part of exposure events for analysis. **Don&apos;t send PII you wouldn&apos;t want in your analytics warehouse.**
+Shipeasy stores attributes you send as part of exposure events for analysis. **Don&apos;t send PII you wouldn&apos;t want in your analytics warehouse.**
 
 <Callout type="warn" title="Hard rules">
   - Pass user **IDs**, not emails. Emails are PII and they change. - Pass `country`, not full IP.
-  ShipEasy already derives a coarse geo from the request. - Hash anything sensitive on your side
+  Shipeasy already derives a coarse geo from the request. - Hash anything sensitive on your side
   first — names, phone numbers, account secrets. - Never put an API token, password, or session
   cookie into an attribute.
 </Callout>

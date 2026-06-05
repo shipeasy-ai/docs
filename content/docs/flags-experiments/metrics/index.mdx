@@ -3,18 +3,13 @@ title: Metrics
 description: Define what you measure — primary metrics, guardrails, outliers, segmentation, and how to keep results honest.
 ---
 
-<DocMeta
-  status="Production ready"
-  read="9 min read"
-  updated="May 3, 2026"
-  works="Server SDK"
-/>
+<DocMeta status="Production ready" read="9 min read" updated="May 3, 2026" works="Server SDK" />
 
 A **metric** is a number computed per user from a set of events. Every experiment has at least one **primary** metric (the thing you're trying to move) and ideally a couple of **guardrails** (things you don't want to break). Get these two choices right and most of your experimentation problems go away on their own.
 
 ## Aggregation types
 
-ShipEasy ships four aggregation functions. Each one collapses a user's event stream into a single number per analysis window:
+Shipeasy ships four aggregation functions. Each one collapses a user's event stream into a single number per analysis window:
 
 | Type         | What it computes per user                     | Use it for                        | Variance                               |
 | ------------ | --------------------------------------------- | --------------------------------- | -------------------------------------- |
@@ -78,7 +73,7 @@ Now `paid_purchase` only counts `purchase` events whose `channel == "organic"` p
 When you attach metrics to an experiment, you mark each one as **primary** or **guardrail**.
 
 - **Primary**: the metric you're trying to move. The experiment's "did it win?" decision is read off these. Pick one or two; if you have five primaries you have none.
-- **Guardrail**: metrics that must _not_ regress. A new checkout flow had better not tank page load time. ShipEasy flags any guardrail that moves significantly in the wrong direction, even if your primary won. By default, the dashboard treats a guardrail as failed when `p < 0.05` and the lift is in the bad direction.
+- **Guardrail**: metrics that must _not_ regress. A new checkout flow had better not tank page load time. Shipeasy flags any guardrail that moves significantly in the wrong direction, even if your primary won. By default, the dashboard treats a guardrail as failed when `p < 0.05` and the lift is in the bad direction.
 
 A common pattern for a checkout experiment:
 
@@ -93,7 +88,7 @@ The primary tells you _"did the change work?"_, the guardrails tell you _"did it
 
 ## Outliers
 
-For `sum` and `mean`, a single $50,000 enterprise purchase can swing the mean for thousands of users. ShipEasy supports two outlier handlers per metric:
+For `sum` and `mean`, a single $50,000 enterprise purchase can swing the mean for thousands of users. Shipeasy supports two outlier handlers per metric:
 
 - **Winsorise** at a configurable percentile (default `p99`). Anything above is clamped to the p99 value of the combined sample. Default for `sum` and `mean`.
 - **Cap** at an absolute value. Use this when there's a domain-specific ceiling (e.g. a maximum plausible session length).
@@ -154,7 +149,7 @@ You don't need to ask for a segment up front — the platform recomputes them on
 
 ## Sample size and power
 
-You can't detect a 1% lift with 100 users. ShipEasy shows you a **power estimate** before you start the experiment, given your traffic and the metric's historical variance — so you know roughly how long the test will need to run.
+You can't detect a 1% lift with 100 users. Shipeasy shows you a **power estimate** before you start the experiment, given your traffic and the metric's historical variance — so you know roughly how long the test will need to run.
 
 Quick rules of thumb (80% power, α = 0.05, two-sided):
 

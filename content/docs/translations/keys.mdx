@@ -1,6 +1,6 @@
 ---
 title: Label keys
-description: How ShipEasy Translations names, hashes, chunks, describes, and deletes the strings your code references.
+description: How Shipeasy Translations names, hashes, chunks, describes, and deletes the strings your code references.
 ---
 
 <DocMeta
@@ -12,7 +12,7 @@ description: How ShipEasy Translations names, hashes, chunks, describes, and del
 
 A **label key** is a stable identifier for a translatable string. It is what your code references; the value (the actual translation) varies per profile. Keys are the contract between your codebase and every locale you ship.
 
-ShipEasy Translations's job is to make keys feel invisible: you write English in code, the codemod hashes it, the AI translates it, and the runtime resolves it back. But understanding what a key actually is — and how it survives renames, refactors, and re-scans — is what stops your localization from drifting six months in.
+Shipeasy Translations's job is to make keys feel invisible: you write English in code, the codemod hashes it, the AI translates it, and the runtime resolves it back. But understanding what a key actually is — and how it survives renames, refactors, and re-scans — is what stops your localization from drifting six months in.
 
 ## Schema
 
@@ -218,7 +218,7 @@ t("invite_status", { gender: "f", name: "Anna" });
 // → "She invited Anna."
 ```
 
-Pluralization rules follow CLDR — ShipEasy Translations preserves the structure across translation. The AI is instructed to fill out every plural category required by the target locale (Russian needs `one / few / many / other`; Arabic needs `zero / one / two / few / many / other`). Categories the source locale does not use are filled by analogy.
+Pluralization rules follow CLDR — Shipeasy Translations preserves the structure across translation. The AI is instructed to fill out every plural category required by the target locale (Russian needs `one / few / many / other`; Arabic needs `zero / one / two / few / many / other`). Categories the source locale does not use are filled by analogy.
 
 <Callout type="warn" title="Validate your plural categories">
   Always spot-check plural keys in low-resource locales after AI translation. Claude is good at this
@@ -325,7 +325,7 @@ The index is cached aggressively at the edge; chunk URLs are content-hashed in t
 
 ## Stale keys and re-translation
 
-ShipEasy Translations detects when a source value changes (the hash changes) and marks every target translation as **stale**. Stale keys still serve their old value at the loader — nothing breaks — but they show up in the dashboard with a yellow flag and are eligible for re-translation.
+Shipeasy Translations detects when a source value changes (the hash changes) and marks every target translation as **stale**. Stale keys still serve their old value at the loader — nothing breaks — but they show up in the dashboard with a yellow flag and are eligible for re-translation.
 
 ```bash
 shipeasy i18n translate --profile fr --ai --stale-only

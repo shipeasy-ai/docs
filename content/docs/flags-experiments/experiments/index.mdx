@@ -4,7 +4,7 @@ description: A/B and multivariate experiments with managed stats. statistical an
 ---
 
 <Hero
-  eyebrow="ShipEasy · Experiments"
+  eyebrow="Shipeasy · Experiments"
   title={
     <>
       Was the new thing <em>actually better?</em>
@@ -17,14 +17,9 @@ description: A/B and multivariate experiments with managed stats. statistical an
   secondaryLabel="Building blocks"
 />
 
-<DocMeta
-  status="Production ready"
-  read="6 min read"
-  updated="May 3, 2026"
-  works="Server SDK"
-/>
+<DocMeta status="Production ready" read="6 min read" updated="May 3, 2026" works="Server SDK" />
 
-ShipEasy **Experiments** lets you ask _"is the new thing actually better?"_ and get a defensible answer.
+Shipeasy **Experiments** lets you ask _"is the new thing actually better?"_ and get a defensible answer.
 
 You define what you want to measure (a **metric**), set up variant payloads (the **groups**), let users land in one bucket or another, log conversions, and look at the dashboard the next morning. The platform handles assignment, exposure stitching, deduplication, daily aggregation, and the statistics.
 
@@ -92,8 +87,7 @@ You define what you want to measure (a **metric**), set up variant payloads (the
       </>
     }
   >
-    Anything you <code>track()</code>. Stored in events store, aggregated into metric
-    values daily.
+    Anything you <code>track()</code>. Stored in events store, aggregated into metric values daily.
   </Tile>
   <Tile
     href="/experiments/analysis"
@@ -109,8 +103,8 @@ You define what you want to measure (a **metric**), set up variant payloads (the
       </>
     }
   >
-    statistical analysis, lift, p-value, 95% CI. Computed once per day, persisted to your project, surfaced
-    in the dashboard.
+    statistical analysis, lift, p-value, 95% CI. Computed once per day, persisted to your project,
+    surfaced in the dashboard.
   </Tile>
 </TileGrid>
 
@@ -157,7 +151,8 @@ A practical workflow is to gate first (so the rollout is safe), then **promote t
     title="assign + track"
     cmd="experiments.assign('checkout-cta', user)"
   >
-    First call logs an exposure. <code>flags.track()</code> on conversion. Daily aggregation does the math.
+    First call logs an exposure. <code>flags.track()</code> on conversion. Daily aggregation does
+    the math.
   </QuickstartStep>
 </Quickstart>
 
@@ -229,7 +224,7 @@ The return shape:
 
 <Steps>
   <Step title="Cron enqueues a job per project">
-    A scheduled trigger on the ShipEasy fans out one queue message per project that has running
+    A scheduled trigger on the Shipeasy fans out one queue message per project that has running
     experiments.
   </Step>
   <Step title="Consumer scans events store">

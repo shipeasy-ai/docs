@@ -10,7 +10,7 @@ description: What `track()` actually does, the event schema, where events live, 
   works="Server SDK · Browser SDK"
 />
 
-An event is the raw signal that metrics are computed from. You log it with `track()`. ShipEasy
+An event is the raw signal that metrics are computed from. You log it with `track()`. Shipeasy
 collects the event and rolls it up into a metric value during the daily analysis window.
 
 This page is the reference for what `track()` accepts, what the platform does with it, and what to log (and what not to).
@@ -118,7 +118,7 @@ per-(experiment, metric, group, day) rows.
 
 ## How aggregation works
 
-Once a day, ShipEasy joins each exposure to events that happened **after** the user was exposed to
+Once a day, Shipeasy joins each exposure to events that happened **after** the user was exposed to
 the experiment (events before exposure don't count — that's what makes the analysis causal). The
 result is one metric value per (user, group, day) which then feeds the statistical test.
 
@@ -138,7 +138,7 @@ client.identify(user_id); // future events use user_id
 client.alias(anonymous_id, user_id); // stitch past anon events to user_id
 ```
 
-`alias` tells ShipEasy that two ids are the same person, so the daily analysis attributes events
+`alias` tells Shipeasy that two ids are the same person, so the daily analysis attributes events
 tagged with `anonymous_id = a` to `user_id = u`. An exposure that happened anonymously can still be
 matched to a conversion that happens after login — the user who looked at the variant is the same
 user who bought.

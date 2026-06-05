@@ -37,7 +37,7 @@ If you&apos;d rather hand this to an AI agent, the [LLM guide](/llms/configs) de
 
 ## Prerequisites
 
-- A ShipEasy project. Sign up at [shipeasy.ai](https://shipeasy.ai) — the free tier is enough for this walkthrough.
+- A Shipeasy project. Sign up at [shipeasy.ai](https://shipeasy.ai) — the free tier is enough for this walkthrough.
 - A **server SDK key** scoped to your environment. Find it in **Project &rarr; SDK keys &rarr; Create &rarr; server**, or generate one from the CLI:
 
 ```bash
@@ -57,7 +57,7 @@ shipeasy keys create --kind server
 
     configureShipeasy({
       apiKey: process.env.SHIPEASY_SERVER_KEY!,
-      
+
     });
 
     export const ready = flags.init();
@@ -176,7 +176,7 @@ shipeasy keys create --kind server
 
 ## What just happened
 
-When you flipped that rollout from `25` to `100`, ShipEasy propagated the change worldwide. Within
+When you flipped that rollout from `25` to `100`, Shipeasy propagated the change worldwide. Within
 the SDK's poll interval (default 30s, 10s on Pro, push on Enterprise), every server saw the new
 value.
 

@@ -3,12 +3,7 @@ title: Universes & holdouts
 description: Group experiments to keep them from stepping on each other, and reserve a clean slice of users as a global control.
 ---
 
-<DocMeta
-  status="Production ready"
-  read="7 min read"
-  updated="May 3, 2026"
-  works="Server SDK"
-/>
+<DocMeta status="Production ready" read="7 min read" updated="May 3, 2026" works="Server SDK" />
 
 A **universe** is the world an experiment lives in. Every experiment belongs to exactly one universe, and the universe owns two of the most important guarantees the platform offers:
 
@@ -98,7 +93,7 @@ You can change the holdout size later, but realise that bumping it up reshuffles
 
 ## Mutual exclusion
 
-When you flip mutual exclusion **on** in a universe, ShipEasy guarantees a user is assigned to **at most one running experiment** in that universe. The bucket they fall into determines which experiment.
+When you flip mutual exclusion **on** in a universe, Shipeasy guarantees a user is assigned to **at most one running experiment** in that universe. The bucket they fall into determines which experiment.
 
 Two experiments that touch the same surface can _confound_ each other — if `checkout-cta` and `checkout-layout` overlap on the same users, you can't tell which experiment moved the metric. Mutual exclusion makes the universe a fixed-pie model: experiments compete for the same allocation, you can't over-allocate, and the analysis stays clean.
 

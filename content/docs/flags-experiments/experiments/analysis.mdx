@@ -10,28 +10,27 @@ description: From raw events to lift, p-value, and CI — exactly what the platf
   works="Daily analysis"
 />
 
-Analysis is the part of an experiment platform that is most often hand-waved. This page is a precise description of what ShipEasy computes for you, in language that doesn't require a stats degree, and an honest description of the assumptions behind it.
+Analysis is the part of an experiment platform that is most often hand-waved. This page is a precise description of what Shipeasy computes for you, in language that doesn't require a stats degree, and an honest description of the assumptions behind it.
 
 ## The pipeline
 
 <Steps>
   <Step title="Daily aggregation fires">
-    Once per day (default 03:00 UTC, configurable per project), ShipEasy starts an analysis pass
-    for every active experiment. Failed runs are retried automatically.
+    Once per day (default 03:00 UTC, configurable per project), Shipeasy starts an analysis pass for
+    every active experiment. Failed runs are retried automatically.
   </Step>
   <Step title="Per-user aggregation">
-    For each (experiment, user) pair, ShipEasy joins the user's events to their exposure timestamp
-    and computes the metric value. Events that happened **before** exposure don't count — that's
-    the rule that makes results causal.
+    For each (experiment, user) pair, Shipeasy joins the user's events to their exposure timestamp
+    and computes the metric value. Events that happened **before** exposure don't count — that's the
+    rule that makes results causal.
   </Step>
   <Step title="Per-group statistics">
-    For each (metric, group), ShipEasy computes mean, variance, and N. Outlier handling
+    For each (metric, group), Shipeasy computes mean, variance, and N. Outlier handling
     (winsorisation or capping) is applied symmetrically across all groups in the comparison.
   </Step>
   <Step title="Welch's t-test">
     For each variant against the control group (and against the universe holdout, when one exists),
-    ShipEasy runs Welch's t-test and computes lift, two-sided p-value, and 95% confidence
-    interval.
+    Shipeasy runs Welch's t-test and computes lift, two-sided p-value, and 95% confidence interval.
   </Step>
   <Step title="Persist results">
     Results are persisted to your project, one row per (experiment, metric, group, segment, day).
@@ -156,7 +155,7 @@ If you allocated 50/50 but the actual exposure counts come back 51,200 / 48,800,
 
 ## Where stats stop and judgement starts
 
-ShipEasy gives you the numbers. It does not tell you whether to ship. You should:
+Shipeasy gives you the numbers. It does not tell you whether to ship. You should:
 
 - Trust **`p < 0.05`** + **CI excludes 0** + **direction matches your hypothesis** + **no guardrail regressed** + **no SRM warning** as a green light.
 - Trust **multiple weeks of data**, not _"we just hit significance in hour 3"_.

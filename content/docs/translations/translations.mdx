@@ -1,6 +1,6 @@
 ---
 title: AI translations
-description: How ShipEasy Translations uses Claude to translate at scale — context, glossary, brand tone, BYOK, and review.
+description: How Shipeasy Translations uses Claude to translate at scale — context, glossary, brand tone, BYOK, and review.
 ---
 
 <DocMeta
@@ -12,7 +12,7 @@ description: How ShipEasy Translations uses Claude to translate at scale — con
 
 Most teams have hundreds of keys and a handful of locales. Translating that by hand is slow; outsourcing is expensive and slow. **AI translations** give you a 90% draft you can review in an hour — and the rest of this doc is about getting that 90% as high as possible.
 
-ShipEasy Translations uses **Anthropic Claude** as the translation engine. You can use ShipEasy Translations's pooled API key (Pro plan) or bring your own (BYOK). Either way every translation lands as a [draft](/translations/drafts) — never auto-merged.
+Shipeasy Translations uses **Anthropic Claude** as the translation engine. You can use Shipeasy Translations's pooled API key (Pro plan) or bring your own (BYOK). Either way every translation lands as a [draft](/translations/drafts) — never auto-merged.
 
 ## Why a model, not a translation API
 
@@ -24,13 +24,13 @@ Traditional translation APIs (Google, DeepL) translate sentence-by-sentence with
 - Handle ICU plural categories that don't exist in the source locale.
 - Use a brand voice ("warm, technical, never marketing-speak").
 
-A model can. The trade-off is cost (still cheap — see below) and the need to review. ShipEasy Translations's review flow ([Drafts](/translations/drafts)) makes that fast.
+A model can. The trade-off is cost (still cheap — see below) and the need to review. Shipeasy Translations's review flow ([Drafts](/translations/drafts)) makes that fast.
 
 ## Setup
 
 <Steps>
   <Step title="Add an Anthropic API key">
-    Either use ShipEasy Translations's pooled key (no setup; Pro/Enterprise plans only), or add your own:
+    Either use Shipeasy Translations's pooled key (no setup; Pro/Enterprise plans only), or add your own:
 
     ```bash
     shipeasy projects set-secret ANTHROPIC_API_KEY sk-ant-...
@@ -79,8 +79,8 @@ A model can. The trade-off is cost (still cheap — see below) and the need to r
 
     ```bash
     shipeasy projects config set i18n.glossary --json '{
-      "ShipEasy Translations": "ShipEasy Translations",
-      "ShipEasy": "ShipEasy",
+      "Shipeasy Translations": "Shipeasy Translations",
+      "Shipeasy": "Shipeasy",
       "checkout": "checkout (do not translate to French as paiement)",
       "flag": "feature gate",
       "workspace": { "fr": "espace de travail", "de": "Arbeitsbereich" }
@@ -158,9 +158,10 @@ Translations are billed per token, with the project's key (or the pooled key for
 Throughput is around 5–20 keys/second depending on context length and model. The CLI streams progress; long runs are resumable. For BYOK on Pro/Enterprise plans, prompt caching is enabled by default — system prompt and glossary cache for 5 minutes, dropping cost by ~30% on multi-locale runs.
 
 <Callout type="info" title="Hosted vs BYOK">
-  Hosted is simpler — pay ShipEasy Translations per word translated, no model decisions. BYOK is cheaper at scale
-  and gives you direct visibility in your Anthropic console. Both run identical prompts with
-  identical retention (zero — ShipEasy Translations sets <code>data_retention: 0</code> on every Anthropic call).
+  Hosted is simpler — pay Shipeasy Translations per word translated, no model decisions. BYOK is
+  cheaper at scale and gives you direct visibility in your Anthropic console. Both run identical
+  prompts with identical retention (zero — Shipeasy Translations sets <code>data_retention: 0</code>{" "}
+  on every Anthropic call).
 </Callout>
 
 ## Streaming and observability
@@ -200,15 +201,15 @@ For high-stakes copy (legal disclaimers, paid plans, anything regulated) — don
 
 <Callout type="warn" title="Plurals and gender are imperfect">
   ICU MessageFormat plurals are preserved syntactically but the AI may pick wrong plural forms in
-  low-resource languages. Always review plural keys. ShipEasy Translations validates the category set is
-  complete, but cannot validate the actual word choice.
+  low-resource languages. Always review plural keys. Shipeasy Translations validates the category
+  set is complete, but cannot validate the actual word choice.
 </Callout>
 
 <Callout type="warn" title="Length budgets are nudged, not enforced">
   A button that's 6 characters in English may be 14 in German, breaking your layout. Add length
-  hints in the description (<code>max 12 chars</code>) and ShipEasy Translations's prompt nudges Claude toward
-  fitting them — but verify in screenshots. The runtime can render a length-warning overlay in
-  development with <code>{`<I18nDevtools />`}</code>.
+  hints in the description (<code>max 12 chars</code>) and Shipeasy Translations's prompt nudges
+  Claude toward fitting them — but verify in screenshots. The runtime can render a length-warning
+  overlay in development with <code>{`<I18nDevtools />`}</code>.
 </Callout>
 
 <Callout type="warn" title="Brand-specific terms drift without a glossary">
@@ -224,7 +225,7 @@ For high-stakes copy (legal disclaimers, paid plans, anything regulated) — don
 
 ## Bring-your-own-translator workflows
 
-If you have an in-house or contracted human translation team, you can still use ShipEasy Translations as the system of record. Two patterns:
+If you have an in-house or contracted human translation team, you can still use Shipeasy Translations as the system of record. Two patterns:
 
 <TileGrid>
   <Tile
@@ -240,9 +241,9 @@ If you have an in-house or contracted human translation team, you can still use 
       </>
     }
   >
-    <code>shipeasy i18n drafts export --profile fr</code> produces XLIFF or JSON; the
-    translator returns it; <code>--import</code> ingests it as a draft. Compatible with Trados,
-    memoQ, Smartcat.
+    <code>shipeasy i18n drafts export --profile fr</code> produces XLIFF or JSON; the translator
+    returns it; <code>--import</code> ingests it as a draft. Compatible with Trados, memoQ,
+    Smartcat.
   </Tile>
   <Tile
     icon="✓"
@@ -312,7 +313,7 @@ If you have an in-house or contracted human translation team, you can still use 
   eyebrow="THAT'S IT"
   title={
     <>
-      You've seen <em>all of ShipEasy Translations</em>.
+      You've seen <em>all of Shipeasy Translations</em>.
     </>
   }
   body="Profiles, keys, drafts, AI translations — that's the whole system. Time to run it on your own repo."
@@ -329,7 +330,7 @@ If you have an in-house or contracted human translation team, you can still use 
 
 <DocNav
   prev={{ href: "/translations/drafts", title: "Drafts" }}
-  next={{ href: "/i18n", title: "ShipEasy Translations overview" }}
+  next={{ href: "/i18n", title: "Shipeasy Translations overview" }}
 />
 
 <DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/translations/translations.mdx" />

@@ -4,13 +4,13 @@ description: Localized labels and AI-assisted translations — discovered from y
 ---
 
 <Hero
-  eyebrow="ShipEasy · Translations"
+  eyebrow="Shipeasy · Translations"
   title={
     <>
       Localize your product, <em>as easy as asking Claude</em>.
     </>
   }
-  subtitle="ShipEasy plugs into your codebase, finds every user-facing string, and ships translations that read like a human wrote them — because Claude did. From npm install to a fully translated build in five minutes."
+  subtitle="Shipeasy plugs into your codebase, finds every user-facing string, and ships translations that read like a human wrote them — because Claude did. From npm install to a fully translated build in five minutes."
   primaryHref="/translations/getting-started"
   primaryLabel="Getting started"
   secondaryHref="#how-it-works"
@@ -24,7 +24,7 @@ description: Localized labels and AI-assisted translations — discovered from y
   works="Next, Vite, Remix, Astro, Expo"
 />
 
-**ShipEasy Translations** treats translations like configuration. You discover keys from source, store them on the project, generate translations (manually or via AI), review, and publish. New copy goes live worldwide in seconds — no redeploy.
+**Shipeasy Translations** treats translations like configuration. You discover keys from source, store them on the project, generate translations (manually or via AI), review, and publish. New copy goes live worldwide in seconds — no redeploy.
 
 ## The 5-minute path
 
@@ -57,7 +57,7 @@ description: Localized labels and AI-assisted translations — discovered from y
   </QuickstartStep>
 </Quickstart>
 
-## What ShipEasy Translations does
+## What Shipeasy Translations does
 
 <TileGrid>
   <Tile
@@ -91,8 +91,8 @@ description: Localized labels and AI-assisted translations — discovered from y
       </>
     }
   >
-    <code>en</code>, <code>fr</code>, <code>de:staging</code>. Each profile is a manifest
-    of keys and values you can publish, diff and revert.
+    <code>en</code>, <code>fr</code>, <code>de:staging</code>. Each profile is a manifest of keys
+    and values you can publish, diff and revert.
   </Tile>
   <Tile
     href="/translations/drafts"
@@ -169,9 +169,9 @@ shipeasy i18n publish --profile fr
 Detailed walkthrough at [Quickstart](/translations/quickstart).
 
 <Callout type="info" title="BYOK or hosted, your call">
-  ShipEasy Translations works with your own Anthropic API key (zero markup, zero data retention) **or** the
-  hosted plan with a generous free tier. Switch any time in the project settings — translations stay
-  in your project either way.
+  Shipeasy Translations works with your own Anthropic API key (zero markup, zero data retention)
+  **or** the hosted plan with a generous free tier. Switch any time in the project settings —
+  translations stay in your project either way.
 </Callout>
 
 ## Configure
@@ -191,7 +191,7 @@ export default defineConfig({
     // Brand voice — Claude reads this on every translation.
     tone: "warm, technical, never marketing-speak",
     glossary: {
-      ShipEasy: "ShipEasy", // never translate
+      Shipeasy: "Shipeasy", // never translate
       ship: "deploy", // disambiguate
     },
 
@@ -260,7 +260,7 @@ export default defineConfig({
 
 ## Use it in your app
 
-ShipEasy Translations ships a thin runtime — about 1.4 kB gzipped. The `useT` hook reads the active locale from your router and returns translations from the bundle generated at build time.
+Shipeasy Translations ships a thin runtime — about 1.4 kB gzipped. The `useT` hook reads the active locale from your router and returns translations from the bundle generated at build time.
 
 ```tsx
 // app/(marketing)/page.tsx
@@ -277,7 +277,7 @@ export default function Page() {
 }
 ```
 
-There is no `en.json` you wrote by hand, no string keys, no `i18n.t("hero.title")`. The English **is** the source of truth and the key. ShipEasy Translations generates a stable hash and keeps every locale&apos;s bundle in sync.
+There is no `en.json` you wrote by hand, no string keys, no `i18n.t("hero.title")`. The English **is** the source of truth and the key. Shipeasy Translations generates a stable hash and keeps every locale&apos;s bundle in sync.
 
 <Callout type="warn" title="Don't translate user-generated content this way">
   `useT` is for static UI strings extracted at build time. For UGC (chat messages, reviews, support
@@ -286,7 +286,7 @@ There is no `en.json` you wrote by hand, no string keys, no `i18n.t("hero.title"
 
 ## Why a separate product
 
-You could store labels as a [dynamic JSON config](/configs/values) — and for tiny apps, you should. ShipEasy Translations exists because real-world i18n hits problems configs aren&apos;t built for:
+You could store labels as a [dynamic JSON config](/configs/values) — and for tiny apps, you should. Shipeasy Translations exists because real-world i18n hits problems configs aren&apos;t built for:
 
 - **Volume**: tens of thousands of keys. One JSON blob is unworkable.
 - **Workflow**: translators are not engineers and shouldn&apos;t need access to flag tooling.
@@ -294,7 +294,7 @@ You could store labels as a [dynamic JSON config](/configs/values) — and for t
 - **Performance**: chunking + lazy loading by route is critical at the upper end.
 - **Stats**: you want to know which keys are unused, which translations are stale, which locales lag behind.
 
-ShipEasy Translations handles all of that and exposes a dead-simple SDK for the runtime side.
+Shipeasy Translations handles all of that and exposes a dead-simple SDK for the runtime side.
 
 <ConvertCTA
   eyebrow="READY?"
@@ -303,7 +303,7 @@ ShipEasy Translations handles all of that and exposes a dead-simple SDK for the 
       Stop reading. <em>Start localizing.</em>
     </>
   }
-  body="The fastest way to feel ShipEasy Translations is to run it on your own repo. Five thousand strings on us — no card, no email gate, runs in your terminal."
+  body="The fastest way to feel Shipeasy Translations is to run it on your own repo. Five thousand strings on us — no card, no email gate, runs in your terminal."
   primaryHref="/translations/quickstart"
   primaryLabel="Run quickstart"
   secondaryHref="/llms/i18n-strings"

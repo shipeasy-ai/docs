@@ -10,7 +10,7 @@ description: Versioned, named manifests of label keys for one locale — the uni
   works="Next, Vite, Remix, Astro, Expo"
 />
 
-A **profile** is a named, versioned manifest of label keys for a specific locale combination. It is the unit you publish, version, diff, and roll back. Everything else in ShipEasy Translations — drafts, AI translations, the loader script, validation in CI — pivots around the profile.
+A **profile** is a named, versioned manifest of label keys for a specific locale combination. It is the unit you publish, version, diff, and roll back. Everything else in Shipeasy Translations — drafts, AI translations, the loader script, validation in CI — pivots around the profile.
 
 If gates and configs are "one row per setting", profiles are "one snapshot per `locale` per publish". Every publish is immutable; revert is just "republish version N".
 
@@ -20,13 +20,13 @@ Profiles use `locale`:
 
 | Profile      | Meaning                          |
 | ------------ | -------------------------------- |
-| `en`    | English, production              |
-| `fr`    | French, production               |
+| `en`         | English, production              |
+| `fr`         | French, production               |
 | `de:staging` | German, staging                  |
 | `ja:dev`     | Japanese, dev                    |
 | `pt-BR:prod` | Brazilian Portuguese, production |
 
-The locale is BCP-47 (`en`, `fr`, `pt-BR`, `zh-Hant`). 
+The locale is BCP-47 (`en`, `fr`, `pt-BR`, `zh-Hant`).
 
 <Callout type="info" title="Why region tags matter">
   Use a region tag (`pt-BR`, `es-MX`, `zh-Hant`) whenever register, vocabulary, or script differs
@@ -44,7 +44,7 @@ Every profile is a small JSON manifest in your project plus a published bundle i
   "id": "prof_01HZ...",
   "name": "fr",
   "locale": "fr",
-  
+
   "role": "target",
   "source_profile_id": "prof_01HZ_en_prod",
   "current_version": 17,
@@ -122,9 +122,9 @@ The `loader_url` is what the runtime hits. It is pinned to the current version, 
 
 ## Source vs target
 
-ShipEasy Translations does not hard-code English as "the" source. The first profile you create on a project is implicitly the **source**: it is where the codemod pushes discovered keys, and it is the basis the AI translates _from_.
+Shipeasy Translations does not hard-code English as "the" source. The first profile you create on a project is implicitly the **source**: it is where the codemod pushes discovered keys, and it is the basis the AI translates _from_.
 
-Other profiles are **targets**: they hold translations of the source's keys. You can switch the source profile in **Project → ShipEasy Translations → Settings**, but in practice every team picks one and sticks with it.
+Other profiles are **targets**: they hold translations of the source's keys. You can switch the source profile in **Project → Shipeasy Translations → Settings**, but in practice every team picks one and sticks with it.
 
 <TileGrid>
   <Tile
@@ -156,8 +156,8 @@ Other profiles are **targets**: they hold translations of the source's keys. You
       </>
     }
   >
-    One per <code>locale</code> you ship. Values come from AI drafts, human translators, or
-    imported XLIFF. Keys are read-only — they mirror the source.
+    One per <code>locale</code> you ship. Values come from AI drafts, human translators, or imported
+    XLIFF. Keys are read-only — they mirror the source.
   </Tile>
 </TileGrid>
 

@@ -4,7 +4,7 @@ description: Typed config values you can change without a redeploy.
 ---
 
 <Hero
-  eyebrow="ShipEasy · Configs"
+  eyebrow="Shipeasy · Configs"
   title={
     <>
       Ship a value — <em>without a redeploy</em>.
@@ -25,7 +25,7 @@ description: Typed config values you can change without a redeploy.
 />
 
 A **config** is a typed key/value you can change without a redeploy. Use one when the answer to
-*"what should this be right now?"* is not boolean — pricing, copy, limits, feature options,
+_"what should this be right now?"_ is not boolean — pricing, copy, limits, feature options,
 endpoint paths, model names, anything you'd otherwise hard-code as a constant.
 
 ## When to use a config [#when-to-use]
@@ -64,12 +64,12 @@ Sub-millisecond evaluation — no per-request fetch from your code.
 
 Both are typed values you can change without a redeploy. Pick by the **shape of the answer**:
 
-| Question                 | Gate                   | Config                                 |
-| ------------------------ | ---------------------- | -------------------------------------- |
-| Output                   | boolean                | `string` / `number` / `boolean` / JSON |
-| Targeting rules?         | yes                    | no — values are global                 |
-| Rollout percentage?      | yes                    | no                                     |
-| Use case                 | "is feature X on?"     | "what value should X be?"              |
+| Question            | Gate               | Config                                 |
+| ------------------- | ------------------ | -------------------------------------- |
+| Output              | boolean            | `string` / `number` / `boolean` / JSON |
+| Targeting rules?    | yes                | no — values are global                 |
+| Rollout percentage? | yes                | no                                     |
+| Use case            | "is feature X on?" | "what value should X be?"              |
 
 ## See also
 

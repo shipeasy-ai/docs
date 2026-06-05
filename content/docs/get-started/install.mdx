@@ -1,6 +1,6 @@
 ---
 title: Install
-description: Add the ShipEasy SDK to your application, the CLI to your machine, and (optionally) the MCP server to your AI assistant.
+description: Add the Shipeasy SDK to your application, the CLI to your machine, and (optionally) the MCP server to your AI assistant.
 ---
 
 <DocMeta
@@ -10,7 +10,7 @@ description: Add the ShipEasy SDK to your application, the CLI to your machine, 
   works="Node 20+ · Workers · Bun · Deno · Browser"
 />
 
-ShipEasy ships as a small set of npm packages — install only the ones you need. There is one SDK, one CLI binary, and one MCP server. They all share the same login.
+Shipeasy ships as a small set of npm packages — install only the ones you need. There is one SDK, one CLI binary, and one MCP server. They all share the same login.
 
 ## Pick what you need
 
@@ -101,7 +101,7 @@ That&apos;s the whole runway from zero to working. Everything below is detail.
     # bun add @shipeasy/sdk
     ```
 
-    The package ships **both** server (Node, ShipEasy, Bun, Deno) and browser builds via conditional exports. Your bundler picks the right one automatically; you can also import the explicit subpath (`/server`, `/client`) when you want to be unambiguous (e.g. inside a monorepo with a shared util used from both).
+    The package ships **both** server (Node, Shipeasy, Bun, Deno) and browser builds via conditional exports. Your bundler picks the right one automatically; you can also import the explicit subpath (`/server`, `/client`) when you want to be unambiguous (e.g. inside a monorepo with a shared util used from both).
 
   </Step>
 
@@ -181,7 +181,7 @@ The CLI is a thin wrapper over the same Server Actions the dashboard uses. Anyth
 
 ## MCP server [#mcp]
 
-If you use Claude Code, Cursor, Windsurf, or any other MCP-compatible AI assistant, install the ShipEasy MCP server so your agent can do setup work for you:
+If you use Claude Code, Cursor, Windsurf, or any other MCP-compatible AI assistant, install the Shipeasy MCP server so your agent can do setup work for you:
 
 <Terminal title="zsh">
   <Prompt />
@@ -231,7 +231,7 @@ The SDK reads the following from `process.env` (and `import.meta.env` in Vite). 
     type="string"
     desc={
       <>
-        Override the ShipEasy base URL. Defaults to <code>https://edge.shipeasy.dev</code>.
+        Override the Shipeasy base URL. Defaults to <code>https://edge.shipeasy.dev</code>.
       </>
     }
   />
@@ -304,7 +304,7 @@ The SDK reads the following from `process.env` (and `import.meta.env` in Vite). 
 
 ## Edge runtimes & ESM
 
-The SDK is shipped as ESM-first with a CJS fallback for older Node. There are no Node built-ins on the hot path, so it runs unchanged on ShipEasy, Vercel Edge, Deno Deploy, and Bun.
+The SDK is shipped as ESM-first with a CJS fallback for older Node. There are no Node built-ins on the hot path, so it runs unchanged on Shipeasy, Vercel Edge, Deno Deploy, and Bun.
 
 <Callout type="info" title="Conditional exports cheat sheet">
   - `import {shipeasy} from "@shipeasy/sdk/server"` — server build, picked automatically when
@@ -322,7 +322,7 @@ If you depend on the SDK from a Cloudflare Worker built with `CLI`, no special c
 ## Troubleshooting
 
 <Callout type="warn" title="Node 18 or older">
-  ShipEasy requires Node 20+. Older Node versions lack stable `fetch` and `AbortSignal.timeout`. Upgrade Node, or polyfill `fetch` and pass it explicitly via `shipeasy({ fetch: customFetch })`.
+  Shipeasy requires Node 20+. Older Node versions lack stable `fetch` and `AbortSignal.timeout`. Upgrade Node, or polyfill `fetch` and pass it explicitly via `shipeasy({ fetch: customFetch })`.
 </Callout>
 
 <Callout type="warn" title="Edge runtime build picks the wrong file">

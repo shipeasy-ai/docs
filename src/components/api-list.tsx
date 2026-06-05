@@ -951,7 +951,7 @@ export function ApiSidebar() {
           />
         </label>
         <p className="se-api-side-warn">
-          Calls go directly from your browser to the ShipEasy API. Your key is never sent to our
+          Calls go directly from your browser to the Shipeasy API. Your key is never sent to our
           docs server.
         </p>
       </div>

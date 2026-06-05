@@ -14,14 +14,14 @@ shipeasy login
 shipeasy i18n <subcommand>
 ```
 
-| Subcommand                  | What it does                                                                                |
-| --------------------------- | ------------------------------------------------------------------------------------------- |
-| `install-loader`            | Inject the ShipEasy i18n loader script into your project                                    |
-| `scan [paths...]`           | Find translatable strings in source files (wrapped `t('key')` calls + unwrapped JSX text)   |
-| `push <file>`               | Push key/value pairs from a JSON file to the i18n profile (existing keys skipped)           |
-| `publish`                   | Publish a profile chunk to the CDN (rebuild KV manifest, purge cache)                       |
-| `validate [paths...]`       | Check that all `t('key', …)` references in code exist on the server                         |
-| `profiles <subcommand>`     | Manage i18n locale profiles                                                                 |
+| Subcommand              | What it does                                                                              |
+| ----------------------- | ----------------------------------------------------------------------------------------- |
+| `install-loader`        | Inject the Shipeasy i18n loader script into your project                                  |
+| `scan [paths...]`       | Find translatable strings in source files (wrapped `t('key')` calls + unwrapped JSX text) |
+| `push <file>`           | Push key/value pairs from a JSON file to the i18n profile (existing keys skipped)         |
+| `publish`               | Publish a profile chunk to the CDN (rebuild KV manifest, purge cache)                     |
+| `validate [paths...]`   | Check that all `t('key', …)` references in code exist on the server                       |
+| `profiles <subcommand>` | Manage i18n locale profiles                                                               |
 
 ```bash
 # Discover untranslated strings in your repo

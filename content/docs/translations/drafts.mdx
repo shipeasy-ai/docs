@@ -12,7 +12,7 @@ description: Translation proposals — manual or AI — that land as a reviewabl
 
 Translations don't go straight into a profile. They land first as a **draft**: a set of proposed values for one profile, attributable to a source (you, an AI run, an imported XLIFF file) and reviewable inline. Merging promotes the draft into the profile. Publishing — a separate, deliberate step — pushes the profile to KV and the CDN.
 
-This separation is the single most important guardrail in ShipEasy Translations. AI translations are good but not perfect; merging without review is how you ship "Confirmer" as a button label that overflows on mobile in three locales for two weeks before anyone notices.
+This separation is the single most important guardrail in Shipeasy Translations. AI translations are good but not perfect; merging without review is how you ship "Confirmer" as a button label that overflows on mobile in three locales for two weeks before anyone notices.
 
 ## Lifecycle
 
@@ -87,13 +87,13 @@ The import becomes a draft, not a direct merge. You still review it; row-by-row 
 
 ### Manual entry
 
-In the dashboard, **ShipEasy Translations → Drafts → New** opens an empty draft for the chosen profile. You can paste keys and values, or use the inline editor. Useful for quick fixes ("change the FR CTA from 'Régler' to 'Payer'") that don't merit a full AI run.
+In the dashboard, **Shipeasy Translations → Drafts → New** opens an empty draft for the chosen profile. You can paste keys and values, or use the inline editor. Useful for quick fixes ("change the FR CTA from 'Régler' to 'Payer'") that don't merit a full AI run.
 
 ## Reviewing a draft
 
-Open **ShipEasy Translations → Drafts → fr**. You see a four-column view:
+Open **Shipeasy Translations → Drafts → fr**. You see a four-column view:
 
-| Source (en)  | Current (fr)  | Proposed (draft)    | Decision               |
+| Source (en)       | Current (fr)       | Proposed (draft)    | Decision               |
 | ----------------- | ------------------ | ------------------- | ---------------------- |
 | Welcome back      | Bon retour         | Bienvenue à nouveau | ✓ Approve              |
 | Pay               | _(empty)_          | Régler              | ✗ Reject (edit inline) |
@@ -171,8 +171,8 @@ Roles control what each teammate can do on a draft:
       </>
     }
   >
-    All reviewer powers, plus publish to any locale, create/delete profiles, manage roles,
-    configure tone and glossary.
+    All reviewer powers, plus publish to any locale, create/delete profiles, manage roles, configure
+    tone and glossary.
   </Tile>
 </TileGrid>
 
@@ -188,7 +188,7 @@ When you're satisfied, click **Merge draft**. Approved values are promoted into 
 shipeasy i18n publish --profile fr
 ```
 
-You can also auto-publish on merge in **Project → ShipEasy Translations → Settings → Auto-publish on merge** if you trust the review step entirely. Most teams turn this on for `:dev` and `:staging` but leave `:prod` manual.
+You can also auto-publish on merge in **Project → Shipeasy Translations → Settings → Auto-publish on merge** if you trust the review step entirely. Most teams turn this on for `:dev` and `:staging` but leave `:prod` manual.
 
 ## Side-by-side review and back-translation
 

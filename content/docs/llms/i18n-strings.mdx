@@ -1,6 +1,6 @@
 ---
 title: "Runbook: Onboard a project to Polylang (i18n)"
-description: Step-by-step MCP runbook for an AI agent to fully onboard a project to ShipEasy Polylang — detect the framework, install the loader, codemod the source, push keys, validate, and publish. One human stop for browser auth.
+description: Step-by-step MCP runbook for an AI agent to fully onboard a project to Shipeasy Polylang — detect the framework, install the loader, codemod the source, push keys, validate, and publish. One human stop for browser auth.
 ---
 
 <DocMeta
@@ -128,7 +128,7 @@ Every step below references one of these MCP tools, all under the `mcp__shipeasy
   <Step title="Confirm the tools are present">
     Before doing anything else, check that `mcp__shipeasy__auth_check` is callable. If it isn&apos;t, stop and tell the human:
 
-    > _"I don&apos;t see the ShipEasy MCP tools. Run `npm install -g @shipeasy/cli && shipeasy mcp install`, restart this session, and try again."_
+    > _"I don&apos;t see the Shipeasy MCP tools. Run `npm install -g @shipeasy/cli && shipeasy mcp install`, restart this session, and try again."_
 
   </Step>
   <Step title="Call auth_check">
@@ -146,15 +146,15 @@ Every step below references one of these MCP tools, all under the `mcp__shipeasy
     shipeasy login
     ```
 
-    The CLI opens their default browser to a ShipEasy auth page. They sign in (GitHub / Google / magic link). The CLI prints `Authenticated successfully` and writes credentials to `~/.shipeasy/credentials`. **Do not attempt `mcp__shipeasy__auth_login` first** — the device-code flow benefits from being attached to the user&apos;s terminal so they can see progress.
+    The CLI opens their default browser to a Shipeasy auth page. They sign in (GitHub / Google / magic link). The CLI prints `Authenticated successfully` and writes credentials to `~/.shipeasy/credentials`. **Do not attempt `mcp__shipeasy__auth_login` first** — the device-code flow benefits from being attached to the user&apos;s terminal so they can see progress.
 
     Once they confirm success, call `auth_check` again. If it still returns `false`, ask them to paste any error from the CLI output and stop.
 
   </Step>
   <Step title="Confirm the project binding">
-    `auth_check` returns `project` when the cwd is bound to a ShipEasy project. If it&apos;s missing, ask the human:
+    `auth_check` returns `project` when the cwd is bound to a Shipeasy project. If it&apos;s missing, ask the human:
 
-    > _"Which ShipEasy project should I onboard this codebase to? You can list yours with `shipeasy projects list`."_
+    > _"Which Shipeasy project should I onboard this codebase to? You can list yours with `shipeasy projects list`."_
 
     Once they answer, run `shipeasy link <project-id>` (or have them run it) and re-check.
 
@@ -167,7 +167,7 @@ Every step below references one of these MCP tools, all under the `mcp__shipeasy
 
 <Steps>
   <Step title="Prefer declared facts over detection">
-    If `CLAUDE.md` (or `AGENTS.md`) at the repo root contains a `## ShipEasy String Manager` block with `Framework:`, `Source root:`, and `Loader target:` filled in, **use those values** and skip `detect_project`. Humans declare them precisely because detection guesses wrong on monorepos.
+    If `CLAUDE.md` (or `AGENTS.md`) at the repo root contains a `## Shipeasy String Manager` block with `Framework:`, `Source root:`, and `Loader target:` filled in, **use those values** and skip `detect_project`. Humans declare them precisely because detection guesses wrong on monorepos.
   </Step>
   <Step title="Otherwise, call detect_project">
     ```
@@ -312,7 +312,7 @@ The branch here depends on what Step 2 told you about codemod capability.
 
     > _"Here are the first 12 strings the codemod wants to wrap. Anything that shouldn&apos;t be translated? (Brand names, code identifiers, technical strings.) I&apos;ll add them to the glossary or skip them."_
 
-    For brand names and acronyms, edit `shipeasy.config.ts`&apos;s `glossary` (e.g. `"ShipEasy": "ShipEasy"` to lock the term).
+    For brand names and acronyms, edit `shipeasy.config.ts`&apos;s `glossary` (e.g. `"Shipeasy": "Shipeasy"` to lock the term).
 
   </Step>
   <Step title="Apply">
@@ -354,7 +354,7 @@ The branch here depends on what Step 2 told you about codemod capability.
     - **Django**: `{% trans "Hero title" %}`
     - **Laravel Blade**: `{{ __('hero.title') }}`
 
-    Push the keys you create regardless of helper syntax — ShipEasy stores them by key name, not call site.
+    Push the keys you create regardless of helper syntax — Shipeasy stores them by key name, not call site.
 
   </Step>
   <Step title="STOP — for ambiguous cases, ask">
