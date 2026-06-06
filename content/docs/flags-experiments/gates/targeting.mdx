@@ -85,10 +85,15 @@ are ANDed. Equivalent JSON shape if you'd rather edit raw via the [Admin API](/f
 ]
 ```
 
-Or directly via the API:
+Or directly via the [Admin API](/flags-experiments/api) (resolve the
+gate's id first, then PATCH it):
 
 ```bash
-curl -X POST https://api.shipeasy.ai/v1/gates/checkout-v2/rules \
+GATE_ID=$(curl -sS \
+  -H "Authorization: Bearer $SHIPEASY_ADMIN_KEY" \
+  "https://shipeasy.ai/api/admin/gates?name=checkout-v2" | jq -r '.data[0].id')
+
+curl -X PATCH "https://shipeasy.ai/api/admin/gates/$GATE_ID" \
   -H "Authorization: Bearer $SHIPEASY_ADMIN_KEY" \
   -H "Content-Type: application/json" \
   -d '{

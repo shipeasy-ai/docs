@@ -54,7 +54,7 @@ Add `--json` to any read command for machine-readable output. Add `--project <id
     type="string"
     desc={
       <>
-        Override the active project for this call. Wins over <code>SHIPEASY_PROJECT</code>.
+        Override the active project for this call. Wins over <code>SHIPEASY_PROJECT_ID</code>.
       </>
     }
   />
@@ -183,7 +183,7 @@ shipeasy experiments create checkout-cta \
 
 For long-lived CI access, create an **admin** SDK key from the dashboard's
 **SDK Keys** page (`shipeasy keys create` with `kind: admin`) and pass it
-via the `SHIPEASY_API_TOKEN` env. See
+via the `SHIPEASY_CLI_TOKEN` env. See
 [Authenticate → SDK keys vs API tokens](/get-started/authenticate#sdk-keys-vs-api-tokens-pick-the-right-one)
 for when to use each.
 
@@ -239,13 +239,17 @@ See [MCP server](/get-started/mcp) for the tool inventory.
 
 <ApiTable>
   <ApiRow
-    name="SHIPEASY_API_TOKEN"
+    name="SHIPEASY_CLI_TOKEN"
     optional
     type="string"
-    desc={<>Long-lived API token used for CI. Bypasses interactive login.</>}
+    desc={
+      <>
+        Long-lived admin token used in CI. Bypasses interactive <code>shipeasy login</code>.
+      </>
+    }
   />
   <ApiRow
-    name="SHIPEASY_API_URL"
+    name="SHIPEASY_API_BASE_URL"
     optional
     type="string"
     desc={
@@ -255,32 +259,23 @@ See [MCP server](/get-started/mcp) for the tool inventory.
     }
   />
   <ApiRow
-    name="SHIPEASY_EDGE_URL"
+    name="SHIPEASY_APP_BASE_URL"
     optional
     type="string"
     desc={
       <>
-        Override the Shipeasy base URL (default <code>https://edge.shipeasy.dev</code>).
+        Override the Shipeasy dashboard base URL the CLI links to from its device-auth output
+        (default <code>https://shipeasy.ai</code>).
       </>
     }
   />
   <ApiRow
-    name="SHIPEASY_PROJECT"
+    name="SHIPEASY_PROJECT_ID_ID"
     optional
     type="string"
     desc={
       <>
         Default project id when no <code>--project</code> flag is passed.
-      </>
-    }
-  />
-  <ApiRow
-    name="SHIPEASY_ENV"
-    optional
-    type={`"dev" | "staging" | "prod"`}
-    desc={
-      <>
-        Default environment when no <code>--env</code> flag is passed.
       </>
     }
   />
@@ -292,27 +287,29 @@ See [MCP server](/get-started/mcp) for the tool inventory.
 `0` on success, `1` on any error. JSON output goes to stdout; human-readable progress goes to stderr — pipes work the way you&apos;d expect.
 
 ```bash
-shipeasy gate list --json | jq '.[] | select(.enabled == true) | .name'
+shipeasy flags list --json | jq '.[] | select(.enabled == true) | .name'
 ```
 
 ## Examples
 
 ```bash
 # Create a gate, set targeting, roll out to 5%, then promote to 100%.
-shipeasy gate create checkout-v2 --rules '[{"attr":"plan","op":"eq","value":"pro"}]'
-shipeasy gate rollout checkout-v2 --percent 5
-shipeasy gate rollout checkout-v2 --percent 100
+shipeasy flags create checkout-v2 --rules '[{"attr":"plan","op":"eq","value":"pro"}]'
+shipeasy flags rollout checkout-v2 5
+shipeasy flags rollout checkout-v2 100
 
-# Scan a Next.js app for translatable strings, push to source profile, AI-translate, publish.
+# Scan a Next.js app for translatable strings, push to the source profile,
+# then publish. AI translation drafts are produced from the dashboard's
+# Drafts panel (or the `i18n_translate_draft` MCP tool) today — the CLI
+# subcommand for it isn't shipped.
 shipeasy i18n install-loader --profile en:prod
 shipeasy i18n scan ./src --rewrite --profile en:prod
 shipeasy i18n push --profile en:prod --source codemod
-shipeasy i18n profiles create --name fr:prod --locale fr
-shipeasy i18n translate --profile fr:prod --ai
+shipeasy i18n profiles create fr:prod --locales fr
 shipeasy i18n publish --profile fr:prod
 
 # CI smoke test — fail the build if a translatable key is missing from prod.
-SHIPEASY_API_TOKEN="$CI_TOKEN" shipeasy i18n validate --profile en:prod ./src
+SHIPEASY_CLI_TOKEN="$CI_TOKEN" shipeasy i18n validate ./src
 ```
 
 <Callout type="info" title="Pipe-friendly by design">

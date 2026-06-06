@@ -37,7 +37,7 @@ redeploys between ramp steps.
     num={4}
     label="RAMP"
     title="Bump to 5%, then 25%, then 100%"
-    cmd="shipeasy flags rollout checkout-v2 --percent 100"
+    cmd="shipeasy flags rollout checkout-v2 100"
   />
 </Quickstart>
 
@@ -84,12 +84,12 @@ Alternatively, create it in the dashboard: **Flags → New gate → Save**.
 ## 3. Wrap the code path
 
 ```ts title="app/checkout/page.tsx"
-import { gate } from "@shipeasy/sdk/server";
+import { flags } from "@shipeasy/sdk/server";
 
 export default async function CheckoutPage() {
   const userId = await getUserId();
 
-  if (await gate("checkout-v2", { userId })) {
+  if (flags.get("checkout-v2", { user_id: userId })) {
     return <CheckoutV2 />;
   }
   return <CheckoutV1 />;
@@ -98,10 +98,10 @@ export default async function CheckoutPage() {
 
 Two things to note:
 
-- **Always pass a stable `userId`.** This is the bucketing key — same user, same answer, every
+- **Always pass a stable `user_id`.** This is the bucketing key — same user, same answer, every
   request. If you pass a random id, the user re-buckets every request and you'll see flicker.
-- **The call is synchronous in spirit.** `gate()` does a hash-table lookup against the in-memory
-  bundle. The `await` is there for the SDK's init guarantee, not for a network round-trip.
+- **The call is synchronous.** `flags.get()` does a hash-table lookup against the in-memory
+  bundle — no network round-trip per read.
 
 Deploy this. With `--rollout 0`, every user sees `CheckoutV1`. The new path is shipped but dark.
 
@@ -111,24 +111,30 @@ When you're ready to start exposing real users:
 
 ```bash
 # Day 1 — 5% of all users
-shipeasy flags rollout checkout-v2 --percent 5
+shipeasy flags rollout checkout-v2 5
 
 # Day 3 — 25%, after metrics look fine
-shipeasy flags rollout checkout-v2 --percent 25
+shipeasy flags rollout checkout-v2 25
 
 # Day 5 — full launch
-shipeasy flags rollout checkout-v2 --percent 100
+shipeasy flags rollout checkout-v2 100
 ```
 
 Each ramp step propagates to every SDK in under a second. No redeploy, no env var change.
 
-The same gate can be ramped from the dashboard with a slider, or from the API with a `PATCH`:
+The same gate can be ramped from the dashboard with a slider, or via the
+[Admin API](/flags-experiments/api). Resolve the gate's id, then PATCH:
 
 ```bash
-curl -X PATCH https://api.shipeasy.ai/v1/gates/checkout-v2 \
+# Resolve `checkout-v2` → its UUID
+GATE_ID=$(curl -sS \
+  -H "Authorization: Bearer $SHIPEASY_ADMIN_KEY" \
+  "https://shipeasy.ai/api/admin/gates?name=checkout-v2" | jq -r '.data[0].id')
+
+curl -X PATCH "https://shipeasy.ai/api/admin/gates/$GATE_ID" \
   -H "Authorization: Bearer $SHIPEASY_ADMIN_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"rolloutPct": 25}'
+  -d '{"rolloutPct": 2500}'   # rolloutPct is basis points: 2500 = 25%
 ```
 
 ## 5. Kill it if something goes wrong
@@ -136,15 +142,17 @@ curl -X PATCH https://api.shipeasy.ai/v1/gates/checkout-v2 \
 If the new path breaks at 25%, flip the killswitch:
 
 ```bash
-shipeasy flags disable checkout-v2 --killswitch \
-  --reason "Carts not finalising — PagerDuty #4912"
+shipeasy flags disable checkout-v2
 ```
 
-Every SDK serves `false` within the next poll (usually ~1s). Targeting rules and the rollout
-percentage are preserved — when you fix the bug, re-enabling restores the previous state exactly.
+Every SDK serves `false` within the next poll (default 30s on Free, 60s
+on Team). Targeting rules and the rollout percentage are preserved on
+the gate — when you fix the bug, `shipeasy flags enable checkout-v2`
+restores the previous state exactly.
 
-See [Killswitches](/flags-experiments/killswitches) for the incident-grade variant that has no
-rollout knob and defaults to safe.
+For incident-grade flips that propagate faster and are a dedicated
+control surface, use a [killswitch](/flags-experiments/killswitches)
+instead.
 
 ## Where to next
 

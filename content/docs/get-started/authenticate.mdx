@@ -7,7 +7,7 @@ description: One `shipeasy login` opens your browser, signs in the CLI and every
 
 Shipeasy uses an OAuth-style PKCE device-auth flow. Run one command, click one link in your browser, and the CLI plus every MCP tool on your machine is signed in. There is no API key to copy, paste, or rotate — for interactive use.
 
-For CI, you swap the device-auth flow for a long-lived `SHIPEASY_API_TOKEN` env var. Same code paths underneath; different credential source.
+For CI, you swap the device-auth flow for a long-lived `SHIPEASY_CLI_TOKEN` env var. Same code paths underneath; different credential source.
 
 ## Log in
 
@@ -25,7 +25,7 @@ Your browser opens to a confirmation page. Sign in with GitHub, Google, or a mag
 
 <Callout type="info" title="No environment variables required">
   Once you&apos;ve logged in, every CLI command and every MCP tool call picks up your credentials
-  automatically. You can still set `SHIPEASY_API_TOKEN` if you prefer — it always wins over the file
+  automatically. You can still set `SHIPEASY_CLI_TOKEN` if you prefer — it always wins over the file
   — but interactive use never needs it.
 </Callout>
 
@@ -101,12 +101,12 @@ This means a stolen refresh token is good for at most one refresh — the moment
 
 ## Using Shipeasy in CI
 
-For GitHub Actions, GitLab CI, and any non-interactive environment, generate a long-lived **API token** in **Project → Tokens → Create** and pass it as `SHIPEASY_API_TOKEN`:
+For GitHub Actions, GitLab CI, and any non-interactive environment, generate a long-lived **API token** in **Project → Tokens → Create** and pass it as `SHIPEASY_CLI_TOKEN`:
 
 ```yaml title=".github/workflows/release.yml"
 - name: Validate i18n keys
   env:
-    SHIPEASY_API_TOKEN: ${{ secrets.SHIPEASY_API_TOKEN }}
+    SHIPEASY_CLI_TOKEN: ${{ secrets.SHIPEASY_CLI_TOKEN }}
   run: shipeasy i18n validate --profile en:prod
 ```
 

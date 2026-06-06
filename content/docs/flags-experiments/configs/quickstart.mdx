@@ -31,7 +31,7 @@ If you&apos;d rather hand this to an AI agent, the [LLM guide](/llms/configs) de
     num={3}
     label="ROLL OUT"
     title="Bump it to 5%, then 100%"
-    cmd="shipeasy flags rollout new-checkout-flow --percent 5"
+    cmd="shipeasy flags rollout new-checkout-flow 5"
   />
 </Quickstart>
 
@@ -90,14 +90,14 @@ shipeasy keys create --kind server
     import { flags } from "@shipeasy/sdk/server";
 
     export async function getCheckoutComponent(user) {
-      if (flags.gate("new-checkout-flow", user)) {
+      if (flags.get("new-checkout-flow", user)) {
         return import("./checkout/new");
       }
       return import("./checkout/legacy");
     }
     ```
 
-    `gate()` is synchronous and reads from the in-process cache. Pass any user attributes you want available to targeting rules — at minimum `{ user_id }`. The shape of `user` is just a plain object:
+    `flags.get()` is synchronous and reads from the in-process cache. Pass any user attributes you want available to targeting rules — at minimum `{ user_id }`. The shape of `user` is just a plain object:
 
     ```ts
     {
@@ -127,9 +127,9 @@ shipeasy keys create --kind server
     Bump the rollout from `0%` &rarr; `5%` &rarr; `25%` &rarr; `100%` over a few hours, watching your error rate and p95.
 
     ```bash
-    shipeasy flags rollout new-checkout-flow --percent 5
-    shipeasy flags rollout new-checkout-flow --percent 25
-    shipeasy flags rollout new-checkout-flow --percent 100
+    shipeasy flags rollout new-checkout-flow 5
+    shipeasy flags rollout new-checkout-flow 25
+    shipeasy flags rollout new-checkout-flow 100
     ```
 
     Bucketing is deterministic by `user_id`, so the same 5% always sees the new path. You won&apos;t see flicker as you bump the percentage — you only ever **add** users to the bucket, never reshuffle.
@@ -151,22 +151,26 @@ shipeasy keys create --kind server
     If something goes wrong, flip the killswitch. It overrides every targeting rule and serves `false` everywhere within the SDK&apos;s next poll (default 30s, faster on Pro).
 
     ```bash
-    shipeasy flags disable new-checkout-flow --killswitch
+    shipeasy flags disable new-checkout-flow
     ```
 
-    Dashboard: toggle the red **Killswitch** chip on the gate row. The killswitch is a separate field from `enabled`, so flipping it preserves your targeting rules and rollout — re-enabling restores the full prior state.
+    `flags disable` is the gate-level off switch. `enabled` is a separate field from the gate's `rolloutPct` + targeting rules, so flipping it preserves them — `shipeasy flags enable new-checkout-flow` restores the full prior state. For incident-grade flips on a different control surface, use a [killswitch](/flags-experiments/killswitches).
 
   </Step>
 
   <Step title="Wire it into CI">
-    Add a check that fails the build if you reference a flag that doesn&apos;t exist on the project:
+    A first-class `flags validate` CLI step isn't shipped today. As a stand-in, dump the project's
+    flags list and grep your source for any name that no longer exists:
 
     ```bash title=".github/workflows/ci.yml"
-    - name: Validate flags
-      run: shipeasy flags validate ./src
+    - name: List flags + grep stale references
+      run: |
+        shipeasy flags list --json | jq -r '.data[].name' > /tmp/known-flags.txt
+        # fail if a flags.get("…") call references a name not in the file
+        git grep -hoE 'flags\.get\("[^"]+"' src | sed -E 's/.*"([^"]+)".*/\1/' | sort -u > /tmp/used-flags.txt
+        comm -23 /tmp/used-flags.txt /tmp/known-flags.txt | tee /tmp/stale.txt
+        [ -s /tmp/stale.txt ] && { echo "Stale flag references found"; exit 1; } || true
     ```
-
-    This catches typos (`new-checkut-flow`) and stale references after a flag has been deleted.
 
   </Step>
 </Steps>

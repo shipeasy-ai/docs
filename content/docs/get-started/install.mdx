@@ -215,32 +215,22 @@ The SDK reads the following from `process.env` (and `import.meta.env` in Vite). 
     }
   />
   <ApiRow
-    name="SHIPEASY_ENV"
-    optional
-    type={`"dev" | "staging" | "prod"`}
-    desc={
-      <>
-        Default environment when not passed explicitly. Defaults to <code>"prod"</code>.
-      </>
-    }
-  />
-  <ApiRow
-    name="SHIPEASY_EDGE_URL"
+    name="SHIPEASY_API_BASE_URL"
     optional
     type="string"
     desc={
       <>
-        Override the Shipeasy base URL. Defaults to <code>https://edge.shipeasy.dev</code>.
+        Override the admin API base URL (CLI default <code>https://shipeasy.ai</code>).
       </>
     }
   />
   <ApiRow
-    name="SHIPEASY_API_URL"
+    name="SHIPEASY_APP_BASE_URL"
     optional
     type="string"
     desc={
       <>
-        Override the admin API base URL. Defaults to <code>https://shipeasy.ai</code>.
+        Override the dashboard URL the CLI links to (default <code>https://shipeasy.ai</code>).
       </>
     }
   />

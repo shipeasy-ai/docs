@@ -240,12 +240,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: npm i -g @shipeasy/cli
-      - run: shipeasy login --token $SHIPEASY_TOKEN
-      - run: shipeasy i18n translate --profile fr --ai --ci
-        env: { SHIPEASY_TOKEN: ${{ secrets.SHIPEASY_TOKEN }} }
+      - run: shipeasy i18n scan ./src --rewrite --profile en:prod
+      - run: shipeasy i18n publish --profile fr:prod
+        env: { SHIPEASY_CLI_TOKEN: ${{ secrets.SHIPEASY_CLI_TOKEN }} }
 ```
 
-The job opens a draft if there are new keys; reviewers get an email with the draft URL.
+For the AI translation draft step, kick the dashboard flow from
+`shipeasy login` on a developer machine or via the
+`i18n_translate_draft` MCP tool — the CLI subcommand for AI
+translations isn't shipped today, so the CI step above is "scan + push
+
+- publish", not "translate + publish".
 
 ## Discarding and abandoning
 
