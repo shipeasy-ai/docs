@@ -14,15 +14,25 @@ shipeasy login
 shipeasy feedback bugs <subcommand>
 ```
 
-| Subcommand                  | What it does                          |
-| --------------------------- | ------------------------------------- |
-| `list`                      | List bug reports                      |
-| `create <title>`            | File a bug report                     |
-| `delete <id>`               | Delete a bug by id (or id prefix)     |
+| Subcommand                 | What it does                             |
+| -------------------------- | ---------------------------------------- |
+| `list`                     | List bug reports                         |
+| `get <id>`                 | Show a bug by id (or id prefix)          |
+| `create <title>`           | File a bug report                        |
+| `update <id>`              | Update status / priority / fields        |
+| `delete <id>`              | Delete a bug                             |
+| `link-pr <id> <pr-number>` | Cross-link a GitHub PR onto the bug card |
 
 ```bash
 shipeasy feedback bugs list --json | jq '.[] | select(.status=="open")'
-shipeasy feedback bugs create "Checkout button overlaps footer" --page-url https://example.com/checkout
+
+# create requires --steps, --actual, --expected (the bug-report contract)
+shipeasy feedback bugs create "Checkout button overlaps footer" \
+  --steps "1. Add item to cart. 2. Resize browser below 1024px." \
+  --actual "Button is hidden behind sticky footer" \
+  --expected "Button remains visible above the footer" \
+  --page-url https://example.com/checkout
+
 shipeasy feedback bugs delete a1b2c3d
 ```
 
@@ -32,15 +42,23 @@ shipeasy feedback bugs delete a1b2c3d
 shipeasy feedback features <subcommand>
 ```
 
-| Subcommand                  | What it does                                     |
-| --------------------------- | ------------------------------------------------ |
-| `list`                      | List feature requests                            |
-| `create <title>`            | File a feature request                           |
-| `delete <id>`               | Delete a feature request by id (or id prefix)    |
+| Subcommand                 | What it does                                 |
+| -------------------------- | -------------------------------------------- |
+| `list`                     | List feature requests                        |
+| `get <id>`                 | Show a feature request                       |
+| `create <title>`           | File a feature request                       |
+| `update <id>`              | Update status / importance / fields          |
+| `delete <id>`              | Delete a feature request                     |
+| `link-pr <id> <pr-number>` | Cross-link a GitHub PR onto the request card |
 
 ```bash
 shipeasy feedback features list --json
-shipeasy feedback features create "Dark mode dashboard" --importance important
+
+# create requires --description and --use-case
+shipeasy feedback features create "Dark mode dashboard" \
+  --description "Add a system-prefers dark theme to the dashboard chrome" \
+  --use-case "I'm reviewing experiments at night and the white bleeds light" \
+  --importance important
 ```
 
 ## See also
