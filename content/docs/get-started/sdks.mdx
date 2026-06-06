@@ -22,30 +22,32 @@ Use this on your backend (Node, Workers, Bun, Deno, Next.js Server Components, e
 import { shipeasy, flags } from "@shipeasy/sdk/server";
 
 await shipeasy({
-  apiKey: process.env.SHIPEASY_SERVER_KEY!,
-  env: "prod", // "dev" | "staging" | "prod"
-  baseUrl: "https://edge.shipeasy.dev", // optional override
+  serverKey: process.env.SHIPEASY_SERVER_KEY ?? "",
 });
 ```
 
 `shipeasy()` is idempotent — call it from the framework entry point that runs once per cold start (Next.js root `layout.tsx`, an Express app initialiser, your Worker `fetch` handler).
 
+If you need to override the env or base URL (rare — defaults are correct
+for almost everyone), use the lower-level `flags.configure({ apiKey, env,
+baseUrl })` before calling `shipeasy(...)`.
+
 ### Evaluating a gate
 
 ```ts
-const enabled = flags.gate("new-checkout-flow", {
+const enabled = flags.get("new-checkout-flow", {
   user_id: "u_4f2a",
   plan: "pro",
   country: "US",
 });
 ```
 
-`gate()` is **synchronous**. The rule set lives in process memory. Pass any user attributes you want available to the targeting rules — see [User attributes](/get-started/attributes) for the full guide.
+`flags.get()` is **synchronous**. The rule set lives in process memory. Pass any user attributes you want available to the targeting rules — see [User attributes](/get-started/attributes) for the full guide.
 
 ### Reading a dynamic config
 
 ```ts
-const pricing = flags.config<{ base: number; currency: string }>("pricing");
+const pricing = flags.getConfig<{ base: number; currency: string }>("pricing");
 const base = pricing?.base ?? 9.99;
 ```
 
@@ -57,16 +59,16 @@ Configs are typed via the optional generic. Always provide a fallback — your c
 flags.track("u_4f2a", "purchase", { value: 49.99, sku: "SHIRT-L-BLUE" });
 ```
 
-`track()` is fire-and-forget. Events are batched and sent to `/collect` on the Shipeasy.
+`track()` is fire-and-forget. Events are batched and sent to `/collect` on the Shipeasy edge.
 
 ### Resolving an experiment
 
 ```ts
-import { experiments } from "@shipeasy/sdk/server";
-
-const result = experiments.assign<{ color: "blue" | "green" }>("checkout-button-color", {
-  user_id: "u_4f2a",
-});
+const result = flags.getExperiment<{ color: "blue" | "green" }>(
+  "checkout-button-color",
+  { user_id: "u_4f2a" },
+  { color: "blue" }, // defaultParams returned when not in experiment
+);
 
 if (result.inExperiment) {
   // result.group       e.g. "control" | "variant_a"
@@ -74,17 +76,18 @@ if (result.inExperiment) {
 }
 ```
 
-Assignment is deterministic by `user_id` (or whatever you set as `bucket_by`). Calling `assign()` also queues an exposure event that the analysis pipeline reads from events store.
+Assignment is deterministic by `user_id`. The first call for a user
+queues an exposure event that the daily analysis pipeline reads.
 
 ### Translating a label
 
 ```ts
-import { t } from "@shipeasy/sdk/server";
+import { i18n } from "@shipeasy/sdk/server";
 
-const greeting = t("home.hero.greeting", "Welcome back");
+const greeting = i18n.t("home.hero.greeting", "Welcome back");
 ```
 
-The `t()` function is part of the same SDK — no separate i18n init. Configuration happens once via the same `shipeasy()` call.
+The `i18n.t()` function is part of the same SDK — no separate i18n init. Configuration happens once via the same `shipeasy()` call.
 
 ## Browser SDK [#browser]
 
@@ -108,41 +111,56 @@ flags.track("checkout_viewed", { source: "nav" });
 
 ### Server-side rendering bootstrap
 
-For Next.js / Remix / SvelteKit, render the bundle into the page to avoid the client roundtrip:
+For Next.js / Remix / SvelteKit, the server-side `await shipeasy({
+serverKey })` call returns the evaluated bundle (`flags`, `configs`,
+`experiments`, `killswitches`, `i18n strings`). Pass any user attributes
+through the `user` field and read the result directly:
 
-```ts
-// Server: build the bootstrap payload
-import { buildClientBootstrap } from "@shipeasy/sdk/server";
+```tsx title="app/layout.tsx"
+import { shipeasy } from "@shipeasy/sdk/server";
 
-const bootstrap = await buildClientBootstrap({ user: { user_id } });
+const seConfig = await shipeasy({
+  serverKey: process.env.SHIPEASY_SERVER_KEY ?? "",
+  user: { user_id: session?.user?.id },
+});
 
-// Client: hydrate with it
-import { shipeasy } from "@shipeasy/sdk/client";
-
-shipeasy({ apiKey });
-shipeasy.initFromBootstrap(bootstrap);
-```
-
-This pattern lets you render the right variant on the server **and** keep the client in sync — no flicker. Shipeasy auto-handles the RSC async-context boundary so the bundle survives SSR streaming.
-
-## Framework usage [#frameworks]
-
-Shipeasy ships a single SDK — `@shipeasy/sdk` — that works from plain JavaScript. Every API (`gate`, `config`, `experiment`, `t`, `track`) is callable directly from React, Vue, Svelte, Angular, or vanilla JS without any framework-specific wrapper.
-
-```tsx title="React"
-import { useEffect, useState } from "react";
-import { shipeasy, gate, t } from "@shipeasy/sdk/client";
-
-shipeasy({ apiKey: KEY, user: { user_id } });
-
-function CheckoutButton() {
-  const [enabled, setEnabled] = useState(() => gate("new-checkout-flow"));
-  useEffect(() => shipeasy.subscribe(() => setEnabled(gate("new-checkout-flow"))), []);
-  return <button>{t("checkout.cta", "Pay")}</button>;
+if (seConfig.flags["new-checkout-flow"]) {
+  // render the new flow
 }
 ```
 
-The same pattern applies in Vue (`watchEffect`), Svelte (`$:`), or any framework — wrap `shipeasy.subscribe` in whatever reactivity primitive your framework provides.
+The same fetch's data lands on `window.__SE_BOOTSTRAP` for the client
+SDK to pick up — no flicker. Configure the client with
+`shipeasy({ clientKey })` and the bootstrap auto-hydrates before your
+first read.
+
+## Framework usage [#frameworks]
+
+Shipeasy ships a single SDK — `@shipeasy/sdk` — that works from plain JavaScript. Every API (`flags.get`, `flags.getConfig`, `flags.getExperiment`, `i18n.t`, `flags.track`) is callable directly from React, Vue, Svelte, Angular, or vanilla JS without any framework-specific wrapper.
+
+```tsx title="React"
+import { useEffect, useState } from "react";
+import { shipeasy, flags, i18n } from "@shipeasy/sdk/client";
+
+shipeasy({ clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "" });
+await flags.identify({ user_id });
+
+function CheckoutButton() {
+  const [enabled, setEnabled] = useState(() => flags.get("new-checkout-flow"));
+  useEffect(() => {
+    const onChange = () => setEnabled(flags.get("new-checkout-flow"));
+    window.addEventListener("se:override:change", onChange);
+    return () => window.removeEventListener("se:override:change", onChange);
+  }, []);
+  return <button>{i18n.t("checkout.cta", "Pay")}</button>;
+}
+```
+
+The browser SDK dispatches the `se:override:change` event whenever a
+re-poll updates the cached blob or the devtools overlay flips an
+override. Wrap that listener in whatever reactivity primitive your
+framework provides (Vue's `onMounted` + `onUnmounted`, Svelte's
+`onMount`, Angular's `ngOnInit`, etc.).
 
 ### A note on vanilla JS [#vanilla-js]
 
@@ -167,13 +185,10 @@ A Ruby gem is published as `shipeasy-sdk` on RubyGems:
 ```ruby
 require "shipeasy-sdk"
 
-Shipeasy.configure do |c|
-  c.api_key    = ENV.fetch("SHIPEASY_SERVER_KEY")
-  c.public_key = ENV.fetch("SHIPEASY_CLIENT_KEY") # for the i18n view helpers
-  c.profile    = "default"
-end
+client = Shipeasy::SDK.new_client(api_key: ENV.fetch("SHIPEASY_SERVER_KEY"))
+client.init
 
-if Shipeasy.flags.get_flag("new-checkout-flow", { user_id: "u_4f2a", plan: "pro" })
+if client.get_flag("new-checkout-flow", { user_id: "u_4f2a", plan: "pro" })
   # …
 end
 ```
@@ -189,21 +204,22 @@ In a Rails app, drop the `Shipeasy.configure` block above into `config/initializ
 In closed beta. Same wire format, same mental model. Reach out on the dashboard if you want early access.
 
 ```python title="Python (preview)"
-from shipeasy import shipeasy, flags
+from shipeasy import Client
 
-shipeasy(api_key=os.environ["SHIPEASY_SERVER_KEY"], env="prod")
+client = Client(api_key=os.environ["SHIPEASY_SERVER_KEY"])
+client.init()
 
-if flags.gate("new-checkout-flow", user_id="u_4f2a", plan="pro"):
+if client.get_flag("new-checkout-flow", {"user_id": "u_4f2a", "plan": "pro"}):
     ...
 ```
 
 ```go title="Go (preview)"
-client, _ := shipeasy.New(shipeasy.Config{
+client := shipeasy.NewClient(shipeasy.Options{
     APIKey: os.Getenv("SHIPEASY_SERVER_KEY"),
-    Env:    "prod",
 })
+_ = client.Init(context.Background())
 
-if client.Gate("new-checkout-flow", shipeasy.User{ID: "u_4f2a", Attrs: map[string]any{"plan": "pro"}}) {
+if client.GetFlag("new-checkout-flow", shipeasy.User{"user_id": "u_4f2a", "plan": "pro"}) {
     // ...
 }
 ```

@@ -130,7 +130,7 @@ The dashboard surfaces an **MDE** (minimum detectable effect) alongside every ru
 
 ## Exposure stitching [#exposure-stitching]
 
-A user is _exposed_ the first time `experiments.assign()` runs for them. The `$exposure` event captures `(experiment, group, user_id, timestamp, attributes_at_exposure)`.
+A user is _exposed_ the first time `flags.getExperiment()` runs for them. The `$exposure` event captures `(experiment, group, user_id, timestamp, attributes_at_exposure)`.
 
 Conversion events **after** that timestamp count. Events **before** it don't. This is what makes the analysis causal — we're measuring _"behaviour after the user saw the variant"_, not _"all behaviour for users in this bucket"_.
 

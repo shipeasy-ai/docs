@@ -112,25 +112,24 @@ That&apos;s the whole runway from zero to working. Everything below is detail.
     import { shipeasy } from "@shipeasy/sdk/server";
 
     await shipeasy({
-      apiKey: process.env.SHIPEASY_SERVER_KEY!, // server SDK key
-      env: "prod",                              // "dev" | "staging" | "prod"
+      serverKey: process.env.SHIPEASY_SERVER_KEY ?? "",
     });
     ```
 
-    The server SDK polls `/sdk/flags` and `/sdk/experiments` in the background. Evaluation happens **locally** — there is no per-request network call from your code.
+    The server SDK polls `/sdk/flags` and `/sdk/experiments` in the background. Evaluation happens **locally** — there is no per-request network call from your code. Env (dev / staging / prod) is determined by which SDK key you pass — keys are env-scoped at issue time.
 
   </Step>
 
   <Step title="Browser initialisation">
     ```ts
-    import { shipeasy } from "@shipeasy/sdk/client";
+    import { shipeasy, flags } from "@shipeasy/sdk/client";
 
     shipeasy({
-      apiKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY!,
+      clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "",
     });
 
     // Once you know who the user is:
-    await shipeasy.identify({ user_id: "u_4f2a", plan: "pro" });
+    await flags.identify({ user_id: "u_4f2a", plan: "pro" });
     ```
 
     The client SDK auto-manages an `anonymous_id` cookie, batches event uploads with `navigator.sendBeacon` on page hide, and exposes a [devtools overlay](/get-started/sdks#devtools) at `?shipeasy=1`.
@@ -138,7 +137,7 @@ That&apos;s the whole runway from zero to working. Everything below is detail.
   </Step>
 
   <Step title="One key, one configure call">
-    Flags, experiments, and i18n share a single `apiKey`. There is no separate `i18n.init()`, no second `flags.configure()`. The single `shipeasy()` call boots all three.
+    Flags, experiments, and i18n share a single key per side (`serverKey` on the server, `clientKey` in the browser). There is no separate `i18n.init()`, no second `flags.configure()`. The single `shipeasy()` call boots all three.
 
     Don&apos;t wrap this in a custom helper file. The SDK owns its own initialisation.
 

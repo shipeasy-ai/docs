@@ -145,7 +145,7 @@ event-stream analysis becomes meaningless.
 
 The dashboard's **Test evaluator** panel takes a JSON user context and prints the same decision the SDK would compute — including which rule matched, the bucket the user fell into, and whether the bucket is below the rollout cutoff. Same answer as your code, no detour through a CLI.
 
-If the dashboard's decision doesn't match what the user reports seeing, something is different about the `ctx` the SDK actually saw — usually a missing or differently-named attribute. Log the `ctx` passed to `flags.gate(...)` in production to compare.
+If the dashboard's decision doesn't match what the user reports seeing, something is different about the `ctx` the SDK actually saw — usually a missing or differently-named attribute. Log the `ctx` passed to `flags.get(...)` in production to compare.
 
 <DocNav
   prev={{ href: "/flags-experiments/gates/targeting", title: "Targeting rules" }}

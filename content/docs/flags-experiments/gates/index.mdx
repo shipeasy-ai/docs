@@ -142,12 +142,11 @@ That order matters: rules are evaluated **before** the rollout. <em>&quot;100% o
 ### Server SDK
 
 ```ts
-import { configureShipeasy, flags } from "@shipeasy/sdk/server";
+import { shipeasy, flags } from "@shipeasy/sdk/server";
 
-configureShipeasy({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
-await flags.init();
+await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? "" });
 
-const enabled = flags.gate("new-checkout-flow", {
+const enabled = flags.get("new-checkout-flow", {
   user_id: "u_4f2a",
   plan: "pro",
   country: "US",
@@ -157,17 +156,20 @@ const enabled = flags.gate("new-checkout-flow", {
 ### Browser SDK
 
 ```ts
-import { configureShipeasy } from "@shipeasy/sdk/client";
+import { shipeasy, flags } from "@shipeasy/sdk/client";
 
-const client = configureShipeasy({ apiKey });
-await client.identify({ user_id, plan, country });
+shipeasy({ clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "" });
+await flags.identify({ user_id, plan, country });
 
-if (client.getFlag("new-checkout-flow")) {
+if (flags.get("new-checkout-flow")) {
   // …
 }
 ```
 
-`gate()` / `getFlag()` is synchronous. If you call it before `init()` resolves, you get `false` and a dev-mode warning. Always `await flags.init()` once at boot.
+`flags.get()` is synchronous. If you call it before the first
+poll resolves, you get `false` (or the bootstrap value when SSR has
+provided one) — never a thrown error. `shipeasy()` is idempotent; call
+it once per cold start.
 
 <ApiTable>
   <ApiRow

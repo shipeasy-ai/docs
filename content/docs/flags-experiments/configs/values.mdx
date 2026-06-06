@@ -60,14 +60,13 @@ Unlike gates, dynamic values are **global per environment**: every user in `prod
 ## Reading a value
 
 ```ts
-import { configureShipeasy, flags } from "@shipeasy/sdk/server";
+import { shipeasy, flags } from "@shipeasy/sdk/server";
 
-configureShipeasy({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
-await flags.init();
+await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? "" });
 
-const limit = flags.value<number>("rate-limit") ?? 100;
-const theme = flags.value<string>("default-theme") ?? "light";
-const cfg = flags.value<{ tier: string; limit: number }>("plan-defaults");
+const limit = flags.getConfig<number>("rate-limit") ?? 100;
+const theme = flags.getConfig<string>("default-theme") ?? "light";
+const cfg = flags.getConfig<{ tier: string; limit: number }>("plan-defaults");
 ```
 
 The optional generic types the return value. **Always provide a fallback** — your code should never crash because the SDK hasn&apos;t initialised yet, or because someone deleted the value in the dashboard.
@@ -75,18 +74,18 @@ The optional generic types the return value. **Always provide a fallback** — y
 Browser:
 
 ```ts
-import { configureShipeasy } from "@shipeasy/sdk/client";
-const client = configureShipeasy({ apiKey });
-const cfg = client.getValue<{ tier: string; limit: number }>("plan-defaults");
+import { shipeasy, flags } from "@shipeasy/sdk/client";
+shipeasy({ clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "" });
+const cfg = flags.getConfig<{ tier: string; limit: number }>("plan-defaults");
 ```
 
-<Callout type="info" title="value() is synchronous, like gate()">
+<Callout type="info" title="getConfig() is synchronous, like flags.get()">
   Same plumbing as{" "}
-  <a href="/configs/gates">
-    <code>flags.gate()</code>
+  <a href="/flags-experiments/configs/gates">
+    <code>flags.get()</code>
   </a>{" "}
-  — the bundle is in memory after <code>init()</code>, so reads are a hash table lookup. There is no
-  async, no Promise, no fetch.
+  — the bundle is in memory after `shipeasy()` resolves, so reads are a hash table lookup. There is
+  no async, no Promise, no fetch.
 </Callout>
 
 ## Updating a value

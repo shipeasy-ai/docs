@@ -72,23 +72,26 @@ This walks through a complete experiment end to end: a button-label test on the 
 
   <Step title="Wire the SDK">
     ```ts
-    import { configureShipeasy, flags, experiments } from "@shipeasy/sdk/server";
+    import { shipeasy, flags } from "@shipeasy/sdk/server";
 
-    configureShipeasy({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
-    await flags.init();
+    await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? "" });
     ```
 
     Then on the request path:
 
     ```ts
-    const result = experiments.assign<{ label: string }>("checkout-cta", {
-      user_id, plan, country,
-    });
+    const result = flags.getExperiment<{ label: string }>(
+      "checkout-cta",
+      { user_id, plan, country },
+      { label: "Pay" }, // defaultParams
+    );
 
-    const label = result.params.label; // "Pay" or "Buy now"
+    const label = result.params.label; // "Pay" or whatever the variant assigns
     ```
 
-    The first time you call `assign()` for a user, an **exposure** event is logged automatically. Subsequent calls in the same process don't re-log — exposures are deduplicated.
+    The first call to `flags.getExperiment(...)` for a given user logs an
+    **exposure** event automatically. Subsequent calls in the same process
+    don't re-log — exposures are deduplicated.
 
   </Step>
 

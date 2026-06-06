@@ -203,7 +203,7 @@ When a user complains "I should be in this beta but I'm not," check four things 
 1. **Is the gate enabled?** `shipeasy flags list` shows `enabled` and the current rollout per gate; the gate detail page in the dashboard also shows `killswitch` state at the top of the header.
 2. **Does the user match the rule?** Open **Gates → checkout-v2 → Test evaluator** in the dashboard and paste a JSON `ctx` — same evaluator the SDK runs, prints the matched rule + bucket.
 3. **Is there an override?** Overrides win over rules. Check **Gates → checkout-v2 → Overrides**.
-4. **Are you passing the attribute the rule expects?** A rule on `plan` won't match `ctx.userPlan`. Log the `ctx` you hand to `flags.gate(...)` and compare against the rule shape.
+4. **Are you passing the attribute the rule expects?** A rule on `plan` won't match `ctx.userPlan`. Log the `ctx` you hand to `flags.get(...)` and compare against the rule shape.
 
 <DocNav
   prev={{ href: "/flags-experiments/gates/quickstart", title: "Quickstart" }}

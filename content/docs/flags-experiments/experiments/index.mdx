@@ -149,7 +149,7 @@ A practical workflow is to gate first (so the rollout is safe), then **promote t
     num={3}
     label="WIRE"
     title="assign + track"
-    cmd="experiments.assign('checkout-cta', user)"
+    cmd="flags.getExperiment('checkout-cta', user, { label: 'Pay' })"
   >
     First call logs an exposure. <code>flags.track()</code> on conversion. Daily aggregation does
     the math.
@@ -161,17 +161,16 @@ A practical workflow is to gate first (so the rollout is safe), then **promote t
 <InstallTabs npm="npm install @shipeasy/sdk" />
 
 ```ts
-import { configureShipeasy, flags, experiments } from "@shipeasy/sdk/server";
+import { shipeasy, flags } from "@shipeasy/sdk/server";
 
-configureShipeasy({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
-await flags.init();
+await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? "" });
 
-const result = experiments.assign<{ label: string }>("checkout-cta", {
-  user_id,
-  plan,
-  country,
-});
-const label = result.params.label; // "Pay" or "Buy now"
+const result = flags.getExperiment<{ label: string }>(
+  "checkout-cta",
+  { user_id, plan, country },
+  { label: "Pay" }, // defaultParams
+);
+const label = result.params.label; // "Pay" or whatever the variant assigns
 ```
 
 ```ts
@@ -179,9 +178,11 @@ const label = result.params.label; // "Pay" or "Buy now"
 flags.track(user_id, "purchase", { value: orderTotal });
 ```
 
-The first time you call `assign()` for a user, an **exposure** is logged automatically. Subsequent calls in the same process don&apos;t re-log — exposures are deduplicated.
+The first call to `flags.getExperiment(...)` for a given user logs an
+**exposure** event automatically. Subsequent calls in the same process
+don't re-log — exposures are deduplicated.
 
-## API · `experiments.assign`
+## API · `flags.getExperiment`
 
 <ApiTable>
   <ApiRow

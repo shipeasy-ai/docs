@@ -53,20 +53,17 @@ shipeasy keys create --kind server
     Initialise once at boot. The server SDK polls flag updates in the background — no per-request cost, no fetch on the hot path.
 
     ```ts title="src/lib/shipeasy.ts"
-    import { configureShipeasy, flags } from "@shipeasy/sdk/server";
+    import { shipeasy } from "@shipeasy/sdk/server";
 
-    configureShipeasy({
-      apiKey: process.env.SHIPEASY_SERVER_KEY!,
-
+    export const ready = shipeasy({
+      serverKey: process.env.SHIPEASY_SERVER_KEY ?? "",
     });
-
-    export const ready = flags.init();
     ```
 
-    Import this once from your entrypoint and `await ready` before serving the first request. After that, every `flags.gate()` call is synchronous and reads from in-process memory.
+    Import this once from your entrypoint and `await ready` before serving the first request. After that, every `flags.get()` call is synchronous and reads from in-process memory.
 
     <Callout type="info" title="One configure call, one key">
-      Flags, dynamic values, experiments, and i18n all share the same `apiKey`. Don&apos;t create per-feature wrappers in your codebase — the SDK owns its own initialisation.
+      Flags, dynamic values, experiments, and i18n all share the same `serverKey`. Don&apos;t create per-feature wrappers in your codebase — the SDK owns its own initialisation.
     </Callout>
 
   </Step>

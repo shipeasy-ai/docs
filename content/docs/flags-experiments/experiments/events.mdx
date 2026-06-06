@@ -39,7 +39,9 @@ The browser SDK batches events and flushes:
 You can tune the batcher:
 
 ```ts
-configureShipeasy({
+import { flags } from "@shipeasy/sdk/client";
+
+flags.configure({
   apiKey,
   batch: { size: 50, intervalMs: 10_000, useBeacon: true },
 });
@@ -79,24 +81,26 @@ Stable, low-cardinality event names. Snake_case. Past tense for things that happ
 
 Some event names are populated automatically and should not be logged manually. They start with `$` to make accidental collisions obvious:
 
-| Event        | Source                                                                       |
-| ------------ | ---------------------------------------------------------------------------- |
-| `$exposure`  | Logged by `experiments.assign()` the first time a user enters an experiment. |
-| `$page_view` | Browser SDK auto-tracks unless disabled.                                     |
-| `$identify`  | Logged by `client.identify()` and `flags.identify()`.                        |
-| `$alias`     | Logged when stitching anon → user.                                           |
-| `$session`   | Browser SDK rolls a new session id every 30 min of inactivity.               |
+| Event        | Source                                                                        |
+| ------------ | ----------------------------------------------------------------------------- |
+| `$exposure`  | Logged by `flags.getExperiment()` the first time a user enters an experiment. |
+| `$page_view` | Browser SDK auto-tracks unless disabled.                                      |
+| `$identify`  | Logged by `client.identify()` and `flags.identify()`.                         |
+| `$alias`     | Logged when stitching anon → user.                                            |
+| `$session`   | Browser SDK rolls a new session id every 30 min of inactivity.                |
 
 You can opt out of auto-tracking in the SDK options:
 
 ```ts
-configureShipeasy({ apiKey, autoTrack: false });
+import { flags } from "@shipeasy/sdk/client";
+
+flags.configure({ apiKey, autoTrack: false });
 ```
 
 Or selectively:
 
 ```ts
-configureShipeasy({
+flags.configure({
   apiKey,
   autoTrack: { pageView: true, webVitals: true, errors: false, fetch: false },
 });
