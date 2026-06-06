@@ -368,14 +368,14 @@ Three failure modes silently break a killswitch:
 The fix is rehearsal. Once a quarter, run a drill in staging:
 
 ```bash
-# Flip in staging
-shipeasy killswitch off emails-enabled --env staging --reason "drill 2026-Q2"
+# Flip the killswitch ON (kill = true) for the drill
+shipeasy killswitch update transactional.emails-enabled --value true
 
 # Run the canonical test that exercises every email-sending code path
 pnpm test:integration --grep email
 
 # Confirm zero emails went out, then restore
-shipeasy killswitch on emails-enabled --env staging --reason "drill complete"
+shipeasy killswitch update transactional.emails-enabled --value false
 ```
 
 If any test sent an email while the killswitch was off, you've found a naked code path. Fix

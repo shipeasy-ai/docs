@@ -14,7 +14,7 @@ have a primary metric that drives a real ship/no-ship decision.
     num={1}
     label="DEFINE"
     title="Create a conversion metric"
-    cmd="shipeasy metrics create purchase_conversion --type conversion --event purchase"
+    cmd="shipeasy metrics create purchase_conversion --event purchase --query 'count_users(purchase)'"
   />
   <QuickstartStep
     num={2}

@@ -133,7 +133,7 @@ A practical workflow is to gate first (so the rollout is safe), then **promote t
     num={1}
     label="METRIC"
     title="Define what success looks like"
-    cmd="shipeasy metrics create purchase_conversion --type conversion --event purchase"
+    cmd="shipeasy metrics create purchase_conversion --event purchase --query 'count_users(purchase)'"
   >
     One number. A primary, plus a couple of guardrails (latency, error rate).
   </QuickstartStep>
@@ -266,7 +266,7 @@ The return shape:
   cmds={[
     {
       label: "Create the metric",
-      cmd: "shipeasy metrics create purchase_conversion --type conversion --event purchase",
+      cmd: "shipeasy metrics create purchase_conversion --event purchase --query 'count_users(purchase)'",
     },
     { label: "Create the experiment", cmd: "shipeasy experiments create checkout-cta" },
   ]}

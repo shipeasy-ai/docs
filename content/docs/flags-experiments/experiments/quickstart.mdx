@@ -12,7 +12,7 @@ This walks through a complete experiment end to end: a button-label test on the 
     num={1}
     label="METRIC"
     title="Define the conversion"
-    cmd="shipeasy metrics create purchase_conversion --type conversion --event purchase"
+    cmd="shipeasy metrics create purchase_conversion --event purchase --query 'count_users(purchase)'"
   />
   <QuickstartStep
     num={2}

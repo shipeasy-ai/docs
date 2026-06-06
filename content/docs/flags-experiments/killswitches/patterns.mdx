@@ -71,14 +71,12 @@ flips:
 2. **A webhook fires.** Wire it to PagerDuty, Opsgenie, or your incident channel. The flip should
    declare the incident, not require someone to remember to.
 
-```bash
-shipeasy webhooks add killswitch.flipped \
-  --url https://events.pagerduty.com/v2/enqueue \
-  --filter '{"direction":"off"}'   # only page on off, not on restore
-```
-
-For multi-tenant setups, scope the webhook to specific killswitches by name. You usually want
-PagerDuty to fire for the payment killswitch but only Slack for the experimental-feature one.
+Wire the `killswitch.flipped` event through **Feedback → Connectors** in the
+dashboard. Pick the GitHub, Slack, or PagerDuty connector (depending on the
+severity) and configure the connector filter to only fire when the new value
+is `true` (kill activated). Scope by name in the same filter when you want
+PagerDuty for the payment killswitch but only Slack for the experimental-
+feature one.
 
 ## Naming
 

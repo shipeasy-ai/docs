@@ -26,46 +26,59 @@ For `conversion`, a user with zero matching events contributes a `0`. For `mean`
 
 ## Creating a metric
 
+Metrics are defined by a small **query DSL** — the same one the dashboard
+generates when you pick aggregation, source event, and filters in the
+"New metric" form. Run `shipeasy metrics grammar` for the full spec; the
+most common shapes:
+
 ```bash
 # binary conversion on `purchase`
-shipeasy metrics create purchase_conversion --type conversion --event purchase
+shipeasy metrics create purchase_conversion \
+  --event purchase --query 'count_users(purchase)'
 
 # revenue per user (includes non-buyers as $0)
-shipeasy metrics create revenue_per_user --type sum --event purchase --property value
+shipeasy metrics create revenue_per_user \
+  --event purchase --query 'sum(purchase, value)'
 
-# average order value (across buyers only)
-shipeasy metrics create avg_order_value --type mean --event purchase --property value --zero-handling drop
+# average order value (averaged across buyers only)
+shipeasy metrics create avg_order_value \
+  --event purchase --query 'avg(purchase, value)'
 
 # sessions per user
-shipeasy metrics create sessions --type count --event session_start
+shipeasy metrics create sessions \
+  --event session_start --query 'count(session_start)'
 ```
 
 Or in the dashboard: **Experiments → Metrics → New metric**.
 
 ## Filtering events into a metric
 
-You can tighten what counts toward a metric with **filters** — same shape as gate targeting rules. Filters run against the event's `properties` payload _before_ the aggregation:
+You can tighten what counts toward a metric with **filters** — written
+inline in the DSL selector as `event{attr=value}`. Filters run against
+the event's `properties` payload _before_ the aggregation:
 
 ```bash
-shipeasy metrics create paid_purchase \
-  --type conversion --event purchase \
-  --filter '[{"attr":"channel","op":"eq","value":"organic"}]'
+shipeasy metrics create organic_purchase \
+  --event purchase \
+  --query 'count_users(purchase{channel="organic"})'
 ```
 
-Now `paid_purchase` only counts `purchase` events whose `channel == "organic"` property is set on the event payload. You can compose multiple filters with implicit AND. Common shapes:
+Now `organic_purchase` only counts users with at least one
+`purchase` event whose `channel` property equals `"organic"`. Compose
+multiple filters inside the same `{}` with commas — they're ANDed.
+Operators are `=` (equal), `!=` (not equal), `=~` (regex match),
+`!~` (regex non-match). Common shapes:
 
 ```bash
 # Web purchases only (exclude mobile app)
---filter '[{"attr":"platform","op":"eq","value":"web"}]'
+'count_users(purchase{platform="web"})'
 
-# Orders above $10 (exclude $0 promo redemptions)
---filter '[{"attr":"value","op":"gte","value":10}]'
+# Orders priced above $10 (string-coerced, server compares numerically
+# when the source event declares the label as numeric)
+'sum(purchase{value=~"^[1-9][0-9]+$"}, value)'
 
-# Multiple conditions
---filter '[
-  {"attr":"platform","op":"eq","value":"web"},
-  {"attr":"country","op":"in","value":["US","CA","GB"]}
-]'
+# Multiple conditions — commas inside {} are ANDed
+'count_users(purchase{platform="web", country="US"})'
 ```
 
 ## Primary vs guardrail
@@ -94,13 +107,15 @@ For `sum` and `mean`, a single $50,000 enterprise purchase can swing the mean fo
 - **Cap** at an absolute value. Use this when there's a domain-specific ceiling (e.g. a maximum plausible session length).
 
 ```bash
-# Winsorise at p99 (default)
-shipeasy metrics create revenue_per_user --type sum --event purchase --property value \
-  --winsorise p99
+# Winsorise at p99 (this is the CLI default; --winsorize 99 is implicit)
+shipeasy metrics create revenue_per_user \
+  --event purchase --query 'sum(purchase, value)' \
+  --winsorize 99
 
-# Hard cap at $1000
-shipeasy metrics create revenue_per_user --type sum --event purchase --property value \
-  --cap 1000
+# Cap at p95 instead
+shipeasy metrics create revenue_per_user \
+  --event purchase --query 'sum(purchase, value)' \
+  --winsorize 95
 ```
 
 Winsorising is the default and is rarely wrong. The trade-off: clamping reduces variance (good — narrower CI, easier to detect lift) at the cost of slightly understating the true effect when the variant genuinely moves the tail (rare).
@@ -113,14 +128,18 @@ Winsorising is the default and is rarely wrong. The trade-off: clamping reduces 
 
 ## Ratio metrics
 
-Some questions are inherently ratios — _"clicks per impression"_, _"conversion per visit"_, _"revenue per session"_. Define them with two events: a numerator and a denominator.
+Some questions are inherently ratios — _"clicks per impression"_,
+_"conversion per visit"_. Express them with the `over` keyword between
+two selector arms in the DSL:
 
 ```bash
 shipeasy metrics create click_through_rate \
-  --type ratio \
-  --numerator-event click \
-  --denominator-event impression
+  --event click \
+  --query 'ratio(count(click), count(impression))'
 ```
+
+The two ratio arms must each be `count` or `count_users` — the DSL doesn't
+allow `sum`/`avg` in ratio position.
 
 Ratio metrics use the **delta method** to compute variance correctly (the naive ratio-of-means understates variance and inflates significance). The dashboard shows the per-user numerator and denominator alongside the ratio so the math is auditable.
 
@@ -314,11 +333,11 @@ The flip side of "how many users do I need" is "given the users I have, what's t
   cmds={[
     {
       label: "Create a primary metric",
-      cmd: "shipeasy metrics create purchase_conversion --type conversion --event purchase",
+      cmd: "shipeasy metrics create purchase_conversion --event purchase --query 'count_users(purchase)'",
     },
     {
       label: "Add a guardrail",
-      cmd: "shipeasy metrics create error_rate --type conversion --event client_error --direction down",
+      cmd: "shipeasy metrics create error_rate --event client_error --query 'count_users(client_error)'",
     },
   ]}
 />

@@ -12,7 +12,7 @@ description: A flag with a single job — disable a system instantly during an i
 
 A **killswitch** is a boolean flag with one purpose: be the lever you pull when something is on
 fire. It looks like a [gate](/flags-experiments/gates) but lives in its own list, has no rollout
-percentage, and defaults to the *safe* position so on-call doesn't have to think.
+percentage, and defaults to the _safe_ position so on-call doesn't have to think.
 
 ## Why a separate primitive?
 
@@ -56,7 +56,7 @@ a name. Mixing them is dangerous — at 3am you do not want to fat-finger a `--r
    ```
 3. **Page-time.** Flip it instantly:
    ```bash
-   shipeasy killswitch off email-sender --reason "PagerDuty #4912"
+   shipeasy killswitch update transactional.email-sender --value true
    ```
 4. **Recover.** Once the incident is closed, flip it back and post-mortem the audit log.
 
