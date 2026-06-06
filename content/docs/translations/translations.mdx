@@ -28,63 +28,49 @@ A model can. The trade-off is cost (still cheap — see below) and the need to r
 
 ## Setup
 
+All four AI-translation settings — API key, model, tone, glossary —
+live on the project / profile rather than the CLI. Open the dashboard
+under **Translations → Profiles → \<profile> → Settings**:
+
 <Steps>
   <Step title="Add an Anthropic API key">
-    Either use Shipeasy Translations's pooled key (no setup; Pro/Enterprise plans only), or add your own:
+    Either use Shipeasy Translations's pooled key (no setup; Team/Enterprise plans), or paste your own under **AI provider → Bring your own key**.
 
-    ```bash
-    shipeasy projects set-secret ANTHROPIC_API_KEY sk-ant-...
-    ```
-
-    The key is stored encrypted on the project (AES-GCM, KMS-wrapped). It is used only for translation calls; never logged, never echoed in dashboards. Rotation: re-run the command with a new key — the old one is overwritten and any in-flight translations finish on the new key.
+    Keys are stored encrypted on the project. They're used only for translation calls; never logged, never echoed in dashboards. To rotate, paste a new key and click Save — the old one is overwritten and any in-flight translations finish on the new key.
 
   </Step>
 
   <Step title="Pick a model">
     Default is `claude-sonnet-4-6` — fast, accurate, cost-effective. For tricky locales (Japanese, Arabic, regional Spanish, traditional Chinese), `claude-opus-4-7` produces noticeably higher-quality drafts at higher cost. For high-volume marketing copy where you'll review heavily anyway, `claude-haiku-4-5` is roughly 5× cheaper.
 
-    ```bash
-    shipeasy projects config set i18n.model claude-opus-4-7
-    ```
-
-    You can also override per-locale:
-
-    ```bash
-    shipeasy projects config set i18n.model.ja claude-opus-4-7
-    shipeasy projects config set i18n.model.es claude-haiku-4-5
-    ```
+    Pick the global default under **AI provider → Model**, then override per-locale on the matching target profile (Japanese: `claude-opus-4-7`, Spanish marketing: `claude-haiku-4-5`).
 
   </Step>
 
   <Step title="Set tone">
     A short brand voice guide lifts quality dramatically. Keep it tonal, not exhaustive — Claude reads this on every call, longer prompts cost more and dilute focus.
 
-    ```bash
-    shipeasy projects config set i18n.tone "Friendly, modern, slightly playful. \
-      Address users with informal pronouns where the locale supports it (tu / du). \
-      Avoid corporate clichés. Buttons should be verbs, never nouns."
-    ```
+    Set the global voice on the source profile's **Tone** field:
 
-    Per-locale tone overrides exist for cases where the global voice doesn't fit — Japanese formality (です/ます vs casual), German Sie/du, Arabic register:
+    > Friendly, modern, slightly playful. Address users with informal pronouns where the locale supports it (tu / du). Avoid corporate clichés. Buttons should be verbs, never nouns.
 
-    ```bash
-    shipeasy projects config set i18n.tone.ja "Polite (です/ます), product-friendly, no keigo flourishes."
-    shipeasy projects config set i18n.tone.de "Use du, not Sie. Tech-startup register."
-    ```
+    Per-locale tone overrides live on the target profile — useful for Japanese formality (です/ます vs casual), German Sie/du, Arabic register.
 
   </Step>
 
   <Step title="Set the glossary">
     A glossary is the difference between "feature gate" being translated as _drapeau_ (literal flag) vs left as-is. Map a term to itself for do-not-translate; map to a target form for forced translation.
 
-    ```bash
-    shipeasy projects config set i18n.glossary --json '{
+    Edit the **Glossary** field on the source profile as a JSON object:
+
+    ```json
+    {
       "Shipeasy Translations": "Shipeasy Translations",
       "Shipeasy": "Shipeasy",
       "checkout": "checkout (do not translate to French as paiement)",
       "flag": "feature gate",
       "workspace": { "fr": "espace de travail", "de": "Arbeitsbereich" }
-    }'
+    }
     ```
 
     Object values give per-locale overrides; string values apply to every locale.
@@ -127,23 +113,23 @@ Output is parsed and validated (placeholders match, length within 1.3× of `max_
 
 ## Running a translation
 
-```bash
-shipeasy i18n translate --profile fr --ai
-```
+Translation runs are driven from the dashboard's **Translations →
+Drafts** panel today (or via the `i18n_translate_draft` MCP tool for
+agents). The Drafts panel exposes the run-time toggles:
 
-By default it translates only **missing** keys — keys present in the source profile but absent (or empty) in the target. Useful flags:
+| Toggle          | Effect                                                                          |
+| --------------- | ------------------------------------------------------------------------------- |
+| Missing only    | Default — translate only keys present in source but absent / empty in target.   |
+| Stale only      | Re-translate only keys whose source value changed since the last translation.   |
+| Reflow existing | Revisit existing values for tone/glossary consistency. Generates a lot of diff. |
+| Limit to chunk  | Run on a single chunk. Faster and cheaper.                                      |
+| Key pattern     | Glob filter (e.g. `checkout.*`).                                                |
+| Model override  | One-shot model override per run.                                                |
+| Estimate only   | Build the prompts and show the projected cost; don't call the API.              |
 
-| Flag              | Effect                                                                          |
-| ----------------- | ------------------------------------------------------------------------------- |
-| `--stale-only`    | Re-translate only keys whose source value changed since the last translation.   |
-| `--reflow`        | Revisit existing values for tone/glossary consistency. Generates a lot of diff. |
-| `--chunk <name>`  | Limit to a single chunk. Faster and cheaper.                                    |
-| `--key <pattern>` | Glob filter: `--key 'checkout.*'`.                                              |
-| `--model <id>`    | One-shot model override (doesn't change project default).                       |
-| `--ci`            | Non-interactive; non-zero exit if the draft is empty.                           |
-| `--dry-run`       | Build the prompts and estimate cost; do not call the API.                       |
-
-The CLI streams progress; long runs are resumable. If a run is interrupted, the next invocation picks up at the last completed key — drafts are written to D1 in batches of 25 so you never lose more than that.
+The Drafts UI streams progress as keys complete. Long runs are
+resumable — drafts are written to D1 in batches of 25 so you never lose
+more than that if the page is closed or the tab is killed.
 
 ## Cost and rate
 
@@ -322,8 +308,8 @@ If you have an in-house or contracted human translation team, you can still use 
   secondaryHref="/i18n"
   secondaryLabel="Back to overview"
   cmds={[
-    { label: "AI draft", cmd: "shipeasy i18n translate --profile fr --ai" },
-    { label: "Estimate cost", cmd: "shipeasy i18n translate --profile fr --ai --dry-run" },
+    { label: "AI draft", cmd: "Dashboard → Drafts → AI translate (or i18n_translate_draft MCP)" },
+    { label: "Estimate cost", cmd: "Tick 'Estimate only' on the Drafts run dialog" },
   ]}
   note="Anthropic Claude · BYOK or hosted · zero retention"
 />

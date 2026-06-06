@@ -165,7 +165,7 @@ import { z } from "zod";
 
 const Schema = z.object({ tier: z.string(), limit: z.number() });
 
-const cfg = flags.value("plan-defaults", {
+const cfg = flags.getConfig("plan-defaults", {
   decode: (raw) => Schema.parse(raw),
 });
 ```

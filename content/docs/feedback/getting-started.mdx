@@ -28,16 +28,15 @@ await shipeasy({ clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "" })
     num={3}
     label="REPORT"
     title="File a bug from the browser"
-    cmd="import { shipeasy } from '@shipeasy/sdk/client';
-
-await shipeasy.feedback.bug({
-title: 'Checkout button overlaps footer on iOS Safari',
-pageUrl: window.location.href,
-});"
-
->
-
-    Returns `202 accepted` and shows up in the dashboard within seconds.
+    cmd="// Mount the devtools nub once at app boot:
+import { init as initDevtools } from '@shipeasy/devtools';
+initDevtools();
+// Then users press Shift+Alt+B to file a bug — overlay handles
+// title, repro steps, screenshot capture, and posting."
+  >
+    The overlay posts via `/devtools-auth` with a short-lived
+    browser-scoped admin token. The bug shows up in the dashboard
+    within seconds.
 
   </QuickstartStep>
 
@@ -45,12 +44,13 @@ pageUrl: window.location.href,
   num={4}
   label="REQUEST"
   title="Capture a feature request"
-  cmd="await shipeasy.feedback.feature({
-  title: 'Dark mode for the dashboard',
-  importance: 'important',
-});"
+  cmd="// Same nub — users press Shift+Alt+R instead of Shift+Alt+B
+// for a feature request. The form prompts for title, description,
+// and use case (the fields the CLI `feedback features create`
+// requires)."
 >
-  Other signed-in users can up-vote the same request from the dashboard.
+  Other signed-in members of the project see the request in the Feature requests tab and can vote /
+  triage it.
 </QuickstartStep>
 
   <QuickstartStep

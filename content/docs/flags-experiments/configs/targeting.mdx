@@ -98,11 +98,7 @@ For a known-low-risk change you can compress this. For anything load-bearing (au
 
 ### The salt [#salt]
 
-Each gate has its own salt. If you ever want to **re-shuffle** the rollout buckets without changing the percentage (say, to avoid the same 5% always being chosen for every gate you ever roll out), bump the salt:
-
-```bash
-shipeasy flags update my-feature --salt v2
-```
+Each gate has its own salt. If you ever want to **re-shuffle** the rollout buckets without changing the percentage (say, to avoid the same 5% always being chosen for every gate you ever roll out), bump the salt. CLI `flags update` doesn't expose a `--salt` flag today — bump it on the gate via the [Admin API](/flags-experiments/api) or edit the gate's JSON in the dashboard.
 
 That&apos;s rare. The default salt is fine for almost every case. The salt is also why two gates at 50% don&apos;t serve the same 50% of users — different salts, different buckets, statistically independent.
 
@@ -123,7 +119,10 @@ This is what you almost always want. If you ever need <em>&quot;this proportion 
 Default: bucketing key is `user_id ?? anonymous_id`. Override per-call:
 
 ```ts
-flags.gate("new-team-ui", user, { bucketBy: "account_id" });
+// Per-call bucketBy override isn't a shipped SDK option today. Set the
+// gate's bucketing key in the dashboard (or PATCH the gate's
+// `bucket_by` field via the Admin API) so every read uses the same key.
+flags.get("new-team-ui", user);
 ```
 
 Or on the gate itself in the dashboard. Use this in B2B so all teammates of an account see the same variant — half a team on the new UI and half on the old is a confusing user experience and an unanalysable rollout.
@@ -167,7 +166,7 @@ If you find yourself adding many overrides, that&apos;s a smell — promote them
 
 ## Attributes that travel
 
-Whatever attributes you pass to `flags.gate()` are also available to:
+Whatever attributes you pass to `flags.get()` are also available to:
 
 - [Experiments](/experiments) (for assignment and segmentation)
 - [Dynamic values](/configs/values) decoders
@@ -190,7 +189,7 @@ export function buildEvalCtx(req: Request) {
 
 ## Debugging a rule
 
-The dashboard&apos;s **Test evaluator** panel takes a JSON context and shows the full evaluation trace — which rule matched, which didn&apos;t, what bucket the user landed in. Indispensable when a customer says &quot;I should be in the beta, why am I not?&quot;. From your own code, `flags.gate(...)` returns the same evaluator result on every read — log the user context plus the result for the same answer in production.
+The dashboard&apos;s **Test evaluator** panel takes a JSON context and shows the full evaluation trace — which rule matched, which didn&apos;t, what bucket the user landed in. Indispensable when a customer says &quot;I should be in the beta, why am I not?&quot;. From your own code, `flags.get(...)` returns the same evaluator result on every read — log the user context plus the result for the same answer in production.
 
 <ConvertCTA
   eyebrow="NEXT"
