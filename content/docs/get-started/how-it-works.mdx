@@ -193,7 +193,7 @@ When you flip a flag, six things happen — all within about a second.
     points at the project&apos;s blob — every other project&apos;s cache stays warm.
   </Step>
   <Step title="Your SDK polls and picks up the change">
-    Server SDKs poll on a plan-driven interval (Free 60s, Team 30s — see
+    Server SDKs poll on a plan-driven interval (Free 300s, Team 60s — see
     `packages/core/src/config/plans.ts` for the current values). Browser SDKs poll on the same
     cadence in the background, and re-evaluate on `flags.identify(...)`. Total time-to-visible from
     the dashboard click is &lt; poll interval + ~100ms of CDN propagation.
