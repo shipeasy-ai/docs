@@ -37,7 +37,7 @@ await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? '' });"
   num={4}
   label="TRANSLATE"
   title="AI drafts → human review"
-  cmd="shipeasy i18n translate --locales fr,de,ja --review"
+  cmd="In the dashboard: Drafts → AI draft (or run the i18n_translate_draft MCP tool)"
 >
   Drafts ride through the review queue in the dashboard. Approve and publish when you're happy.
 </QuickstartStep>
@@ -46,8 +46,8 @@ await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? '' });"
     num={5}
     label="USE"
     title="Render in your app"
-    cmd="import { t } from '@shipeasy/sdk/server';
-<h1>{t('home.hero.title')}</h1>"
+    cmd="import { i18n } from '@shipeasy/sdk/server';
+<h1>{i18n.t('home.hero.title', 'Localize easily.')}</h1>"
   >
     Reads happen at the edge. New keys live within a second of publish.
   </QuickstartStep>

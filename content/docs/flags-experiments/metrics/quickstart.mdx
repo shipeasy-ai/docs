@@ -128,10 +128,9 @@ shipeasy metrics create p95_page_load_ms \
 
 Then attach it as `guardrail` on the same experiment detail page.
 
-```
-
-`--role primary` is the metric the experiment is judged by. `--role guardrail` is a metric that
-must _not_ regress, even if the primary moves. See [Guardrails](/flags-experiments/metrics/guardrails).
+The metric you mark **primary** drives the ship/no-ship decision. A
+metric marked **guardrail** must _not_ regress, even if the primary
+moves. See [Guardrails](/flags-experiments/metrics/guardrails).
 
 ## 5. Read the result
 
