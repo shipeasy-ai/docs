@@ -269,18 +269,22 @@ options:
 Automate step 1 with the CLI:
 
 ```bash
-# Every gate at 100% for >30 days
-shipeasy flags list --json \
-  | jq -r '.[] | select(.rolloutPct == 10000 and .stableForDays >= 30) | .name'
+# Every gate at 100% rollout (filter to long-stable ones using the
+# created_at field + your own threshold)
+shipeasy flags list --json | jq -r '.[] | select(.rolloutPct == 10000) | .name'
 
-# Validate the codebase no longer references each one
-shipeasy flags validate ./src --names dark-mode,checkout-v2,new-search
+# Sanity-check the codebase no longer references each candidate before
+# deleting — grep is the simplest correct tool:
+git grep -nE "flags\\.get\\(['\"](dark-mode|checkout-v2|new-search)['\"]"
 
-# Once green, delete
-shipeasy flags delete dark-mode checkout-v2 new-search
+# Once nothing matches, delete them one at a time (the CLI's `delete`
+# takes one name per invocation):
+shipeasy flags delete dark-mode
+shipeasy flags delete checkout-v2
+shipeasy flags delete new-search
 ```
 
-The `validate` step is non-negotiable. Deleting a gate that's still referenced in code is fine
+The grep step is non-negotiable. Deleting a gate that's still referenced in code is fine
 (the SDK returns the `defaultValue`), but you want the dead conditional gone too — otherwise
 you've just moved the technical debt.
 
@@ -409,18 +413,22 @@ Set duration from your power calculation. Resist looking. The dashboard supports
 T+plan" mode — enable it on an experiment to hide the running p-value entirely until the planned
 end:
 
-```bash
-shipeasy experiments update paywall-v2 --hide-interim-results
-```
+In the dashboard, open the experiment's **Analysis settings** and tick
+"Hide interim results until planned end" — the running p-value and CI
+are replaced by a countdown to the planned horizon. Once the experiment
+reaches that horizon the panel unlocks.
 
 ### 2. Use sequential testing
 
-Sequential tests (mSPRT, group-sequential bounds) compute _adjusted_ p-values that account for
-continuous looks. Peeking is fine; the math handles it.
+Sequential tests (mSPRT, group-sequential bounds) compute _adjusted_
+p-values that account for continuous looks. Peeking is fine; the math
+handles it.
 
-```bash
-shipeasy experiments update paywall-v2 --analysis-mode sequential
-```
+This is a project-wide default on the Team plan and above
+(`sequential_testing: true` per
+`packages/core/src/config/plans.ts`). To enable on a specific
+experiment, open its Analysis settings and switch the analysis mode to
+**Sequential**.
 
 Sequential is less powerful at the planned horizon than fixed-horizon — you pay a small
 efficiency tax for the right to peek. If you don't need to peek, fixed-horizon is more efficient.
@@ -455,10 +463,14 @@ You don't need to detect a 10% lift. Detecting a 25% lift requires ~1,000 users 
 days. A 25% lift is also a more practically interesting hypothesis — small improvements aren't
 worth the org cost of running experiments at scale.
 
+Adjust the MDE in the experiment wizard's **Power calc** card (you can
+nudge it on a draft) — the wizard recomputes runtime live as you slide
+the value. For running experiments, edit `min_runtime_days` /
+`min_sample_size` instead:
+
 ```bash
-shipeasy experiments power paywall-v2 \
-  --metric purchase_conversion \
-  --min-detectable-effect 0.25
+shipeasy experiments update paywall-v2 \
+  --min-runtime-days 10 --min-sample-size 1000
 ```
 
 ### CUPED for variance reduction
@@ -495,26 +507,34 @@ The cause is straightforward: gate config is per-environment, and there's no aut
 
 Three patterns to keep envs aligned:
 
-### 1. Mirror writes via the CLI
+### 1. Mirror writes per-env
 
-For everyday flag tweaks (rollout %, targeting rules), apply to both envs in the same script:
-
-```bash
-for env in staging production; do
-  shipeasy flags update checkout-v2 --rollout 100 --env "$env"
-done
-```
-
-Annoying. Worth it.
-
-### 2. Use the env-aware diff tool
+Today gates live at the project scope (not per-env) — the same rollout %
+applies in staging and prod. To run different rollouts per env, create a
+sibling gate per env (e.g. `checkout-v2.staging`, `checkout-v2.prod`)
+and pin the SDK to the matching name based on which env's SDK key it's
+booted with:
 
 ```bash
-shipeasy flags diff --env-a staging --env-b production
+shipeasy flags rollout checkout-v2.staging 100
+shipeasy flags rollout checkout-v2.prod 25
 ```
 
-Outputs a table of every flag whose config differs between the two envs, with the diff. Run it in
-CI before merging to main, or as a weekly cron that posts the diff to your team channel.
+Per-env values on a single gate is on the roadmap — until then, the
+naming convention is what enforces the boundary.
+
+### 2. Diff env state by hand
+
+A first-class env-diff tool isn't shipped today. Until it lands, the
+practical pattern is to dump `shipeasy flags list --json` from each env
+(by re-binding to the appropriate project / SDK key) and `jq` the
+delta:
+
+```bash
+shipeasy flags list --json > staging.json
+shipeasy flags list --json --project prod-project-id > prod.json
+diff <(jq -S . staging.json) <(jq -S . prod.json)
+```
 
 ### 3. Promote rather than re-create
 
