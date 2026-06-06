@@ -151,7 +151,7 @@ Explicit keys are forever-ish — they are referenced from code, drafted, transl
 - **Snake_case the leaf**: `cta_label`, not `ctaLabel` or `cta-label`.
 - **Describe role, not content**: `header.cta_primary` ages better than `header.start_free_trial` (the copy will change; the role won't).
 - **Don't embed the language**: `welcome_en` is wrong; `welcome` is right.
-- **Don't embed the locale into the key**: keys are scoped to a profile, not duplicated per env.
+- **Don't embed the locale into the key**: one key is shared across every profile; each profile supplies its own translation. Don't duplicate a key per locale.
 
 A loose convention that scales well: `<surface>.<component>.<role>`. So `checkout.summary.cta_primary`, `settings.billing.heading`, `auth.signup.subtitle`.
 

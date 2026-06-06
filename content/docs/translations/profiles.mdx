@@ -26,7 +26,14 @@ Profiles use `locale`:
 | `ja:dev`     | Japanese, dev                    |
 | `pt-BR:prod` | Brazilian Portuguese, production |
 
-The locale is BCP-47 (`en`, `fr`, `pt-BR`, `zh-Hant`).
+The locale is BCP-47 (`en`, `fr`, `pt-BR`, `zh-Hant`). The optional `:suffix` (`:dev`, `:staging`, `:prod`) is **just part of the profile name** — a convention teams use to keep an in-review copy separate from the live one.
+
+<Callout type="warn" title="Profiles are not per-environment values">
+  Translations have no built-in environment axis. Unlike a **config** or **killswitch** — which
+  stores a distinct `dev` / `staging` / `prod` value behind one name — a profile is a single named
+  snapshot. "Staging" vs "prod" copy means **two separate profiles** (`fr:staging` and `fr:prod`)
+  that you pin and promote by name (see below), not one profile with per-env values.
+</Callout>
 
 <Callout type="info" title="Why region tags matter">
   Use a region tag (`pt-BR`, `es-MX`, `zh-Hant`) whenever register, vocabulary, or script differs
