@@ -176,31 +176,16 @@ Detailed walkthrough at [Quickstart](/translations/quickstart).
 
 ## Configure
 
-The config file is plain TypeScript — no YAML, no JSON gymnastics. Most teams ship the defaults and never touch it again.
+Translation settings live on the **profile** (one per locale, e.g.
+`en:prod`, `fr:prod`). Configure source language, targets, tone, glossary
+terms, and AI provider in the dashboard under **Translations → Profiles
+→ Settings**. The same values can be edited via the
+[Admin API](/flags-experiments/api).
 
-```ts
-// shipeasy.config.ts
-import { defineConfig } from "@shipeasy/sdk";
+A declarative `shipeasy.config.ts` is on the roadmap — until then, the
+profile is the authoritative configuration surface.
 
-export default defineConfig({
-  i18n: {
-    source: "en",
-    targets: ["es", "fr", "de", "ja", "pt-BR"],
-    files: ["app/**/*.{ts,tsx}", "content/**/*.md"],
-
-    // Brand voice — Claude reads this on every translation.
-    tone: "warm, technical, never marketing-speak",
-    glossary: {
-      Shipeasy: "Shipeasy", // never translate
-      ship: "deploy", // disambiguate
-    },
-
-    provider: { kind: "anthropic", model: "claude-haiku-4-5" },
-  },
-});
-```
-
-## API · `i18n` config
+## Settings reference
 
 <ApiTable>
   <ApiRow
