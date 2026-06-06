@@ -145,7 +145,7 @@ user u_42 timeline:
   10:14  purchase   value=49    <- counts toward v1
 ```
 
-If a user's `anonymous_id` later gets aliased to a `user_id` (`client.alias()`), exposures are stitched: pre-login behaviour is attributed to the right variant for the right user. The aliasing is applied retroactively at analysis time, so you don't need to log everything as `user_id` to get correct results.
+If a user's `anonymous_id` later gets aliased to a `user_id` (automatically, the first time `flags.identify({ user_id })` runs after the SDK has seen anonymous activity), exposures are stitched: pre-login behaviour is attributed to the right variant for the right user. The aliasing is applied retroactively at analysis time, so you don't need to log everything as `user_id` to get correct results.
 
 ### Sample Ratio Mismatch (SRM)
 
@@ -170,15 +170,15 @@ Everything analysis produces is queryable. The CLI:
 
 ```bash
 shipeasy experiments status checkout-cta --json > result.json
-shipeasy experiments status checkout-cta --csv  > result.csv
-shipeasy experiments status checkout-cta --segment country=US
+# CSV and per-segment exports aren't shipped on the CLI today — use the
+# Admin API JSON below and shape it with jq / your own ETL.
 ```
 
-Or pull straight from the API:
+Or pull straight from the [Admin API](/flags-experiments/api):
 
 ```bash
-curl -H "Authorization: Bearer $SHIPEASY_API_KEY" \
-  https://shipeasy.ai/api/experiments/checkout-cta/results
+curl -H "Authorization: Bearer $SHIPEASY_ADMIN_KEY" \
+  https://shipeasy.ai/api/admin/experiments/<experiment-id>/results
 ```
 
 Or read via the API if you've enabled the read access on your project:

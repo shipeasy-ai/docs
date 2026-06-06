@@ -16,14 +16,16 @@ npm install -g @shipeasy/cli
 shipeasy mcp install
 ```
 
-Or wire manually:
+Or wire manually (this is what `shipeasy mcp install` writes into your
+assistant's config file under the hood — point `command` + `args` at
+`@shipeasy/mcp` directly):
 
 ```json
 {
   "mcpServers": {
     "shipeasy": {
-      "command": "shipeasy",
-      "args": ["mcp"]
+      "command": "npx",
+      "args": ["-y", "@shipeasy/mcp@latest"]
     }
   }
 }
@@ -34,14 +36,14 @@ Or wire manually:
 > Status: in design. The current MCP server doesn't ship feedback tools yet — the CLI is the
 > production interface. Tracking them here so the agent prompt examples make sense once they land.
 
-| Tool                          | What it does                                                |
-| ----------------------------- | ----------------------------------------------------------- |
-| `feedback_create_bug`         | File a bug report                                           |
-| `feedback_list_bugs`          | List bugs (filterable by status)                            |
-| `feedback_update_bug_status`  | Move a bug through the status flow                          |
-| `feedback_create_feature`     | File a feature request                                      |
-| `feedback_list_features`      | List feature requests                                       |
-| `feedback_update_feature_status` | Move a feature request through the status flow           |
+| Tool                             | What it does                                   |
+| -------------------------------- | ---------------------------------------------- |
+| `feedback_create_bug`            | File a bug report                              |
+| `feedback_list_bugs`             | List bugs (filterable by status)               |
+| `feedback_update_bug_status`     | Move a bug through the status flow             |
+| `feedback_create_feature`        | File a feature request                         |
+| `feedback_list_features`         | List feature requests                          |
+| `feedback_update_feature_status` | Move a feature request through the status flow |
 
 ## Example agent prompt
 

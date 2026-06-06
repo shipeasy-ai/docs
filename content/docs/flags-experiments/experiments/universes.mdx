@@ -80,7 +80,9 @@ A 5% holdout in the `checkout` universe means: 5% of users are pinned to never s
 Holdouts are **persistent**: a user assigned to the holdout stays in it across experiments and across time, as long as the universe's salt and holdout percentage don't change.
 
 ```bash
-shipeasy universes create checkout --holdout 5
+# --holdout takes a basis-point range, lo,hi (0–9999). 0,499 = first
+# 5% of bucketed users sit in the holdout.
+shipeasy universes create checkout --holdout 0,499
 ```
 
 You can change the holdout size later, but realise that bumping it up reshuffles bucketing — some users move in, some out — which invalidates the long-term holdout comparison for that period. Avoid changing it during an active experiment.
@@ -97,8 +99,14 @@ When you flip mutual exclusion **on** in a universe, Shipeasy guarantees a user 
 
 Two experiments that touch the same surface can _confound_ each other — if `checkout-cta` and `checkout-layout` overlap on the same users, you can't tell which experiment moved the metric. Mutual exclusion makes the universe a fixed-pie model: experiments compete for the same allocation, you can't over-allocate, and the analysis stays clean.
 
+Mutual exclusion is enforced project-wide on the universe — all
+experiments attached to the same universe automatically compete for
+the same allocation pie (the SDK won't double-assign a user). There
+isn't a per-universe `--mutex` flag; it's the universe model itself
+that gives you the guarantee.
+
 ```bash
-shipeasy universes create checkout --holdout 5 --mutex
+shipeasy universes create checkout --holdout 0,499
 ```
 
 ### How allocation slots work under mutex
@@ -248,7 +256,7 @@ Don't. The point is stability. If a specific user (e.g. an internal account) nee
   secondaryHref="/experiments/quickstart"
   secondaryLabel="Back to quickstart"
   cmds={[
-    { label: "Create a universe", cmd: "shipeasy universes create checkout --holdout 5 --mutex" },
+    { label: "Create a universe", cmd: "shipeasy universes create checkout --holdout 0,499" },
     {
       label: "Then create an experiment in it",
       cmd: "shipeasy experiments create checkout-cta --universe checkout",
