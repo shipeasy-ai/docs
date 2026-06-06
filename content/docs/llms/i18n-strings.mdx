@@ -312,7 +312,7 @@ The branch here depends on what Step 2 told you about codemod capability.
 
     > _"Here are the first 12 strings the codemod wants to wrap. Anything that shouldn&apos;t be translated? (Brand names, code identifiers, technical strings.) I&apos;ll add them to the glossary or skip them."_
 
-    For brand names and acronyms, edit `shipeasy.config.ts`&apos;s `glossary` (e.g. `"Shipeasy": "Shipeasy"` to lock the term).
+    For brand names and acronyms, edit the profile's `glossary` field in the dashboard (Translations → Profiles → en:prod → Settings → Glossary) — `"Shipeasy": "Shipeasy"` locks the term. (A `shipeasy.config.ts` builder is on the roadmap; until then the profile is the authoritative configuration surface.)
 
   </Step>
   <Step title="Apply">
@@ -544,8 +544,9 @@ Translation quality drops sharply without context. For every key the codemod cre
     type="false positive"
     desc={
       <>
-        Add the file or pattern to <code>shipeasy.config.ts</code>&apos;s <code>files</code>{" "}
-        exclusion globs and re-preview. Don&apos;t apply.
+        Pass an explicit narrower set of <code>files</code> to
+        <code>i18n_codemod_preview</code> (and re-preview), or skip those rows with the per-row{" "}
+        {`{include: false}`} override before applying.
       </>
     }
   />

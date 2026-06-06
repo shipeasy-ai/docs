@@ -21,7 +21,8 @@ description: Scan, draft, publish — translated copy live worldwide in five min
 import { shipeasy } from '@shipeasy/sdk/server';
 await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? '' });"
 >
-  Same `shipeasy()` boot as flags. The SDK exposes `t()` once configured.
+  Same `shipeasy()` boot as flags. Import `i18n` from the same package to read labels — `i18n.t(key,
+  fallback)`.
 </QuickstartStep>
 
 <QuickstartStep

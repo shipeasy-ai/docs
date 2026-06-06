@@ -22,9 +22,9 @@ This page is the reference for what `track()` accepts, what the platform does wi
 import { flags } from "@shipeasy/sdk/server";
 flags.track(user_id, "purchase", { value: 49.99, sku: "SHIRT-L-BLUE" });
 
-// browser
-import { client } from "@shipeasy/sdk/client";
-client.track("checkout_viewed", { source: "nav" });
+// browser — the user has already been associated via flags.identify(...)
+import { flags } from "@shipeasy/sdk/client";
+flags.track("checkout_viewed", { source: "nav" });
 ```
 
 `track()` is **fire and forget** — it never throws, never blocks, never returns a promise you need to await. If the network is unavailable, the browser SDK queues to memory; if the worker is down, the event is dropped (events store has its own buffering, so this is rarer than you'd think).
@@ -34,7 +34,7 @@ The browser SDK batches events and flushes:
 - After a small batch fills (default `20` events).
 - On a 5-second timer.
 - On `pagehide` via `navigator.sendBeacon` so unloads don't lose data.
-- Immediately on `flags.identify()` and `client.alias()` to make sure stitching has the freshest data.
+- Immediately on `flags.identify()` to make sure identity stitching has the freshest data.
 
 You can tune the batcher:
 
@@ -53,7 +53,7 @@ flags.configure({
 | -------------- | -------- | ------------ | ----------------------------------------------------------------------- |
 | `event`        | `string` | yes          | The event name. Use snake_case: `purchase`, `signup_complete`.          |
 | `user_id`      | `string` | one of these | Pass on the server.                                                     |
-| `anonymous_id` | `string` | one of these | Auto-set by the browser SDK; rotates on `client.reset()`.               |
+| `anonymous_id` | `string` | one of these | Auto-set + persisted as a first-party cookie by the browser SDK.        |
 | `timestamp`    | `number` | no           | Defaults to "now". Pass a unix-ms timestamp to backfill.                |
 | `value`        | `number` | no           | Convenience for `sum`/`mean` metrics. Equivalent to `properties.value`. |
 | `properties`   | `object` | no           | Any string/number/boolean keys. Flat, ≤4 KB serialised.                 |
@@ -134,18 +134,21 @@ You don't write any of this — define the metric, log the events, read the resu
 Most apps have anonymous users who later log in. The flow is:
 
 ```ts
-// before login: browser SDK auto-assigns an anonymous_id
-client.track("page_view");
+import { flags } from "@shipeasy/sdk/client";
 
-// at login:
-client.identify(user_id); // future events use user_id
-client.alias(anonymous_id, user_id); // stitch past anon events to user_id
+// before login: browser SDK auto-assigns an anonymous_id
+flags.track("page_view");
+
+// at login — identify stitches the anon trail to user_id automatically
+await flags.identify({ user_id });
 ```
 
-`alias` tells Shipeasy that two ids are the same person, so the daily analysis attributes events
-tagged with `anonymous_id = a` to `user_id = u`. An exposure that happened anonymously can still be
-matched to a conversion that happens after login — the user who looked at the variant is the same
-user who bought.
+`flags.identify(...)` tells Shipeasy that the current anonymous session
+belongs to `user_id`. The SDK emits an internal `$alias` record so the daily
+analysis attributes events tagged with the prior `anonymous_id` to that
+`user_id`. An exposure that happened anonymously can still be matched to a
+conversion that happens after login — the user who looked at the variant is
+the same user who bought.
 
 ## Pulling raw events
 

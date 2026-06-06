@@ -14,6 +14,12 @@ A **label key** is a stable identifier for a translatable string. It is what you
 
 Shipeasy Translations's job is to make keys feel invisible: you write English in code, the codemod hashes it, the AI translates it, and the runtime resolves it back. But understanding what a key actually is — and how it survives renames, refactors, and re-scans — is what stops your localization from drifting six months in.
 
+<Callout type="info" title="Shorthand">
+  In every example on this page, `t(...)` is shorthand for `i18n.t(...)` from `@shipeasy/sdk/client`
+  (or `/server` for SSR). The codemod always emits the full `i18n.t(...)` form with the import
+  added.
+</Callout>
+
 ## Schema
 
 <ApiTable>

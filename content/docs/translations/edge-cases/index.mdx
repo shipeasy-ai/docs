@@ -33,16 +33,17 @@ The right move is to put the pluralisation rules in the _string_, where the tran
 them, using ICU MessageFormat:
 
 ```ts
-import { t } from "@shipeasy/sdk/server";
+import { i18n } from "@shipeasy/sdk/server";
 
-t("cart.itemCount", {
-  count,
-  default: `{count, plural,
+i18n.t(
+  "cart.itemCount",
+  `{count, plural,
     =0 {Your cart is empty}
     one {# item in your cart}
     other {# items in your cart}
   }`,
-});
+  { count },
+);
 ```
 
 The English source defines `one` and `other`. The Russian translation will fill in `one`, `few`,
@@ -72,7 +73,11 @@ translation and, in dev mode, logs a one-line warning so you know the fallback f
 You can override the chain per-call when the default is wrong:
 
 ```ts
-t("cta.subscribe", { locale: "pt-BR", fallback: ["pt-PT", "en"] });
+// The active locale is set by the loader script + the i18n cookie.
+// Per-call locale overrides aren't shipped yet — use the [Admin API](/flags-experiments/api)
+// to set a per-user locale preference, or switch the loader's reading
+// strategy in the dashboard's i18n settings.
+i18n.t("cta.subscribe", "Subscribe");
 ```
 
 That's useful for projects with intentionally distinct PT-PT and PT-BR copy where falling back
