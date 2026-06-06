@@ -245,28 +245,35 @@ profile is the authoritative configuration surface.
 
 ## Use it in your app
 
-Shipeasy Translations ships a thin runtime — about 1.4 kB gzipped. The `useT` hook reads the active locale from your router and returns translations from the bundle generated at build time.
+Shipeasy Translations ships through the same client SDK as flags and
+experiments. Call `i18n.t(key, fallback)` anywhere — the active locale is
+picked from your loader script (or the cookie / URL param you configure),
+and translations come from the chunked bundle the loader fetches.
 
 ```tsx
-// app/(marketing)/page.tsx
-import { useT } from "@shipeasy/sdk/react";
+// app/(marketing)/page.tsx (Server Component or "use client" — both work)
+import { i18n } from "@shipeasy/sdk/client";
 
 export default function Page() {
-  const t = useT();
   return (
     <section>
-      <h1>{t("Localize, as easy as asking Claude.")}</h1>
-      <p>{t("Ship in 12 languages without ever leaving your editor.")}</p>
+      <h1>{i18n.t("landing.hero.title", "Localize, as easy as asking Claude.")}</h1>
+      <p>{i18n.t("landing.hero.sub", "Ship in 12 languages without ever leaving your editor.")}</p>
     </section>
   );
 }
 ```
 
-There is no `en.json` you wrote by hand, no string keys, no `i18n.t("hero.title")`. The English **is** the source of truth and the key. Shipeasy Translations generates a stable hash and keeps every locale&apos;s bundle in sync.
+The English fallback string is the SOURCE OF TRUTH — `shipeasy i18n scan`
+picks it up and pushes it to the en profile, and the AI draft uses it as
+the prompt to translate from. The key (`landing.hero.title`) is what the
+runtime looks up in the published chunk. Pre-launch you can ship without
+ever opening the dashboard — fallbacks render until the chunk is up.
 
 <Callout type="warn" title="Don't translate user-generated content this way">
-  `useT` is for static UI strings extracted at build time. For UGC (chat messages, reviews, support
-  tickets), use the runtime `/translate` endpoint with the streaming SDK.
+  This is for static UI strings the scanner can extract at build time. For UGC (chat messages,
+  reviews, support tickets) you need a streaming runtime translation endpoint — that surface isn't
+  shipped yet.
 </Callout>
 
 ## Why a separate product

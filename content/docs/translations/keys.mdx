@@ -168,8 +168,8 @@ The CLI discovers keys two ways:
     }
   >
     Walks the AST, finds string literals in user-visible positions (JSX text, JSX attribute values
-    for known props, <code>useT</code> arguments), and replaces them with{" "}
-    <code>{`t("key", "value")`}</code>. Aggressive and high-quality on JSX.
+    for known props, existing <code>i18n.t</code> / <code>t</code> calls), and replaces them with{" "}
+    <code>{`i18n.t("key", "value")`}</code>. Aggressive and high-quality on JSX.
   </Tile>
   <Tile
     icon="✓"
