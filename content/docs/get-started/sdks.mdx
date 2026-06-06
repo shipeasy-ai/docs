@@ -91,19 +91,19 @@ The `t()` function is part of the same SDK — no separate i18n init. Configurat
 Use this in the browser (Vite, Webpack, Next.js client, plain HTML). The browser SDK manages an `anonymous_id` cookie, fetches an evaluation bundle on init, and batches event uploads with `navigator.sendBeacon` on page hide.
 
 ```ts
-import { shipeasy } from "@shipeasy/sdk/client";
+import { shipeasy, flags } from "@shipeasy/sdk/client";
 
 shipeasy({
-  apiKey: import.meta.env.VITE_SHIPEASY_CLIENT_KEY,
+  clientKey: import.meta.env.VITE_SHIPEASY_CLIENT_KEY ?? "",
 });
 
-await shipeasy.identify({ user_id: "u_4f2a", plan: "pro" });
+await flags.identify({ user_id: "u_4f2a", plan: "pro" });
 
-if (shipeasy.gate("new-checkout-flow")) {
+if (flags.get("new-checkout-flow")) {
   // …
 }
 
-shipeasy.track("checkout_viewed", { source: "nav" });
+flags.track("checkout_viewed", { source: "nav" });
 ```
 
 ### Server-side rendering bootstrap

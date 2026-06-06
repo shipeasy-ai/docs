@@ -22,7 +22,7 @@ Conversion is the simplest and statistically the friendliest — the variance is
 
 ### When the metric is "no event"
 
-For `conversion`, a user with zero matching events contributes a `0`. For `mean`, you have a choice: include zero-event users at `0`, or drop them entirely. The default is `include` — _"average revenue across **all** exposed users, including non-buyers"_ — because that's the question business stakeholders almost always actually ask. You can flip it with `--zero-handling drop` when you want _"average order value among buyers"_.
+For `count_users` (the binary "did it happen?" aggregation), a user with zero matching events contributes `0`. For `avg`, the DSL averages across all exposed users — non-purchasers contribute `0` and pull the mean down. To answer "average among buyers only" instead, express it as a ratio (`ratio(sum(purchase, revenueCents), count_users(purchase))`) or compute the per-buyer cohort metric offline.
 
 ## Creating a metric
 

@@ -27,8 +27,8 @@ during the analysis window?
 
 ```bash
 shipeasy metrics create purchase_conversion \
-  --type conversion \
-  --event purchase
+  --event purchase \
+  --query 'count_users(purchase)'
 ```
 
 Each user contributes a `0` or `1`. The metric mean is the fraction who converted. Variance is
@@ -43,17 +43,19 @@ Per user: how many of the event happened?
 
 ```bash
 shipeasy metrics create sessions_per_user \
-  --type count \
-  --event session_start
+  --event session_start \
+  --query 'count(session_start)'
 ```
 
-Each user contributes an integer ≥ 0. Means and variances behave reasonably for low-volume events
-(0–5 per user) and get long-tailed for high-volume ones (a power user with 200 sessions skews the
-mean). For long-tailed counts, consider:
+Each user contributes an integer ≥ 0. Means and variances behave
+reasonably for low-volume events (0–5 per user) and get long-tailed for
+high-volume ones (a power user with 200 sessions skews the mean). For
+long-tailed counts, consider:
 
-- Capping at a sensible ceiling (`--cap 50`).
-- Switching to `conversion` (did they have at least 1 session?) if the count distinction doesn't
-  drive your decision.
+- Tightening the **winsorize** percentile (`--winsorize 95` instead of
+  the 99 default) to clamp the heavy tail.
+- Switching to `count_users(session_start)` (did they have at least 1
+  session?) if the count distinction doesn't drive your decision.
 
 ## Sum
 
@@ -61,17 +63,16 @@ Per user: sum a numeric property across all matching events.
 
 ```bash
 shipeasy metrics create revenue_per_user \
-  --type sum \
   --event purchase \
-  --property revenueCents
+  --query 'sum(purchase, revenueCents)'
 ```
 
-The classic "did this experiment make us more money per user." Each user contributes their total
-revenue. Non-purchasers contribute `0`.
+The classic "did this experiment make us more money per user." Each
+user contributes their total revenue. Non-purchasers contribute `0`.
 
-Sums are **heavy-tailed**. One $50,000 enterprise purchase can swing the mean for thousands of
-users. Always set outlier handling (see below) — the default winsorise at p99 is correct in most
-cases.
+Sums are **heavy-tailed**. One $50,000 enterprise purchase can swing
+the mean for thousands of users. The metric's `--winsorize` percentile
+clamps that — the CLI default is `--winsorize 99` and is rarely wrong.
 
 ## Mean
 
@@ -79,43 +80,27 @@ Per user: average a numeric property across their events.
 
 ```bash
 shipeasy metrics create avg_order_value \
-  --type mean \
   --event purchase \
-  --property revenueCents
+  --query 'avg(purchase, revenueCents)'
 ```
 
-The trap with `mean` is **zero-handling**: should users with zero matching events count as `0`,
-or be dropped from the denominator entirely?
-
-- `--zero-handling include` (default) — non-purchasers contribute `0`. The metric answers "average
-  revenue per _exposed user_."
-- `--zero-handling drop` — non-purchasers don't contribute. The metric answers "average revenue
-  per _purchaser_."
-
-The two answer different questions. The first is what most business stakeholders mean. The second
-is what a product manager often asks for. Pick deliberately:
-
-```bash
-# Average across everyone exposed (the business question)
-shipeasy metrics create revenue_per_exposed_user \
-  --type mean --event purchase --property revenueCents \
-  --zero-handling include
-
-# Average among buyers only
-shipeasy metrics create average_basket_size \
-  --type mean --event purchase --property revenueCents \
-  --zero-handling drop
-```
+There's a trap with `avg`: should users with zero matching events count
+as `0`, or be dropped from the denominator entirely? Today the DSL's
+`avg` averages across all exposed users — non-purchasers contribute `0`
+("average revenue per _exposed user_"). To answer the "average across
+buyers only" question instead, define two metrics and divide via the
+`ratio` aggregation, or compute the per-buyer average offline.
 
 ## Ratio
 
 Per user: numerator-event count divided by denominator-event count.
+Express it with `ratio(...)` between two count arms — `count` or
+`count_users` are the only arm aggregations supported.
 
 ```bash
 shipeasy metrics create click_through_rate \
-  --type ratio \
-  --numerator-event click \
-  --denominator-event impression
+  --event click \
+  --query 'ratio(count(click), count(impression))'
 ```
 
 Use ratios for inherently-ratio questions: clicks per impression, conversions per visit, errors
@@ -134,26 +119,22 @@ The dashboard shows numerator and denominator means alongside the ratio so the m
 
 Sums and means need outlier handling. Two options:
 
-**Winsorise** at a percentile. Anything above is clamped to the value at that percentile.
+**Winsorize** at a percentile. Anything above is clamped to the value
+at that percentile.
 
 ```bash
 shipeasy metrics create revenue_per_user \
-  --type sum --event purchase --property revenueCents \
-  --winsorise p99
+  --event purchase \
+  --query 'sum(purchase, revenueCents)' \
+  --winsorize 99
 ```
 
-`p99` (default), `p99.5`, `p99.9`, `p95`. `p99` is rarely wrong: trims the rarest 1% to the value
-of the 99th percentile, keeps the body of the distribution intact.
+`99` (default), `95`, `90`. Lower percentiles clamp more aggressively.
+Trims the rarest 1% (or 5% / 10%) to the value of that percentile,
+keeps the body of the distribution intact.
 
-**Cap** at an absolute value:
-
-```bash
-shipeasy metrics create revenue_per_user \
-  --type sum --event purchase --property revenueCents \
-  --cap 100000   # $1,000 in cents
-```
-
-Use when there's a domain-specific ceiling — e.g. session length can't reasonably exceed 4 hours,
+For a hard ceiling (e.g. session length can't reasonably exceed 4
+hours,
 revenue per user can't exceed your enterprise plan price.
 
 <Callout type="info" title="Symmetric across arms">
@@ -172,52 +153,42 @@ You can tighten what counts toward a metric with **filters**. Same shape as gate
 applied to the event's `properties` payload before aggregation:
 
 ```bash
-shipeasy metrics create paid_organic_purchase \
-  --type conversion --event purchase \
-  --filter '[{"attr":"channel","op":"eq","value":"organic"}]'
+shipeasy metrics create organic_purchase \
+  --event purchase \
+  --query 'count_users(purchase{channel="organic"})'
 ```
 
-Now only `purchase` events with `channel == "organic"` count. Multiple predicates are ANDed.
+Now only `purchase` events with `channel == "organic"` count. Multiple
+predicates inside `{}` are ANDed (commas separate them). String values must
+be double-quoted in the DSL; `=~` does regex match for numeric / pattern
+filters.
 
 Common shapes:
 
 ```bash
 # Web only (exclude mobile app purchases)
---filter '[{"attr":"platform","op":"eq","value":"web"}]'
-
-# Above a price floor (exclude $0 promo redemptions)
---filter '[{"attr":"revenueCents","op":"gte","value":1000}]'
+'count_users(purchase{platform="web"})'
 
 # Geographic slice
---filter '[{"attr":"country","op":"in","value":["US","CA","GB"]}]'
+'count_users(purchase{country=~"^(US|CA|GB)$"})'
 
-# Multiple — ANDed
---filter '[
-  {"attr":"platform","op":"eq","value":"web"},
-  {"attr":"country","op":"in","value":["US","CA"]}
-]'
+# Multiple — ANDed inside the same {}
+'count_users(purchase{platform="web", country="US"})'
 ```
 
-Filters run cheaply during aggregation. You can have many metrics that share the same underlying
-event, each filtering differently — no need to log the same purchase twice with different names.
+Filters run cheaply during aggregation. You can have many metrics that
+share the same underlying event, each filtering differently — no need
+to log the same purchase twice with different names.
 
 ## Direction
 
-For every metric, pick which direction is "good":
-
-```bash
-shipeasy metrics create error_rate \
-  --type conversion --event client_error \
-  --direction down
-
-shipeasy metrics create purchase_conversion \
-  --type conversion --event purchase \
-  --direction up
-```
-
-`--direction` is informational for primary metrics (colour-codes the lift), and **functional** for
-guardrails — a guardrail with `--direction down` flags as failed when it moves up. Pick the right
-direction; the dashboard's red/green and the alerting both depend on it.
+The dashboard infers each metric's "good" direction from its name + the
+metric type when you attach it to an experiment as primary or guardrail.
+Words like `error`, `fail`, `latency`, `crash`, `churn`, `bounce` are
+flagged as lower-is-better (see
+`apps/ui/src/app/dashboard/[projectId]/metrics/metrics-list-view.tsx` for
+the exact heuristic). Override on the experiment-metric attachment in the
+dashboard when the heuristic gets it wrong.
 
 ## When you don't have the event yet
 

@@ -13,34 +13,34 @@ description: Scan, draft, publish — translated copy live worldwide in five min
     Same SDK + CLI as flags. No separate i18n package, no separate API key.
   </QuickstartStep>
 
-  <QuickstartStep
-    num={2}
-    label="WIRE"
-    title="One configure call"
-    cmd="// app/layout.tsx
+<QuickstartStep
+  num={2}
+  label="WIRE"
+  title="One configure call"
+  cmd="// app/layout.tsx
 import { shipeasy } from '@shipeasy/sdk/server';
-await shipeasy({ apiKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY! });"
-  >
-    Same `shipeasy()` boot as flags. The SDK exposes `t()` once configured.
-  </QuickstartStep>
+await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? '' });"
+>
+  Same `shipeasy()` boot as flags. The SDK exposes `t()` once configured.
+</QuickstartStep>
 
-  <QuickstartStep
-    num={3}
-    label="SCAN"
-    title="Discover strings in your repo"
-    cmd="shipeasy i18n scan ./apps/web"
-  >
-    Walks your code, finds untranslated user-facing copy, proposes keys, and uploads them as drafts.
-  </QuickstartStep>
+<QuickstartStep
+  num={3}
+  label="SCAN"
+  title="Discover strings in your repo"
+  cmd="shipeasy i18n scan ./apps/web"
+>
+  Walks your code, finds untranslated user-facing copy, proposes keys, and uploads them as drafts.
+</QuickstartStep>
 
-  <QuickstartStep
-    num={4}
-    label="TRANSLATE"
-    title="AI drafts → human review"
-    cmd="shipeasy i18n translate --locales fr,de,ja --review"
-  >
-    Drafts ride through the review queue in the dashboard. Approve and publish when you're happy.
-  </QuickstartStep>
+<QuickstartStep
+  num={4}
+  label="TRANSLATE"
+  title="AI drafts → human review"
+  cmd="shipeasy i18n translate --locales fr,de,ja --review"
+>
+  Drafts ride through the review queue in the dashboard. Approve and publish when you're happy.
+</QuickstartStep>
 
   <QuickstartStep
     num={5}

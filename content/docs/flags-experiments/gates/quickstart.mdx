@@ -62,7 +62,7 @@ path, no per-request latency. Configure once, use everywhere.
 ```ts title="src/lib/shipeasy.ts"
 import { shipeasy } from "@shipeasy/sdk/server";
 
-await shipeasy({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
+await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? "" });
 ```
 
 Call this once during boot (server entry, root layout, or worker startup). The same `shipeasy()`

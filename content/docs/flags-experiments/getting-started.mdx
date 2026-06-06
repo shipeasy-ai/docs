@@ -13,14 +13,9 @@ description: Install the SDK, configure once, ship a flag — under five minutes
     One package, server + browser. The CLI logs in via your browser — no env tokens.
   </QuickstartStep>
 
-  <QuickstartStep
-    num={2}
-    label="LOGIN"
-    title="Authenticate"
-    cmd="shipeasy login"
-  >
-    Opens your browser, mints an admin SDK key, stores it in `~/.config/shipeasy/`.
-  </QuickstartStep>
+<QuickstartStep num={2} label="LOGIN" title="Authenticate" cmd="shipeasy login">
+  Opens your browser, mints an admin SDK key, stores it in `~/.config/shipeasy/`.
+</QuickstartStep>
 
   <QuickstartStep
     num={3}
@@ -28,19 +23,19 @@ description: Install the SDK, configure once, ship a flag — under five minutes
     title="Configure once, use everywhere"
     cmd="// app/layout.tsx
 import { shipeasy } from '@shipeasy/sdk/server';
-await shipeasy({ apiKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY! });"
+await shipeasy({ clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "" });"
   >
     Gates, configs, experiments, and killswitches all share this single `apiKey`.
   </QuickstartStep>
 
-  <QuickstartStep
-    num={4}
-    label="SHIP"
-    title="Create your first gate"
-    cmd="shipeasy gate create checkout-v2 --rollout 5"
-  >
-    Changes you make are visible to your SDK worldwide in under a second.
-  </QuickstartStep>
+<QuickstartStep
+  num={4}
+  label="SHIP"
+  title="Create your first gate"
+  cmd="shipeasy flags create checkout-v2 --rollout 5"
+>
+  Changes you make are visible to your SDK worldwide in under a second.
+</QuickstartStep>
 
   <QuickstartStep
     num={5}

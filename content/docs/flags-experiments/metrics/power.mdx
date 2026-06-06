@@ -141,8 +141,10 @@ sometimes reduce variance via stratification or CUPED. Shipeasy supports the lat
 
 ```bash
 shipeasy metrics create purchase_conversion \
-  --type conversion --event purchase \
-  --cuped-covariate previous_28d_purchase_rate
+  --event purchase \
+  --query 'count_users(purchase)'
+# Then enable CUPED + pick the covariate on the metric's "Variance
+# reduction" tab in the dashboard (Team plan and above).
 ```
 
 CUPED ("Controlled experiments Using Pre-Experiment Data") subtracts predictable variance using

@@ -37,12 +37,12 @@ This walks through a complete experiment end to end: a button-label test on the 
 
 <Steps>
   <Step title="Define the conversion metric">
-    A **metric** wraps an event type and an aggregation function. For "did this user buy?" we use `conversion` over the `purchase` event.
+    A **metric** wraps an event type and an aggregation function. For "did this user buy?" we use `count_users` over the `purchase` event (the binary did-it-happen-at-least-once aggregation).
 
     ```bash
     shipeasy metrics create purchase_conversion \
-      --type conversion \
-      --event purchase
+      --event purchase \
+      --query 'count_users(purchase)'
     ```
 
     Or in the dashboard: **Experiments → Metrics → New metric**.

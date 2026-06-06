@@ -19,7 +19,7 @@ description: Wire a "Report bug" button into your app in two minutes.
     title="Configure once, use everywhere"
     cmd="// app/layout.tsx
 import { shipeasy } from '@shipeasy/sdk/server';
-await shipeasy({ apiKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY! });"
+await shipeasy({ clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "" });"
   >
     Same `shipeasy()` boot as the rest of the platform.
   </QuickstartStep>
@@ -31,24 +31,27 @@ await shipeasy({ apiKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY! });"
     cmd="import { shipeasy } from '@shipeasy/sdk/client';
 
 await shipeasy.feedback.bug({
-  title: 'Checkout button overlaps footer on iOS Safari',
-  pageUrl: window.location.href,
+title: 'Checkout button overlaps footer on iOS Safari',
+pageUrl: window.location.href,
 });"
-  >
+
+>
+
     Returns `202 accepted` and shows up in the dashboard within seconds.
+
   </QuickstartStep>
 
-  <QuickstartStep
-    num={4}
-    label="REQUEST"
-    title="Capture a feature request"
-    cmd="await shipeasy.feedback.feature({
+<QuickstartStep
+  num={4}
+  label="REQUEST"
+  title="Capture a feature request"
+  cmd="await shipeasy.feedback.feature({
   title: 'Dark mode for the dashboard',
   importance: 'important',
 });"
-  >
-    Other signed-in users can up-vote the same request from the dashboard.
-  </QuickstartStep>
+>
+  Other signed-in users can up-vote the same request from the dashboard.
+</QuickstartStep>
 
   <QuickstartStep
     num={5}

@@ -81,19 +81,17 @@ So: primary green + guardrails not red = ship.
 
 ## Configuring roles
 
-```bash
-# Attach as primary
-shipeasy experiments metric add paywall-v2 \
-  purchase_conversion --role primary
+Attaching metrics to an experiment is a dashboard operation today
+(the CLI doesn't expose an `experiments metric add` subcommand). Open
+the experiment detail page, scroll to **Metrics**, click **Attach**,
+pick the role:
 
-# Attach as guardrail
-shipeasy experiments metric add paywall-v2 \
-  p95_page_load_ms --role guardrail
-shipeasy experiments metric add paywall-v2 \
-  client_error_rate --role guardrail
-```
+- **Primary** — drives the ship/no-ship decision.
+- **Guardrail** — must not regress.
+- **Secondary** — informational, not load-bearing for the decision.
 
-Or in the dashboard: **Experiment → Metrics → Add metric → Role: Primary | Guardrail**.
+The same operation is exposed via the [Admin API](/flags-experiments/api)
+if you'd rather script it.
 
 You can change a metric's role on a running experiment, but think hard before doing so. If the
 primary is missing the lift target and you start promoting "secondary" metrics to primary, you're
@@ -104,14 +102,10 @@ running into [HARKing](#harking) territory.
 Sometimes you want a guardrail that only fires on a _large_ regression, not a small one — e.g.
 you accept that a 1% perf hit might be tolerable for a winning experiment, but a 10% one is not.
 
-```bash
-shipeasy experiments metric add paywall-v2 \
-  p95_page_load_ms \
-  --role guardrail \
-  --max-regression-pct 5
-```
+In the dashboard's **Attach metric** dialog, set the guardrail's
+**Max regression %** field to `5`.
 
-`--max-regression-pct 5` means: only flag as failed if the lift is more than 5% in the bad
+A max-regression of 5% means: only flag as failed if the lift is more than 5% in the bad
 direction. Smaller regressions are surfaced (with a yellow chip) but don't block ship.
 
 This is the right knob for performance metrics, where some regression is expected and the

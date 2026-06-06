@@ -20,13 +20,13 @@ have a primary metric that drives a real ship/no-ship decision.
     num={2}
     label="LOG"
     title="Log the underlying event from your code"
-    cmd="await shipeasy.track('purchase', { revenueCents })"
+    cmd="flags.track(userId, 'purchase', { revenueCents })"
   />
   <QuickstartStep
     num={3}
     label="ATTACH"
     title="Attach to an experiment as the primary metric"
-    cmd="shipeasy experiments metric add paywall-v2 purchase_conversion --role primary"
+    cmd="In the dashboard: Experiments → paywall-v2 → Metrics → Attach primary"
   />
   <QuickstartStep
     num={4}
@@ -62,8 +62,8 @@ The simplest case — did event X happen for this user at least once?
 
 ```bash
 shipeasy metrics create purchase_conversion \
-  --type conversion \
-  --event purchase
+  --event purchase \
+  --query 'count_users(purchase)'
 ```
 
 You now have a metric definition. It does nothing on its own; it tells the analysis pipeline how
@@ -73,9 +73,8 @@ For a revenue metric (sum the `revenueCents` property across `purchase` events p
 
 ```bash
 shipeasy metrics create revenue_per_user \
-  --type sum \
   --event purchase \
-  --property revenueCents
+  --query 'sum(purchase, revenueCents)'
 ```
 
 For more aggregation types, see [Aggregations](/flags-experiments/metrics/aggregations).
@@ -85,11 +84,10 @@ For more aggregation types, see [Aggregations](/flags-experiments/metrics/aggreg
 The metric is a _rule_ for aggregating events. The events themselves come from your code:
 
 ```ts title="app/checkout/success/page.tsx"
-import { shipeasy } from "@shipeasy/sdk/server";
+import { flags } from "@shipeasy/sdk/server";
 
 export default async function CheckoutSuccess({ order }: { order: Order }) {
-  await shipeasy.track("purchase", {
-    userId: order.userId,
+  flags.track(order.userId, "purchase", {
     revenueCents: order.totalCents,
     currency: order.currency,
     channel: order.acquisitionChannel,
@@ -100,31 +98,36 @@ export default async function CheckoutSuccess({ order }: { order: Order }) {
 
 A few rules that matter:
 
-- **`userId` is required for attribution.** Without it, the event can't be assigned to an
-  experiment exposure.
-- **Properties become filterable.** You can later add a metric like "paid purchases from organic
-  channel" by filtering on `channel`.
-- **`track()` is fire-and-forget.** It returns immediately; the event flushes asynchronously. Do
-  not await it on the hot path expecting a delivery guarantee — it's analytics, not transactional
-  state.
+- **The first argument is the `userId`.** Without it, the event can't be
+  assigned to an experiment exposure — `flags.track` requires it as a
+  positional arg.
+- **Properties become filterable.** You can later add a metric like
+  "organic-channel purchases" by filtering on `channel` inside the DSL
+  selector (`count_users(purchase{channel="organic"})`).
+- **`track()` is fire-and-forget.** It returns void; the event flushes
+  asynchronously. Don't `await` it expecting a delivery guarantee —
+  it's analytics, not transactional state.
 
 Deploy this. Events start flowing. The metric definition will pick them up on the next analysis
 window (daily by default).
 
 ## 4. Attach the metric to an experiment
 
-Now wire the metric into the experiment whose lift you want to read:
+Attaching metrics (primary / guardrail / secondary) to an experiment is a
+dashboard operation today — open the experiment detail page, scroll to
+**Metrics**, click **Attach** on `purchase_conversion`, pick `primary`,
+save. The same can be done via the [Admin API](/flags-experiments/api).
+
+Create a guardrail alongside it — don't tank page load while you're at it:
 
 ```bash
-shipeasy experiments metric add paywall-v2 \
-  purchase_conversion --role primary
-
-# Add a guardrail too — don't tank page load while you're at it
 shipeasy metrics create p95_page_load_ms \
-  --type mean --event page_view --property loadTimeMs --direction down
+  --event page_view \
+  --query 'p95(page_view, loadTimeMs)'
+```
 
-shipeasy experiments metric add paywall-v2 \
-  p95_page_load_ms --role guardrail
+Then attach it as `guardrail` on the same experiment detail page.
+
 ```
 
 `--role primary` is the metric the experiment is judged by. `--role guardrail` is a metric that
@@ -136,10 +139,12 @@ The dashboard's experiment page shows lift, confidence interval, and p-value per
 once per analysis window:
 
 ```
-purchase_conversion        control   v1     lift     p       95% CI
-                            4.8%     5.2%   +8.3%    0.018   [1.2%, 15.6%]
 
-p95_page_load_ms (guard)   860 ms   862 ms  +0.2%    0.71    [-1.1%, 1.5%]
+purchase_conversion control v1 lift p 95% CI
+4.8% 5.2% +8.3% 0.018 [1.2%, 15.6%]
+
+p95_page_load_ms (guard) 860 ms 862 ms +0.2% 0.71 [-1.1%, 1.5%]
+
 ```
 
 You read this as: paywall v1 lifted conversion by 8.3% (p=0.018, 95% CI excludes zero) and did
@@ -173,3 +178,4 @@ See [Power & sample size](/flags-experiments/metrics/power).
   prev={{ href: "/flags-experiments/metrics", title: "Metrics overview" }}
   next={{ href: "/flags-experiments/metrics/aggregations", title: "Aggregation types" }}
 />
+```

@@ -468,8 +468,10 @@ variance — equivalent to 10–30% more users.
 
 ```bash
 shipeasy metrics create purchase_conversion \
-  --type conversion --event purchase \
-  --cuped-covariate previous_28d_purchase_rate
+  --event purchase \
+  --query 'count_users(purchase)'
+# Enable CUPED + pick the pre-experiment covariate on the metric's
+# Variance reduction tab in the dashboard (Team plan and above).
 ```
 
 ### Don't run an experiment

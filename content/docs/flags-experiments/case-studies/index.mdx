@@ -54,12 +54,15 @@ return renderCheckoutV1();
 ```
 
 ```bash
-# Day 1
-shipeasy gate update checkout-v2 --rule "country IN ['US','CA']" --rollout 5
+# Day 1 — rules edited in the dashboard or via the Admin API
+#         (CLI's `flags create --rules` only sets them at creation time)
+shipeasy flags rollout checkout-v2 5
+
 # Day 3
-shipeasy gate update checkout-v2 --rollout 25
+shipeasy flags rollout checkout-v2 25
+
 # Day 5
-shipeasy gate update checkout-v2 --rollout 100
+shipeasy flags rollout checkout-v2 100
 ```
 
 ## Change homepage hero copy [#hero-copy]
@@ -471,28 +474,25 @@ shown. Naive instinct: log clicks, log impressions, compute the ratio in the das
 
 ```bash
 shipeasy metrics create rec_rail_ctr \
-  --type ratio \
-  --numerator-event rec_click \
-  --denominator-event rec_impression
+  --event rec_click \
+  --query 'ratio(count(rec_click), count(rec_impression))'
 ```
 
 ```ts title="app/components/RecRail.tsx"
 "use client";
-import { shipeasy } from "@shipeasy/sdk/client";
+import { flags } from "@shipeasy/sdk/client";
 import { useEffect } from "react";
 
 export function RecRail({ items, userId }) {
   useEffect(() => {
-    items.forEach((item) =>
-      shipeasy.track("rec_impression", { userId, itemId: item.id }),
-    );
+    items.forEach((item) => flags.track("rec_impression", { itemId: item.id }));
   }, [items, userId]);
 
   return items.map((item) => (
     <a
       href={item.href}
       key={item.id}
-      onClick={() => shipeasy.track("rec_click", { userId, itemId: item.id })}
+      onClick={() => flags.track("rec_click", { itemId: item.id })}
     >
       {item.title}
     </a>
