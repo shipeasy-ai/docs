@@ -31,7 +31,7 @@ redeploys between ramp steps.
     num={3}
     label="WRAP"
     title="Gate the new code path"
-    cmd="if (await gate('checkout-v2', { userId })) { ... }"
+    cmd="if (flags.get('checkout-v2', { user_id: userId })) { ... }"
   />
   <QuickstartStep
     num={4}
@@ -71,13 +71,14 @@ call covers flags, configs, experiments, and translations — you do not need se
 ## 2. Create the gate
 
 ```bash
-shipeasy flags create checkout-v2 \
-  --description "New checkout flow rewrite" \
-  --rollout 0
+shipeasy flags create checkout-v2 --rollout 0
 ```
 
-`--rollout 0` means "no one sees it yet." The gate exists, the SDK knows about it, but every call
-returns `false`. Safe to deploy.
+`--rollout 0` means "no one sees it yet." The gate exists, the SDK
+knows about it, but every call returns `false`. Safe to deploy. (A
+description field exists on the gate row but the CLI's `flags create`
+doesn't accept a `--description` flag today — add the description from
+the dashboard after creating.)
 
 Alternatively, create it in the dashboard: **Flags → New gate → Save**.
 

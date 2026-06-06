@@ -46,8 +46,8 @@ where you control the payment integration end-to-end — then ramp the percentag
 stay green. Each step is a dashboard click, not a deploy.
 
 ```ts
-import { gate } from "@shipeasy/sdk/server";
-if (await gate("checkout-v2", { userId, country })) {
+import { flags } from "@shipeasy/sdk/server";
+if (flags.get("checkout-v2", { user_id: userId, country })) {
   return renderCheckoutV2();
 }
 return renderCheckoutV1();
@@ -75,11 +75,11 @@ touch the deploy pipeline again.
 **Why not gate?** Gates are boolean. The thing you actually want to change is the _string_.
 
 ```ts
-import { config } from "@shipeasy/sdk/server";
+import { flags } from "@shipeasy/sdk/server";
 
-export default async function Home() {
-  const title = await config<string>("home.hero.title", { default: "Ship faster." });
-  const cta = await config<string>("home.hero.cta", { default: "Get started" });
+export default function Home() {
+  const title = flags.getConfig<string>("home.hero.title") ?? "Ship faster.";
+  const cta = flags.getConfig<string>("home.hero.cta") ?? "Get started";
   return (
     <section>
       <h1>{title}</h1>
@@ -89,9 +89,10 @@ export default async function Home() {
 }
 ```
 
-Always pass a `default` — it's what renders if the SDK can't reach KV, and it's the value your
-local dev environment will read until you've created the config. Treat the defaults as the
-source-of-truth copy; the dashboard value as the _override_.
+`getConfig()` returns `undefined` if the SDK hasn't fetched the bundle yet or the config doesn't
+exist — fall back with `??` to the value your local dev environment will read until you've
+created the config. Treat the fallback as the source-of-truth copy; the dashboard value as the
+_override_.
 
 If the copy needs translation, don't store strings in a config — use the i18n module. Configs are
 for values that vary across environments or experiments; translations are for values that vary
@@ -109,10 +110,12 @@ have one switch — on or off — and they're audited so you have a paper trail 
 when.
 
 ```ts
-import { gate } from "@shipeasy/sdk/server";
+import { flags } from "@shipeasy/sdk/server";
 
 export async function sendOrderEmail(order: Order) {
-  if (!(await gate("emails-enabled", undefined, { defaultValue: true }))) {
+  // `flags.ks(name)` returns true when the killswitch is engaged (flipped to pause).
+  // Read it as "are we paused?". Unknown killswitches return false (fail-open).
+  if (flags.ks("emails-enabled")) {
     logger.warn("emails paused via killswitch", { orderId: order.id });
     return;
   }
@@ -120,9 +123,11 @@ export async function sendOrderEmail(order: Order) {
 }
 ```
 
-The `defaultValue: true` is load-bearing. If KV is unreachable during the same incident, you do
-not want the killswitch to silently default to `false` and amplify the outage by also halting
-emails. Default open, fail closed only when you explicitly flip the switch.
+Killswitches are a dedicated primitive — created via `shipeasy killswitches create` in the CLI and
+read with `flags.ks(name)` from the server SDK. Unlike gates, they don't take a user context and
+they don't bucket: every caller sees the same answer the instant the flip propagates (within the
+next SDK poll). The default is fail-open: until you flip the switch, every read returns `false`
+and the protected code path keeps running.
 
 Wire a webhook to the killswitch so when it flips, it pages the team and posts to your incident
 channel. The switch itself is one bit; the social signal that someone _flipped it_ is what makes
@@ -138,15 +143,20 @@ worse you've thrown away real revenue while you waited to notice.
 **Why not gate?** You don't know the answer yet. You need a confidence interval to decide.
 
 ```ts
-import { experiment } from "@shipeasy/sdk/server";
+import { flags } from "@shipeasy/sdk/server";
 
-const { variant, log } = await experiment("paywall-v2", { userId });
+const user = { user_id: userId };
+const { group, params } = flags.getExperiment(
+  "paywall-v2",
+  user,
+  { variant: "control" as "control" | "treatment" },
+);
 
-await log("paywall_viewed");
-const paywall = variant === "treatment" ? <PaywallV2 /> : <PaywallV1 />;
+flags.track(userId, "paywall_viewed", { group });
+const paywall = params.variant === "treatment" ? <PaywallV2 /> : <PaywallV1 />;
 
 // elsewhere, in the checkout success handler
-await log("paywall_converted", { revenueCents: order.totalCents });
+flags.track(userId, "paywall_converted", { revenueCents: order.totalCents });
 ```
 
 Set the **primary metric** to `paywall_converted` and the universe split to 50/50. Let it run
@@ -167,14 +177,14 @@ you can edit.
 **The trick:** targeting rule on an account attribute, rollout fixed at 100% of the matched set.
 
 ```ts
-import { gate } from "@shipeasy/sdk/server";
+import { flags } from "@shipeasy/sdk/server";
 
 const ctx = {
   userId: session.user.id,
   account: { id: session.account.id, plan: session.account.plan, tier: session.account.tier },
 };
 
-if (await gate("new-analytics-dashboard", ctx)) {
+if (flags.get("new-analytics-dashboard", ctx)) {
   return <AnalyticsV2 />;
 }
 return <AnalyticsV1 />;
@@ -197,15 +207,17 @@ boolean ship/no-ship.
 weights — different configs per variant — so you can tune them without redeploying.
 
 ```ts
-import { experiment, config } from "@shipeasy/sdk/server";
+import { flags } from "@shipeasy/sdk/server";
 
-const { variant, log } = await experiment("search-weights-v3", { userId });
-const weights = await config<{ recency: number; relevance: number; popularity: number }>(
-  `search.weights.${variant}`,
-);
+type Weights = { recency: number; relevance: number; popularity: number };
+const DEFAULTS: Weights = { recency: 0.2, relevance: 0.6, popularity: 0.2 };
+
+const user = { user_id: userId };
+const { group } = flags.getExperiment("search-weights-v3", user, { variant: "control" });
+const weights = flags.getConfig<Weights>(`search.weights.${group}`) ?? DEFAULTS;
 
 const results = ranked(query, weights);
-await log("search_results_shown", { hasResults: results.length > 0 });
+flags.track(userId, "search_results_shown", { group, hasResults: results.length > 0 });
 ```
 
 Create three configs (`search.weights.control`, `search.weights.a`, `search.weights.b`) with three
@@ -252,26 +264,29 @@ percentage fixed at 100% of the matched set.
 **The primitive:** Gate.
 **The mechanic:** ramp by widening the targeting rule, not by raising the rollout percentage.
 
+CLI `flags update` isn't shipped — edit the gate's targeting rules in
+the dashboard (Gates → intl-shipping → Targeting), or PATCH via the
+[Admin API](/flags-experiments/api):
+
 ```bash
-# Day 1 — domestic only
-shipeasy flags update intl-shipping \
-  --rule 'country IN ["US","CA"]' --rollout 100
+GATE_ID=$(curl -sS \
+  -H "Authorization: Bearer $SHIPEASY_ADMIN_KEY" \
+  "https://shipeasy.ai/api/admin/gates?name=intl-shipping" | jq -r '.data[0].id')
 
-# Week 2 — EU added after EU couriers qualified
-shipeasy flags update intl-shipping \
-  --rule 'country IN ["US","CA","GB","DE","FR","NL","IE"]' --rollout 100
-
-# Week 4 — APAC added
-shipeasy flags update intl-shipping \
-  --rule 'country IN ["US","CA","GB","DE","FR","NL","IE","JP","AU","SG"]' --rollout 100
+# Week 2 — widen to EU
+curl -X PATCH "https://shipeasy.ai/api/admin/gates/$GATE_ID" \
+  -H "Authorization: Bearer $SHIPEASY_ADMIN_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "rules": [{"attr":"country","op":"in","value":["US","CA","GB","DE","FR","NL","IE"]}] }'
 ```
 
-The code never changes:
+The rollout stays at 100% the whole time — what widens is the eligible
+cohort. The code never changes:
 
 ```ts
-import { gate } from "@shipeasy/sdk/server";
+import { flags } from "@shipeasy/sdk/server";
 
-if (await gate("intl-shipping", { userId, country })) {
+if (flags.get("intl-shipping", { user_id: userId, country })) {
   return renderInternationalShipping();
 }
 return renderDomesticOnly();
@@ -281,8 +296,8 @@ Why not a percentage rollout? Because the failure mode is _regional_. A 25% glob
 catch your DE integration in a state where it's only ready for the US — a percentage doesn't help
 you. Targeting by country gives you explicit, auditable control of which regions are live.
 
-When the launch is complete, drop the rule entirely (`--rule ''`) and leave the gate at 100% as
-a kill-switch lever for incidents.
+When the launch is complete, PATCH the rules array to `[]` (or clear targeting from the dashboard)
+and leave the gate at 100% as a kill-switch lever for incidents.
 
 ## Block stale mobile clients [#sdk-version-gate]
 
@@ -293,12 +308,12 @@ path on the API for clients below v2.4.2.
 **The primitive:** Gate with a `semverGte` rule on the client's reported version.
 
 ```ts title="apps/api/checkout/route.ts"
-import { gate } from "@shipeasy/sdk/server";
+import { flags } from "@shipeasy/sdk/server";
 
 export async function POST(req: Request) {
   const appVersion = req.headers.get("x-app-version") ?? "0.0.0";
 
-  if (!(await gate("checkout-v2-eligible", { userId, appVersion }))) {
+  if (!flags.get("checkout-v2-eligible", { user_id: userId, appVersion })) {
     return Response.json(
       { error: "upgrade_required", message: "Please update to the latest app." },
       { status: 426 },
@@ -331,12 +346,12 @@ the new price tanks conversion. Engineering does not want to deploy four times t
 **The primitive:** Config (typed number) with audit log.
 
 ```ts title="lib/pricing.ts"
-import { config } from "@shipeasy/sdk/server";
+import { flags } from "@shipeasy/sdk/server";
 
-export async function priceForCountry(country: string, currency: string) {
-  const cents = await config<number>(`price.pro.${country}`, {
-    default: defaults[country] ?? defaults.US,
-  });
+const DEFAULTS: Record<string, number> = { US: 1900, GB: 1900, DE: 1900 };
+
+export function priceForCountry(country: string, currency: string) {
+  const cents = flags.getConfig<number>(`price.pro.${country}`) ?? DEFAULTS[country] ?? DEFAULTS.US;
   return { cents, currency };
 }
 ```
@@ -365,7 +380,7 @@ so a typo in the dashboard JSON doesn't crash the page.
 **The primitive:** Config with a Zod schema.
 
 ```ts title="lib/banner.ts"
-import { config } from "@shipeasy/sdk/server";
+import { flags } from "@shipeasy/sdk/server";
 import { z } from "zod";
 
 const BannerSchema = z
@@ -379,14 +394,17 @@ const BannerSchema = z
   })
   .nullable();
 
-export async function getBanner() {
-  const raw = await config<unknown>("site.banner", { default: null });
-  const parsed = BannerSchema.safeParse(raw);
-  if (!parsed.success) {
-    console.error("Banner config failed schema check", parsed.error.flatten());
-    return null;
-  }
-  const banner = parsed.data;
+export function getBanner() {
+  // Pass a safe-parse decoder — malformed dashboard JSON is rendered as
+  // "no banner" rather than crashing the page.
+  const banner = flags.getConfig("site.banner", (raw) => {
+    const parsed = BannerSchema.safeParse(raw);
+    if (!parsed.success) {
+      console.error("Banner config failed schema check", parsed.error.flatten());
+      return null;
+    }
+    return parsed.data;
+  });
   if (!banner?.enabled) return null;
   if (banner.expiresAt && Date.parse(banner.expiresAt) < Date.now()) return null;
   return banner;
@@ -425,24 +443,23 @@ The mechanic: 10% of users in the universe never see any treatment for the entir
 Compare them to the other 90% to get the cumulative lift of _everything_ you shipped.
 
 ```bash
-shipeasy universes update product-decisions \
-  --holdout-pct 10 \
-  --holdout-window 90d
+# Holdout range is in basis points (0-9999). 0,999 = first 10% of buckets
+# in this universe are held out for the entire quarter.
+shipeasy universes update product-decisions --holdout 0,999
 ```
 
+Assign the experiment to the universe in the dashboard (or via the Admin API) — the SDK reads the
+universe binding from the bundle, so no per-call config is needed. Then on the request path:
+
 ```ts title="route handlers"
-import { experiment } from "@shipeasy/sdk/server";
+import { flags } from "@shipeasy/sdk/server";
 
-// All your experiments live under this universe
-const { variant, log } = await experiment(
-  "paywall-v2",
-  { userId },
-  {
-    universe: "product-decisions",
-  },
-);
+const user = { user_id: userId };
+const { group } = flags.getExperiment("paywall-v2", user, {
+  variant: "control" as "control" | "treatment",
+});
 
-await log("conversion");
+flags.track(userId, "conversion", { group });
 ```
 
 At the end of the quarter, the universe page shows:
@@ -474,7 +491,6 @@ shown. Naive instinct: log clicks, log impressions, compute the ratio in the das
 
 ```bash
 shipeasy metrics create rec_rail_ctr \
-  --event rec_click \
   --query 'ratio(count(rec_click), count(rec_impression))'
 ```
 

@@ -90,14 +90,14 @@ rather than a global `--env` flag.
 
 ## Gates (feature flags)
 
-| Command                               | Description                                                                            |
-| ------------------------------------- | -------------------------------------------------------------------------------------- |
-| `shipeasy flags list`                 | List every gate in the project. `--json` for raw output.                               |
-| `shipeasy flags create <name>`        | Create a new gate. Options: `--rules <json>`, `--rollout <pct>`, `--salt`, `--folder`. |
-| `shipeasy flags rollout <name> <pct>` | Set the rollout %. `0` is an instant kill-switch.                                      |
-| `shipeasy flags enable <name>`        | Set the gate's `enabled` bit to true.                                                  |
-| `shipeasy flags disable <name>`       | Set `enabled` to false (keeps rules).                                                  |
-| `shipeasy flags delete <name>`        | Permanent. Use with care.                                                              |
+| Command                               | Description                                                                                |
+| ------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `shipeasy flags list`                 | List every gate in the project. `--json` for raw output.                                   |
+| `shipeasy flags create <name>`        | Create a new gate. Options: `--rollout <pct>` (default 0), `--rules <json>`, `--salt <s>`. |
+| `shipeasy flags rollout <name> <pct>` | Set the rollout %. `0` is an instant kill-switch.                                          |
+| `shipeasy flags enable <name>`        | Set the gate's `enabled` bit to true.                                                      |
+| `shipeasy flags disable <name>`       | Set `enabled` to false (keeps rules).                                                      |
+| `shipeasy flags delete <name>`        | Permanent. Use with care.                                                                  |
 
 `--rules` accepts a JSON array of `{ attr, op, value }` rules — the same shape the dashboard produces:
 
@@ -251,7 +251,7 @@ See [MCP server](/get-started/mcp) for the tool inventory.
     }
   />
   <ApiRow
-    name="SHIPEASY_PROJECT_ID_ID"
+    name="SHIPEASY_PROJECT_ID"
     optional
     type="string"
     desc={
