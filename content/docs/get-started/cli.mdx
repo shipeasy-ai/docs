@@ -100,13 +100,12 @@ Add `--json` to any read command for machine-readable output. Add `--project <id
 
 ## Auth
 
-| Command                      | Description                                                                        |
-| ---------------------------- | ---------------------------------------------------------------------------------- |
-| `shipeasy login`             | PKCE browser flow. Saves credentials to `~/.shipeasy/credentials`.                 |
-| `shipeasy logout`            | Wipe credentials. Add `--revoke` to also invalidate the refresh token server-side. |
-| `shipeasy whoami`            | Show the active project, email, and endpoint URLs.                                 |
-| `shipeasy projects list`     | List every project you have access to.                                             |
-| `shipeasy projects use <id>` | Set the active project.                                                            |
+| Command              | Description                                                         |
+| -------------------- | ------------------------------------------------------------------- |
+| `shipeasy login`     | PKCE browser flow. Saves credentials to `~/.shipeasy/credentials`.  |
+| `shipeasy logout`    | Wipe credentials.                                                   |
+| `shipeasy whoami`    | Show the active project, email, and accessible projects.            |
+| `shipeasy bind <id>` | Bind the cwd to a project (writes `.shipeasy` in the project root). |
 
 ## Gates (boolean flags)
 

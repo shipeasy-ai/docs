@@ -147,13 +147,7 @@ user who bought.
 
 For debugging, the dashboard's **Events** tab streams the most recent events for the project. You can filter by event name, user, or property.
 
-Programmatically:
-
-```bash
-shipeasy events tail --event purchase --since 1h
-shipeasy events query --metric purchase_conversion --user u_4f2a
-shipeasy events query --event purchase --where 'value>100' --since 24h
-```
+For programmatic access, query the Analytics Engine dataset behind the project via the [Admin API](/flags-experiments/api) — same filters (`event`, `user`, ad-hoc `WHERE` clauses), JSON response.
 
 Raw events are **not the place to do analytics** — they're for _"is the wiring correct?"_ and _"what did this one user actually do?"_ checks. Use metrics for analysis. The platform's aggregates already handle all the joins, the deduplication, and the stats; rebuilding any of that from raw events is reinventing what we already give you.
 
@@ -259,8 +253,8 @@ For the daily-aggregation case this almost never matters — `conversion` collap
   secondaryHref="/experiments/metrics"
   secondaryLabel="Back to metrics"
   cmds={[
-    { label: "Tail events", cmd: "shipeasy events tail --event purchase --since 1h" },
-    { label: "Inspect a user", cmd: "shipeasy events query --user u_4f2a" },
+    { label: "List metrics", cmd: "shipeasy metrics list" },
+    { label: "Read a metric", cmd: "shipeasy metrics show purchase_conversion" },
   ]}
 />
 

@@ -50,7 +50,7 @@ description: Localized labels and AI-assisted translations — discovered from y
     num={3}
     label="TRANSLATE"
     title="AI draft, you approve, publish"
-    cmd="shipeasy i18n translate --profile fr --ai"
+    cmd="Run i18n_translate_draft via the MCP, or use the dashboard Drafts panel"
   >
     Claude drafts every missing key with your tone and glossary. Review in the dashboard, click
     publish.
@@ -161,8 +161,8 @@ shipeasy i18n install-loader --profile en  # injects the script tag
 shipeasy i18n scan ./src --rewrite               # discovers & rewrites t("…") calls
 shipeasy i18n push --profile en
 shipeasy i18n profiles create --name fr --locale fr
-shipeasy i18n translate --profile fr --ai   # AI draft
-# review the draft in the dashboard, then:
+# AI draft + review happen in the dashboard or via the i18n_translate_draft
+# MCP tool — the CLI subcommand for this is on the roadmap.
 shipeasy i18n publish --profile fr
 ```
 

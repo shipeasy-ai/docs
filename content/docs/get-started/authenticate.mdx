@@ -61,23 +61,22 @@ There is no plaintext password anywhere on disk. PKCE means an attacker who stea
 If your account has access to more than one project, the login flow lets you choose one. To switch later:
 
 ```bash
-shipeasy whoami            # show the active project
-shipeasy projects list     # list every project you can access
-shipeasy projects use acme # set the active project
+shipeasy whoami            # show the active project + accessible projects
+shipeasy bind <project_id> # bind the cwd to a project (writes .shipeasy)
+shipeasy login --project <project_id>  # re-auth scoped to a different project
 ```
 
-You can also override the project on a per-command basis:
+For one-off overrides on a single command, every CLI subcommand accepts a `--project <id>` flag:
 
 ```bash
-shipeasy --project acme flags list
-SHIPEASY_PROJECT=acme shipeasy flags list
+shipeasy flags list --project acme
 ```
 
-The order of precedence is: `--project` flag &gt; `SHIPEASY_PROJECT` env &gt; `~/.shipeasy/credentials` &gt; nothing (the CLI errors out).
+The order of precedence is: `--project` flag &gt; `.shipeasy` file in the cwd &gt; the project bound during `shipeasy login`.
 
 ## Multiple orgs
 
-Each Shipeasy project belongs to one org. If you&apos;re in several orgs, projects from all of them show up in `shipeasy projects list`. There is no separate `org switch` — the project is the authoritative scope and the org is implied by the project ID.
+Each Shipeasy project belongs to one org. If you&apos;re in several orgs, projects from all of them show up in `shipeasy whoami` output. There is no separate `org switch` — the project is the authoritative scope and the org is implied by the project ID.
 
 ## Log out
 
@@ -203,7 +202,7 @@ The credentials file is the only state the CLI writes. Project/env preferences l
   secondaryLabel="Open CLI reference"
   cmds={[
     { label: "Verify auth", cmd: "shipeasy whoami" },
-    { label: "List projects", cmd: "shipeasy projects list" },
+    { label: "Bind a project", cmd: "shipeasy bind <project_id>" },
   ]}
 />
 

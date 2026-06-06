@@ -76,17 +76,16 @@ Three things to internalise:
 ## Defining rules
 
 In the dashboard, expand a gate, add rules under **Targeting**. Each row is one predicate; rows
-are ANDed. From the CLI:
+are ANDed. Equivalent JSON shape if you'd rather edit raw via the [Admin API](/flags-experiments/api):
 
-```bash
-shipeasy flags rule add checkout-v2 \
-  --attr plan --op eq --value pro
-
-shipeasy flags rule add checkout-v2 \
-  --attr country --op in --value '["US","CA"]'
+```json
+"rules": [
+  { "attr": "plan",    "op": "eq", "value": "pro" },
+  { "attr": "country", "op": "in", "value": ["US", "CA"] }
+]
 ```
 
-Or via the API:
+Or directly via the API:
 
 ```bash
 curl -X POST https://api.shipeasy.ai/v1/gates/checkout-v2/rules \
@@ -201,13 +200,10 @@ what your rules use, not your whole user record.
 
 When a user complains "I should be in this beta but I'm not," check four things in order:
 
-1. **Is the gate enabled?** `shipeasy flags get checkout-v2` shows `enabled` and `killswitch`.
-2. **Does the user match the rule?** `shipeasy flags eval checkout-v2 --ctx '{"userId":"u_4f2a","plan":"pro"}'`
-   returns the same answer the SDK does, with a breakdown.
+1. **Is the gate enabled?** `shipeasy flags list` shows `enabled` and the current rollout per gate; the gate detail page in the dashboard also shows `killswitch` state at the top of the header.
+2. **Does the user match the rule?** Open **Gates → checkout-v2 → Test evaluator** in the dashboard and paste a JSON `ctx` — same evaluator the SDK runs, prints the matched rule + bucket.
 3. **Is there an override?** Overrides win over rules. Check **Gates → checkout-v2 → Overrides**.
-4. **Are you passing the attribute the rule expects?** A rule on `plan` won't match `ctx.userPlan`.
-
-The dashboard's **Evaluator** tab does the same as the CLI command, with a UI.
+4. **Are you passing the attribute the rule expects?** A rule on `plan` won't match `ctx.userPlan`. Log the `ctx` you hand to `flags.gate(...)` and compare against the rule shape.
 
 <DocNav
   prev={{ href: "/flags-experiments/gates/quickstart", title: "Quickstart" }}

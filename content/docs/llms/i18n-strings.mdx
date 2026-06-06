@@ -154,9 +154,9 @@ Every step below references one of these MCP tools, all under the `mcp__shipeasy
   <Step title="Confirm the project binding">
     `auth_check` returns `project` when the cwd is bound to a Shipeasy project. If it&apos;s missing, ask the human:
 
-    > _"Which Shipeasy project should I onboard this codebase to? You can list yours with `shipeasy projects list`."_
+    > _"Which Shipeasy project should I onboard this codebase to? Run `shipeasy whoami` to see the active project, or open the dashboard project picker for the full list."_
 
-    Once they answer, run `shipeasy link <project-id>` (or have them run it) and re-check.
+    Once they answer, run `shipeasy bind <project-id>` (or have them run it) and re-check.
 
   </Step>
 </Steps>

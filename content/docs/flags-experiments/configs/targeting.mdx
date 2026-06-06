@@ -56,14 +56,7 @@ Numeric ops coerce strings that look like numbers — `"100" gt 50` is `true`. T
 ]
 ```
 
-The dashboard shape is JSON, so you can copy these straight in — or push them with the CLI:
-
-```bash
-shipeasy flags rules set new-checkout-flow --json '[
-  { "attr": "plan",    "op": "eq", "value": "pro" },
-  { "attr": "country", "op": "in", "value": ["US","CA","UK"] }
-]'
-```
+The dashboard shape is JSON, so you can copy these straight in — paste the array into the gate's targeting editor and click Save. The same JSON can be patched via the [Admin API](/flags-experiments/api).
 
 ## Rollout percentages
 
@@ -197,21 +190,7 @@ export function buildEvalCtx(req: Request) {
 
 ## Debugging a rule
 
-The dashboard&apos;s **Test evaluator** panel takes a JSON context and shows the full evaluation trace — which rule matched, which didn&apos;t, what bucket the user landed in. The CLI exposes the same:
-
-```bash
-shipeasy flags eval new-checkout-flow \
-  --ctx '{"user_id":"u_4f2a","plan":"pro","country":"US"}'
-```
-
-```text
-gate    new-checkout-flow
-result  true
-trace   killswitch=off, enabled=on, override=–, rule[plan=pro]=match,
-        rule[country in [US,CA,UK]]=match, bucket=2147 < 5000=true
-```
-
-Indispensable when a customer says &quot;I should be in the beta, why am I not?&quot;.
+The dashboard&apos;s **Test evaluator** panel takes a JSON context and shows the full evaluation trace — which rule matched, which didn&apos;t, what bucket the user landed in. Indispensable when a customer says &quot;I should be in the beta, why am I not?&quot;. From your own code, `flags.gate(...)` returns the same evaluator result on every read — log the user context plus the result for the same answer in production.
 
 <ConvertCTA
   eyebrow="NEXT"
@@ -226,8 +205,8 @@ Indispensable when a customer says &quot;I should be in the beta, why am I not?&
   secondaryHref="/flags-experiments/decision"
   secondaryLabel="Pick the right primitive"
   cmds={[
-    { label: "Set rules", cmd: "shipeasy flags rules set my-flag --json '[…]'" },
-    { label: "Eval locally", cmd: "shipeasy flags eval my-flag --ctx '{…}'" },
+    { label: "Set a rollout", cmd: "shipeasy flags rollout my-flag 25" },
+    { label: "List flags", cmd: "shipeasy flags list" },
   ]}
 />
 

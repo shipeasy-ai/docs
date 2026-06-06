@@ -143,23 +143,9 @@ event-stream analysis becomes meaningless.
 
 ## Debugging "why did this user get the rollout?"
 
-The CLI's eval command mirrors the SDK exactly and prints the bucket:
+The dashboard's **Test evaluator** panel takes a JSON user context and prints the same decision the SDK would compute — including which rule matched, the bucket the user fell into, and whether the bucket is below the rollout cutoff. Same answer as your code, no detour through a CLI.
 
-```bash
-shipeasy flags eval checkout-v2 \
-  --ctx '{"userId":"u_4f2a","plan":"pro","country":"US"}'
-
-# enabled:        true
-# killswitch:     false
-# override:       none
-# rules:          matched (plan=pro AND country=US)
-# bucket:         3214
-# rolloutPct:     2500  (25%)
-# decision:       false  (bucket >= cutoff)
-```
-
-If `decision` doesn't match what the user reports seeing, something is different about the `ctx`
-the SDK actually saw. Usually a missing or differently-named attribute.
+If the dashboard's decision doesn't match what the user reports seeing, something is different about the `ctx` the SDK actually saw — usually a missing or differently-named attribute. Log the `ctx` passed to `flags.gate(...)` in production to compare.
 
 <DocNav
   prev={{ href: "/flags-experiments/gates/targeting", title: "Targeting rules" }}

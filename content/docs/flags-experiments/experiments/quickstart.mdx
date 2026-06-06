@@ -3,12 +3,7 @@ title: Quickstart
 description: Run your first A/B test from scratch — define a metric, create the experiment, ship variants, read results.
 ---
 
-<DocMeta
-  status="Tutorial"
-  read="8 min read"
-  updated="May 3, 2026"
-  works="Server SDK"
-/>
+<DocMeta status="Tutorial" read="8 min read" updated="May 3, 2026" works="Server SDK" />
 
 This walks through a complete experiment end to end: a button-label test on the checkout CTA. We'll set up a conversion metric, create the experiment with two variants at 50/50, instrument the SDK, and read results.
 
@@ -241,12 +236,12 @@ This walks through a complete experiment end to end: a button-label test on the 
   secondaryLabel="Back to gates"
   cmds={[
     {
-      label: "Create from existing gate",
-      cmd: "shipeasy experiments create checkout-v2 --from-gate checkout-v2",
+      label: "Create an experiment",
+      cmd: "shipeasy experiments create checkout-v2 --targeting-gate checkout-v2",
     },
     {
-      label: "Then attach a metric",
-      cmd: "shipeasy experiments attach-metric checkout-v2 purchase_conversion --primary",
+      label: "Then start it",
+      cmd: "shipeasy experiments start checkout-v2",
     },
   ]}
 />

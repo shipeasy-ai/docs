@@ -14,6 +14,13 @@ Translations don't go straight into a profile. They land first as a **draft**: a
 
 This separation is the single most important guardrail in Shipeasy Translations. AI translations are good but not perfect; merging without review is how you ship "Confirmer" as a button label that overflows on mobile in three locales for two weeks before anyone notices.
 
+<Callout type="info" title="CLI examples below are roadmap">
+  The `shipeasy i18n translate ...` invocations on this page are the planned CLI surface — they
+  aren't shipped yet. Today the same workflows run through **Shipeasy Translations → Drafts** in the
+  dashboard, and through the `i18n_translate_draft` MCP tool when you'd rather drive it from Claude.
+  Use `shipeasy i18n scan` / `i18n push` / `i18n publish` for the parts that are wired today.
+</Callout>
+
 ## Lifecycle
 
 ```
@@ -267,7 +274,7 @@ Or from the dashboard. Abandoning frees the profile for a new draft. The abandon
   secondaryHref="/translations/profiles"
   secondaryLabel="Back to profiles"
   cmds={[
-    { label: "AI draft", cmd: "shipeasy i18n translate --profile fr --ai" },
+    { label: "Scan repo", cmd: "shipeasy i18n scan ./src" },
     { label: "Publish merged", cmd: "shipeasy i18n publish --profile fr" },
   ]}
   note="Side-by-side review · RBAC · back-translation"
