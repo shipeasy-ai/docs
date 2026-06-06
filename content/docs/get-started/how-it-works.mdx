@@ -193,9 +193,10 @@ When you flip a flag, six things happen — all within about a second.
     points at the project&apos;s blob — every other project&apos;s cache stays warm.
   </Step>
   <Step title="Your SDK polls and picks up the change">
-    Server SDKs poll on a plan-driven interval (Free 60s, Pro 10s, Enterprise streaming). Browser
-    SDKs refetch on init or on `client.refresh()`. Total time-to-visible from the dashboard click is
-    &lt; poll interval + ~100ms of CDN propagation.
+    Server SDKs poll on a plan-driven interval (Free 60s, Team 30s — see
+    `packages/core/src/config/plans.ts` for the current values). Browser SDKs poll on the same
+    cadence in the background, and re-evaluate on `flags.identify(...)`. Total time-to-visible from
+    the dashboard click is &lt; poll interval + ~100ms of CDN propagation.
   </Step>
 </Steps>
 
@@ -211,7 +212,7 @@ The other direction is much shorter — and on purpose.
 
 <Steps>
   <Step title="Your code asks the SDK">
-    `flags.gate("new-checkout", {user_id})`. Synchronous. No Promise.
+    `flags.get("new-checkout", {user_id})`. Synchronous. No Promise.
   </Step>
   <Step title="The SDK evaluates locally">
     The full rule set for every gate in your project lives in process memory. Targeting rules and
@@ -230,7 +231,7 @@ The other direction is much shorter — and on purpose.
   </Step>
 </Steps>
 
-There is no per-evaluation network call, no rate limit on `gate()`, and no async surface to wrap. The cost of `flags.gate()` is approximately the cost of a hash plus a few comparisons.
+There is no per-evaluation network call, no rate limit on `flags.get()`, and no async surface to wrap. The cost of `flags.get()` is approximately the cost of a hash plus a few comparisons.
 
 ## Two SDK builds, one package
 
@@ -267,29 +268,30 @@ The browser build can also be **bootstrapped from the server** to avoid the firs
 
 A handful of behaviours are plan-derived rather than per-project. The big one is the SDK poll interval:
 
-| Plan       | Server poll | Browser refresh  | Streaming |
-| ---------- | ----------- | ---------------- | --------- |
-| Free       | 60s         | on init          | –         |
-| Pro        | 10s         | on init + manual | –         |
-| Enterprise | 1s          | streaming        | ✓         |
+| Plan       | Poll interval | Notes                                     |
+| ---------- | ------------- | ----------------------------------------- |
+| Free       | 300s          | One CDN fetch per project every 5 min.    |
+| Team       | 60s           | Same path, tighter cadence.               |
+| Enterprise | custom        | Talk to us — streaming / sub-second tier. |
 
-Bumping a plan propagates through the next KV rebuild — no per-project migration. The constants live in `packages/core/src/config/plans.ts`.
+Bumping a plan propagates through the next KV rebuild — no per-project migration. The exact values live in `packages/core/src/config/plans.ts` (`poll_interval_seconds`).
 
 ## Identity model
 
 A two-tier identity is enough for almost every use case:
 
 ```ts
-client.identify({
+import { flags } from "@shipeasy/sdk/client";
+
+await flags.identify({
   user_id: "u_4f2a", // your stable user ID, set after login
-  anonymous_id: "anon_xyz", // pre-login ID, auto-managed by the browser SDK
   plan: "pro",
   country: "US",
   beta_tester: true,
 });
 ```
 
-Shipeasy buckets by `user_id ?? anonymous_id`, so a user gets a stable assignment before _and_ after login. When a user authenticates, call `client.alias(anonymous_id, user_id)` to stitch their pre-login exposures to their post-login identity.
+Shipeasy buckets by `user_id ?? anonymous_id`, so a user gets a stable assignment before _and_ after login. The `anonymous_id` is auto-managed by the browser SDK (first-party cookie). When `flags.identify(...)` runs after anonymous activity, the SDK emits an internal alias record so the daily analysis stitches the pre-login exposures to the post-login `user_id` — no explicit alias call required.
 
 For B2B, you can bucket by `account_id` instead, so all teammates see the same variant. See [User attributes](/get-started/attributes) for the full guide.
 

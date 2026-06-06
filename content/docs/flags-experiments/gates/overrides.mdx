@@ -41,23 +41,30 @@ scale; overrides don't.
 In the dashboard: expand the gate, scroll to **Overrides**, add user IDs under **Always on** or
 **Always off**.
 
-From the CLI:
+A first-class `flags override` CLI subcommand isn't shipped yet. The
+shortest path is the dashboard (gate detail → Overrides → paste user
+IDs); for scripting, PATCH the gate via the
+[Admin API](/flags-experiments/api):
 
 ```bash
-shipeasy flags override add checkout-v2 \
-  --user u_qa1 --user u_qa2 --user u_demo \
-  --decision true
+GATE_ID=$(curl -sS \
+  -H "Authorization: Bearer $SHIPEASY_ADMIN_KEY" \
+  "https://shipeasy.ai/api/admin/gates?name=checkout-v2" | jq -r '.data[0].id')
 
-shipeasy flags override add checkout-v2 \
-  --user u_legacy_partner \
-  --decision false
+curl -X PATCH "https://shipeasy.ai/api/admin/gates/$GATE_ID" \
+  -H "Authorization: Bearer $SHIPEASY_ADMIN_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "overrides": {
+      "always_on": ["u_qa1", "u_qa2", "u_demo"],
+      "always_off": ["u_legacy_partner"]
+    }
+  }'
 ```
 
-Removing:
-
-```bash
-shipeasy flags override remove checkout-v2 --user u_qa1
-```
+To remove a specific override, GET the gate, drop the user from the
+matching list, then PATCH it back. The `overrides` object is replaced
+in full on each PATCH, so omitted lists are cleared.
 
 ## What overrides bypass
 
@@ -128,9 +135,13 @@ common patterns:
 1. **Delete the gate.** Once you remove the conditional from code and clean up the dead path,
    delete the gate itself. The override list goes with it.
 2. **Clear overrides.** Keep the gate (if you might want to reuse the name for a follow-up
-   feature) but clear out the override list:
+   feature) but clear out the override list. PATCH the gate with
+   empty arrays:
    ```bash
-   shipeasy flags override clear checkout-v2
+   curl -X PATCH "https://shipeasy.ai/api/admin/gates/$GATE_ID" \
+     -H "Authorization: Bearer $SHIPEASY_ADMIN_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{ "overrides": { "always_on": [], "always_off": [] } }'
    ```
 
 The dashboard's **Cleanup** view surfaces gates with stale overrides (overrides on a gate that's

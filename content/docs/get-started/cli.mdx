@@ -47,25 +47,19 @@ Add `--json` to any read command for machine-readable output. Add `--project <id
 
 ## Global flags
 
+The CLI doesn't have process-wide global options today — each
+subcommand declares its own flags. Two flags are accepted by nearly
+every write command, though:
+
 <ApiTable>
   <ApiRow
-    name="--project"
+    name="--project <id>"
     optional
     type="string"
     desc={
       <>
-        Override the active project for this call. Wins over <code>SHIPEASY_PROJECT_ID</code>.
-      </>
-    }
-  />
-  <ApiRow
-    name="--env"
-    optional
-    type={`"dev" | "staging" | "prod"`}
-    desc={
-      <>
-        Target environment. Defaults to <code>prod</code>. Only relevant for commands that read or
-        write env-scoped state.
+        Override the active project for this call. Wins over <code>SHIPEASY_PROJECT_ID</code>
+        and the <code>.shipeasy</code> file in the cwd.
       </>
     }
   />
@@ -75,28 +69,15 @@ Add `--json` to any read command for machine-readable output. Add `--project <id
     type="boolean"
     desc={
       <>
-        Emit machine-readable JSON to stdout. Human-readable progress goes to stderr — pipes work
-        the way you&apos;d expect.
-      </>
-    }
-  />
-  <ApiRow
-    name="--quiet"
-    optional
-    type="boolean"
-    desc={<>Suppress progress output. Errors still go to stderr.</>}
-  />
-  <ApiRow
-    name="--no-color"
-    optional
-    type="boolean"
-    desc={
-      <>
-        Disable ANSI colour. Also honoured via <code>NO_COLOR=1</code>.
+        On read commands, emit machine-readable JSON to stdout. On write commands, emit the
+        created/updated resource as JSON instead of the human-readable confirmation line.
       </>
     }
   />
 </ApiTable>
+
+Env scoping is per-subcommand (e.g. `configs draft --env staging`)
+rather than a global `--env` flag.
 
 ## Auth
 
@@ -173,16 +154,16 @@ shipeasy experiments create checkout-cta \
 
 ## SDK keys
 
-| Command                     | Description                                                                       |
-| --------------------------- | --------------------------------------------------------------------------------- |
-| `shipeasy keys list`        | List keys (id, kind, last used). The raw token is **never** shown after creation. |
-| `shipeasy keys create`      | Create a key. Asks for `kind` (`server` / `client`). Token is shown **once**.     |
-| `shipeasy keys revoke <id>` | Revoke by id or id-prefix. First match wins.                                      |
+| Command                              | Description                                                                       |
+| ------------------------------------ | --------------------------------------------------------------------------------- | ------- | ----------------------------------------------------------- |
+| `shipeasy keys list`                 | List keys (id, kind, last used). The raw token is **never** shown after creation. |
+| `shipeasy keys create --type <server | client                                                                            | admin>` | Create a key (required: `--type`). Token is shown **once**. |
+| `shipeasy keys revoke <id>`          | Revoke by id or id-prefix. First match wins.                                      |
 
 ## API tokens
 
 For long-lived CI access, create an **admin** SDK key from the dashboard's
-**SDK Keys** page (`shipeasy keys create` with `kind: admin`) and pass it
+**SDK Keys** page (`shipeasy keys create --type admin`) and pass it
 via the `SHIPEASY_CLI_TOKEN` env. See
 [Authenticate → SDK keys vs API tokens](/get-started/authenticate#sdk-keys-vs-api-tokens-pick-the-right-one)
 for when to use each.

@@ -48,7 +48,7 @@ a name. Mixing them is dangerous — at 3am you do not want to fat-finger a `--r
 
 ## Lifecycle
 
-1. **Create.** `shipeasy killswitch create email-sender --description "Disables outbound email"`
+1. **Create.** `shipeasy killswitch create transactional.email-sender --description "Disables outbound email" --value false` (killswitch names must be `folder.name`; `--value false` means "not killed by default").
 2. **Wire it in.** Wrap the call in your code:
    ```ts
    if (!(await gate("email-sender"))) return; // killed
