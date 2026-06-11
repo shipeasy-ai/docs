@@ -17,16 +17,16 @@ description: Install the SDK, configure once, ship a flag — under five minutes
   Opens your browser, mints an admin SDK key, stores it in `~/.config/shipeasy/`.
 </QuickstartStep>
 
-  <QuickstartStep
-    num={3}
-    label="WIRE"
-    title="Configure once, use everywhere"
-    cmd="// app/layout.tsx
+<QuickstartStep
+  num={3}
+  label="WIRE"
+  title="Configure once, use everywhere"
+  cmd="// app/layout.tsx
 import { shipeasy } from '@shipeasy/sdk/server';
-await shipeasy({ clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "" });"
-  >
-    Gates, configs, experiments, and killswitches all share this single `apiKey`.
-  </QuickstartStep>
+await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? '' });"
+>
+  Gates, configs, experiments, and killswitches all share this single `apiKey`.
+</QuickstartStep>
 
 <QuickstartStep
   num={4}

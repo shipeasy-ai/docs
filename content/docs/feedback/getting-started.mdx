@@ -13,16 +13,16 @@ description: Wire a "Report bug" button into your app in two minutes.
     Same SDK as flags + translations. No separate package, no separate API key.
   </QuickstartStep>
 
-  <QuickstartStep
-    num={2}
-    label="WIRE"
-    title="Configure once, use everywhere"
-    cmd="// app/layout.tsx
+<QuickstartStep
+  num={2}
+  label="WIRE"
+  title="Configure once, use everywhere"
+  cmd="// app/layout.tsx
 import { shipeasy } from '@shipeasy/sdk/server';
-await shipeasy({ clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "" });"
-  >
-    Same `shipeasy()` boot as the rest of the platform.
-  </QuickstartStep>
+await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? '' });"
+>
+  Same `shipeasy()` boot as the rest of the platform.
+</QuickstartStep>
 
   <QuickstartStep
     num={3}

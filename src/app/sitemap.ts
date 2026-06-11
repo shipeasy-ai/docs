@@ -1,6 +1,9 @@
 import type { MetadataRoute } from "next";
 import { getPages } from "@/lib/source";
 
+// Required under `output: "export"` — emit this metadata route as a static file.
+export const dynamic = "force-static";
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const pages = getPages();
   return pages.map((page) => ({
