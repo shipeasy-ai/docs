@@ -1,0 +1,28 @@
+---
+title: Error reporting with see()
+description: Report every handled exception with see() so it folds into the errors primitive.
+---
+
+{/* TODO: flesh out this page. Placeholder for the ops-install follow-on step. */}
+
+<Callout type="info">
+  This page is a work in progress. It will cover wrapping handled exceptions across your project
+  with `see()` from `@shipeasy/sdk`.
+</Callout>
+
+## What this covers
+
+Auditing your `try/catch` blocks and routing every handled exception through
+`see()` so it lands in the errors primitive with a product consequence:
+
+```ts
+import { see } from "@shipeasy/sdk/client"; // or "@shipeasy/sdk/server"
+
+try {
+  await submitOrder(order);
+} catch (e) {
+  see(e).causes_the("checkout").to("use cached prices").extras({ order_id: order.id });
+}
+```
+
+More detail coming soon.

@@ -4,6 +4,8 @@
   "pages": [
     "index",
     "getting-started",
+    "error-reporting",
+    "alerts",
     "---",
     "case-studies",
     "edge-cases",

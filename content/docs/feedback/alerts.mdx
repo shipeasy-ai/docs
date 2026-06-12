@@ -1,0 +1,25 @@
+---
+title: Configure alerts
+description: Wire events into metrics and raise metric-threshold alerts when something crosses the line.
+---
+
+{/* TODO: flesh out this page. Placeholder for the ops-install follow-on step. */}
+
+<Callout type="info">
+  This page is a work in progress. It will walk through proposing alert rules for your project and
+  building each one end-to-end.
+</Callout>
+
+## What this covers
+
+Surveying your project for what's worth watching, then building each alert as a
+full chain — emit the **event**, define a **metric** over it, and attach a
+**metric-threshold alert rule**:
+
+```bash
+shipeasy metrics create …   # metric over the event (see /shipeasy:metrics:grammar)
+shipeasy alerts create …    # threshold rule on that metric
+shipeasy alerts list        # confirm it landed
+```
+
+More detail coming soon.
