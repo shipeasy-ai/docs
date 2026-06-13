@@ -1,25 +1,178 @@
 ---
 title: Configure alerts
-description: Wire events into metrics and raise metric-threshold alerts when something crosses the line.
+description: Turn an event into a metric, then raise a metric-threshold alert that files its own ticket when the metric crosses the line.
 ---
 
-{/* TODO: flesh out this page. Placeholder for the ops-install follow-on step. */}
+<DocMeta status="Beta" read="6 min read" updated="June 12, 2026" works="Edge Worker · Cron" />
 
-<Callout type="info">
-  This page is a work in progress. It will walk through proposing alert rules for your project and
-  building each one end-to-end.
-</Callout>
+An **alert rule** watches one metric and fires when its value crosses a threshold
+over a window — "checkout errors `> 50` in the last hour", "active users `< 100`
+in the last 24h". When it fires, Shipeasy files a ticket into the same feedback
+queue as your bugs and error reports, so the thing you need to look at shows up
+where you already triage.
 
-## What this covers
+Alerts are evaluated server-side by a cron — there's no SDK call and nothing to
+poll. You only define the rule.
 
-Surveying your project for what's worth watching, then building each alert as a
-full chain — emit the **event**, define a **metric** over it, and attach a
-**metric-threshold alert rule**:
+## The event → metric → alert chain
+
+An alert rule doesn't read raw events; it reads a **metric**. So a working alert
+is a three-link chain:
+
+<TileGrid>
+  <Tile icon="◦" title="1 · Event">
+    A fact your app emits — `checkout_error`, `page_view`. Captured through the SDK and stored in
+    Analytics Engine.
+  </Tile>
+  <Tile icon="◎" title="2 · Metric">
+    An aggregation over an event — count of events, distinct users, a sum or average. This is the
+    number an alert compares.
+  </Tile>
+  <Tile icon="🔔" title="3 · Alert rule">
+    A threshold on the metric over a time window, with a severity. The cron evaluates it and fires
+    when the value breaches.
+  </Tile>
+</TileGrid>
 
 ```bash
-shipeasy metrics create …   # metric over the event (see /shipeasy:metrics:grammar)
-shipeasy alerts create …    # threshold rule on that metric
-shipeasy alerts list        # confirm it landed
+# 1. a metric over the event (DSL grammar: /shipeasy:metrics:grammar)
+shipeasy metrics create checkout-errors \
+  --event checkout_error --query 'count(checkout_error)'
+
+# 2. a threshold rule on that metric
+shipeasy alert-rules create "Checkout errors spiking" \
+  --metric checkout-errors --comparator gt --threshold 50 --window 1 --severity danger
+
+# 3. confirm it landed
+shipeasy alert-rules list
 ```
 
-More detail coming soon.
+<Callout type="info">
+  The same three steps are available over MCP (`exp_create_alert_rule`) and as the
+  `/shipeasy:alerts:create` skill, which surveys your project and proposes rules worth adding. The
+  CLI command is `shipeasy alert-rules` — `shipeasy alerts` is the read-only view of what has
+  already fired.
+</Callout>
+
+## The rule fields
+
+<ApiTable>
+  <ApiRow
+    name="name"
+    type="string"
+    required
+    desc="Human label (1–120 chars), shown on the rule and on every alert it raises."
+  />
+  <ApiRow
+    name="metric"
+    type="metric id or name"
+    required
+    desc="The metric to watch. Immutable once set — to point a rule at a different metric, delete it and create a new one."
+  />
+  <ApiRow
+    name="comparator"
+    type='"gt" | "gte" | "lt" | "lte"'
+    required
+    desc="How the value is compared to the threshold: > ≥ < ≤."
+  />
+  <ApiRow
+    name="threshold"
+    type="number"
+    required
+    desc="The line the metric value is compared against."
+  />
+  <ApiRow
+    name="window"
+    type="integer (hours)"
+    optional
+    desc="Lookback window in whole hours, 1–720 (30 days). Defaults to 24."
+  />
+  <ApiRow
+    name="severity"
+    type='"danger" | "warn" | "info"'
+    optional
+    desc="Severity of the raised alert. Defaults to warn."
+  />
+  <ApiRow
+    name="enabled"
+    type="boolean"
+    optional
+    desc="Whether the cron evaluates the rule. Defaults to true; pass --disabled to create it dormant."
+  />
+</ApiTable>
+
+<Callout type="warn">
+  **Windows are whole hours.** The minimum is 1 hour and there are no sub-hour windows — a "last 30
+  minutes" intent rounds up to 1h. Pick a window long enough that the metric is stable but short
+  enough to catch the spike you care about.
+</Callout>
+
+## How it fires
+
+A cron evaluates every enabled rule on a roughly **10-minute** cadence. For each
+rule it:
+
+1. Compiles the rule's metric into a query over the window
+   `[now − window hours, now]` and reads the aggregated value from Analytics
+   Engine.
+2. Compares that value to the threshold with the comparator. If it breaches, the
+   rule **raises an alert**.
+3. When a previously-breaching rule comes back inside its threshold, the alert
+   **auto-resolves** — no manual clearing.
+
+Each rule is evaluated in isolation, so a misconfigured metric can't block the
+others.
+
+## What firing produces
+
+A fired alert does three things at once:
+
+<TileGrid>
+  <Tile icon="🔔" title="An alert record">
+    Shows in the read-only alerts view (`shipeasy alerts list`, danger first), with the observed
+    value, the rule, and a deep link to the metric. One active alert per rule — re-breaches update
+    it rather than piling up.
+  </Tile>
+  <Tile icon="◎" title="A feedback ticket">
+    Auto-filed into the unified queue as type <strong>alert</strong>. Severity maps to priority:{" "}
+    <code>danger → critical</code>, <code>warn → high</code>,<code>info → medium</code>. Deduped
+    while open, so a flapping metric won't spam new tickets.
+  </Tile>
+  <Tile icon="✉" title="A notification">
+    An <code>alert.triggered</code> event hits the in-app feed and email, per your project's
+    notification preferences.
+  </Tile>
+</TileGrid>
+
+When the metric recovers, the alert resolves and no new ticket is filed. If it
+breaches again after resolving, a fresh alert and ticket are raised.
+
+## Tuning a rule
+
+Everything except the metric is editable in place — adjust the threshold, flip the
+comparator, widen the window, change severity, or toggle it off without recreating
+it:
+
+```bash
+shipeasy alert-rules update "Checkout errors spiking" \
+  --threshold 80 --window 2 --severity warn
+shipeasy alert-rules update "Checkout errors spiking" --enabled false
+```
+
+To repoint a rule at a different metric, delete it and create a new one — the
+metric is pinned for the rule's life because it fixes both _what_ is measured and
+_how_ it's aggregated.
+
+## Where to next
+
+<CardGrid>
+  <Card href="/feedback/error-reporting" eyebrow="Related" title="Error reporting with see()">
+    Errors auto-file their own tickets once they cross a count threshold.
+  </Card>
+  <Card href="/flags-experiments/metrics" eyebrow="Step 0" title="Define a metric">
+    The metric DSL an alert rule reads from.
+  </Card>
+  <Card href="/feedback/api" eyebrow="Reference" title="API reference">
+    The `alert-rules` and `alerts` admin endpoints.
+  </Card>
+</CardGrid>

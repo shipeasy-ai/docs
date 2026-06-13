@@ -1,0 +1,201 @@
+---
+title: The devtools overlay
+description: Mount the in-app devtools overlay so you and your users can file bugs and feature requests without leaving the product.
+---
+
+<DocMeta status="Beta" read="5 min read" updated="June 12, 2026" works="Browser SDK · Devtools" />
+
+The **devtools overlay** is the in-app panel behind every bug report and feature
+request. It mounts as an isolated, shadow-DOM floating rail on your own site,
+captures the page context for you, and posts straight into your project's feedback
+queue. The same overlay also surfaces your flags, configs, experiments, and i18n
+keys, so it doubles as a control panel while you're building.
+
+It ships in `@shipeasy/devtools` and rides the bundle that base setup already wired
+into your root layout — in the common case there is **nothing to install**.
+
+## Already wired: just add `?se`
+
+If you ran `/shipeasy:setup`, your root layout renders `getBootstrapHtml()` into
+`<head>`. That snippet lazily loads the overlay from
+`https://shipeasy.ai/se-devtools.js` **only when the URL contains `?se` (or
+`?se_devtools`)** — so it costs your users nothing until someone asks for it.
+
+<Quickstart title="Open the overlay" time="~30 seconds">
+  <QuickstartStep num={1} label="VERIFY" title="Confirm the bootstrap is in <head>" cmd="// app/layout.tsx — from base setup, already present:
+import { shipeasy } from '@shipeasy/sdk/server';
+const se = await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? '' });
+// …then render se.getBootstrapHtml() into <head>.">
+    No bootstrap, no overlay. If it's missing, re-run `/shipeasy:setup`.
+  </QuickstartStep>
+
+<QuickstartStep
+  num={2}
+  label="OPEN"
+  title="Append ?se to any page"
+  cmd="http://localhost:3000/?se=1"
+>
+  The rail appears bottom-right. Toggle it any time with <strong>Shift+Alt+S</strong>.
+</QuickstartStep>
+
+  <QuickstartStep num={3} label="FILE" title="Sign in once, then report" cmd="// In the overlay: File a bug / Request a feature.">
+    First open prompts a one-time sign-in popup. The report lands in your dashboard
+    within seconds.
+  </QuickstartStep>
+</Quickstart>
+
+<Callout type="info">
+  `Shift+Alt+S` toggles the overlay open and closed; `?se-devtools` in the URL opens it immediately
+  on load. To wire your own "Report a bug" button instead of the rail, use the public widget below.
+</Callout>
+
+## Mount it unconditionally with init()
+
+When you want the rail present without the `?se` gate — an internal tool, a staging
+build, a demo — call `init()` once from a client component at app boot:
+
+```ts
+"use client";
+import { init as initDevtools } from "@shipeasy/devtools";
+import { useEffect } from "react";
+
+export function Devtools() {
+  useEffect(() => initDevtools({ accentColor: "var(--brand)" }), []);
+  return null;
+}
+```
+
+`init()` is framework-agnostic — call it from any `useEffect`, `onMounted`, or a
+plain `<script>`. It is idempotent and tears itself down via `destroy()`.
+
+<ApiTable>
+  <ApiRow
+    name="adminUrl"
+    type="string"
+    optional
+    desc="Admin endpoint the overlay talks to. Defaults to the script origin, then window.location.origin. Override for staging or a separate admin deploy."
+  />
+  <ApiRow
+    name="accentColor"
+    type="string"
+    optional
+    desc="Overrides the overlay --accent. Any CSS color or var(…) — pass var(--brand) to inherit the host page's brand."
+  />
+  <ApiRow
+    name="hideAdminLinks"
+    type="boolean"
+    optional
+    desc="Hides every deep link back into the Shipeasy dashboard. For white-labelled embeds. Can also be flipped at runtime by a gate."
+  />
+  <ApiRow
+    name="hideRail"
+    type="boolean"
+    optional
+    desc="Always mount expanded; the collapse button tears the overlay down instead of docking to an edge rail. Use when your page owns the open/close button."
+  />
+  <ApiRow
+    name="onClose"
+    type="() => void"
+    optional
+    desc="Called when the user closes the overlay while hideRail is set. Defaults to a full destroy()."
+  />
+  <ApiRow
+    name="seed"
+    type="{ session, project, activePanel }"
+    optional
+    desc="Pre-seed auth and project state — demo mode. See below."
+  />
+</ApiTable>
+
+## Signing in
+
+The overlay is team-facing and authenticated. On first open it pops a window to
+`{adminUrl}/devtools-auth`, you approve access, and it stores a **short-lived,
+browser-scoped admin token** in `sessionStorage` (valid ~10 minutes). Reports post
+to the admin endpoints (`POST /api/admin/bugs`, `/api/admin/feature-requests`) with
+that token — no cookies, no SDK key embedded in the page.
+
+<Callout type="warn">
+  If the sign-in popup never returns or the overlay never appears, base setup is
+  incomplete — `getBootstrapHtml()` isn't rendering into `<head>`. Re-run
+  `/shipeasy:setup` before debugging anything else.
+</Callout>
+
+## What a report captures
+
+The bug form asks for a title, steps to reproduce, actual result, expected result,
+and an optional priority. On top of what the user types, the overlay attaches the
+page context automatically:
+
+<TileGrid>
+  <Tile icon="◎" title="Auto-attached context">
+    `pageUrl` (the current `location.href`), `userAgent`, and `viewport` (`width×height`) — so a
+    report is reproducible without asking "where were you?"
+  </Tile>
+  <Tile icon="✦" title="Screenshot & screen recording">
+    One click grabs a screenshot or a screen recording (with audio) via the browser's
+    `getDisplayMedia()` and uploads it alongside the report.
+  </Tile>
+</TileGrid>
+
+Feature requests use the same flow with a title, description, and use-case, plus
+the same auto-attached page context.
+
+## Embedding an end-user widget
+
+The authenticated overlay is for your team. To collect feedback from **signed-out
+end users**, mount the standalone widget — a single modal form, no dashboard, no
+sign-in. It's always exposed on `window.shipeasy.feedback` once the bundle loads:
+
+```ts
+// Wire your own "Report a bug" button:
+window.shipeasy.feedback.open({ kind: "bug" }); // or "feature"
+```
+
+It authenticates with your **public client key** and posts to
+`POST /api/public/feedback`, gated by the project's `public_feedback_mode` setting
+— so it only accepts reports when you've turned it on. `open()` also takes
+`defaultTitle` / `defaultDetails` (handy for prefilling from a caught error),
+`accentColor`, and `onSubmitted` callbacks.
+
+## Demo mode
+
+Pass `seed` to skip the sign-in popup and preload a project — useful for marketing
+pages, screenshots, and tests. Seeded values are written to `sessionStorage` only
+when absent, so a real session is never clobbered:
+
+```ts
+initDevtools({
+  seed: {
+    session: { token: "demo", projectId: "proj_demo" },
+    project: { id: "proj_demo", name: "Acme", modules: { feedback: true } },
+    activePanel: "feedback",
+  },
+});
+```
+
+## Verify the install
+
+```bash
+shipeasy modules enable feedback   # the overlay needs the feedback module on
+shipeasy modules list              # expect: feedback ✓
+# then load any page with ?se=1 and confirm the rail appears
+shipeasy feedback bugs list        # CLI mirror — expect [] or rows, never 403
+```
+
+`/shipeasy:ops:install` runs these checks for you and drops the project pointer
+skills.
+
+## Where to next
+
+<CardGrid>
+  <Card href="/feedback/getting-started" eyebrow="Step 1" title="Wire up the SDK">
+    The one `shipeasy()` boot the overlay rides on.
+  </Card>
+  <Card href="/feedback/error-reporting" eyebrow="Related" title="Error reporting with see()">
+    Auto-capture and `see()` — a separate flow from the manual overlay.
+  </Card>
+  <Card href="/feedback/case-studies" eyebrow="Worked examples" title="Case studies">
+    Custom report buttons, Slack forwarding, roadmap voting.
+  </Card>
+</CardGrid>
