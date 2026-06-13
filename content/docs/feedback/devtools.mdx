@@ -1,6 +1,6 @@
 ---
 title: The devtools overlay
-description: Mount the in-app devtools overlay so you and your users can file bugs and feature requests without leaving the product.
+description: Mount the in-app devtools overlay so you and your team can file bugs and feature requests without leaving the product.
 ---
 
 <DocMeta status="Beta" read="5 min read" updated="June 12, 2026" works="Browser SDK · Devtools" />
@@ -46,7 +46,7 @@ const se = await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? '' });
 
 <Callout type="info">
   `Shift+Alt+S` toggles the overlay open and closed; `?se-devtools` in the URL opens it immediately
-  on load. To wire your own "Report a bug" button instead of the rail, use the public widget below.
+  on load.
 </Callout>
 
 ## Mount it unconditionally with init()
@@ -140,23 +140,6 @@ page context automatically:
 
 Feature requests use the same flow with a title, description, and use-case, plus
 the same auto-attached page context.
-
-## Embedding an end-user widget
-
-The authenticated overlay is for your team. To collect feedback from **signed-out
-end users**, mount the standalone widget — a single modal form, no dashboard, no
-sign-in. It's always exposed on `window.shipeasy.feedback` once the bundle loads:
-
-```ts
-// Wire your own "Report a bug" button:
-window.shipeasy.feedback.open({ kind: "bug" }); // or "feature"
-```
-
-It authenticates with your **public client key** and posts to
-`POST /api/public/feedback`, gated by the project's `public_feedback_mode` setting
-— so it only accepts reports when you've turned it on. `open()` also takes
-`defaultTitle` / `defaultDetails` (handy for prefilling from a caught error),
-`accentColor`, and `onSubmitted` callbacks.
 
 ## Demo mode
 
