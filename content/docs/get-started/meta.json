@@ -1,5 +1,14 @@
 {
   "title": "Get started",
   "root": true,
-  "pages": ["how-it-works", "install", "authenticate", "sdks", "cli", "mcp", "attributes"]
+  "pages": [
+    "how-it-works",
+    "install",
+    "authenticate",
+    "sdks",
+    "cli",
+    "cli-reference",
+    "mcp",
+    "attributes"
+  ]
 }
