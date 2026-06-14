@@ -1,4 +1,4 @@
 {
   "title": "Metrics",
-  "pages": ["index", "quickstart", "aggregations", "guardrails", "power"]
+  "pages": ["index", "quickstart", "aggregations", "grammar", "guardrails", "power"]
 }

@@ -21,6 +21,10 @@ Authenticate via PKCE device flow (no-op if already logged in)
 
 Authenticate via PKCE device flow (no-op if already logged in)
 
+With no flags, `login` auto-detects the project: an explicit `--project` wins, otherwise the project bound via the nearest `.shipeasy` file (searched up from the cwd, like `.git`) — the browser flow then offers only that project. With neither, it opens the picker and writes `.shipeasy` on success.
+
+In CI, set `SHIPEASY_CLI_TOKEN` + `SHIPEASY_PROJECT_ID` instead — they act as the session, so `login` short-circuits as already-authenticated (no browser).
+
 ```bash
 shipeasy login [options]
 ```
@@ -33,13 +37,17 @@ shipeasy login [options]
 Examples:
 
 ```bash
+# Use the .shipeasy-bound project, else open the picker
 shipeasy login
 
-# re-authenticate over a live session
+# Re-authenticate over a live session
 shipeasy login --force
 
-# scope login to one project
+# Scope to one project explicitly
 shipeasy login --project proj_abc123
+
+# CI: env credentials act as the session, so this is a no-op
+SHIPEASY_CLI_TOKEN=… SHIPEASY_PROJECT_ID=… shipeasy login
 ```
 
 ## logout
@@ -83,6 +91,35 @@ shipeasy whoami
 
 # machine-readable session + project
 shipeasy whoami --json
+```
+
+Returns (with --json):
+
+```json
+{
+  "logged_in": true,
+  "session": {
+    "project_id": "proj_abc123",
+    "user_email": "you@example.com",
+    "worker_url": "https://api.shipeasy.ai",
+    "app_url": "https://shipeasy.ai",
+    "saved_at": "2026-06-14T17:00:00.000Z"
+  },
+  "bound_dir": {
+    "project_id": "proj_abc123",
+    "project_name": "acme"
+  },
+  "active_project_id": "proj_abc123",
+  "project": {
+    "id": "proj_abc123",
+    "name": "acme",
+    "domain": "acme.com",
+    "ownerEmail": "you@example.com",
+    "plan": "paid",
+    "status": "active"
+  },
+  "project_error": null
+}
 ```
 
 ## bind
@@ -259,6 +296,27 @@ Examples:
 
 ```bash
 shipeasy flags list
+```
+
+Returns (with --json):
+
+```json
+[
+  {
+    "id": "gate_7Hq2",
+    "name": "checkout-v2",
+    "enabled": true,
+    "rolloutPct": 2500,
+    "rules": [
+      {
+        "attr": "plan",
+        "op": "eq",
+        "value": "pro"
+      }
+    ],
+    "updatedAt": "2026-06-14T17:00:00.000Z"
+  }
+]
 ```
 
 ### `shipeasy flags create`
@@ -494,6 +552,10 @@ shipeasy killswitch delete payments.stripe-gateway
 
 Set or update one switch entry on one env (default env=prod)
 
+A kill switch is a named set of boolean **switches** that ship in the flags KV blob alongside gates and configs, so the SDK reads them with no extra round-trip. Each switch is keyed by `switch_key` and scoped per environment (`dev` / `staging` / `prod`) — so you can flip one dependency off in `prod` while leaving `staging` running. `set` creates or updates a single switch entry; the value is coerced (`true/1/on` → true, `false/0/off` → false).
+
+See [Kill switches](/flags-experiments/killswitches) for the full model — when to reach for a kill switch vs. a gate at 0%, and how switches evaluate at the edge.
+
 ```bash
 shipeasy killswitch set [options] <name> <switch_key> <value>
 ```
@@ -522,6 +584,8 @@ shipeasy killswitch set payments.stripe-gateway refunds true --env staging
 ### `shipeasy killswitch unset`
 
 Remove one switch entry from one env (default env=prod)
+
+Removes one switch entry from one environment, reverting that key to its default (absent = not overridden). The inverse of `set`. See [Kill switches](/flags-experiments/killswitches).
 
 ```bash
 shipeasy killswitch unset [options] <name> <switch_key>
@@ -778,6 +842,8 @@ Manage event metrics
 
 Print the metric query DSL grammar
 
+Prints the full metric query DSL grammar — aggregation functions, event selectors, label filters, and group-by. The same reference is published at [Query DSL grammar](/flags-experiments/metrics/grammar).
+
 ```bash
 shipeasy metrics grammar [options]
 ```
@@ -1027,33 +1093,6 @@ Examples:
 ```bash
 # Promote the staged draft to prod
 shipeasy configs publish pricing --env prod
-```
-
-### `shipeasy configs activity`
-
-Show recent activity for a config
-
-```bash
-shipeasy configs activity [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option           |          | Description                                |
-| ---------------- | -------- | ------------------------------------------ |
-| `--limit <n>`    | optional | How many entries to show (default: `"20"`) |
-| `--json`         | optional | Output as JSON                             |
-| `--project <id>` | optional | Project ID override                        |
-
-Examples:
-
-```bash
-shipeasy configs activity pricing
-
-# Last 5 entries
-shipeasy configs activity pricing --limit 5
 ```
 
 ### `shipeasy configs delete`
