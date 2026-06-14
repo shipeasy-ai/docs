@@ -6,10 +6,12 @@
     "install",
     "authenticate",
     "sdks",
+    "---",
     "cli",
     "cli-reference",
     "mcp",
     "mcp-reference",
+    "---",
     "attributes"
   ]
 }

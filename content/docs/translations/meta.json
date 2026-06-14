@@ -13,8 +13,6 @@
     "case-studies",
     "edge-cases",
     "---",
-    "api",
-    "cli",
-    "mcp"
+    "api"
   ]
 }

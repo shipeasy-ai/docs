@@ -107,6 +107,22 @@ shipeasy flags create new-ui \
   --rules '[{"attr":"plan","op":"eq","value":"pro"}]'
 ```
 
+## Killswitches (alias `ks`) — break-glass
+
+| Command                                   | Description                                         |
+| ----------------------------------------- | --------------------------------------------------- |
+| `shipeasy killswitch list`                | List all killswitches. `ks` is the short alias.     |
+| `shipeasy ks create <name>`               | Create a killswitch (`folder.name`).                |
+| `shipeasy ks update <name>`               | Update default value, switches map, or description. |
+| `shipeasy ks set <name> <switch> <value>` | Set a switch entry on one env (default `prod`).     |
+| `shipeasy ks unset <name> <switch>`       | Remove a switch entry from one env.                 |
+| `shipeasy ks delete <name>`               | Permanent.                                          |
+
+```bash
+shipeasy ks create email.outbound
+shipeasy ks set email.outbound off true
+```
+
 ## Dynamic values (configs)
 
 | Command                            | Description                                               |
@@ -189,6 +205,29 @@ subcommand for that step today.
 | Command                            | Description                                                                                                         |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `shipeasy codemod i18n [paths...]` | Run the i18n codemod standalone — same as `i18n scan --rewrite` but exposed as a top-level command for easy CI use. |
+
+## Feedback (bugs & requests)
+
+| Command                                   | Description                                                              |
+| ----------------------------------------- | ------------------------------------------------------------------------ |
+| `shipeasy feedback bugs <subcommand>`     | `list` / `get` / `create` / `update` / `delete` / `link-pr` bug reports. |
+| `shipeasy feedback features <subcommand>` | Same surface for feature requests.                                       |
+
+`bugs create` takes the bug-report contract (`--steps`, `--actual`,
+`--expected`); `features create` takes `--description`, `--use-case`,
+`--importance`. Both accept `--json` for scripting.
+
+```bash
+shipeasy feedback bugs create "Checkout button overlaps footer" \
+  --steps "1. Add item to cart. 2. Resize below 1024px." \
+  --actual "Button hidden behind sticky footer" \
+  --expected "Button stays visible above the footer"
+
+shipeasy feedback features create "Dark mode dashboard" \
+  --description "System-prefers dark theme for the dashboard chrome" \
+  --use-case "Reviewing experiments at night" \
+  --importance important
+```
 
 ## MCP server
 

@@ -73,7 +73,7 @@ export default async function Page({ params }: Props) {
   const isRoot = !slug || slug.length === 0;
 
   if (isRoot) {
-    const target = "/flags-experiments/";
+    const target = "/get-started/how-it-works";
     return (
       <>
         <meta httpEquiv="refresh" content={`0; url=${target}`} />
@@ -84,7 +84,7 @@ export default async function Page({ params }: Props) {
         />
         <noscript>
           <p>
-            Redirecting to <a href={target}>Flags &amp; Experiments</a>…
+            Redirecting to <a href={target}>Get started</a>…
           </p>
         </noscript>
       </>
