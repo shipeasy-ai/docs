@@ -3,7 +3,7 @@ title: Error reporting with see()
 description: Report every handled exception with see() so it folds into the errors primitive with a product consequence.
 ---
 
-<DocMeta status="Beta" read="6 min read" updated="June 12, 2026" works="Server SDK · Browser SDK" />
+<DocMeta status="Beta" read="6 min read" updated="June 13, 2026" works="Server SDK · Browser SDK" />
 
 `see()` is the error-reporting primitive in `@shipeasy/sdk`. You hand it a caught
 exception and a one-sentence **consequence** — what feature broke and how it
@@ -72,18 +72,20 @@ together, and the same exception harming two surfaces splits into two issues.
 
 ## When you don't need to call see()
 
-The browser SDK installs auto-capture by default, so the unhandled cases are
-already covered. You add an explicit `see()` only where you **catch** an error and
-know the product consequence.
+The browser SDK auto-captures **failed network calls** by default — those name a
+specific endpoint, so the SDK can write a useful consequence on its own.
+Everything else is yours: add an explicit `see()` wherever you **catch** an error
+and know the product consequence.
 
 <TileGrid>
   <Tile icon="▲" title="Auto-captured for you">
-    Uncaught exceptions, unhandled promise rejections, failed `fetch` calls (offline / DNS / CORS),
-    and HTTP 5xx responses — all reported with a sensible consequence, no code from you.
+    Failed `fetch` calls (offline / DNS / CORS) and HTTP 5xx responses — each reported against the
+    specific endpoint that failed, no code from you.
   </Tile>
   <Tile icon="✎" title="You write the see()">
-    A `try/catch` where you recover or degrade — only your code knows which feature was affected and
-    how. A generic global handler can't name that, so it can't write the consequence for you.
+    Everything else — a `try/catch` where you recover or degrade, and any uncaught error or
+    rejection. Only your code knows which feature was affected and how; a generic global handler
+    can't name that, so the SDK deliberately doesn't guess. Report it where you catch it.
   </Tile>
 </TileGrid>
 
@@ -91,16 +93,15 @@ know the product consequence.
 
 When something is wrong but nothing was thrown, report a **Violation**. The
 `name` is a stable identifier (it's fingerprinted, so keep variable data out of
-it); `.message()` is free-form detail.
+it); a Violation has no `.message()` — all context goes in `.extras()`.
 
 ```ts
 if (rows.length > LIMIT) {
   see
     .Violation("oversized query")
-    .message(`got ${rows.length} rows, capped at ${LIMIT}`)
     .causes_the("search results")
     .to("be trimmed")
-    .extras({ actual: rows.length });
+    .extras({ actual: rows.length, cap: LIMIT });
   rows = rows.slice(0, LIMIT);
 }
 ```
@@ -120,13 +121,14 @@ import { see } from "@shipeasy/sdk/server";
 try {
   return decodeFoo(blob);
 } catch (e) {
-  see.ControlFlowException(e, "because the blob wasn't a Foo");
+  see.ControlFlowException(e).because("because the blob wasn't a Foo");
   return decodeBar(blob);
 }
 ```
 
-The reason string must start with `"because"`. Nothing is reported — you've told
-the SDK this throw is expected.
+Pass the reason to `.because()` — it must start with `"because"`. Nothing is
+reported; you've told the SDK this throw is expected. An optional `.extras({…})`
+tail attaches local debug context (kept on the mark, never sent).
 
 ## What lands where
 
@@ -162,10 +164,10 @@ the SDK this throw is expected.
     desc="Report a non-exception problem. name is the stable fingerprint key."
   />
   <ApiRow
-    name="see.ControlFlowException(e, because)"
-    type="(unknown, string)"
+    name="see.ControlFlowException(e).because(reason)"
+    type="(unknown) → chain"
     optional
-    desc="Mark an expected throw so auto-capture skips it. because must start with 'because'."
+    desc="Mark an expected throw so auto-capture skips it. reason must start with 'because'. Optional .extras({…}) tail for local debug context (never sent)."
   />
 </ApiTable>
 
@@ -179,9 +181,9 @@ the SDK this throw is expected.
    (with a timeseries in Analytics Engine). Recurrences bump the count; a resolved
    issue reopens automatically when it happens again.
 3. **Auto-file a ticket.** When an issue's count crosses the threshold (**10**
-   occurrences), Shipeasy files a feedback ticket of type **error** — `critical`
-   priority for uncaught errors and rejections, `high` for caught ones. It dedupes
-   by fingerprint, so one issue files at most one open ticket.
+   occurrences), Shipeasy files a feedback ticket of type **error**, with
+   priority scaled by the error kind (network failures rank above caught ones).
+   It dedupes by fingerprint, so one issue files at most one open ticket.
 4. **Triage.** The ticket joins your bugs and feature requests in the unified
    queue, where `/shipeasy:ops:work` can burn it down like any other item.
 
@@ -192,16 +194,16 @@ the SDK this throw is expected.
   links straight to its root cause on the server.
 </Callout>
 
-## Two rules that keep the feed clean
+## Rules that keep the feed clean
 
 <TileGrid>
   <Tile icon="⊘" title="No generic global wrapper">
     A catch-all that funnels every error through one `see()` can't name the feature, so every issue
     gets the same useless consequence. Report at the `try/catch` that knows what broke.
   </Tile>
-  <Tile icon="⊘" title="Never see() and re-throw">
-    Either handle the error (report + degrade) or let it propagate to a boundary that will. Doing
-    both double-reports the same failure.
+  <Tile icon="✓" title="see() then re-throw is fine">
+    Report the specific consequence you know, then re-throw to let an outer boundary handle it. The
+    re-thrown error links back to your report as a `caused_by` chain — it isn't double-counted.
   </Tile>
 </TileGrid>
 
