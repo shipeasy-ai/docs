@@ -2135,22 +2135,29 @@ Create a new SDK key. The raw token is shown ONCE — store it now.
 shipeasy keys create [options]
 ```
 
-| Option           |          | Description                                |
-| ---------------- | -------- | ------------------------------------------ |
-| `--type <type>`  | required | Key type: server \| client \| admin \| ops |
-| `--json`         | optional | Output as JSON                             |
-| `--project <id>` | optional | Project ID override                        |
+| Option           |               | Description                                                                                                              |
+| ---------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `--type <type>`  | required      | Key type: server \| client \| admin \| ops                                                                               |
+| `--env <env>`    | server/client | Environment the key is bound to: dev \| staging \| prod. **Required** for server and client keys; ignored for admin/ops. |
+| `--json`         | optional      | Output as JSON                                                                                                           |
+| `--project <id>` | optional      | Project ID override                                                                                                      |
+
+Each server/client key is bound to one environment at mint time. The worker
+derives the read environment **from the key** — a client key can only ever read
+its own env (it ships in the browser, so it cannot be trusted to pick), while a
+server key may additionally pass `?env=` per request as an explicit override.
+Mint one key per environment.
 
 Examples:
 
 ```bash
-# Server key (private, server-only)
-shipeasy keys create --type server
+# Server key for production (private, server-only)
+shipeasy keys create --type server --env prod
 
-# Public client key for the browser
-shipeasy keys create --type client
+# Public client key for staging
+shipeasy keys create --type client --env staging
 
-# Restricted ops key for the trigger
+# Restricted ops key for the trigger (env-agnostic)
 shipeasy keys create --type ops
 ```
 

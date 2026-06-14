@@ -116,7 +116,7 @@ That&apos;s the whole runway from zero to working. Everything below is detail.
     });
     ```
 
-    The server SDK polls `/sdk/flags` and `/sdk/experiments` in the background. Evaluation happens **locally** — there is no per-request network call from your code. Env (dev / staging / prod) is determined by which SDK key you pass — keys are env-scoped at issue time.
+    The server SDK polls `/sdk/flags` and `/sdk/experiments` in the background. Evaluation happens **locally** — there is no per-request network call from your code. Env (dev / staging / prod) is **derived from the key**: each key is bound to exactly one environment when you mint it, so you deploy the prod key to prod and the staging key to staging — there is nothing to set in code. (A server key may still override per request with `?env=` for local debugging; client keys cannot — see below.)
 
   </Step>
 
@@ -133,6 +133,8 @@ That&apos;s the whole runway from zero to working. Everything below is detail.
     ```
 
     The client SDK auto-manages an `anonymous_id` cookie, batches event uploads with `navigator.sendBeacon` on page hide, and exposes a [devtools overlay](/get-started/sdks#devtools) at `?shipeasy=1`.
+
+    The client key is public — it ships in your browser bundle. Its environment is **locked to the key** and cannot be changed at runtime, so a client key minted for `staging` can only ever read `staging` flags and configs. Use a **separate client key per environment**; never share one across environments expecting isolation.
 
   </Step>
 
