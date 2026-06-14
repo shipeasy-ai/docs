@@ -1,5 +1,5 @@
 {
   "title": "Shipeasy Docs",
-  "pages": ["flags-experiments", "translations", "feedback"],
+  "pages": ["flags-experiments", "translations", "feedback", "assistant"],
   "root": true
 }
