@@ -30,9 +30,10 @@ html {
   --se-fg-3: rgba(245, 245, 244, 0.48);
   --se-fg-4: rgba(245, 245, 244, 0.28);
 
-  --se-accent: oklch(0.78 0.17 155);
+  /* Uniform purple — mirrors apps/ui `.theme-purple` (--se-accent triplet). */
+  --se-accent: oklch(0.72 0.19 292);
   --se-accent-soft: color-mix(in oklch, var(--se-accent) 16%, transparent);
-  --se-accent-fg: #07120d;
+  --se-accent-fg: #100a1f;
   --se-danger: oklch(0.72 0.18 25);
   --se-danger-soft: color-mix(in oklch, var(--se-danger) 16%, transparent);
   --se-warn: oklch(0.82 0.15 85);
@@ -665,30 +666,17 @@ main {
    - llms              → purple
    - get-started / *   → default (green/teal)
    ────────────────────────────────────────────────────────────── */
-html[data-section="flags-experiments"] {
-  --se-accent: oklch(0.78 0.17 155);
-  --se-accent-fg: #07140e;
-}
-html[data-section="translations"] {
-  --se-accent: oklch(0.74 0.17 245);
-  --se-accent-fg: #07101e;
-}
-html[data-section="feedback"] {
-  --se-accent: oklch(0.78 0.16 35);
-  --se-accent-fg: #1a0d08;
-}
-/* Legacy section accents kept for back-compat while old MDX still resolves. */
-html[data-section="i18n"] {
-  --se-accent: oklch(0.74 0.17 245);
-  --se-accent-fg: #07101e;
-}
-html[data-section="configs"] {
-  --se-accent: oklch(0.82 0.15 85);
-  --se-accent-fg: #1a1408;
-}
+/* Uniform purple: every section resolves to the same accent as the base
+   :root triplet (mirrors apps/ui `.theme-purple`). The per-section blocks are
+   kept (rather than removed) so any MDX still keying off them stays purple. */
+html[data-section="flags-experiments"],
+html[data-section="translations"],
+html[data-section="feedback"],
+html[data-section="i18n"],
+html[data-section="configs"],
 html[data-section="llms"] {
-  --se-accent: oklch(0.72 0.18 295);
-  --se-accent-fg: #14081a;
+  --se-accent: oklch(0.72 0.19 292);
+  --se-accent-fg: #100a1f;
 }
 html[data-section="flags-experiments"],
 html[data-section="translations"],
@@ -1338,7 +1326,7 @@ html[data-section="get-started"] {
   margin: 0;
 }
 .se-api-response-head code {
-  color: oklch(0.78 0.17 155);
+  color: var(--se-accent);
   font-size: 12px;
 }
 .se-api-response pre {

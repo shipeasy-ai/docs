@@ -8,9 +8,12 @@ type Product = {
   name: string;
   href: string;
   desc: string;
-  /** A representative color for the swatch. Mirrors the per-section accent in theme.css. */
+  /** Swatch color. Uniform purple, mirroring the accent in theme.css. */
   color: string;
 };
+
+/** Uniform purple accent (mirrors --se-accent in theme.css / apps/ui .theme-purple). */
+const ACCENT = "oklch(0.72 0.19 292)";
 
 const PRODUCTS: Product[] = [
   {
@@ -18,21 +21,21 @@ const PRODUCTS: Product[] = [
     name: "Flags & Experiments",
     href: "/flags-experiments",
     desc: "Gates, configs, killswitches & A/B tests",
-    color: "oklch(0.78 0.17 155)",
+    color: ACCENT,
   },
   {
     slug: "translations",
     name: "Translations",
     href: "/translations",
     desc: "Localized labels & AI translations",
-    color: "oklch(0.74 0.17 245)",
+    color: ACCENT,
   },
   {
     slug: "feedback",
     name: "Bugs & Requests",
     href: "/feedback",
     desc: "Bug reports & feature requests",
-    color: "oklch(0.78 0.16 35)",
+    color: ACCENT,
   },
 ];
 
@@ -71,7 +74,7 @@ export function ProductSwitcher() {
     name: "Platform",
     href: "/",
     desc: "Overview",
-    color: "oklch(0.78 0.17 155)",
+    color: ACCENT,
   };
 
   // Switcher renders inside fumadocs' brand `<a href="/">`. Without
