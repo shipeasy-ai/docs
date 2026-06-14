@@ -201,20 +201,22 @@ subcommand for that step today.
 
 See [MCP server](/get-started/mcp) for the tool inventory.
 
-## Plugin
+## Agent skills & plugins
 
-| Command                                 | Description                                                                     |
-| --------------------------------------- | ------------------------------------------------------------------------------- |
-| `shipeasy plugin install [features...]` | Install Claude Code plugins for Shipeasy features (auth, flags, configs, etc.). |
-| `shipeasy plugin list`                  | List installed plugins.                                                         |
-| `shipeasy plugin uninstall`             | Remove the Shipeasy Claude Code plugin.                                         |
+There is no separate `skills` or `plugin` install command — `shipeasy setup`
+does it. It detects every coding agent in your environment (Claude Code,
+Cursor, OpenAI Codex, GitHub Copilot, Google Jules) and wires each the way
+that agent expects: the Claude Code marketplace plugin (commands + skills +
+MCP) for Claude, and the agent's own instructions file
+(`.cursor/rules/shipeasy.mdc`, `AGENTS.md`, `.github/copilot-instructions.md`)
+plus `@shipeasy/mcp` registration for the rest.
 
-## Skills
+```bash
+shipeasy setup                              # detect + wire every agent found
+shipeasy setup --yes --agents claude,cursor # non-interactive subset
+```
 
-| Command                          | Description                                                      |
-| -------------------------------- | ---------------------------------------------------------------- |
-| `shipeasy skills list`           | List installed Claude Code skills exposed by the CLI.            |
-| `shipeasy skills install <name>` | Install a packaged skill into your `~/.claude/skills` directory. |
+`setup` is idempotent — re-run it as you add agents.
 
 ## Environment variables
 

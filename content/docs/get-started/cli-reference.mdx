@@ -161,6 +161,13 @@ One-command onboarding: log in + bind a project, detect your coding agents, regi
 
 One-command onboarding: log in + bind a project, detect your coding agents, register the Shipeasy MCP server + skills, and hand SDK wiring to the agent.
 
+`setup` is the one place that wires Shipeasy into your coding agents — there is no separate `skills`/`plugin` install step. It **detects every agent** in your environment (Claude Code, Cursor, OpenAI Codex, GitHub Copilot, Google Jules) and wires each one the way that agent expects:
+
+- **Claude Code** — installs the marketplace plugin (slash commands + skills + MCP), or drops `.mcp.json` when the `claude` binary isn't on PATH.
+- **Cursor / Codex / Copilot / Jules** — registers the `@shipeasy/mcp` server in that agent's config and writes its instructions file (`.cursor/rules/shipeasy.mdc`, `AGENTS.md`, `.github/copilot-instructions.md`).
+
+Pick a subset with `--agents`, or let it auto-detect. It's idempotent — safe to re-run as you add agents. In CI (non-TTY) it runs non-interactively with `SHIPEASY_CLI_TOKEN` + `SHIPEASY_PROJECT_ID`.
+
 ```bash
 shipeasy setup [options]
 ```
@@ -177,9 +184,10 @@ shipeasy setup [options]
 Examples:
 
 ```bash
+# interactive: detect + wire every agent found
 shipeasy setup
 
-# non-interactive
+# non-interactive subset
 shipeasy setup --yes --agents claude,cursor
 
 # preview without writing
@@ -2502,121 +2510,4 @@ Examples:
 shipeasy mcp uninstall
 
 shipeasy mcp uninstall --client cursor --scope user
-```
-
-## skills
-
-Install or list Shipeasy agent skills from the marketplace (shipeasy-ai/shipeasy)
-
-### `shipeasy skills list`
-
-List skills available in the marketplace
-
-```bash
-shipeasy skills list [options]
-```
-
-Examples:
-
-```bash
-shipeasy skills list
-```
-
-### `shipeasy skills install`
-
-Copy skills from the marketplace into .claude/skills. With no args, installs every skill in the shipeasy plugin. Skill names: shipeasy-setup, shipeasy-experiments, shipeasy-flags, shipeasy-i18n, shipeasy-bugs.
-
-```bash
-shipeasy skills install [options] [skill...]
-```
-
-| Argument   |          | Description |
-| ---------- | -------- | ----------- |
-| `skill...` | optional | —           |
-
-| Option            |          | Description                                   |
-| ----------------- | -------- | --------------------------------------------- |
-| `--scope <scope>` | optional | user \| project (default: `"project"`)        |
-| `--target <dir>`  | optional | Override the destination directory (advanced) |
-| `--force`         | optional | Overwrite existing files                      |
-
-Examples:
-
-```bash
-# install every shipeasy skill
-shipeasy skills install
-
-shipeasy skills install shipeasy-flags shipeasy-experiments
-
-shipeasy skills install shipeasy-setup --scope user --force
-```
-
-## plugin
-
-Install Shipeasy plugin files into .claude/ for non-Claude-Code harnesses (Cursor, Windsurf) or to drop project-level pointer skills that new contributors follow. For Claude Code itself prefer `claude plugin marketplace add shipeasy-ai/shipeasy`.
-
-### `shipeasy plugin install`
-
-With no args: copy the full `shipeasy` plugin (every command + every skill) into .claude/ — useful for non-Claude-Code harnesses. With feature names (setup, bugs, flags, experiments, i18n): drop just the per-feature pointer skill(s) into .claude/skills/shipeasy-\<feature>/SKILL.md so new contributors find the workflow.
-
-```bash
-shipeasy plugin install [options] [features...]
-```
-
-| Argument      |          | Description |
-| ------------- | -------- | ----------- |
-| `features...` | optional | —           |
-
-| Option            |          | Description                                                           |
-| ----------------- | -------- | --------------------------------------------------------------------- |
-| `--scope <scope>` | optional | user \| project (default: `"project"`)                                |
-| `--target <dir>`  | optional | Override the destination .claude root (advanced)                      |
-| `--full`          | optional | Force full install (commands + skills) even when features are given   |
-| `--pointer-only`  | optional | Drop pointer skills only, even with no feature args (== all features) |
-| `--force`         | optional | Overwrite existing files                                              |
-
-Examples:
-
-```bash
-# full plugin into .claude/
-shipeasy plugin install
-
-# drop pointer skills only
-shipeasy plugin install flags experiments
-
-shipeasy plugin install --scope user --full --force
-```
-
-### `shipeasy plugin list`
-
-List the features available in the shipeasy plugin
-
-```bash
-shipeasy plugin list [options]
-```
-
-Examples:
-
-```bash
-shipeasy plugin list
-```
-
-### `shipeasy plugin uninstall`
-
-Print the directories to remove (refuses to delete user files)
-
-```bash
-shipeasy plugin uninstall [options]
-```
-
-| Option            |          | Description                            |
-| ----------------- | -------- | -------------------------------------- |
-| `--scope <scope>` | optional | user \| project (default: `"project"`) |
-
-Examples:
-
-```bash
-shipeasy plugin uninstall
-
-shipeasy plugin uninstall --scope user
 ```
