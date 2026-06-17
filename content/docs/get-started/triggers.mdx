@@ -35,18 +35,18 @@ where `<platform>` is `claude` (default), `cursor`, `copilot`, `windsurf`, `code
 | **B — native local daemon**      | `cline`, `openclaw`, `codex`                   | a built-in scheduler runs it, but on a daemon on your machine — host must stay awake |
 | **C — headless + external cron** | `opencode`, `continue`, `gemini` (and `codex`) | non-interactive run mode driven by system cron or a GitHub Actions `schedule:` job   |
 
-| `--provider` | Scheduler                                               | Launch / auth                                            |
-| ------------ | ------------------------------------------------------- | -------------------------------------------------------- |
-| `claude`     | `/schedule` cloud routine                               | runs `ops:work --pr`; **registers a Shipeasy connector** |
-| `cursor`     | Cursor Automation / `POST /v1/agents`                   | `autoCreatePR`; `CURSOR_API_KEY`                         |
-| `copilot`    | Copilot automations, or scheduled Actions + cloud agent | PAT with "Copilot Requests"                              |
-| `windsurf`   | Devin Scheduled Sessions (cloud VM)                     | `WINDSURF_API_KEY` / `DEVIN_API_KEY`                     |
-| `cline`      | `cline schedule create --cron`                          | `cline --auto-approve true`                              |
-| `openclaw`   | `openclaw cron create`                                  | static API key only                                      |
-| `codex`      | Codex Automations (local) or external cron              | `codex exec --sandbox danger-full-access`                |
-| `opencode`   | system cron / Actions                                   | `opencode run` (`permission: "allow"`)                   |
-| `continue`   | system cron / Actions                                   | `cn -p --auto`                                           |
-| `gemini`     | Actions `schedule:` (run-gemini-cli)                    | `gemini -p --approval-mode=yolo`                         |
+| `--provider` | Scheduler                                                                                            | Launch / auth                                            |
+| ------------ | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `claude`     | `/schedule` cloud routine                                                                            | runs `ops:work --pr`; **registers a Shipeasy connector** |
+| `cursor`     | Cursor Automation / `POST /v1/agents`                                                                | `autoCreatePR`; `CURSOR_API_KEY`                         |
+| `copilot`    | Copilot automations, or scheduled Actions + cloud agent                                              | PAT with "Copilot Requests"                              |
+| `windsurf`   | Devin Scheduled Sessions (cloud VM)                                                                  | `WINDSURF_API_KEY` / `DEVIN_API_KEY`                     |
+| `cline`      | `cline schedule create --cron`                                                                       | `cline --auto-approve true`                              |
+| `openclaw`   | `openclaw cron create`                                                                               | static API key only                                      |
+| `codex`      | Codex Cloud agent (cloud, event/Actions-triggered), Codex Automations (local cron), or external cron | `codex exec --sandbox danger-full-access`                |
+| `opencode`   | system cron / Actions                                                                                | `opencode run` (`permission: "allow"`)                   |
+| `continue`   | system cron / Actions                                                                                | `cn -p --auto`                                           |
+| `gemini`     | Actions `schedule:` (run-gemini-cli)                                                                 | `gemini -p --approval-mode=yolo`                         |
 
 ## The run is identical everywhere
 
