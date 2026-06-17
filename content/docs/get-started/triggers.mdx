@@ -1,0 +1,98 @@
+---
+title: Scheduled triggers
+description: Provision an unattended, scheduled agent that runs ops:work --pr on a cadence — burning down the feedback queue and opening one PR per item — on Claude Code, Cursor, Copilot, Windsurf, Codex, Cline, OpenClaw, OpenCode, Continue, or Gemini.
+---
+
+<DocMeta
+  status="Production ready"
+  read="6 min read"
+  updated="June 17, 2026"
+  works="Claude Code · Cursor · Copilot · Windsurf · Codex · Cline · OpenClaw · OpenCode · Continue · Gemini"
+/>
+
+A **trigger** is an _unattended, scheduled_ agent run. On a cron cadence it runs **`/shipeasy:ops:work --pr`** against your project — burning down the feedback queue (bugs, feature requests, auto-filed error/alert tickets) one item at a time, committing each fix on its own branch, and opening **one PR per item** for review. No human in the loop.
+
+Provision it with:
+
+```bash
+/shipeasy:ops:create_trigger --provider <platform>
+```
+
+where `<platform>` is `claude` (default), `cursor`, `copilot`, `windsurf`, `codex`, `cline`, `openclaw`, `opencode`, `continue`, or `gemini`.
+
+<Callout type="info">
+  Every provider schedules the **same work** — only what *schedules* it and how the run is launched
+  + authenticated differs. The full copy-paste reference is
+  [`TRIGGER-INSTALL.md`](https://github.com/shipeasy-ai/shipeasy/blob/main/TRIGGER-INSTALL.md) in
+  the marketplace repo.
+</Callout>
+
+## Three scheduler tiers
+
+| Tier                             | Platforms                                      | Mechanism                                                                            |
+| -------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------ |
+| **A — native cloud scheduler**   | `claude`, `cursor`, `copilot`, `windsurf`      | a managed cron runs the agent in the vendor's cloud — machine can be off             |
+| **B — native local daemon**      | `cline`, `openclaw`, `codex`                   | a built-in scheduler runs it, but on a daemon on your machine — host must stay awake |
+| **C — headless + external cron** | `opencode`, `continue`, `gemini` (and `codex`) | non-interactive run mode driven by system cron or a GitHub Actions `schedule:` job   |
+
+| `--provider` | Scheduler                                               | Launch / auth                                            |
+| ------------ | ------------------------------------------------------- | -------------------------------------------------------- |
+| `claude`     | `/schedule` cloud routine                               | runs `ops:work --pr`; **registers a Shipeasy connector** |
+| `cursor`     | Cursor Automation / `POST /v1/agents`                   | `autoCreatePR`; `CURSOR_API_KEY`                         |
+| `copilot`    | Copilot automations, or scheduled Actions + cloud agent | PAT with "Copilot Requests"                              |
+| `windsurf`   | Devin Scheduled Sessions (cloud VM)                     | `WINDSURF_API_KEY` / `DEVIN_API_KEY`                     |
+| `cline`      | `cline schedule create --cron`                          | `cline --auto-approve true`                              |
+| `openclaw`   | `openclaw cron create`                                  | static API key only                                      |
+| `codex`      | Codex Automations (local) or external cron              | `codex exec --sandbox danger-full-access`                |
+| `opencode`   | system cron / Actions                                   | `opencode run` (`permission: "allow"`)                   |
+| `continue`   | system cron / Actions                                   | `cn -p --auto`                                           |
+| `gemini`     | Actions `schedule:` (run-gemini-cli)                    | `gemini -p --approval-mode=yolo`                         |
+
+## The run is identical everywhere
+
+Whatever the provider, the scheduled run authenticates with a restricted **`ops`** key, refreshes the plugin + CLI, and follows the installed `ops:work --pr` workflow. Mint the key with:
+
+```bash
+npx -y @shipeasy/cli@latest keys create --type ops
+```
+
+The `ops` key can read the queue, flip item status, link the PR it opens, and create resources — but never edits or deletes existing ones, and auto-extends its 7-day expiry on each run. A leaked trigger prompt can't compromise the project. **Never embed your admin login token.**
+
+## Tier C — the GitHub Actions shape
+
+For headless providers with no native scheduler, a scheduled Actions workflow is the always-on driver (Gemini shown via the official [`run-gemini-cli`](https://github.com/google-github-actions/run-gemini-cli) Action — swap the run step for `opencode run` / `cn -p --auto` / `codex exec` for the others):
+
+```yaml title=".github/workflows/shipeasy-feedback-trigger.yml"
+on:
+  schedule:
+    - cron: "0 9 * * 1-5" # weekdays 09:00 UTC
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: google-github-actions/run-gemini-cli@v0
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SHIPEASY_CLI_TOKEN: ${{ secrets.SHIPEASY_OPS_KEY }}
+          SHIPEASY_PROJECT_ID: ${{ secrets.SHIPEASY_PROJECT_ID }}
+        with:
+          prompt: "<trigger prompt>"
+          settings: '{ "approval-mode": "yolo" }'
+```
+
+<Callout type="warn">
+  Unattended runs use an auto-approve flag (`--approval-mode=yolo`, `--sandbox danger-full-access`,
+  `--allow-all-tools`, `--dangerously-skip-permissions`, `cline --auto-approve true`) that removes
+  the human gate — run only in an isolated env. They also spend tokens/credits on every fire, so
+  start with a weekly or daily cron and watch the first runs. PRs land for review; nothing
+  auto-merges.
+</Callout>
+
+## Connector registration
+
+The **`claude`** provider registers the trigger as a Shipeasy **connector** (Feedback → Connectors, with "Fire now" + event auto-fire). Other providers run on their own scheduler and open PRs the same way, but on-demand "Fire now" from the Shipeasy UI is Claude-only today — for them, the platform's own scheduler UI (Cursor Automations, Devin Scheduled Sessions, the Actions tab, `cline schedule`, `openclaw cron`) is where you pause, run, and inspect the trigger.
