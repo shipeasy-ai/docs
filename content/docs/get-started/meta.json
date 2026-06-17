@@ -4,6 +4,7 @@
   "pages": [
     "how-it-works",
     "install",
+    "agents",
     "authenticate",
     "sdks",
     "---",
