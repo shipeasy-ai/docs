@@ -7,7 +7,7 @@ description: One plugin tree, every coding agent. Install Shipeasy's skills + MC
   status="Production ready"
   read="6 min read"
   updated="June 17, 2026"
-  works="Claude Code · Codex · Copilot CLI · OpenCode · Cursor · Windsurf · Cline · Gemini · Continue"
+  works="Claude Code · Codex · Copilot CLI · OpenCode · Cursor · Windsurf · Cline · Gemini · Continue · OpenClaw"
 />
 
 Shipeasy ships **seven skills** (`flags`, `experiments`, `metrics`, `i18n`, `bugs`, `see`, `setup`) and the **`shipeasy` MCP server** (`npx -y @shipeasy/mcp@latest`). The skills auto-trigger on natural-language phrasing and walk your agent through each workflow; the MCP server is the typed toolkit that actually creates gates, drafts experiments, pushes i18n keys, and files feedback.
@@ -47,7 +47,7 @@ Every other agent installs in two steps.
 npx skills add https://github.com/shipeasy-ai/shipeasy/tree/main/shipeasy -a <agent>
 ```
 
-`<agent>` is `opencode`, `cursor`, `windsurf`, `cline`, `gemini-cli`, `continue`, `github-copilot`, … (`--agent '*'` installs into all). Add `-g` for the user-global skills dir.
+`<agent>` is `opencode`, `cursor`, `windsurf`, `cline`, `gemini-cli`, `continue`, `openclaw`, `github-copilot`, … (`--agent '*'` installs into all 70+ supported agents). Add `-g` for the user-global skills dir.
 
 <Callout type="info">
   The `skills` CLI handles skill text only — it does not register MCP servers. Do Step 2 separately.
