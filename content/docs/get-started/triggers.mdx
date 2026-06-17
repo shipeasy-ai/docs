@@ -93,6 +93,16 @@ jobs:
   auto-merges.
 </Callout>
 
-## Connector registration
+## Connector registration — Shipeasy-fired vs. platform-scheduled
 
-The **`claude`** provider registers the trigger as a Shipeasy **connector** (Feedback → Connectors, with "Fire now" + event auto-fire). Other providers run on their own scheduler and open PRs the same way, but on-demand "Fire now" from the Shipeasy UI is Claude-only today — for them, the platform's own scheduler UI (Cursor Automations, Devin Scheduled Sessions, the Actions tab, `cline schedule`, `openclaw cron`) is where you pause, run, and inspect the trigger.
+A Shipeasy **connector** (Feedback → Connectors, "Fire now" + event auto-fire) means **Shipeasy's own cron fires the trigger**. That backend is a Cloudflare Worker, so it can only fire a provider that exposes (1) a clean HTTP "start a run" endpoint — a plain `fetch()`, no CLI binary or local scheduler — and (2) a storable static token.
+
+- **`claude`** — ✅ live. Fires via `POST …/routines/<id>/fire` with a per-routine bearer token.
+- **`cursor`** — ✅ viable second connector (not yet wired): `POST https://api.cursor.com/v1/agents` with `CURSOR_API_KEY` + `autoCreatePR`.
+- **Everyone else** — platform-scheduled only. Codex and Copilot cloud agents are mention/assignment-triggered (gated to the connected account — a Shipeasy token can't fire them, and a cold scheduled run has no thread to mention on); the rest schedule on their own surface (Devin Scheduled Sessions, `cline schedule`, `openclaw cron`, system cron, or a GitHub Actions `schedule:` job). Pause/run/inspect them there.
+
+<Callout type="info">
+  Rule of thumb: if a provider can't be started from nothing by one authenticated HTTP call,
+  Shipeasy can't fire it — it's scheduled on the provider's own platform. Only `claude` (live) and
+  `cursor` (candidate) clear that bar.
+</Callout>
