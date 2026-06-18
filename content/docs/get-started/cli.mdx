@@ -88,16 +88,16 @@ rather than a global `--env` flag.
 | `shipeasy whoami`    | Show the active project, email, and accessible projects.            |
 | `shipeasy bind <id>` | Bind the cwd to a project (writes `.shipeasy` in the project root). |
 
-## Gates (feature flags)
+## Feature flags
 
-| Command                               | Description                                                                                |
-| ------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `shipeasy flags list`                 | List every gate in the project. `--json` for raw output.                                   |
-| `shipeasy flags create <name>`        | Create a new gate. Options: `--rollout <pct>` (default 0), `--rules <json>`, `--salt <s>`. |
-| `shipeasy flags rollout <name> <pct>` | Set the rollout %. `0` is an instant kill-switch.                                          |
-| `shipeasy flags enable <name>`        | Set the gate's `enabled` bit to true.                                                      |
-| `shipeasy flags disable <name>`       | Set `enabled` to false (keeps rules).                                                      |
-| `shipeasy flags delete <name>`        | Permanent. Use with care.                                                                  |
+| Command                               | Description                                                                                        |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `shipeasy flags list`                 | List every feature flag in the project. `--json` for raw output.                                   |
+| `shipeasy flags create <name>`        | Create a new feature flag. Options: `--rollout <pct>` (default 0), `--rules <json>`, `--salt <s>`. |
+| `shipeasy flags rollout <name> <pct>` | Set the rollout %. `0` is an instant kill-switch.                                                  |
+| `shipeasy flags enable <name>`        | Set the feature flag's `enabled` bit to true.                                                      |
+| `shipeasy flags disable <name>`       | Set `enabled` to false (keeps rules).                                                              |
+| `shipeasy flags delete <name>`        | Permanent. Use with care.                                                                          |
 
 `--rules` accepts a JSON array of `{ attr, op, value }` rules — the same shape the dashboard produces:
 
@@ -315,7 +315,7 @@ shipeasy flags list --json | jq '.[] | select(.enabled == true) | .name'
 ## Examples
 
 ```bash
-# Create a gate, set targeting, roll out to 5%, then promote to 100%.
+# Create a feature flag, set targeting, roll out to 5%, then promote to 100%.
 shipeasy flags create checkout-v2 --rules '[{"attr":"plan","op":"eq","value":"pro"}]'
 shipeasy flags rollout checkout-v2 5
 shipeasy flags rollout checkout-v2 100

@@ -1,6 +1,6 @@
 ---
 title: Quickstart
-description: From zero to a flag-gated feature in production — install the SDK, create a gate, roll it out, kill-switch it, and watch it in the dashboard. Five minutes, end to end.
+description: From zero to a feature behind a feature flag in production — install the SDK, create a feature flag, roll it out, kill-switch it, and watch it in the dashboard. Five minutes, end to end.
 ---
 
 <DocMeta
@@ -10,11 +10,11 @@ description: From zero to a flag-gated feature in production — install the SDK
   works="Server SDK · Browser SDK · CLI"
 />
 
-This walks through the full flow end to end: install the SDK, create a gate, gate code, roll it out gradually, then kill-switch it. By the end you&apos;ll have a feature behind a flag in production, evaluated locally with no per-request network call, that you can flip from your phone.
+This walks through the full flow end to end: install the SDK, create a feature flag, put a feature flag around your code, roll it out gradually, then kill-switch it. By the end you&apos;ll have a feature behind a feature flag in production, evaluated locally with no per-request network call, that you can flip from your phone.
 
 If you&apos;d rather hand this to an AI agent, the [LLM guide](/llms/configs) describes the same flow for Claude Code, Cursor, and Windsurf.
 
-<Quickstart title="The 5-minute path" time="install · create · gate · roll out">
+<Quickstart title="The 5-minute path" time="install · create · flag · roll out">
   <QuickstartStep
     num={1}
     label="INSTALL"
@@ -24,7 +24,7 @@ If you&apos;d rather hand this to an AI agent, the [LLM guide](/llms/configs) de
   <QuickstartStep
     num={2}
     label="CREATE"
-    title="Create a gate at 0%"
+    title="Create a feature flag at 0%"
     cmd="shipeasy flags create new-checkout-flow --rollout 0"
   />
   <QuickstartStep
@@ -68,14 +68,14 @@ shipeasy keys create --kind server
 
   </Step>
 
-  <Step title="Create a gate">
+  <Step title="Create a feature flag">
     From the CLI:
 
     ```bash
     shipeasy flags create new-checkout-flow --rollout 0
     ```
 
-    Or in the dashboard: **Configs &rarr; Gates &rarr; New gate**, name `new-checkout-flow`, leave the rollout at `0%`. The default value is `false` — nobody sees the new path yet.
+    Or in the dashboard: **Configs &rarr; Feature flags &rarr; New feature flag**, name `new-checkout-flow`, leave the rollout at `0%`. The default value is `false` — nobody sees the new path yet.
 
     Naming conventions to save your future self pain:
 
@@ -85,7 +85,7 @@ shipeasy keys create --kind server
 
   </Step>
 
-  <Step title="Gate your code">
+  <Step title="Put a feature flag around your code">
     ```ts
     import { flags } from "@shipeasy/sdk/server";
 
@@ -111,7 +111,7 @@ shipeasy keys create --kind server
   </Step>
 
   <Step title="Test locally with overrides">
-    Add yourself to the **overrides** list in the dashboard (**Gate &rarr; Overrides &rarr; Always on**, paste your `user_id`). The flag returns `true` for you and `false` for everyone else — no rollout math involved.
+    Add yourself to the **overrides** list in the dashboard (**Feature flag &rarr; Overrides &rarr; Always on**, paste your `user_id`). The flag returns `true` for you and `false` for everyone else — no rollout math involved.
 
     If you have the [browser DevTools overlay](/get-started/sdks#devtools) loaded, you can also force a value with a query param:
 
@@ -154,7 +154,7 @@ shipeasy keys create --kind server
     shipeasy flags disable new-checkout-flow
     ```
 
-    `flags disable` is the gate-level off switch. `enabled` is a separate field from the gate's `rolloutPct` + targeting rules, so flipping it preserves them — `shipeasy flags enable new-checkout-flow` restores the full prior state. For incident-grade flips on a different control surface, use a [killswitch](/flags-experiments/killswitches).
+    `flags disable` is the feature-flag-level off switch. `enabled` is a separate field from the feature flag's `rolloutPct` + targeting rules, so flipping it preserves them — `shipeasy flags enable new-checkout-flow` restores the full prior state. For incident-grade flips on a different control surface, use a [killswitch](/flags-experiments/killswitches).
 
   </Step>
 
@@ -184,7 +184,7 @@ value.
 No deploy. No restart. No backend round-trip on the read.
 
 <Callout type="success" title="What you just got for free">
-  An audit log of every change, side-by-side dashboards for the affected gate, deterministic
+  An audit log of every change, side-by-side dashboards for the affected feature flag, deterministic
   bucketing per user, and a kill-switch you can hit from your phone. You didn&apos;t have to build
   any of it.
 </Callout>
@@ -249,7 +249,7 @@ No deploy. No restart. No backend round-trip on the read.
       </>
     }
   >
-    Once it&apos;s gated, run an experiment on the same flag.
+    Once it&apos;s behind a feature flag, run an experiment on the same flag.
   </Tile>
 </TileGrid>
 
@@ -260,7 +260,7 @@ No deploy. No restart. No backend round-trip on the read.
       Hand it to an <em>AI agent</em>.
     </>
   }
-  body="The same flow, but driven by Claude Code or Cursor through the MCP server. You answer one auth prompt, the agent creates the gate, wires the SDK, and opens the PR."
+  body="The same flow, but driven by Claude Code or Cursor through the MCP server. You answer one auth prompt, the agent creates the feature flag, wires the SDK, and opens the PR."
   primaryHref="/llms/configs"
   primaryLabel="Open the LLM guide"
   secondaryHref="/configs"
@@ -273,7 +273,7 @@ No deploy. No restart. No backend round-trip on the read.
 
 <DocNav
   prev={{ href: "/configs", title: "Configs overview" }}
-  next={{ href: "/configs/gates", title: "Gates" }}
+  next={{ href: "/configs/gates", title: "Feature flags" }}
 />
 
 <DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/configs/quickstart.mdx" />

@@ -1,6 +1,6 @@
 {
   "title": "Flags & Experiments",
-  "description": "Gates, configs, killswitches & A/B tests",
+  "description": "Feature flags, configs, killswitches & A/B tests",
   "defaultOpen": true,
   "pages": [
     "index",

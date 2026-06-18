@@ -12,7 +12,7 @@ description: Versioned, named manifests of label keys for one locale — the uni
 
 A **profile** is a named, versioned manifest of label keys for a specific locale combination. It is the unit you publish, version, diff, and roll back. Everything else in Shipeasy Translations — drafts, AI translations, the loader script, validation in CI — pivots around the profile.
 
-If gates and configs are "one row per setting", profiles are "one snapshot per `locale` per publish". Every publish is immutable; revert is just "republish version N".
+If feature flags and configs are "one row per setting", profiles are "one snapshot per `locale` per publish". Every publish is immutable; revert is just "republish version N".
 
 ## Naming
 

@@ -1,6 +1,6 @@
 ---
 title: Targeting & rollouts
-description: Express &quot;show this to the right users&quot; with attribute rules, deterministic percentage rollouts, and per-gate salts. The rules engine, in detail.
+description: Express &quot;show this to the right users&quot; with attribute rules, deterministic percentage rollouts, and per-feature-flag salts. The rules engine, in detail.
 ---
 
 <DocMeta
@@ -10,7 +10,7 @@ description: Express &quot;show this to the right users&quot; with attribute rul
   works="Server SDK · Browser SDK"
 />
 
-A targeting rule on a gate is a predicate of the form **`attr op value`**. Multiple rules on a gate are **ANDed** together. To OR, use the `in` operator with an array, or split into separate gates and combine in code.
+A targeting rule on a feature flag is a predicate of the form **`attr op value`**. Multiple rules on a feature flag are **ANDed** together. To OR, use the `in` operator with an array, or split into separate feature flags and combine in code.
 
 This page is the operational reference for the rules engine: every operator, the bucketing math, and the patterns we&apos;ve seen work for safe rollouts.
 
@@ -56,7 +56,7 @@ Numeric ops coerce strings that look like numbers — `"100" gt 50` is `true`. T
 ]
 ```
 
-The dashboard shape is JSON, so you can copy these straight in — paste the array into the gate's targeting editor and click Save. The same JSON can be patched via the [Admin API](/flags-experiments/api).
+The dashboard shape is JSON, so you can copy these straight in — paste the array into the feature flag's targeting editor and click Save. The same JSON can be patched via the [Admin API](/flags-experiments/api).
 
 ## Rollout percentages
 
@@ -69,8 +69,8 @@ true   = bucket < rolloutPct
 
 That gives you three properties:
 
-- **Stable**: the same user always gets the same bucket for the same gate. No flicker on reloads, no flicker across servers.
-- **Independent**: changing one gate&apos;s rollout doesn&apos;t move users on another gate (different salts).
+- **Stable**: the same user always gets the same bucket for the same feature flag. No flicker on reloads, no flicker across servers.
+- **Independent**: changing one feature flag&apos;s rollout doesn&apos;t move users on another feature flag (different salts).
 - **Fair**: bucketing is uniform; small rollouts give a representative sample.
 
 Internally we work in basis points (0..10000), so you can roll out at 0.01% granularity if you really need it.
@@ -98,9 +98,9 @@ For a known-low-risk change you can compress this. For anything load-bearing (au
 
 ### The salt [#salt]
 
-Each gate has its own salt. If you ever want to **re-shuffle** the rollout buckets without changing the percentage (say, to avoid the same 5% always being chosen for every gate you ever roll out), bump the salt. CLI `flags update` doesn't expose a `--salt` flag today — bump it on the gate via the [Admin API](/flags-experiments/api) or edit the gate's JSON in the dashboard.
+Each feature flag has its own salt. If you ever want to **re-shuffle** the rollout buckets without changing the percentage (say, to avoid the same 5% always being chosen for every feature flag you ever roll out), bump the salt. CLI `flags update` doesn't expose a `--salt` flag today — bump it on the feature flag via the [Admin API](/flags-experiments/api) or edit the feature flag's JSON in the dashboard.
 
-That&apos;s rare. The default salt is fine for almost every case. The salt is also why two gates at 50% don&apos;t serve the same 50% of users — different salts, different buckets, statistically independent.
+That&apos;s rare. The default salt is fine for almost every case. The salt is also why two feature flags at 50% don&apos;t serve the same 50% of users — different salts, different buckets, statistically independent.
 
 ## Combining rules + rollout
 
@@ -125,7 +125,7 @@ Default: bucketing key is `user_id ?? anonymous_id`. Override per-call:
 flags.get("new-team-ui", user);
 ```
 
-Or on the gate itself in the dashboard. Use this in B2B so all teammates of an account see the same variant — half a team on the new UI and half on the old is a confusing user experience and an unanalysable rollout.
+Or on the feature flag itself in the dashboard. Use this in B2B so all teammates of an account see the same variant — half a team on the new UI and half on the old is a confusing user experience and an unanalysable rollout.
 
 <Callout type="warn" title="Don't bucket by mutable attributes">
   Bucketing on <code>email</code> or <code>plan</code> means a user changes bucket whenever the
@@ -135,7 +135,7 @@ Or on the gate itself in the dashboard. Use this in B2B so all teammates of an a
 
 ## First-match-wins evaluation
 
-When a gate has multiple rule **groups** (the dashboard&apos;s &quot;OR an additional cohort&quot; affordance), the SDK evaluates them top to bottom and takes the **first match**. Each group can have its own rollout percentage and bucketing key.
+When a feature flag has multiple rule **groups** (the dashboard&apos;s &quot;OR an additional cohort&quot; affordance), the SDK evaluates them top to bottom and takes the **first match**. Each group can have its own rollout percentage and bucketing key.
 
 ```json title="multi-group rule"
 [
@@ -198,7 +198,7 @@ The dashboard&apos;s **Test evaluator** panel takes a JSON context and shows the
       Promote to an <em>experiment</em>.
     </>
   }
-  body="When you want a defensible answer (not just a ramp), turn the gate into an A/B test and let Shipeasy run the statistics."
+  body="When you want a defensible answer (not just a ramp), turn the feature flag into an A/B test and let Shipeasy run the statistics."
   primaryHref="/flags-experiments/experiments"
   primaryLabel="Experiments"
   secondaryHref="/flags-experiments/decision"

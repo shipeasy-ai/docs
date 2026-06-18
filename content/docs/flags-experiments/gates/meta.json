@@ -1,4 +1,4 @@
 {
-  "title": "Gates",
+  "title": "Feature flags",
   "pages": ["index", "quickstart", "targeting", "rollouts", "overrides"]
 }

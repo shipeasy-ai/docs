@@ -32,7 +32,7 @@ If you need to override the env or base URL (rare — defaults are correct
 for almost everyone), use the lower-level `flags.configure({ apiKey, env,
 baseUrl })` before calling `shipeasy(...)`.
 
-### Evaluating a gate
+### Evaluating a feature flag
 
 ```ts
 const enabled = flags.get("new-checkout-flow", {
@@ -164,7 +164,7 @@ framework provides (Vue's `onMounted` + `onUnmounted`, Svelte's
 
 ### A note on vanilla JS [#vanilla-js]
 
-Every Shipeasy SDK API works from plain JavaScript. You can drop the SDK into a plain `<script>` tag, an Astro island, an HTMX page, or a vanilla TS app, and every primitive — gates, configs, experiments, i18n — works without any framework.
+Every Shipeasy SDK API works from plain JavaScript. You can drop the SDK into a plain `<script>` tag, an Astro island, an HTMX page, or a vanilla TS app, and every primitive — feature flags, configs, experiments, i18n — works without any framework.
 
 ## React Native & mobile [#mobile]
 
@@ -226,7 +226,7 @@ if client.GetFlag("new-checkout-flow", shipeasy.User{"user_id": "u_4f2a", "plan"
 
 ## DevTools overlay [#devtools]
 
-Add `?shipeasy=1` to any URL on a site running the browser SDK and a debugging overlay appears. You can inspect every gate, every config, every label, and **override values locally** — no rule changes, no redeploys, scoped to your browser only.
+Add `?shipeasy=1` to any URL on a site running the browser SDK and a debugging overlay appears. You can inspect every feature flag, every config, every label, and **override values locally** — no rule changes, no redeploys, scoped to your browser only.
 
 ```ts
 import { loadDevtools } from "@shipeasy/sdk/client";

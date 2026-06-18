@@ -204,7 +204,7 @@ If you need to log something sensitive for debugging, log a hash (`sha256(value)
 
 ## Idempotency
 
-`track()` is **not** idempotent — calling it twice logs two events. If a request might retry, gate the call:
+`track()` is **not** idempotent — calling it twice logs two events. If a request might retry, guard the call:
 
 ```ts
 const eventId = `purchase:${orderId}`;

@@ -230,7 +230,7 @@ These are scaffolded against the same MCP surface and ship as the underlying pro
 <TileGrid>
   <Tile
     icon="⌗"
-    title="Gate an existing feature"
+    title="Put a feature behind a feature flag"
     meta={
       <>
         <span>
@@ -241,8 +241,8 @@ These are scaffolded against the same MCP surface and ship as the underlying pro
       </>
     }
   >
-    Pick a code path, create the gate, wrap the call site, default-off, ship. Optional rollout to
-    5%. Uses <code>exp_create_gate</code> + <code>get_sdk_snippet</code>.
+    Pick a code path, create the feature flag, wrap the call site, default-off, ship. Optional
+    rollout to 5%. Uses <code>exp_create_gate</code> + <code>get_sdk_snippet</code>.
   </Tile>
   <Tile
     icon="✦"
@@ -273,8 +273,8 @@ These are scaffolded against the same MCP surface and ship as the underlying pro
       </>
     }
   >
-    Pull flag definitions via LD&apos;s API, map to gates + targeting rules, generate the codemod
-    that swaps SDK call sites, run side-by-side in one environment for sign-off.
+    Pull flag definitions via LD&apos;s API, map to feature flags + targeting rules, generate the
+    codemod that swaps SDK call sites, run side-by-side in one environment for sign-off.
   </Tile>
   <Tile
     icon="◇"
@@ -289,8 +289,9 @@ These are scaffolded against the same MCP surface and ship as the underlying pro
       </>
     }
   >
-    Statsig flags + experiments → Shipeasy gates + universes. Preserves bucketing where possible
-    (deterministic by user_id) and flags any incompatible targeting expressions for human review.
+    Statsig flags + experiments → Shipeasy feature flags + universes. Preserves bucketing where
+    possible (deterministic by user_id) and flags any incompatible targeting expressions for human
+    review.
   </Tile>
 </TileGrid>
 

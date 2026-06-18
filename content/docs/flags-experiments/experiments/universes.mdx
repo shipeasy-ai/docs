@@ -51,7 +51,7 @@ Think of a universe as a population: every eligible user is sliced into one of t
     allocation weights.
   </Tile>
   <Tile
-    href="#targeting-gates-on-universes"
+    href="#targeting-feature-flags-on-universes"
     icon="✎"
     title="Untargeted / unallocated"
     meta={
@@ -62,8 +62,8 @@ Think of a universe as a population: every eligible user is sliced into one of t
       </>
     }
   >
-    Either ineligible (failed the universe's targeting gate) or in the leftover slice of unallocated
-    traffic. Sees the default code path.
+    Either ineligible (failed the universe's targeting feature flag) or in the leftover slice of
+    unallocated traffic. Sees the default code path.
   </Tile>
 </TileGrid>
 
@@ -120,9 +120,9 @@ With mutex on, the post-holdout traffic is sliced into a single number line `[0,
 
 Stop experiment A and the slice between `.05` and `.35` becomes unallocated on the next poll. Add experiment D with 15% allocation and it gets appended to the right of the last allocated slice. Allocations don't reshuffle when other experiments start or stop, which keeps user assignments stable.
 
-## Targeting gates on universes
+## Targeting feature flags on universes
 
-A universe can carry a **targeting gate** — a regular [gate](/configs/gates) that decides whether a user is _eligible_ for the universe at all. Common shapes:
+A universe can carry a **targeting feature flag** — a regular [feature flag](/configs/gates) that decides whether a user is _eligible_ for the universe at all. Common shapes:
 
 - _"Logged-in users only"_ — `attr: user_id, op: neq, value: ""`.
 - _"Pro plan only"_ — `attr: plan, op: eq, value: "pro"`.
@@ -215,8 +215,8 @@ This is the single best argument for keeping a holdout: it's the only way to det
     type="string"
     desc={
       <>
-        Name of a gate that decides eligibility. Users for whom the gate returns <code>false</code>{" "}
-        are excluded entirely (no holdout, no experiment, not in analysis).
+        Name of a feature flag that decides eligibility. Users for whom the feature flag returns{" "}
+        <code>false</code> are excluded entirely (no holdout, no experiment, not in analysis).
       </>
     }
   />
@@ -235,7 +235,7 @@ This is the single best argument for keeping a holdout: it's the only way to det
 
 ## Switching a user out of the holdout
 
-Don't. The point is stability. If a specific user (e.g. an internal account) needs to bypass the holdout, use a [gate override](/configs/gates#overrides) on the universe's targeting gate to exclude them — they'll then be eligible for experiments normally. Manually moving users in and out of the holdout breaks the comparability of every aggregate measurement and is not exposed in the API on purpose.
+Don't. The point is stability. If a specific user (e.g. an internal account) needs to bypass the holdout, use a [feature flag override](/configs/gates#overrides) on the universe's targeting feature flag to exclude them — they'll then be eligible for experiments normally. Manually moving users in and out of the holdout breaks the comparability of every aggregate measurement and is not exposed in the API on purpose.
 
 <Callout type="warn" title="Don't change the universe salt mid-experiment">
   Changing the salt rebuckets every user. Any in-flight experiment in the universe will see its

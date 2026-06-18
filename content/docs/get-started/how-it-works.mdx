@@ -105,7 +105,7 @@ That single rule decides almost every architectural choice — no Durable Object
 
 `apps/ui` is a Next.js 16 app (App Router, React 19) deployed to a Cloudflare Worker via `@opennextjs/cloudflare`. It owns:
 
-- The dashboard UI for gates, configs, experiments, profiles and labels.
+- The dashboard UI for feature flags, configs, experiments, profiles and labels.
 - Server Actions and Route Handlers under `/api/*` — the same endpoints the CLI calls.
 - Auth.js v5 sessions (stateless JWT, 15-minute expiry).
 - The KV rebuild + CDN purge pipeline. Whenever you change a flag, the admin app rebuilds the affected blob and purges the URL.
@@ -130,8 +130,8 @@ The same worker also handles the CLI device-auth flow (`/auth/device/*`) and run
     type="row store"
     desc={
       <>
-        Source of truth — gates, configs, experiments, profiles, keys, exposures, daily results.
-        Schema in <code>packages/core/src/db/schema.ts</code>. Project-scoped via{" "}
+        Source of truth — feature flags, configs, experiments, profiles, keys, exposures, daily
+        results. Schema in <code>packages/core/src/db/schema.ts</code>. Project-scoped via{" "}
         <code>db/scoped.ts</code>.
       </>
     }
@@ -142,8 +142,9 @@ The same worker also handles the CLI device-auth flow (`/auth/device/*`) and run
     type="read cache"
     desc={
       <>
-        Two blobs per project: <code>:flags</code> (gates + configs) and <code>:experiments</code>{" "}
-        (universes + experiments). Plus per-profile chunks for i18n labels.
+        Two blobs per project: <code>:flags</code> (feature flags + configs) and{" "}
+        <code>:experiments</code> (universes + experiments). Plus per-profile chunks for i18n
+        labels.
       </>
     }
   />
@@ -180,9 +181,9 @@ When you flip a flag, six things happen — all within about a second.
     table) is derived from a D1 row.
   </Step>
   <Step title="The config blob is rebuilt">
-    The rebuild helper assembles the full project blob — every gate, every config, every targeting
-    rule — into a single JSON payload. Rebuild is cheap because the project is small; we don&apos;t
-    do partial updates.
+    The rebuild helper assembles the full project blob — every feature flag, every config, every
+    targeting rule — into a single JSON payload. Rebuild is cheap because the project is small; we
+    don&apos;t do partial updates.
   </Step>
   <Step title="The blob is written to KV">
     KV propagation is sub-second between Cloudflare colocations. The blob is small (a few KB for
@@ -215,9 +216,9 @@ The other direction is much shorter — and on purpose.
     `flags.get("new-checkout", {user_id})`. Synchronous. No Promise.
   </Step>
   <Step title="The SDK evaluates locally">
-    The full rule set for every gate in your project lives in process memory. Targeting rules and
-    rollout buckets are evaluated against the user object you passed in. Bucketing is deterministic
-    — same user, same answer, every time.
+    The full rule set for every feature flag in your project lives in process memory. Targeting
+    rules and rollout buckets are evaluated against the user object you passed in. Bucketing is
+    deterministic — same user, same answer, every time.
   </Step>
   <Step title="A background poll keeps the bundle fresh">
     A worker thread (Node) or `setInterval` (browser) re-fetches the config blob on the plan-driven

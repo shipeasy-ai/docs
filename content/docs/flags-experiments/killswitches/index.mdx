@@ -11,18 +11,18 @@ description: A flag with a single job — disable a system instantly during an i
 />
 
 A **killswitch** is a boolean flag with one purpose: be the lever you pull when something is on
-fire. It looks like a [gate](/flags-experiments/gates) but lives in its own list, has no rollout
+fire. It looks like a [feature flag](/flags-experiments/gates) but lives in its own list, has no rollout
 percentage, and defaults to the _safe_ position so on-call doesn't have to think.
 
 ## Why a separate primitive?
 
-Gates have targeting rules, ramps, and dozens of them per project. Killswitches have one switch and
+Feature flags have targeting rules, ramps, and dozens of them per project. Killswitches have one switch and
 a name. Mixing them is dangerous — at 3am you do not want to fat-finger a `--rollout 100` instead of
 `--off`.
 
 <Callout type="warn" title="Rule of thumb">
   If a junior on-call engineer needs to flip this in five seconds without reading the docs, it's a
-  killswitch. Not a gate.
+  killswitch. Not a feature flag.
 </Callout>
 
 ## Anatomy
@@ -60,9 +60,9 @@ a name. Mixing them is dangerous — at 3am you do not want to fat-finger a `--r
    ```
 4. **Recover.** Once the incident is closed, flip it back and post-mortem the audit log.
 
-## Killswitch vs gate vs config
+## Killswitch vs feature flag vs config
 
-| Question                | Killswitch                   | Gate                | Config                                |
+| Question                | Killswitch                   | Feature flag        | Config                                |
 | ----------------------- | ---------------------------- | ------------------- | ------------------------------------- |
 | Output                  | boolean                      | boolean             | typed value (string/number/json/bool) |
 | Targeting rules?        | no                           | yes                 | yes (per-env)                         |
@@ -72,7 +72,7 @@ a name. Mixing them is dangerous — at 3am you do not want to fat-finger a `--r
 
 ## See also
 
-- [Gates](/flags-experiments/gates) — the everyday rollout primitive
+- [Feature flags](/flags-experiments/gates) — the everyday rollout primitive
 - [Decision tree](/flags-experiments/decision) — pick the right primitive for the change you're shipping
 - [API reference](/flags-experiments/api) — `POST /api/admin/killswitches` etc.
 - [CLI](/get-started/cli) — `shipeasy killswitch …` commands

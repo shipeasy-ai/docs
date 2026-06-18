@@ -1,6 +1,6 @@
 ---
 title: Case studies
-description: Real scenarios — when to reach for a gate vs config vs killswitch vs experiment.
+description: Real scenarios — when to reach for a feature flag vs config vs killswitch vs experiment.
 ---
 
 Each case below picks one primitive, names a real-feeling scenario, and shows the code. Use them as
@@ -8,7 +8,8 @@ templates when you're stuck choosing.
 
 <TileGrid>
   <Tile href="#new-checkout" icon="⌗" title="Roll out a redesigned checkout">
-    **Gate** — targeted by country, ramp 5%→25%→100% over a week. Sticky bucketing per `userId`.
+    **Feature flag** — targeted by country, ramp 5%→25%→100% over a week. Sticky bucketing per
+    `userId`.
   </Tile>
   <Tile href="#hero-copy" icon="⚙" title="Change homepage hero copy">
     **Config** — typed string, no code change to swap copy.
@@ -21,7 +22,7 @@ templates when you're stuck choosing.
     ship.
   </Tile>
   <Tile href="#beta-feature" icon="⌗" title="Open a beta to allow-listed accounts">
-    **Gate** — targeting rule on `account.plan IN ['beta-tester']`, no rollout %.
+    **Feature flag** — targeting rule on `account.plan IN ['beta-tester']`, no rollout %.
   </Tile>
   <Tile href="#search-relevance" icon="◈" title="Tune search ranking weights">
     **Experiment** + **Config** — config supplies the weights, experiment splits which weight set
@@ -36,11 +37,11 @@ real money-spending users without redeploying twelve times and without one rare 
 torching your conversion rate for a day before you notice.
 
 **The choice:** ship the rewrite progressively without a redeploy each ramp step.
-**The primitive:** Gate.
+**The primitive:** Feature flag.
 **Why not experiment?** You already know v2 is the future. You just don't want to break carts on
 the way. No statistical question — you're ramping for safety, not for an answer.
 
-A gate gives you two knobs: a targeting rule (who's eligible at all) and a rollout percentage (of
+A feature flag gives you two knobs: a targeting rule (who's eligible at all) and a rollout percentage (of
 the eligible, how many actually get the new path). Target safe geographies first — countries
 where you control the payment integration end-to-end — then ramp the percentage as your dashboards
 stay green. Each step is a dashboard click, not a deploy.
@@ -72,7 +73,7 @@ Tuesday. Solve once: read the string from a config, let marketing edit it in the
 touch the deploy pipeline again.
 
 **The primitive:** Config.
-**Why not gate?** Gates are boolean. The thing you actually want to change is the _string_.
+**Why not a feature flag?** Feature flags are boolean. The thing you actually want to change is the _string_.
 
 ```ts
 import { flags } from "@shipeasy/sdk/server";
@@ -105,7 +106,7 @@ same "your order has shipped" email seven times. You need one switch to stop the
 you call the vendor.
 
 **The primitive:** Killswitch.
-**Why not gate?** A 3am on-call shouldn't have to think about rollout percentages. Killswitches
+**Why not a feature flag?** A 3am on-call shouldn't have to think about rollout percentages. Killswitches
 have one switch — on or off — and they're audited so you have a paper trail of who flipped what
 when.
 
@@ -124,7 +125,7 @@ export async function sendOrderEmail(order: Order) {
 ```
 
 Killswitches are a dedicated primitive — created via `shipeasy killswitches create` in the CLI and
-read with `flags.ks(name)` from the server SDK. Unlike gates, they don't take a user context and
+read with `flags.ks(name)` from the server SDK. Unlike feature flags, they don't take a user context and
 they don't bucket: every caller sees the same answer the instant the flip propagates (within the
 next SDK poll). The default is fail-open: until you flip the switch, every read returns `false`
 and the protected code path keeps running.
@@ -140,7 +141,7 @@ anchor is moved, your designer is sure of it. You can't ship the new one as-is b
 worse you've thrown away real revenue while you waited to notice.
 
 **The primitive:** Experiment.
-**Why not gate?** You don't know the answer yet. You need a confidence interval to decide.
+**Why not a feature flag?** You don't know the answer yet. You need a confidence interval to decide.
 
 ```ts
 import { flags } from "@shipeasy/sdk/server";
@@ -162,7 +163,7 @@ flags.track(userId, "paywall_converted", { revenueCents: order.totalCents });
 Set the **primary metric** to `paywall_converted` and the universe split to 50/50. Let it run
 until the daily analysis page shows p&lt;0.05 _and_ the minimum-detectable-effect you committed to
 before launch. Don't peek; don't stop early on a "looking good" day-three reading. The whole point
-of running an experiment instead of a gate is the discipline of waiting for the answer.
+of running an experiment instead of a feature flag is the discipline of waiting for the answer.
 
 If the result comes back negative, ship `variant: "control"` to 100% (it already is) and write a
 short doc about why the hypothesis was wrong. That doc is worth more than the experiment.
@@ -173,7 +174,7 @@ A handful of design-partner customers want early access to a feature you're not 
 everyone. You don't want a deploy step every time you add or remove an account. You want a list
 you can edit.
 
-**The primitive:** Gate.
+**The primitive:** Feature flag.
 **The trick:** targeting rule on an account attribute, rollout fixed at 100% of the matched set.
 
 ```ts
@@ -193,7 +194,7 @@ return <AnalyticsV1 />;
 In the dashboard, write the targeting rule against an attribute you actually maintain — e.g.
 `account.tier IN ['beta']` — and set rollout to 100%. Adding a customer to the beta becomes "set
 their tier to beta in your own database" (which you probably already have a workflow for) rather
-than "redeploy with a new array literal." When you graduate the feature, drop the gate; don't
+than "redeploy with a new array literal." When you graduate the feature, drop the feature flag; don't
 leave it sitting at 100% forever as dead conditional.
 
 ## Tune search ranking weights [#search-relevance]
@@ -235,11 +236,16 @@ sub-menu. Each shows a less obvious use of the tool, including the wiring that's
 wrong the first time.
 
 <TileGrid>
-  <Tile href="#progressive-region-rollout" icon="◇" title="Gates → progressive region rollout">
-    **Gate + targeting** — ramp by country list rather than percentage, expand the list weekly.
+  <Tile
+    href="#progressive-region-rollout"
+    icon="◇"
+    title="Feature flags → progressive region rollout"
+  >
+    **Feature flag + targeting** — ramp by country list rather than percentage, expand the list
+    weekly.
   </Tile>
-  <Tile href="#sdk-version-gate" icon="◈" title="Gates → block stale mobile clients">
-    **Gate + semverGte** — disable a feature for app versions below a known-fixed build.
+  <Tile href="#sdk-version-gate" icon="◈" title="Feature flags → block stale mobile clients">
+    **Feature flag + semverGte** — disable a feature for app versions below a known-fixed build.
   </Tile>
   <Tile href="#pricing-config" icon="⚙" title="Configs → safe price changes">
     **Config + audit log** — change prices without deploys, with full who-changed-what trail.
@@ -261,11 +267,11 @@ You've got a new shipping integration that's been built region-by-region. You do
 ramp — you want to expand the _country list_ as each region's integration is qualified, with the
 percentage fixed at 100% of the matched set.
 
-**The primitive:** Gate.
+**The primitive:** Feature flag.
 **The mechanic:** ramp by widening the targeting rule, not by raising the rollout percentage.
 
-CLI `flags update` isn't shipped — edit the gate's targeting rules in
-the dashboard (Gates → intl-shipping → Targeting), or PATCH via the
+CLI `flags update` isn't shipped — edit the feature flag's targeting rules in
+the dashboard (Feature flags → intl-shipping → Targeting), or PATCH via the
 [Admin API](/flags-experiments/api):
 
 ```bash
@@ -297,7 +303,7 @@ catch your DE integration in a state where it's only ready for the US — a perc
 you. Targeting by country gives you explicit, auditable control of which regions are live.
 
 When the launch is complete, PATCH the rules array to `[]` (or clear targeting from the dashboard)
-and leave the gate at 100% as a kill-switch lever for incidents.
+and leave the feature flag at 100% as a kill-switch lever for incidents.
 
 ## Block stale mobile clients [#sdk-version-gate]
 
@@ -305,7 +311,7 @@ A bug in v2.4.1 of your mobile app sends malformed payment payloads. v2.4.2 is f
 via the app store, but old clients are stuck. You need server-side enforcement: refuse the bad
 path on the API for clients below v2.4.2.
 
-**The primitive:** Gate with a `semverGte` rule on the client's reported version.
+**The primitive:** Feature flag with a `semverGte` rule on the client's reported version.
 
 ```ts title="apps/api/checkout/route.ts"
 import { flags } from "@shipeasy/sdk/server";
@@ -332,7 +338,7 @@ Rollout: 100%
 ```
 
 A user on v2.4.1 fails the rule → falls out of eligibility → gets the upgrade message. A user on
-v2.5.3 passes → flows through. No code change is needed when v2.4.3 ships; the gate stays at
+v2.5.3 passes → flows through. No code change is needed when v2.4.3 ships; the feature flag stays at
 `semverGte 2.4.2` until you decide to raise the floor.
 
 The trick that's easy to miss: `semverGte` is in [Targeting rules](/flags-experiments/gates/targeting#operators).
@@ -428,7 +434,7 @@ The schema gives you two safety properties: a fat-fingered key in the dashboard 
 garbage (the schema check rejects it and the banner stays hidden), and `expiresAt` means ops can
 schedule the banner to disappear without needing to remember to turn it off.
 
-Don't reach for a gate for this. A gate is a boolean — you'd then need a _second_ config for the
+Don't reach for a feature flag for this. A feature flag is a boolean — you'd then need a _second_ config for the
 payload, and now two things must be in sync. One typed config is the smaller, more honest pattern.
 
 ## Measure quarterly cumulative lift [#quarterly-holdout]

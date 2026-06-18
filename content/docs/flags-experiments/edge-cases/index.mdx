@@ -214,11 +214,12 @@ this code do if Shipeasy is dead?" and it should be readable next to the code th
 ## More edge cases
 
 The six below are the second wave — failure modes that bite once you've shipped a few experiments
-and a dozen gates, not on day one. One per primitive in this section's sub-menu.
+and a dozen feature flags, not on day one. One per primitive in this section's sub-menu.
 
 <TileGrid>
-  <Tile href="#gate-sprawl" icon="◇" title="Gates → flag sprawl">
-    Dead gates at 100% are technical debt. How to find them and rip them out without breaking code.
+  <Tile href="#gate-sprawl" icon="◇" title="Feature flags → flag sprawl">
+    Dead feature flags at 100% are technical debt. How to find them and rip them out without
+    breaking code.
   </Tile>
   <Tile href="#config-schema-drift" icon="⚙" title="Configs → schema drift">
     A dashboard value that no longer matches your code's expected shape. Schema validation +
@@ -239,32 +240,32 @@ and a dozen gates, not on day one. One per primitive in this section's sub-menu.
   </Tile>
 </TileGrid>
 
-## Gate sprawl [#gate-sprawl]
+## Feature flag sprawl [#gate-sprawl]
 
-After 12 months of shipping, you have 187 gates. Half are at 100% and have been for months. The
+After 12 months of shipping, you have 187 feature flags. Half are at 100% and have been for months. The
 code that reads them is dead conditionals — a branch the linter still respects but no human will
 ever take.
 
 That's not aesthetic — it's a real cost:
 
 - Every `if (await gate(...))` adds a layer of indirection in code review. New engineers spend
-  time tracing why a 100% gate exists before realising it's dead.
-- Removed features that left their gates behind become Chesterton's-fence puzzles — was this
+  time tracing why a 100% feature flag exists before realising it's dead.
+- Removed features that left their feature flags behind become Chesterton's-fence puzzles — was this
   rolled back? Is it still in flight? Nobody remembers.
-- Stale gates are still polled. The KV bundle isn't _huge_, but every gate's targeting rules and
+- Stale feature flags are still polled. The KV bundle isn't _huge_, but every feature flag's targeting rules and
   override list ship with every poll.
 
-The Shipeasy **Cleanup** view surfaces candidates: gates at 100% or 0% for more than 30 days,
+The Shipeasy **Cleanup** view surfaces candidates: feature flags at 100% or 0% for more than 30 days,
 with no targeting rule changes in 60 days. Run through it monthly. For each candidate, three
 options:
 
-1. **Delete.** The default. The gate is at 100% (or 0%), the code branch behind it is settled —
-   rip out the conditional, delete the gate.
-2. **Convert to a killswitch.** If the gate is "at 100% but you want to keep the lever," promote
+1. **Delete.** The default. The feature flag is at 100% (or 0%), the code branch behind it is settled —
+   rip out the conditional, delete the feature flag.
+2. **Convert to a killswitch.** If the feature flag is "at 100% but you want to keep the lever," promote
    it to a killswitch. Different semantics, different sub-menu, signals to the team it's
    incident-grade.
 3. **Document why it stays.** Rare — usually because of a planned future change. Add a note to
-   the gate description so a future cleanup pass doesn't axe it by mistake.
+   the feature flag description so a future cleanup pass doesn't axe it by mistake.
 
 Automate step 1 with the CLI:
 
@@ -284,7 +285,7 @@ shipeasy flags delete checkout-v2
 shipeasy flags delete new-search
 ```
 
-The grep step is non-negotiable. Deleting a gate that's still referenced in code is fine
+The grep step is non-negotiable. Deleting a feature flag that's still referenced in code is fine
 (the SDK returns the `defaultValue`), but you want the dead conditional gone too — otherwise
 you've just moved the technical debt.
 
@@ -499,19 +500,19 @@ neutral." It wasn't neutral; it was inconclusive. The dashboard tags this state 
 
 ## Cross-env flag drift [#env-drift]
 
-You changed a gate in production. The same gate in staging is still on the old config. A week
+You changed a feature flag in production. The same feature flag in staging is still on the old config. A week
 later, a new dev tests against staging, sees v1 behaviour, ships code that depends on v1,
 production breaks because production is on v2.
 
-The cause is straightforward: gate config is per-environment, and there's no automatic sync.
+The cause is straightforward: feature flag config is per-environment, and there's no automatic sync.
 
 Three patterns to keep envs aligned:
 
 ### 1. Mirror writes per-env
 
-Today gates live at the project scope (not per-env) — the same rollout %
+Today feature flags live at the project scope (not per-env) — the same rollout %
 applies in staging and prod. To run different rollouts per env, create a
-sibling gate per env (e.g. `checkout-v2.staging`, `checkout-v2.prod`)
+sibling feature flag per env (e.g. `checkout-v2.staging`, `checkout-v2.prod`)
 and pin the SDK to the matching name based on which env's SDK key it's
 booted with:
 
@@ -520,7 +521,7 @@ shipeasy flags rollout checkout-v2.staging 100
 shipeasy flags rollout checkout-v2.prod 25
 ```
 
-Per-env values on a single gate is on the roadmap — until then, the
+Per-env values on a single feature flag is on the roadmap — until then, the
 naming convention is what enforces the boundary.
 
 ### 2. Diff env state by hand

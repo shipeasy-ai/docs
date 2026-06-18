@@ -10,7 +10,7 @@ description: The in-dashboard AI assistant — what you can ask, what it renders
       Describe the outcome. <em>It</em> wires up the flags, experiments, and metrics.
     </>
   }
-  subtitle="A chat assistant built into the dashboard. It reads your project to answer questions, and proposes every change as a card you confirm — gates, configs, kill switches, experiments, metrics, and alert rules. Nothing happens until you approve it."
+  subtitle="A chat assistant built into the dashboard. It reads your project to answer questions, and proposes every change as a card you confirm — feature flags, configs, kill switches, experiments, metrics, and alert rules. Nothing happens until you approve it."
   primaryHref="#what-it-produces"
   primaryLabel="What it can produce"
   secondaryHref="#measurement-plans"
@@ -53,7 +53,7 @@ kept out of the answer; if the model thinks, it's tucked behind a dim "Thought f
 ### Thinking trace
 
 While it works, each read action shows as a trace line that resolves with a check mark — so you can
-see exactly what it looked at (your gates, an experiment's enrolment, a page on your site).
+see exactly what it looked at (your feature flags, an experiment's enrolment, a page on your site).
 
 ### Choice chooser
 
@@ -67,8 +67,9 @@ Any change is an editable card. Tweak the fields, then **Confirm** to apply or *
 The assistant can propose:
 
 <TileGrid>
-  <Tile href="/flags-experiments/gates" icon="⌘" title="Feature gates">
-    Create, update, enable/disable, or delete a gate — rollout %, targeting rules, environments.
+  <Tile href="/flags-experiments/gates" icon="⌘" title="Feature flags">
+    Create, update, enable/disable, or delete a feature flag — rollout %, targeting rules,
+    environments.
   </Tile>
   <Tile href="/flags-experiments/configs" icon="⚙" title="Dynamic configs">
     Create, update, or delete a typed config value with targeting.
@@ -77,8 +78,8 @@ The assistant can propose:
     Create/update/delete a kill switch, or flip a named per-key override on one environment.
   </Tile>
   <Tile href="/flags-experiments/experiments" icon="🧪" title="Experiments">
-    Draft an A/B experiment (groups, allocation, targeting gate, success metric), update it, or
-    start/stop it.
+    Draft an A/B experiment (groups, allocation, targeting feature flag, success metric), update it,
+    or start/stop it.
   </Tile>
   <Tile href="/flags-experiments/experiments/universes" icon="🌐" title="Universes">
     Create, update, or delete a universe (the holdout boundary experiments share).
@@ -145,7 +146,7 @@ until you refill.
 
 <CardGrid>
   <Card href="/flags-experiments" eyebrow="Create" title="Flags & experiments">
-    What the gate / config / experiment cards produce, and how rollouts and analysis work.
+    What the feature flag / config / experiment cards produce, and how rollouts and analysis work.
   </Card>
   <Card href="/flags-experiments/metrics" eyebrow="Measure" title="Metrics">
     How event-backed metrics and the metric DSL work — what the assistant builds for a plan.

@@ -57,7 +57,7 @@ _No parameters._
 
 ### `list_resources`
 
-Unified listing across gates, configs, experiments, events, metrics, alert_rules, universes, attributes, i18n profiles/chunks/keys/drafts, and sdk_keys.
+Unified listing across feature flags, configs, experiments, events, metrics, alert_rules, universes, attributes, i18n profiles/chunks/keys/drafts, and sdk_keys.
 
 | Parameter |          | Type                                                                                                                                                                                    | Description |
 | --------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
@@ -91,11 +91,11 @@ Return ready-to-paste install / env-vars / init / usage / tracking code for the 
 
 ## Flags & experiments
 
-Create and manage gates, dynamic configs, kill switches, universes, experiments, and alert rules.
+Create and manage feature flags, dynamic configs, kill switches, universes, experiments, and alert rules.
 
 ### `exp_create_gate`
 
-Create a feature gate with targeting rules and rollout percentage.
+Create a feature flag with targeting rules and rollout percentage.
 
 | Parameter     |          | Type     | Description               |
 | ------------- | -------- | -------- | ------------------------- |
@@ -106,7 +106,7 @@ Create a feature gate with targeting rules and rollout percentage.
 
 ### `exp_update_gate`
 
-Update a feature gate's rollout, rules, or enabled flag.
+Update a feature flag's rollout, rules, or enabled flag.
 
 | Parameter |          | Type      | Description      |
 | --------- | -------- | --------- | ---------------- |
@@ -168,7 +168,7 @@ Remove one switch entry from one env. Falls back to the default value.
 
 ### `exp_delete_gate`
 
-Delete a feature gate by name. Refuses if used by a running experiment.
+Delete a feature flag by name. Refuses if used by a running experiment.
 
 | Parameter |          | Type     | Description |
 | --------- | -------- | -------- | ----------- |
@@ -231,7 +231,7 @@ Delete a universe by name. Refuses if any experiment still references it.
 
 ### `exp_create_experiment`
 
-Create an experiment draft with groups, params, optional targeting gate, and a success (goal) metric. Pass success_event (+ success_aggregation) to attach the goal metric inline — required before the experiment can be started. Does NOT start — call exp_start_experiment.
+Create an experiment draft with groups, params, optional targeting feature flag, and a success (goal) metric. Pass success_event (+ success_aggregation) to attach the goal metric inline — required before the experiment can be started. Does NOT start — call exp_start_experiment.
 
 | Parameter             |          | Type                                                                                     | Description                                                                                                                           |
 | --------------------- | -------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
@@ -248,20 +248,20 @@ Create an experiment draft with groups, params, optional targeting gate, and a s
 
 ### `exp_update_experiment`
 
-Update a draft (or running) experiment's allocation, groups, targeting gate, stats thresholds, or goal metric. Pass success_event (+ success_aggregation) to attach/replace the goal metric — use this to make a draft startable when it's missing one.
+Update a draft (or running) experiment's allocation, groups, targeting feature flag, stats thresholds, or goal metric. Pass success_event (+ success_aggregation) to attach/replace the goal metric — use this to make a draft startable when it's missing one.
 
-| Parameter                |          | Type                                                                                     | Description                                                                                        |
-| ------------------------ | -------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `name`                   | required | `string`                                                                                 | —                                                                                                  |
-| `allocation`             | optional | `number`                                                                                 | 0–100                                                                                              |
-| `groups`                 | optional | `string`                                                                                 | JSON [\{name,weight,params\}]                                                                      |
-| `targeting_gate`         | optional | `string`                                                                                 | Gate name; pass empty string or omit to leave unchanged; pass the literal 'none' to clear the gate |
-| `significance_threshold` | optional | `number`                                                                                 | 0.0001–0.5                                                                                         |
-| `min_runtime_days`       | optional | `number`                                                                                 | —                                                                                                  |
-| `min_sample_size`        | optional | `number`                                                                                 | —                                                                                                  |
-| `success_event`          | optional | `string`                                                                                 | Event name for the goal metric. Attaches/replaces the role=goal metric.                            |
-| `success_aggregation`    | optional | `"count_users" \| "count_events" \| "sum" \| "avg" \| "retention_7d" \| "retention_30d"` | Goal-metric reducer. Defaults to count_users when success_event is set.                            |
-| `success_value`          | optional | `string`                                                                                 | Numeric event property to reduce over. Required only for sum / avg.                                |
+| Parameter                |          | Type                                                                                     | Description                                                                                                        |
+| ------------------------ | -------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `name`                   | required | `string`                                                                                 | —                                                                                                                  |
+| `allocation`             | optional | `number`                                                                                 | 0–100                                                                                                              |
+| `groups`                 | optional | `string`                                                                                 | JSON [\{name,weight,params\}]                                                                                      |
+| `targeting_gate`         | optional | `string`                                                                                 | Feature flag name; pass empty string or omit to leave unchanged; pass the literal 'none' to clear the feature flag |
+| `significance_threshold` | optional | `number`                                                                                 | 0.0001–0.5                                                                                                         |
+| `min_runtime_days`       | optional | `number`                                                                                 | —                                                                                                                  |
+| `min_sample_size`        | optional | `number`                                                                                 | —                                                                                                                  |
+| `success_event`          | optional | `string`                                                                                 | Event name for the goal metric. Attaches/replaces the role=goal metric.                                            |
+| `success_aggregation`    | optional | `"count_users" \| "count_events" \| "sum" \| "avg" \| "retention_7d" \| "retention_30d"` | Goal-metric reducer. Defaults to count_users when success_event is set.                                            |
+| `success_value`          | optional | `string`                                                                                 | Numeric event property to reduce over. Required only for sum / avg.                                                |
 
 ### `exp_delete_experiment`
 

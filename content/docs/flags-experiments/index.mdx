@@ -10,7 +10,7 @@ description: One product, four primitives. Pick the right one for the change you
       Ship behind a flag, measure with stats, kill instantly — <em>no redeploy</em>.
     </>
   }
-  subtitle="Four primitives that share one SDK and one API key: gates for ramps, configs for typed values, killswitches for break-glass, experiments for A/B tests with automated p-values."
+  subtitle="Four primitives that share one SDK and one API key: feature flags for ramps, configs for typed values, killswitches for break-glass, experiments for A/B tests with automated p-values."
   primaryHref="/flags-experiments/getting-started"
   primaryLabel="Getting started"
   secondaryHref="/flags-experiments/decision"
@@ -30,7 +30,7 @@ description: One product, four primitives. Pick the right one for the change you
   <Tile
     href="/flags-experiments/gates"
     icon="⌗"
-    title="Gates — boolean flags"
+    title="Feature flags — boolean flags"
     meta={
       <>
         <span>
@@ -75,8 +75,8 @@ description: One product, four primitives. Pick the right one for the change you
       </>
     }
   >
-    A flag with a single job: disable a system in an incident. Separate from gates so on-call
-    doesn't have to think about rollout percentages at 3am.
+    A flag with a single job: disable a system in an incident. Separate from feature flags so
+    on-call doesn't have to think about rollout percentages at 3am.
   </Tile>
   <Tile
     href="/flags-experiments/experiments"
@@ -111,8 +111,12 @@ Writes you make in the dashboard or CLI propagate worldwide in under a second.
   <Card href="/flags-experiments/getting-started" eyebrow="Step 1" title="Install & configure">
     `npm install @shipeasy/sdk` and one `shipeasy()` call.
   </Card>
-  <Card href="/flags-experiments/gates/quickstart" eyebrow="Step 2" title="Ship your first gate">
-    Five-minute walkthrough. Create, gate code, ramp.
+  <Card
+    href="/flags-experiments/gates/quickstart"
+    eyebrow="Step 2"
+    title="Ship your first feature flag"
+  >
+    Five-minute walkthrough. Create, put a feature flag around your code, ramp.
   </Card>
   <Card href="/flags-experiments/experiments/quickstart" eyebrow="Step 3" title="Run an experiment">
     Pick a metric, define a variant, watch the p-value.

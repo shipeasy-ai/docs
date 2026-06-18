@@ -12,7 +12,7 @@ the decision guide: when to add one, what to put behind it, and how to keep them
 ## What deserves a killswitch
 
 The rule of thumb: **if a junior engineer on-call would need to flip this in five seconds without
-reading the docs, it's a killswitch.** Otherwise it's a gate.
+reading the docs, it's a killswitch.** Otherwise it's a feature flag.
 
 Concrete examples that _do_ deserve one:
 
@@ -27,12 +27,12 @@ Concrete examples that _do_ deserve one:
 
 Examples that should _not_ be killswitches:
 
-- **Feature rollouts.** That's what gates are for. A killswitch has no rollout percentage by
+- **Feature rollouts.** That's what feature flags are for. A killswitch has no rollout percentage by
   design — you can't ramp it.
 - **A/B variant selection.** Use an experiment. A killswitch can't express "50% see A, 50% see B."
 - **Permission checks.** Killswitches bypass on incident, which is the opposite of what you want
   from an authz check.
-- **Anything you'd put behind a feature flag _and_ might never flip.** That's a config or a gate.
+- **Anything you'd put behind a feature flag _and_ might never flip.** That's a config or a feature flag.
 
 ## Fail-safe defaults
 
@@ -96,7 +96,7 @@ A killswitch flipped during an incident, the team fixed the underlying bug, and 
 back on. Two cleanup steps that often get skipped:
 
 1. **Verify the killswitch still works.** A flipped-then-restored killswitch sometimes drifts —
-   maybe someone removed the in-code gate during the fix, or the webhook moved. Re-rehearse the
+   maybe someone removed the in-code feature flag during the fix, or the webhook moved. Re-rehearse the
    flip in staging within a week.
 2. **Update the runbook.** What was the trigger for this flip? Add it to the on-call runbook so
    the next engineer doesn't have to figure it out from scratch. The audit log entry is the raw

@@ -25,13 +25,13 @@ description: Install the SDK, configure once, ship a flag — under five minutes
 import { shipeasy } from '@shipeasy/sdk/server';
 await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? '' });"
 >
-  Gates, configs, experiments, and killswitches all share this single `apiKey`.
+  Feature flags, configs, experiments, and killswitches all share this single `apiKey`.
 </QuickstartStep>
 
 <QuickstartStep
   num={4}
   label="SHIP"
-  title="Create your first gate"
+  title="Create your first feature flag"
   cmd="shipeasy flags create checkout-v2 --rollout 5"
 >
   Changes you make are visible to your SDK worldwide in under a second.
@@ -40,7 +40,7 @@ await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? '' });"
   <QuickstartStep
     num={5}
     label="USE"
-    title="Gate code in your app"
+    title="Put a feature flag around code in your app"
     cmd="import { gate } from '@shipeasy/sdk/server';
 if (await gate('checkout-v2', { userId })) {
   return renderCheckoutV2();
@@ -54,15 +54,15 @@ if (await gate('checkout-v2', { userId })) {
 
 <CardGrid>
   <Card href="/flags-experiments/decision" eyebrow="Pick the right tool" title="Which primitive?">
-    Decision tree mapping "I want to do X" to gate vs config vs killswitch vs experiment.
+    Decision tree mapping "I want to do X" to feature flag vs config vs killswitch vs experiment.
   </Card>
-  <Card href="/flags-experiments/gates" eyebrow="Deep dive" title="Gates — boolean flags">
+  <Card href="/flags-experiments/gates" eyebrow="Deep dive" title="Feature flags — boolean flags">
     Targeting rules, rollout percentages, hashing, sticky bucketing.
   </Card>
   <Card href="/flags-experiments/experiments" eyebrow="Deep dive" title="Experiments — A/B tests">
     Universes, holdouts, metrics, and how daily statistical analysis works.
   </Card>
   <Card href="/get-started/cli" eyebrow="Reference" title="CLI commands">
-    Every gate / config / experiment / killswitch verb the CLI exposes.
+    Every feature flag / config / experiment / killswitch verb the CLI exposes.
   </Card>
 </CardGrid>

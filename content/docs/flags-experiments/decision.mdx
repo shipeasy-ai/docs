@@ -1,6 +1,6 @@
 ---
 title: Which primitive should I use?
-description: Decision tree — map your goal to gates, configs, killswitches, or experiments.
+description: Decision tree — map your goal to feature flags, configs, killswitches, or experiments.
 ---
 
 You have a change to ship. Which Shipeasy primitive fits? Walk the tree.
@@ -10,7 +10,7 @@ You have a change to ship. Which Shipeasy primitive fits? Walk the tree.
 ## Cheat sheet
 
 <TileGrid>
-  <Tile href="/flags-experiments/gates" icon="⌗" title="Gate">
+  <Tile href="/flags-experiments/gates" icon="⌗" title="Feature flag">
     *"Show v2 of checkout to 5% of EU users."* Boolean output. Targeting rules + rollout %.
   </Tile>
   <Tile href="/flags-experiments/configs" icon="⚙" title="Config">
@@ -27,17 +27,17 @@ You have a change to ship. Which Shipeasy primitive fits? Walk the tree.
 
 ## Common mistakes
 
-<Callout type="warn" title="Using a gate when you should be using a config">
+<Callout type="warn" title="Using a feature flag when you should be using a config">
   If your code reads `if (gate) value = 'A' else value = 'B'`, you've smuggled a value through a
   boolean. Use a **config** — schema-validated, typed, supports more than two values.
 </Callout>
 
-<Callout type="warn" title="Using a gate when you should be using an experiment">
+<Callout type="warn" title="Using a feature flag when you should be using an experiment">
   If you're using a 50% rollout to "see if v2 is better", you have no statistical guarantee. Use an
   **experiment** — same UX, but you get a p-value and a confidence interval back.
 </Callout>
 
-<Callout type="warn" title="Using a gate when you should be using a killswitch">
-  Page-at-3am gates blur incident response. Killswitches sit in their own list, default to "on", and
-  don't have ramp percentages to fat-finger.
+<Callout type="warn" title="Using a feature flag when you should be using a killswitch">
+  Page-at-3am feature flags blur incident response. Killswitches sit in their own list, default to
+  "on", and don't have ramp percentages to fat-finger.
 </Callout>

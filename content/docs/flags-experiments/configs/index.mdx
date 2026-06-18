@@ -60,11 +60,11 @@ const limits = await config<{ maxItems: number; maxPrice: number }>("checkout.li
 
 Sub-millisecond evaluation — no per-request fetch from your code.
 
-## Configs vs gates
+## Configs vs feature flags
 
 Both are typed values you can change without a redeploy. Pick by the **shape of the answer**:
 
-| Question            | Gate               | Config                                 |
+| Question            | Feature flag       | Config                                 |
 | ------------------- | ------------------ | -------------------------------------- |
 | Output              | boolean            | `string` / `number` / `boolean` / JSON |
 | Targeting rules?    | yes                | no — values are global                 |
@@ -75,5 +75,5 @@ Both are typed values you can change without a redeploy. Pick by the **shape of 
 
 - [Quickstart](/flags-experiments/configs/quickstart) — create your first config in 5 minutes
 - [Values](/flags-experiments/configs/values) — schema validation, JSON shapes, complex configs
-- [Targeting](/flags-experiments/configs/targeting) — when you need targeting, reach for a gate
-- [Decision tree](/flags-experiments/decision) — gate vs config vs killswitch vs experiment
+- [Targeting](/flags-experiments/configs/targeting) — when you need targeting, reach for a feature flag
+- [Decision tree](/flags-experiments/decision) — feature flag vs config vs killswitch vs experiment

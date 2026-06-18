@@ -148,8 +148,9 @@ That&apos;s the whole runway from zero to working. Everything below is detail.
 
 <Callout type="warn" title="Two kinds of keys — server vs client">
   **Server keys** can read full payloads and write events. **Client keys** are scoped: they expose
-  only the gates and configs you mark _client-readable_, and they rate-limit by domain. Never put a
-  server key in browser code. Manage both in **Project → SDK keys**, or with `shipeasy keys`.
+  only the feature flags and configs you mark _client-readable_, and they rate-limit by domain.
+  Never put a server key in browser code. Manage both in **Project → SDK keys**, or with `shipeasy
+  keys`.
 </Callout>
 
 ## CLI [#cli]

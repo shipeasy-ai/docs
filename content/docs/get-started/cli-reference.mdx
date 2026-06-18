@@ -285,7 +285,7 @@ shipeasy modules disable experiments
 
 ## flags
 
-Manage feature flags (gates)
+Manage feature flags
 
 ### `shipeasy flags list`
 
@@ -560,9 +560,9 @@ shipeasy killswitch delete payments.stripe-gateway
 
 Set or update one switch entry on one env (default env=prod)
 
-A kill switch is a named set of boolean **switches** that ship in the flags KV blob alongside gates and configs, so the SDK reads them with no extra round-trip. Each switch is keyed by `switch_key` and scoped per environment (`dev` / `staging` / `prod`) — so you can flip one dependency off in `prod` while leaving `staging` running. `set` creates or updates a single switch entry; the value is coerced (`true/1/on` → true, `false/0/off` → false).
+A kill switch is a named set of boolean **switches** that ship in the flags KV blob alongside feature flags and configs, so the SDK reads them with no extra round-trip. Each switch is keyed by `switch_key` and scoped per environment (`dev` / `staging` / `prod`) — so you can flip one dependency off in `prod` while leaving `staging` running. `set` creates or updates a single switch entry; the value is coerced (`true/1/on` → true, `false/0/off` → false).
 
-See [Kill switches](/flags-experiments/killswitches) for the full model — when to reach for a kill switch vs. a gate at 0%, and how switches evaluate at the edge.
+See [Kill switches](/flags-experiments/killswitches) for the full model — when to reach for a kill switch vs. a feature flag at 0%, and how switches evaluate at the edge.
 
 ```bash
 shipeasy killswitch set [options] <name> <switch_key> <value>
@@ -659,7 +659,7 @@ shipeasy experiments create [options] <name>
 | `--allocation <pct>`      | optional | Allocation percentage (0-100) (default: `"100"`) |
 | `--groups <json>`         | optional | Groups as JSON [\{name,weight,params\}]          |
 | `--params <json>`         | optional | Parameter schema \{name: type\}                  |
-| `--targeting-gate <name>` | optional | Targeting gate name                              |
+| `--targeting-gate <name>` | optional | Targeting feature flag name                      |
 | `--salt <s>`              | optional | Override hash salt                               |
 | `--json`                  | optional | Output as JSON                                   |
 | `--project <id>`          | optional | Project ID override                              |
@@ -687,17 +687,17 @@ shipeasy experiments update [options] <name>
 | -------- | -------- | ----------- |
 | `name`   | required | —           |
 
-| Option                    |          | Description                               |
-| ------------------------- | -------- | ----------------------------------------- |
-| `--allocation <pct>`      | optional | Allocation percentage (0-100)             |
-| `--groups <json>`         | optional | Groups as JSON [\{name,weight,params\}]   |
-| `--params <json>`         | optional | Parameter schema \{name: type\}           |
-| `--targeting-gate <name>` | optional | Targeting gate name (use 'null' to clear) |
-| `--significance <p>`      | optional | Significance threshold (0.0001-0.5)       |
-| `--min-runtime-days <n>`  | optional | Minimum runtime in days                   |
-| `--min-sample-size <n>`   | optional | Minimum sample size                       |
-| `--json`                  | optional | Output as JSON                            |
-| `--project <id>`          | optional | Project ID override                       |
+| Option                    |          | Description                                       |
+| ------------------------- | -------- | ------------------------------------------------- |
+| `--allocation <pct>`      | optional | Allocation percentage (0-100)                     |
+| `--groups <json>`         | optional | Groups as JSON [\{name,weight,params\}]           |
+| `--params <json>`         | optional | Parameter schema \{name: type\}                   |
+| `--targeting-gate <name>` | optional | Targeting feature flag name (use 'null' to clear) |
+| `--significance <p>`      | optional | Significance threshold (0.0001-0.5)               |
+| `--min-runtime-days <n>`  | optional | Minimum runtime in days                           |
+| `--min-sample-size <n>`   | optional | Minimum sample size                               |
+| `--json`                  | optional | Output as JSON                                    |
+| `--project <id>`          | optional | Project ID override                               |
 
 Examples:
 

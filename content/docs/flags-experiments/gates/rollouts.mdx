@@ -10,8 +10,8 @@ description: How the percentage actually works — sticky hashing, deterministic
   works="Server SDK · Browser SDK"
 />
 
-A **rollout** is the percentage of eligible traffic that gets the gate's `true` answer. The
-implementation is deterministic hashing — same user, same gate, same answer, on every server, in
+A **rollout** is the percentage of eligible traffic that gets the feature flag's `true` answer. The
+implementation is deterministic hashing — same user, same feature flag, same answer, on every server, in
 every SDK, forever (until you bump the salt). This page is the precise model of how that works.
 
 ## The hash
@@ -23,7 +23,7 @@ bucket = hash(salt || ":" || bucketBy(ctx)) mod 10_000
 return bucket < rolloutPct * 100
 ```
 
-- **`salt`** is per-gate (`name + ":" + saltVersion`). Defaults to the gate name and `"v1"`.
+- **`salt`** is per-flag (`name + ":" + saltVersion`). Defaults to the feature flag name and `"v1"`.
 - **`bucketBy(ctx)`** is `ctx.userId` by default. Override per call with `{ bucketBy: "accountId" }`.
 - The modulus is `10_000`, so rollout precision is 0.01% (basis points). The dashboard shows 0–100;
   internally the value is `0..10000`.
@@ -62,7 +62,7 @@ is randomly shuffled with each change.
 | Cookie ID   | Per browser — survives across sessions on one device | Logged-out users on a marketing page.         |
 | `requestId` | Per request — re-buckets every call                  | Don't. This is what bad bucketing looks like. |
 
-Pick **once per gate** and stick with it. Switching `bucketBy` mid-rollout is the same as changing
+Pick **once per feature flag** and stick with it. Switching `bucketBy` mid-rollout is the same as changing
 the salt — every user re-buckets, your "5% who saw v2" is now a completely different 5%.
 
 ```ts
@@ -72,7 +72,7 @@ await gate("admin-redesign", { userId, accountId }, { bucketBy: "accountId" });
 
 ## Salt — the re-shuffle lever
 
-The salt is what makes two 50% rollouts not serve the same 50% of users. Each gate has its own
+The salt is what makes two 50% rollouts not serve the same 50% of users. Each feature flag has its own
 salt by default, so:
 
 - `gate-a` at 50% returns `true` for users in buckets `[0..4999]` of `hash("gate-a:v1" + userId)`.
@@ -98,8 +98,8 @@ that relied on "the same set of users."
 
 ## Multi-arm rollouts
 
-A gate has one rollout percentage. For "70% A, 20% B, 10% C," use an experiment with three
-variants and a universe split, not a gate. See [Experiments quickstart](/flags-experiments/experiments/quickstart).
+A feature flag has one rollout percentage. For "70% A, 20% B, 10% C," use an experiment with three
+variants and a universe split, not a feature flag. See [Experiments quickstart](/flags-experiments/experiments/quickstart).
 
 If you genuinely need multi-arm and an experiment is overkill, a config with three string values
 keyed by user-bucket modulo is a smaller pattern — but at that point you're reinventing

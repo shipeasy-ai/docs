@@ -132,7 +132,7 @@ This walks through a complete experiment end to end: a button-label test on the 
       v1       N=12,503  rate=5.2%   lift +8.3%   p=0.018   CI [+1.4%, +15.2%]
     ```
 
-    `p < 0.05` and the CI excluding zero is your stop-condition. Promote `v1` by adding a gate that mirrors the variant, then deleting the experiment.
+    `p < 0.05` and the CI excluding zero is your stop-condition. Promote `v1` by adding a feature flag that mirrors the variant, then deleting the experiment.
 
   </Step>
 
@@ -226,17 +226,17 @@ This walks through a complete experiment end to end: a button-label test on the 
 </TileGrid>
 
 <ConvertCTA
-  eyebrow="ALREADY GATING?"
+  eyebrow="ALREADY USING A FEATURE FLAG?"
   title={
     <>
-      Promote a gate to an <em>experiment</em>.
+      Promote a feature flag to an <em>experiment</em>.
     </>
   }
-  body="If a feature is already behind a gate at 50%, you're one CLI command away from collecting stats on it instead of guessing whether it works."
+  body="If a feature is already behind a feature flag at 50%, you're one CLI command away from collecting stats on it instead of guessing whether it works."
   primaryHref="/experiments"
   primaryLabel="Read the overview"
   secondaryHref="/configs"
-  secondaryLabel="Back to gates"
+  secondaryLabel="Back to feature flags"
   cmds={[
     {
       label: "Create an experiment",

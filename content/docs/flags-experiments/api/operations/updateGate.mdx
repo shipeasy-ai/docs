@@ -1,5 +1,5 @@
 ---
-title: Update a feature gate
+title: Update a feature flag
 full: true
 _openapi:
   method: PATCH
@@ -12,7 +12,7 @@ _openapi:
           `stack`) **replace** wholesale; there is no merge or append.
 
 
-          `name` and the gate id are immutable. The response carries only `{ id
+          `name` and the feature flag id are immutable. The response carries only `{ id
           }` — re-fetch via `GET /api/admin/gates` for the new row.
 
 
@@ -44,7 +44,7 @@ _openapi:
 
 Partial update — only supplied fields change. Array fields (`rules`, `stack`) **replace** wholesale; there is no merge or append.
 
-`name` and the gate id are immutable. The response carries only `{ id }` — re-fetch via `GET /api/admin/gates` for the new row.
+`name` and the feature flag id are immutable. The response carries only `{ id }` — re-fetch via `GET /api/admin/gates` for the new row.
 
 **Use cases**
 

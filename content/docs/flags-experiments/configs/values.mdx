@@ -12,7 +12,7 @@ description: Typed config values — strings, numbers, booleans, JSON — that c
 
 A **dynamic value** is a typed key/value pair stored on your project. Use one when the answer to <em>&quot;what should this be right now?&quot;</em> is not boolean — pricing, copy, limits, feature options, API endpoints, model names, anything you&apos;d otherwise hard-code as a constant or stash in an environment variable.
 
-Unlike gates, dynamic values are **global per environment**: every user in `prod` sees the same value. To vary by user, gate the code that reads the value, or use a [structured config](#structured-configs) with one key per cohort.
+Unlike feature flags, dynamic values are **global per environment**: every user in `prod` sees the same value. To vary by user, put a feature flag around the code that reads the value, or use a [structured config](#structured-configs) with one key per cohort.
 
 ## Types
 
@@ -42,7 +42,7 @@ Unlike gates, dynamic values are **global per environment**: every user in `prod
     name="boolean"
     required
     type="boolean"
-    desc="Site-wide on/off, separate from a gate when no targeting is needed."
+    desc="Site-wide on/off, separate from a feature flag when no targeting is needed."
   />
   <ApiRow
     name="json"
@@ -177,17 +177,17 @@ The SDK calls `decode` once per fetched blob — invalid payloads are dropped (w
   production. A good value is in production in seconds. A great value can be reverted in one click.
 </Callout>
 
-## When to use a value vs. a gate
+## When to use a value vs. a feature flag
 
-| Question                           | Use                                                        |
-| ---------------------------------- | ---------------------------------------------------------- |
-| Should I show feature X?           | [Gate](/flags-experiments/gates).                          |
-| What should the value of N be?     | Dynamic value.                                             |
-| Different value per user / cohort? | Gate around the read, or structured value keyed by cohort. |
-| Need an audit trail?               | Both. Every write is versioned.                            |
-| Need a kill-switch?                | [Killswitch](/flags-experiments/killswitches).             |
+| Question                           | Use                                                                |
+| ---------------------------------- | ------------------------------------------------------------------ |
+| Should I show feature X?           | [Feature flag](/flags-experiments/gates).                          |
+| What should the value of N be?     | Dynamic value.                                                     |
+| Different value per user / cohort? | Feature flag around the read, or structured value keyed by cohort. |
+| Need an audit trail?               | Both. Every write is versioned.                                    |
+| Need a kill-switch?                | [Killswitch](/flags-experiments/killswitches).                     |
 
-A useful rule: if you&apos;d say <em>&quot;show feature X&quot;</em>, gate it. If you&apos;d say <em>&quot;set feature X to value Y&quot;</em>, use a dynamic value.
+A useful rule: if you&apos;d say <em>&quot;show feature X&quot;</em>, put it behind a feature flag. If you&apos;d say <em>&quot;set feature X to value Y&quot;</em>, use a dynamic value.
 
 ## CI snippet
 
@@ -214,10 +214,10 @@ If your JSON is approaching the limit, you&apos;re probably storing data that be
   eyebrow="NEXT"
   title={
     <>
-      Add <em>targeting rules</em> to a gate.
+      Add <em>targeting rules</em> to a feature flag.
     </>
   }
-  body="Now that you've seen typed values, see how gates layer rules and rollout to vary behaviour per user — deterministically, with no flicker."
+  body="Now that you've seen typed values, see how feature flags layer rules and rollout to vary behaviour per user — deterministically, with no flicker."
   primaryHref="/flags-experiments/configs/targeting"
   primaryLabel="Targeting & rollouts"
   secondaryHref="/flags-experiments/decision"
@@ -229,7 +229,7 @@ If your JSON is approaching the limit, you&apos;re probably storing data that be
 />
 
 <DocNav
-  prev={{ href: "/configs/gates", title: "Gates" }}
+  prev={{ href: "/configs/gates", title: "Feature flags" }}
   next={{ href: "/configs/targeting", title: "Targeting & rollouts" }}
 />
 

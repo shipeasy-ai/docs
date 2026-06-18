@@ -1,6 +1,6 @@
 ---
 title: Quickstart
-description: Create a gate, wrap your code, ramp from 0% to 100% — end to end in five minutes.
+description: Create a feature flag, wrap your code, ramp from 0% to 100% — end to end in five minutes.
 ---
 
 <DocMeta
@@ -10,11 +10,11 @@ description: Create a gate, wrap your code, ramp from 0% to 100% — end to end 
   works="Server SDK · Browser SDK · CLI"
 />
 
-This walks you through shipping a real feature behind a gate. You'll create the gate, wrap a code
+This walks you through shipping a real feature behind a feature flag. You'll create the feature flag, wrap a code
 path, and ramp it from 0% → 5% → 25% → 100%. By the end the feature is live for everyone, with no
 redeploys between ramp steps.
 
-<Quickstart title="The 5-minute path" time="install · create · gate · ramp">
+<Quickstart title="The 5-minute path" time="install · create · flag · ramp">
   <QuickstartStep
     num={1}
     label="INSTALL"
@@ -24,13 +24,13 @@ redeploys between ramp steps.
   <QuickstartStep
     num={2}
     label="CREATE"
-    title="Create a gate at 0%"
+    title="Create a feature flag at 0%"
     cmd="shipeasy flags create checkout-v2 --rollout 0"
   />
   <QuickstartStep
     num={3}
     label="WRAP"
-    title="Gate the new code path"
+    title="Put the new code path behind a feature flag"
     cmd="if (flags.get('checkout-v2', { user_id: userId })) { ... }"
   />
   <QuickstartStep
@@ -68,19 +68,19 @@ await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? "" });
 Call this once during boot (server entry, root layout, or worker startup). The same `shipeasy()`
 call covers flags, configs, experiments, and translations — you do not need separate init for each.
 
-## 2. Create the gate
+## 2. Create the feature flag
 
 ```bash
 shipeasy flags create checkout-v2 --rollout 0
 ```
 
-`--rollout 0` means "no one sees it yet." The gate exists, the SDK
+`--rollout 0` means "no one sees it yet." The feature flag exists, the SDK
 knows about it, but every call returns `false`. Safe to deploy. (A
-description field exists on the gate row but the CLI's `flags create`
+description field exists on the feature flag row but the CLI's `flags create`
 doesn't accept a `--description` flag today — add the description from
 the dashboard after creating.)
 
-Alternatively, create it in the dashboard: **Flags → New gate → Save**.
+Alternatively, create it in the dashboard: **Flags → New feature flag → Save**.
 
 ## 3. Wrap the code path
 
@@ -123,8 +123,8 @@ shipeasy flags rollout checkout-v2 100
 
 Each ramp step propagates to every SDK in under a second. No redeploy, no env var change.
 
-The same gate can be ramped from the dashboard with a slider, or via the
-[Admin API](/flags-experiments/api). Resolve the gate's id, then PATCH:
+The same feature flag can be ramped from the dashboard with a slider, or via the
+[Admin API](/flags-experiments/api). Resolve the feature flag's id, then PATCH:
 
 ```bash
 # Resolve `checkout-v2` → its UUID
@@ -148,7 +148,7 @@ shipeasy flags disable checkout-v2
 
 Every SDK serves `false` within the next poll (default 30s on Free, 60s
 on Team). Targeting rules and the rollout percentage are preserved on
-the gate — when you fix the bug, `shipeasy flags enable checkout-v2`
+the feature flag — when you fix the bug, `shipeasy flags enable checkout-v2`
 restores the previous state exactly.
 
 For incident-grade flips that propagate faster and are a dedicated
@@ -166,7 +166,7 @@ instead.
     works.
   </Tile>
   <Tile href="/flags-experiments/gates/overrides" icon="◆" title="QA + dogfood overrides">
-    Force a gate on or off for specific user IDs without touching targeting or rollout.
+    Force a feature flag on or off for specific user IDs without touching targeting or rollout.
   </Tile>
   <Tile href="/flags-experiments/case-studies" icon="⌗" title="Real scenarios">
     Worked examples — checkout rollout, beta allow-list, regional rollout.
@@ -174,6 +174,6 @@ instead.
 </TileGrid>
 
 <DocNav
-  prev={{ href: "/flags-experiments/gates", title: "Gates overview" }}
+  prev={{ href: "/flags-experiments/gates", title: "Feature flags overview" }}
   next={{ href: "/flags-experiments/gates/targeting", title: "Targeting rules" }}
 />

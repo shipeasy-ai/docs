@@ -10,7 +10,7 @@ description: One plugin tree, every coding agent. Install Shipeasy's skills + MC
   works="Claude Code · Codex · Copilot CLI · OpenCode · Cursor · Windsurf · Cline · Gemini · Continue · OpenClaw"
 />
 
-Shipeasy ships **seven skills** (`flags`, `experiments`, `metrics`, `i18n`, `bugs`, `see`, `setup`) and the **`shipeasy` MCP server** (`npx -y @shipeasy/mcp@latest`). The skills auto-trigger on natural-language phrasing and walk your agent through each workflow; the MCP server is the typed toolkit that actually creates gates, drafts experiments, pushes i18n keys, and files feedback.
+Shipeasy ships **seven skills** (`flags`, `experiments`, `metrics`, `i18n`, `bugs`, `see`, `setup`) and the **`shipeasy` MCP server** (`npx -y @shipeasy/mcp@latest`). The skills auto-trigger on natural-language phrasing and walk your agent through each workflow; the MCP server is the typed toolkit that actually creates feature flags, drafts experiments, pushes i18n keys, and files feedback.
 
 Everything lives **once** in the [`shipeasy-ai/shipeasy`](https://github.com/shipeasy-ai/shipeasy) marketplace repo and is _referenced_ per host — nothing is duplicated per agent. There are two install tiers.
 
@@ -116,4 +116,4 @@ Installing only _registers_ the skills + MCP — it runs no shell commands. To w
 | `/shipeasy:*` slash commands |     ✅      |   —   |      —      |          —          |
 | One-command install          |     ✅      |  ✅   |     ✅      |      two steps      |
 
-Slash commands are the only Claude-Code-exclusive surface. Everything that _does_ the work — creating gates, drafting experiments, pushing i18n, filing feedback — runs through the MCP server, which every host has.
+Slash commands are the only Claude-Code-exclusive surface. Everything that _does_ the work — creating feature flags, drafting experiments, pushing i18n, filing feedback — runs through the MCP server, which every host has.

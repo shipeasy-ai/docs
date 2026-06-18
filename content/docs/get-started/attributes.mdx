@@ -12,7 +12,7 @@ description: The shape of the eval context — pass everything you know about th
 
 A **user attribute** is any key/value pair you attach to a user when calling the SDK. Shipeasy uses attributes for three things:
 
-1. **Targeting rules** on gates — _"only enable this for `plan = pro`"_.
+1. **Targeting rules** on feature flags — _"only enable this for `plan = pro`"_.
 2. **Variant assignment** in experiments — _"assign by `account_id` so all teammates see the same thing"_.
 3. **Segmentation** in analysis — _"how did the lift differ for `country = US` vs `EU`?"_.
 
@@ -248,7 +248,7 @@ Targeting rules use these operators against attribute values:
   <ApiRow name="regex" required type="string" desc={<>JS regex match. Anchor your patterns.</>} />
 </ApiTable>
 
-Multiple rules on a gate are **AND**ed. Use `in` with a list to express OR. Rule order doesn&apos;t matter — there is no fall-through.
+Multiple rules on a feature flag are **AND**ed. Use `in` with a list to express OR. Rule order doesn&apos;t matter — there is no fall-through.
 
 ## Server vs browser
 
@@ -367,7 +367,7 @@ You can set per-attribute retention in **Project → Privacy** (default 90 days 
   secondaryHref="/experiments/quickstart"
   secondaryLabel="Or run an experiment"
   cmds={[
-    { label: "Create a gate", cmd: "shipeasy gate create new-checkout" },
+    { label: "Create a feature flag", cmd: "shipeasy gate create new-checkout" },
     { label: "Roll out to 5%", cmd: "shipeasy gate rollout new-checkout --percent 5" },
   ]}
 />

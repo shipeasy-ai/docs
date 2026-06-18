@@ -1,5 +1,5 @@
 ---
-title: Gates
+title: Feature flags
 description: Boolean feature flags with targeting rules, percentage rollouts, kill-switches, and per-user overrides — evaluated locally in your SDK with zero per-request cost.
 ---
 
@@ -10,11 +10,11 @@ description: Boolean feature flags with targeting rules, percentage rollouts, ki
   works="Server SDK · Browser SDK"
 />
 
-A **gate** is a single boolean answer for a single user. It is the unit of <em>&quot;should I do the new thing?&quot;</em> in your code. Gates are evaluated locally — the SDK keeps the bundle in process and the call is a hash table lookup, not a network round trip.
+A **feature flag** is a single boolean answer for a single user. It is the unit of <em>&quot;should I do the new thing?&quot;</em> in your code. Feature flags are evaluated locally — the SDK keeps the bundle in process and the call is a hash table lookup, not a network round trip.
 
-Use a gate when the answer is yes/no. For typed payloads (strings, numbers, JSON), reach for a [dynamic value](/configs/values). For yes/no with measurement attached, reach for an [experiment](/experiments).
+Use a feature flag when the answer is yes/no. For typed payloads (strings, numbers, JSON), reach for a [dynamic value](/configs/values). For yes/no with measurement attached, reach for an [experiment](/experiments).
 
-## Anatomy of a gate
+## Anatomy of a feature flag
 
 <TileGrid>
   <Tile
@@ -31,8 +31,8 @@ Use a gate when the answer is yes/no. For typed payloads (strings, numbers, JSON
       </>
     }
   >
-    The on/off bit. When false, the gate returns <code>false</code> for everyone, ignoring rules.
-    Targeting rules and rollout are preserved.
+    The on/off bit. When false, the feature flag returns <code>false</code> for everyone, ignoring
+    rules. Targeting rules and rollout are preserved.
   </Tile>
   <Tile
     href="#killswitch"
@@ -104,13 +104,13 @@ Use a gate when the answer is yes/no. For typed payloads (strings, numbers, JSON
     title="salt — hash salt"
     meta={
       <>
-        <span>per-gate</span>
+        <span>per-flag</span>
         <span>·</span>
         <span>re-shuffle buckets</span>
       </>
     }
   >
-    Per-gate salt fed into the bucketing hash. Bump it and rollout buckets re-shuffle — useful when
+    Per-flag salt fed into the bucketing hash. Bump it and rollout buckets re-shuffle — useful when
     rolling out the same feature twice.
   </Tile>
 </TileGrid>
@@ -132,7 +132,7 @@ For a request `gate(name, user)`:
 That order matters: rules are evaluated **before** the rollout. <em>&quot;100% of `plan = pro`&quot;</em> means <em>100%</em> of pro users, not <em>the same 100% bucket</em> filtered down to pros. The rollout filter never fights a targeting rule.
 
 <Callout type="info" title="Why deterministic bucketing matters">
-  Same user, same gate, same answer — every time, on every server, in every language SDK. No
+  Same user, same feature flag, same answer — every time, on every server, in every language SDK. No
   flicker, no &quot;why does this user see different things on different requests&quot;, no need to
   persist assignments anywhere. The hash is the persistence.
 </Callout>
@@ -193,7 +193,7 @@ it once per cold start.
     name="defaultValue"
     optional
     type="boolean"
-    desc="Returned when the gate is missing from the bundle (e.g. SDK not initialised). Defaults to false — fail closed."
+    desc="Returned when the feature flag is missing from the bundle (e.g. SDK not initialised). Defaults to false — fail closed."
   />
   <ApiRow
     name="bucketBy"
@@ -214,21 +214,21 @@ The return is a plain `boolean`. There is no async, no Promise, no fetch — the
 
 The killswitch is a separate field from `enabled` so you can keep targeting and rollout intact while turning the feature off. Three places to flip it:
 
-- **Dashboard**: red **Killswitch** chip on the gate row.
+- **Dashboard**: red **Killswitch** chip on the feature flag row.
 - **CLI**: `shipeasy flags disable <name> --killswitch` (without `--killswitch` it toggles `enabled` instead).
 - **API**: `PATCH /api/flags/<name>` with `{ "killswitch": true }`.
 
-A killed gate returns `false` everywhere within the SDK&apos;s next poll. Re-enabling restores the full prior state — overrides, rules, rollout %, salt, all of it. Treat the killswitch as your incident lever; treat `enabled` as your &quot;feature is shipped, deactivated cleanly&quot; lever.
+A killed feature flag returns `false` everywhere within the SDK&apos;s next poll. Re-enabling restores the full prior state — overrides, rules, rollout %, salt, all of it. Treat the killswitch as your incident lever; treat `enabled` as your &quot;feature is shipped, deactivated cleanly&quot; lever.
 
 <Callout type="warn" title="Killswitch is a contract, not a panic button">
-  A killed gate goes false within the next poll, not instantly. With the default 30s poll a
+  A killed feature flag goes false within the next poll, not instantly. With the default 30s poll a
   worst-case worker still serves the new path for ~30s after you hit the switch. For sub-second
   cutoff, use the Pro 10s poll or the Enterprise streaming push.
 </Callout>
 
 ## Overrides [#overrides]
 
-In the dashboard, expand a gate and add user IDs under **Overrides &rarr; Always on** or **Always off**. Overrides:
+In the dashboard, expand a feature flag and add user IDs under **Overrides &rarr; Always on** or **Always off**. Overrides:
 
 - Bypass `enabled`, `killswitch`, all rules, and the rollout.
 - Are scoped to **`user_id`** only (no attribute matching — it&apos;s a literal set lookup).
@@ -250,7 +250,7 @@ If you need a percentage-based &quot;always-on for cohort X&quot;, use a [target
 ## Naming [#enabled]
 
 - **kebab-case**: `new-checkout-flow`, not `newCheckoutFlow`.
-- **Describe the change, not the abstract feature**: `enable-redis-pool` ages better than `redis-pool` (which sounds like a permanent feature, not a temporary gate).
+- **Describe the change, not the abstract feature**: `enable-redis-pool` ages better than `redis-pool` (which sounds like a permanent feature, not a temporary feature flag).
 - **Prefix by area** for grouping: `checkout-`, `nav-`, `infra-`.
 - **Avoid double-negatives**: prefer `show-banner` over `hide-banner`.
 
@@ -266,29 +266,29 @@ shipeasy flags list --json \
 
 These are candidates for removal. Run a `shipeasy flags validate ./src` after the deletion to catch any code references that need to be ripped out.
 
-The dashboard also surfaces a **Cleanup** view that lists gates which have been at 100% (or 0%) for more than 30 days, with a one-click PR-creation button if you&apos;ve connected a GitHub app.
+The dashboard also surfaces a **Cleanup** view that lists feature flags which have been at 100% (or 0%) for more than 30 days, with a one-click PR-creation button if you&apos;ve connected a GitHub app.
 
 ## The salt [#salt]
 
-Each gate has its own salt. If you ever want to **re-shuffle** the rollout buckets without changing the percentage (say, to avoid the same 5% always being chosen for every gate), bump the salt:
+Each feature flag has its own salt. If you ever want to **re-shuffle** the rollout buckets without changing the percentage (say, to avoid the same 5% always being chosen for every feature flag), bump the salt:
 
 ```bash
 shipeasy flags update my-feature --salt v2
 ```
 
-That&apos;s rare. The default salt is fine for almost every case. The salt is also why two gates at 50% don&apos;t serve the same 50% of users — different salts, different buckets, independently distributed.
+That&apos;s rare. The default salt is fine for almost every case. The salt is also why two feature flags at 50% don&apos;t serve the same 50% of users — different salts, different buckets, independently distributed.
 
 ## Audit log
 
-Every write to a gate is recorded in the audit log: who, when, from what (dashboard, CLI, API), and the diff. Find it under **Configs &rarr; Gates &rarr; \<gate\> &rarr; History**. Each row links to a one-click revert.
+Every write to a feature flag is recorded in the audit log: who, when, from what (dashboard, CLI, API), and the diff. Find it under **Configs &rarr; Feature flags &rarr; \<feature flag\> &rarr; History**. Each row links to a one-click revert.
 
 ## Limits [#rollout]
 
-| Plan       | Gates per project | Rules per gate | Overrides per gate |
-| ---------- | ----------------- | -------------- | ------------------ |
-| Free       | 50                | 5              | 100                |
-| Pro        | 500               | 20             | 10,000             |
-| Enterprise | Unlimited         | Unlimited      | Unlimited          |
+| Plan       | Feature flags per project | Rules per feature flag | Overrides per feature flag |
+| ---------- | ------------------------- | ---------------------- | -------------------------- |
+| Free       | 50                        | 5                      | 100                        |
+| Pro        | 500                       | 20                     | 10,000                     |
+| Enterprise | Unlimited                 | Unlimited              | Unlimited                  |
 
 If you hit a limit, audit for stale flags first; those numbers are very generous if you delete what you ship.
 
