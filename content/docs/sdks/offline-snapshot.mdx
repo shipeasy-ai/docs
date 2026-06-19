@@ -1,0 +1,74 @@
+---
+title: Offline & snapshots
+description: Build a fully offline client from a captured snapshot — real evaluation, zero network. For CI, tests, and air-gapped runtimes.
+---
+
+<DocMeta
+  status="Production ready"
+  read="3 min read"
+  updated="June 19, 2026"
+  works="@shipeasy/sdk · server"
+/>
+
+Sometimes you want real flag evaluation with **no network at all** — a CI job, a deterministic test, an air-gapped runtime. A snapshot is just the two SDK wire bodies captured to disk; the client evaluates the real rules against it.
+
+## The snapshot shape
+
+A snapshot is the bodies of `GET /sdk/flags` and `GET /sdk/experiments`:
+
+```jsonc
+// snapshot.json
+{
+  "flags":       /* body of GET /sdk/flags */,
+  "experiments": /* body of GET /sdk/experiments */
+}
+```
+
+## Load it
+
+```ts
+import { FlagsClient } from "@shipeasy/sdk/server";
+
+// from a file (Node only — reads with node:fs)
+const client = FlagsClient.fromFile("./snapshot.json");
+
+// or from a parsed object you already hold (works anywhere)
+const client = FlagsClient.fromSnapshot({ flags, experiments });
+
+client.getFlag("new_checkout", { user_id: "u1" });
+```
+
+Evaluations run the **real** eval against the snapshot. `init()` / `initOnce()` / `track()` are no-ops, and `override*` setters still apply on top — handy for forcing a specific case in a test.
+
+<Callout type="info" title="fromFile is Node-only">
+  <code>fromFile</code> reads the file with <code>node:fs</code>. In a browser, an edge runtime, or
+  anywhere without a filesystem, fetch or import the JSON yourself and pass it to{" "}
+  <code>fromSnapshot</code>.
+</Callout>
+
+## When to use it
+
+- **CI / tests** — deterministic evaluation with no live dependency.
+- **Air-gapped or offline runtimes** — ship a snapshot alongside the build.
+- **Reproducing a bug** — capture production rules once and replay them locally.
+
+For seeding individual values without a snapshot, use [`forTesting()` + overrides](/sdks/testing) instead.
+
+<SeeAlso
+  links={[
+    { href: "/sdks/testing", title: "Testing", note: "forTesting + override*" },
+    { href: "/sdks/node-typescript", title: "Node / TypeScript", note: "The server client" },
+    {
+      href: "/get-started/evaluation-and-caching",
+      title: "Evaluation & caching",
+      note: "What the wire bodies contain",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/sdks/sticky-bucketing", title: "Sticky bucketing" }}
+  next={{ href: "/sdks/testing", title: "Testing" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/sdks/offline-snapshot.mdx" />

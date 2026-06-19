@@ -1,0 +1,112 @@
+---
+title: PHP
+description: The Shipeasy PHP server SDK — PHP-FPM friendly per-request init, local evaluation, configs, experiments, and tracking.
+---
+
+<DocMeta
+  status="Production ready"
+  read="4 min read"
+  updated="June 18, 2026"
+  works="PHP 8.1+ · Laravel · WordPress · Symfony"
+/>
+
+Server-side flags, configs, experiments, and tracking for PHP. PHP-FPM friendly — `init()` fetches once per request, no background thread. Evaluates locally against the fetched blob — see the [shared evaluation model](/sdks).
+
+## Install
+
+```bash
+composer require shipeasy/sdk
+```
+
+## Configure
+
+Construct with the **server** key and call `init()`. Under PHP-FPM this fetches once per request; for long-running runtimes (Swoole, RoadRunner, queue workers) call `init()` from a periodic task.
+
+```php
+use Shipeasy\Client;
+
+$c = new Client(getenv('SHIPEASY_SERVER_KEY'));
+$c->init();
+```
+
+## Evaluate a feature flag
+
+```php
+$enabled = $c->getFlag('new_checkout', ['user_id' => 'u_123']);
+```
+
+An optional default is returned **only** when the gate can't be evaluated (client not ready or gate absent) — a gate that evaluates falsy returns `false`:
+
+```php
+$c->getFlag('new_checkout', ['user_id' => 'u1'], true);
+```
+
+For the value plus the reason, use `getFlagDetail` — see [Evaluation reasons](/sdks/reasons):
+
+```php
+$d = $c->getFlagDetail('new_checkout', ['user_id' => 'u1']);
+$d->value;   // bool
+$d->reason;  // e.g. FlagDetail::RULE_MATCH
+```
+
+## Read a dynamic config
+
+```php
+$cfg = $c->getConfig('billing_copy', ['headline' => 'Welcome']);
+```
+
+## Resolve an experiment
+
+```php
+$r = $c->getExperiment('checkout_button', ['user_id' => 'u_123'], ['color' => 'blue']);
+if ($r->inExperiment) {
+    $r->group;   // 'treatment'
+    $r->params;  // ['color' => ...]
+}
+```
+
+## Track an event
+
+```php
+$c->track('u_123', 'purchase', ['amount' => 49]);
+```
+
+## Anonymous visitors
+
+Call `Identity::ensure()` once early in your bootstrap (before any output) to read or mint the shared `__se_anon_id` cookie, so logged-out traffic buckets like the browser:
+
+```php
+use Shipeasy\Identity;
+
+Identity::ensure();
+$c->getFlag('new_checkout', []); // buckets on the cookie
+```
+
+Works in plain PHP, WordPress, Laravel, Symfony, and Slim — anywhere `$_COOKIE` / `setcookie()` exist.
+
+## Testing
+
+`Client::forTesting()` does zero network — no key, `init`/`track` are no-ops. Seed with `override*` and reset with `clearOverrides`. See [Testing](/sdks/testing).
+
+```php
+$c = Client::forTesting();
+$c->overrideFlag('new_checkout', true);
+$c->getFlag('new_checkout', ['user_id' => 'u1']); // true
+$c->clearOverrides();
+```
+
+<SeeAlso
+  links={[
+    { href: "/sdks", title: "Shared evaluation model", note: "How every SDK buckets" },
+    { href: "/sdks/reasons", title: "Evaluation reasons", note: "getFlagDetail" },
+    { href: "/sdks/testing", title: "Testing", note: "forTesting" },
+    { href: "/flags-experiments/gates", title: "Feature gates" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/sdks/kotlin", title: "Kotlin" }}
+  next={{ href: "/sdks/swift", title: "Swift" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/sdks/php.mdx" />

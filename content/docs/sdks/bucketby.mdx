@@ -1,0 +1,75 @@
+---
+title: Multi-context bucketing (bucketBy)
+description: Bucket on company_id, session_id, or any attribute instead of user_id — so a rollout or experiment splits by account, not by individual user.
+---
+
+<DocMeta
+  status="Production ready"
+  read="4 min read"
+  updated="June 19, 2026"
+  works="Gates · Experiments"
+/>
+
+By default Shipeasy buckets on `user_id ?? anonymous_id`: a 20% rollout means 20% of _users_. `bucketBy` changes the bucketing unit so you can roll out to 20% of **companies**, keep a whole **session** on one variant, or split by **device** — whatever attribute you hash on.
+
+## How it works
+
+Set `bucketBy` to an attribute name on the gate or experiment. The SDK resolves the bucketing identifier from that attribute on the user object instead of `user_id`:
+
+```ts
+// the user object carries the attribute you bucket on
+flags.getExperiment("pricing_test", {
+  user_id: "u_4f2a",
+  company_id: "acme_corp", // ← experiment is configured with bucketBy: "company_id"
+});
+```
+
+Every teammate in `acme_corp` now hashes to the **same** group — the rollout splits at the account boundary, not the user boundary. The hash is still deterministic and sticky: same company, same answer, every time.
+
+<Callout type="info" title="Configured on the resource, carried on the user">
+  <code>bucketBy</code> is set on the gate/experiment (in the dashboard, CLI, or API). Your job in
+  code is to make sure the named attribute (e.g. <code>company_id</code>) is present on the user
+  object you pass — if it's missing, that user falls back to individual bucketing.
+</Callout>
+
+## Common units
+
+| `bucketBy`                  | Use case                                          |
+| --------------------------- | ------------------------------------------------- |
+| `company_id` / `account_id` | B2B — every teammate sees the same variant        |
+| `session_id`                | Keep one browsing session on one experience       |
+| `device_id`                 | Consistent across logged-out sessions on a device |
+| `org_id`, `team_id`, …      | Any grouping you target on                        |
+
+## The analysis-unit caveat
+
+<Callout type="warn" title="Bucketing unit vs analysis unit">
+  Bucketing by company makes <em>assignment</em> account-level, but the statistics still aggregate
+  per the experiment's configured analysis unit. When you bucket by a coarse unit (companies), plan
+  for the effective sample size being the number of <em>companies</em>, not users — and confirm your
+  metric and analysis unit line up. See{" "}
+  <a href="/flags-experiments/experiments/analysis">Analysis</a>.
+</Callout>
+
+<SeeAlso
+  links={[
+    {
+      href: "/get-started/identity-and-bucketing",
+      title: "Identity & bucketing",
+      note: "The full bucketing model",
+    },
+    { href: "/flags-experiments/gates/rollouts", title: "Rollouts", note: "Percentage ramps" },
+    {
+      href: "/flags-experiments/experiments/analysis",
+      title: "Analysis",
+      note: "Sample size & analysis unit",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/sdks/manual-exposure", title: "Manual exposure" }}
+  next={{ href: "/sdks/private-attributes", title: "Private attributes" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/sdks/bucketby.mdx" />

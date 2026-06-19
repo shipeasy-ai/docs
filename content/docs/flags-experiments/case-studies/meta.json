@@ -3,6 +3,10 @@
   "defaultOpen": false,
   "pages": [
     "index",
+    "maintenance-mode",
+    "entitlements-with-configs",
+    "company-rollout-bucketby",
+    "low-traffic-experiment",
     "[Redesigned checkout](/flags-experiments/case-studies#new-checkout)",
     "[Homepage hero copy](/flags-experiments/case-studies#hero-copy)",
     "[Pause outbound emails](/flags-experiments/case-studies#kill-emails)",

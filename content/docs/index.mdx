@@ -1,90 +1,195 @@
 ---
 title: Shipeasy
-description: Flags & experiments, translations, and feedback — one SDK for everything you ship.
+description: Flags & experiments, metrics & alerts, and feedback — one SDK, one API key, for everything you ship.
 ---
 
 <Hero
   eyebrow="Shipeasy platform"
   title={
     <>
-      Ship faster with <em>flags, experiments, translations, and feedback</em>.
+      Everything you ship, <em>behind one SDK</em>.
     </>
   }
-  subtitle="Roll out features behind a flag, run rigorous A/B tests with automated statistics, translate your product without re-deploying, and capture user-reported bugs straight into your tooling. Three products, one SDK, one API key."
-  primaryHref="/flags-experiments/getting-started"
-  primaryLabel="Get started"
-  secondaryHref="#which-product"
-  secondaryLabel="Which product?"
+  subtitle="Roll out features behind a flag, run rigorous A/B tests with automated statistics, track metrics and alert on regressions, and capture bugs and errors straight into your tooling. One SDK, one API key — drivable by hand, by CLI, or by an AI agent."
+  primaryHref="/get-started/quickstart"
+  primaryLabel="Quickstart"
+  secondaryHref="/get-started/overview"
+  secondaryLabel="How it works"
 />
 
 <DocMeta
   status="Production ready"
   read="3 min read"
-  updated="May 10, 2026"
-  works="Next, Vite, Remix, Expo, Workers"
+  updated="June 18, 2026"
+  works="Next · Vite · Remix · Expo · Workers · 8 server languages"
 />
 
-## Pick a primitive
+## Pick your journey
 
-Most teams start with **Flags & Experiments**. Inside that product there are four primitives —
-pick the one that matches what you're shipping.
+Most teams arrive with a goal, not a primitive. Pick the outcome you're after — each path is an
+ordered set of pages that takes you from install to shipped.
+
+<JourneyPath
+  title="Ship a feature behind a flag"
+  goal="Put new code behind a switch, target who sees it, and ramp from 0% to 100% with no redeploy."
+  steps={[
+    { href: "/get-started/install", label: "Install", title: "Add the SDK & CLI" },
+    {
+      href: "/flags-experiments/gates/quickstart",
+      label: "Create",
+      title: "Your first feature flag",
+    },
+    { href: "/flags-experiments/gates/targeting", label: "Target", title: "Rules & audiences" },
+    { href: "/flags-experiments/gates/rollouts", label: "Ramp", title: "Gradual rollout" },
+  ]}
+/>
+
+<JourneyPath
+  title="Run an A/B test"
+  goal="Measure whether a change actually moves the needle, with managed p-values and confidence intervals."
+  steps={[
+    { href: "/metrics/quickstart", label: "Measure", title: "Define a metric" },
+    {
+      href: "/flags-experiments/experiments/quickstart",
+      label: "Launch",
+      title: "Create the experiment",
+    },
+    {
+      href: "/flags-experiments/experiments/analysis",
+      label: "Read",
+      title: "Interpret the results",
+    },
+  ]}
+/>
+
+<JourneyPath
+  title="Catch bugs & errors in production"
+  goal="Capture user-reported bugs and handled exceptions, route them to your tools, alert on regressions."
+  steps={[
+    { href: "/feedback/getting-started", label: "Wire", title: "Add the report button" },
+    { href: "/feedback/devtools", label: "Capture", title: "In-app devtools overlay" },
+    { href: "/feedback/error-reporting", label: "Report", title: "Handled errors with see()" },
+    { href: "/metrics/alerts", label: "Alert", title: "Threshold alerts → tickets" },
+  ]}
+/>
+
+<JourneyPath
+  title="Let an AI agent run it all"
+  goal="Hand setup, flags, experiments, and metrics to a coding assistant via the CLI and MCP server."
+  steps={[
+    { href: "/get-started/mcp", label: "Connect", title: "Install the MCP server" },
+    { href: "/get-started/agents", label: "Wire", title: "Set up your agent" },
+    { href: "/llms", label: "Run", title: "AI-agent runbooks" },
+  ]}
+/>
+
+## The products
+
+<TileGrid>
+  <Tile
+    href="/flags-experiments"
+    icon="⌗"
+    title="Flags & Experiments"
+    meta={
+      <>
+        <span>flags · configs · killswitches · A/B</span>
+      </>
+    }
+  >
+    Feature flags for ramps, configs for typed values, killswitches for break-glass, and experiments
+    with automated statistics.
+  </Tile>
+  <Tile
+    href="/metrics"
+    icon="📈"
+    title="Metrics & Alerts"
+    meta={
+      <>
+        <span>event metrics</span>
+        <span>·</span>
+        <span>threshold alerts</span>
+      </>
+    }
+  >
+    Turn events into metrics with a small DSL, attach them to experiments, and raise threshold
+    alerts that file their own tickets.
+  </Tile>
+  <Tile
+    href="/feedback"
+    icon="✦"
+    title="Bugs & Requests"
+    meta={
+      <>
+        <span>devtools widget</span>
+        <span>·</span>
+        <span>error reporting</span>
+      </>
+    }
+  >
+    User-reported bugs, feature requests, and handled errors — captured in-app and routed into your
+    tooling.
+  </Tile>
+  <Tile
+    href="/assistant"
+    icon="◆"
+    title="Assistant"
+    meta={
+      <>
+        <span>in-dashboard AI</span>
+      </>
+    }
+  >
+    Ask questions about your project, and let the assistant draft flags, configs, experiments, and
+    measurement plans as editable cards.
+  </Tile>
+  <Tile
+    href="/sdks"
+    icon="◇"
+    title="SDKs"
+    meta={
+      <>
+        <span>8 server languages</span>
+        <span>·</span>
+        <span>browser + React</span>
+      </>
+    }
+  >
+    One package, server + browser builds, plus native ports for Go, Python, Ruby, Java, Kotlin, PHP
+    and Swift.
+  </Tile>
+  <Tile
+    href="/get-started/overview"
+    icon="✱"
+    title="How it works"
+    meta={
+      <>
+        <span>architecture</span>
+        <span>·</span>
+        <span>read/write model</span>
+      </>
+    }
+  >
+    Fast local reads, explicit edge writes, sub-second propagation. The mental model behind every
+    product.
+  </Tile>
+</TileGrid>
+
+## Not sure which primitive?
+
+Inside **Flags & Experiments** there are four primitives. This picker maps "I want to do X" to the
+right one.
 
 <DecisionPicker />
 
-Full breakdown with examples → [decision guide](/flags-experiments/decision).
-
-## The 5-minute path
-
-<Quickstart title="From zero to Shipeasy" time="~5 minutes · no card required">
-  <QuickstartStep
-    num={1}
-    label="INSTALL"
-    title="Add the SDK and CLI"
-    cmd="npm i @shipeasy/sdk && npm i -g @shipeasy/cli"
-  >
-    One package for server + browser. The CLI logs in via your browser — no env tokens to wrangle.
-  </QuickstartStep>
-  <QuickstartStep
-    num={2}
-    label="WIRE"
-    title="Configure once, use everywhere"
-    cmd="shipeasy login && shipeasy bind"
-  >
-    Flags, experiments, translations, and feedback share a single API key. One{" "}
-    <code>shipeasy()</code>
-    call boots all of them.
-  </QuickstartStep>
-  <QuickstartStep
-    num={3}
-    label="SHIP"
-    title="Flip a flag, ship a translation"
-    cmd="shipeasy flags create checkout-v2 --rollout 5"
-  >
-    Changes you make in the dashboard go live worldwide in under a second.
-  </QuickstartStep>
-</Quickstart>
+Full breakdown → [decision guide](/flags-experiments/decision).
 
 ## Why Shipeasy
 
-- **One SDK** for feature flags, configs, experiments, translations, and feedback. Server _and_ client.
+- **One SDK** for feature flags, configs, experiments, metrics, and feedback. Server _and_ client.
 - **One CLI** (`shipeasy`) for everything you can do in the dashboard.
 - **One MCP server** so your AI agent can do the boring setup for you.
 - **Sub-millisecond evaluation**: flags resolve in your code without a network round-trip.
 - **Export your data**: results and events are yours, not locked into our dashboard.
-
-## Pick where to go next
-
-<CardGrid>
-  <Card href="/flags-experiments/getting-started" eyebrow="Step 1" title="Install the SDK & CLI">
-    `npm install @shipeasy/sdk` and `npm install -g @shipeasy/cli`.
-  </Card>
-  <Card href="/flags-experiments/decision" eyebrow="Step 2" title="Pick the right primitive">
-    Decision tree mapping "I want to do X" to feature flag vs config vs killswitch vs experiment.
-  </Card>
-  <Card href="/flags-experiments/case-studies" eyebrow="Step 3" title="See it in context">
-    Real scenarios with code — from "ramp checkout v2" to "kill outbound emails".
-  </Card>
-</CardGrid>
 
 <ConvertCTA
   eyebrow="READY?"
@@ -94,7 +199,7 @@ Full breakdown with examples → [decision guide](/flags-experiments/decision).
     </>
   }
   body="The fastest way to feel Shipeasy is to install it on a real repo. The free tier is generous, the CLI does the boring parts, and your AI agent can do the rest."
-  primaryHref="/flags-experiments/getting-started"
+  primaryHref="/get-started/quickstart"
   primaryLabel="Run quickstart"
   secondaryHref="/get-started/mcp"
   secondaryLabel="Hand it to an AI agent"

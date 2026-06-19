@@ -1,0 +1,100 @@
+---
+title: Evaluation reasons
+description: getFlagDetail returns the value plus the reason a flag resolved the way it did — RULE_MATCH, DEFAULT, OFF, OVERRIDE, FLAG_NOT_FOUND, and CLIENT_NOT_READY.
+---
+
+<DocMeta
+  status="Production ready"
+  read="4 min read"
+  updated="June 19, 2026"
+  works="@shipeasy/sdk · server + client"
+/>
+
+`getFlag` tells you _what_ a flag resolved to. `getFlagDetail` tells you _why_ — it returns `{ value, reason }`, LaunchDarkly `variationDetail` parity, so you can log, debug, or branch on the cause rather than just the boolean.
+
+```ts
+import { FlagsClient, type FlagReason } from "@shipeasy/sdk/server";
+
+const client = new FlagsClient({ sdkKey: process.env.SHIPEASY_SERVER_KEY! });
+await client.init();
+
+const d = client.getFlagDetail("new_checkout", { user_id: "u1" });
+// → { value: true, reason: "RULE_MATCH" }
+```
+
+The browser entry is identical (no `user` argument — the visitor is already identified):
+
+```ts
+import { FlagsClientBrowser } from "@shipeasy/sdk/client";
+
+const d = client.getFlagDetail("new_checkout");
+// → { value: false, reason: "DEFAULT" }
+```
+
+## The reason enum
+
+`FlagReason` is one of:
+
+| reason             | meaning                                                     |
+| ------------------ | ----------------------------------------------------------- |
+| `CLIENT_NOT_READY` | no rules loaded yet — `init()` / `identify()` still pending |
+| `FLAG_NOT_FOUND`   | the gate name isn't in the loaded rules                     |
+| `OFF`              | the gate exists but is disabled / killed (server only)      |
+| `OVERRIDE`         | a local override or a `?se_gate_…` URL override decided it  |
+| `RULE_MATCH`       | the gate evaluated `true`                                   |
+| `DEFAULT`          | the gate evaluated `false`                                  |
+
+<Callout type="info" title="Reason is computed at the client boundary">
+  The wire blob carries rules, not reasons. <code>getFlagDetail</code> runs the evaluation locally
+  and labels the outcome — the reason is derived in the SDK, not returned by the API. That's why{" "}
+  <code>getFlag</code> is implemented on top of <code>getFlagDetail</code>: one evaluation, one
+  telemetry beacon.
+</Callout>
+
+On the **browser**, the edge pre-evaluates the gate's enabled/killed state into a boolean, so `OFF` never surfaces there — it folds into `DEFAULT`. `OFF` is a server-only reason.
+
+## When to use it
+
+`getFlagDetail` is the same single evaluation as `getFlag` — there's no extra cost. Reach for it when you need the cause, not just the answer:
+
+- **Structured logging** — record _why_ a user did or didn't get a feature.
+- **Distinguishing "off" from "not found"** — `DEFAULT` (rolled out to 0%) vs `FLAG_NOT_FOUND` (typo or stale bundle) look identical through `getFlag`.
+- **Detecting a not-ready read** — `CLIENT_NOT_READY` tells you the SDK answered with the caller default because nothing had loaded yet.
+- **OpenFeature** — the [provider](/sdks/openfeature) maps these reasons onto `StandardResolutionReasons`.
+
+Use plain `getFlag` everywhere else — it's the same evaluation with the reason discarded.
+
+<ApiTable>
+  <ApiRow name="name" required type="string" desc="The gate name." />
+  <ApiRow
+    name="user"
+    type="User"
+    desc={
+      <>
+        Server only. Evaluation context — include <code>user_id</code> for deterministic bucketing
+        plus any attributes your rules target. The browser omits this (the visitor is already
+        identified).
+      </>
+    }
+  />
+</ApiTable>
+
+<SeeAlso
+  links={[
+    { href: "/sdks/node-typescript", title: "Node / TypeScript", note: "Server client" },
+    { href: "/sdks/browser-react", title: "Browser / React", note: "Client client" },
+    { href: "/sdks/openfeature", title: "OpenFeature provider", note: "Reason mapping" },
+    {
+      href: "/flags-experiments/gates/rollouts",
+      title: "Rollouts",
+      note: "What drives RULE_MATCH vs DEFAULT",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/sdks/swift", title: "Swift" }}
+  next={{ href: "/sdks/onchange", title: "Reacting to changes" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/sdks/reasons.mdx" />

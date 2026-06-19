@@ -195,7 +195,7 @@ Stopping early because "we already know it's going to win" is the same as peekin
 
 1. **Define the primary metric.** One. Two if tightly related.
 2. **Define guardrails.** At least error rate and performance. See
-   [Guardrails](/flags-experiments/metrics/guardrails).
+   [Guardrails](/metrics/guardrails).
 3. **Compute MDE.** `shipeasy experiments power <name> --metric <primary>`.
 4. **Decide duration.** Read the "expected duration" output, round up to the nearest whole week.
 5. **Decide α and analysis mode.** 0.05 fixed-horizon is the default. Switch to sequential only
@@ -207,6 +207,6 @@ running; either pick a higher-baseline metric, target a higher-traffic cohort, o
 hypothesis bigger than the noise floor.
 
 <DocNav
-  prev={{ href: "/flags-experiments/metrics/guardrails", title: "Guardrails" }}
-  next={{ href: "/flags-experiments/experiments", title: "Experiments" }}
+  prev={{ href: "/metrics/guardrails", title: "Guardrails" }}
+  next={{ href: "/metrics/alerts", title: "Alerts" }}
 />

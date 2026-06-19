@@ -53,7 +53,7 @@ The metric needs to be:
 - **Specific to the change** — not "DAU," which moves for a hundred reasons. "Did _this exposed
   user_ convert _after exposure_."
 - **Reasonable to detect** — a 1% conversion lift on 1,000 users a day will take a month. Check
-  the [power table](/flags-experiments/metrics/power#sample-size-rules-of-thumb) before
+  the [power table](/metrics/power#sample-size-rules-of-thumb) before
   committing.
 
 ## 2. Define the metric
@@ -77,7 +77,7 @@ shipeasy metrics create revenue_per_user \
   --query 'sum(purchase, revenueCents)'
 ```
 
-For more aggregation types, see [Aggregations](/flags-experiments/metrics/aggregations).
+For more aggregation types, see [Aggregations](/metrics/aggregations).
 
 ## 3. Log the underlying events
 
@@ -130,7 +130,7 @@ Then attach it as `guardrail` on the same experiment detail page.
 
 The metric you mark **primary** drives the ship/no-ship decision. A
 metric marked **guardrail** must _not_ regress, even if the primary
-moves. See [Guardrails](/flags-experiments/metrics/guardrails).
+moves. See [Guardrails](/metrics/guardrails).
 
 ## 5. Read the result
 
@@ -157,24 +157,24 @@ What if the result is flat or noisy? Two checks:
 2. **Is the experiment powered?** The dashboard shows MDE alongside the lift. If MDE is `±10%`
    and the real lift is `+2%`, you can't tell — run longer or accept the null.
 
-See [Power & sample size](/flags-experiments/metrics/power).
+See [Power & sample size](/metrics/power).
 
 ## Where to next
 
 <TileGrid>
-  <Tile href="/flags-experiments/metrics/aggregations" icon="∑" title="Aggregation types">
+  <Tile href="/metrics/aggregations" icon="∑" title="Aggregation types">
     Conversion, count, sum, mean, ratio — what each does and when to pick it.
   </Tile>
-  <Tile href="/flags-experiments/metrics/guardrails" icon="◐" title="Primary vs guardrail">
+  <Tile href="/metrics/guardrails" icon="◐" title="Primary vs guardrail">
     The two roles a metric can play in an experiment, and how the dashboard treats each.
   </Tile>
-  <Tile href="/flags-experiments/metrics/power" icon="◯" title="Power & sample size">
+  <Tile href="/metrics/power" icon="◯" title="Power & sample size">
     Pre-flight check: do you have enough users to detect the lift you're hoping for?
   </Tile>
 </TileGrid>
 
 <DocNav
-  prev={{ href: "/flags-experiments/metrics", title: "Metrics overview" }}
-  next={{ href: "/flags-experiments/metrics/aggregations", title: "Aggregation types" }}
+  prev={{ href: "/metrics", title: "Metrics overview" }}
+  next={{ href: "/metrics/aggregations", title: "Aggregation types" }}
 />
 ```

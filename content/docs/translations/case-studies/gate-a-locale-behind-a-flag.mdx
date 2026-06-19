@@ -1,0 +1,92 @@
+---
+title: Gate a locale behind a feature flag
+description: Roll a freshly published language out to a percentage of users with a gate before opening it to everyone.
+---
+
+<DocMeta
+  status="Production ready"
+  read="5 min read"
+  updated="June 19, 2026"
+  works="Server SDK · Translations · Dashboard"
+/>
+
+You've [launched `fr:prod`](/translations/case-studies/launch-a-new-locale) — drafted, reviewed, published. But a freshly machine-translated locale carries risk you can't fully see in review: a string that overflows a button, a register that reads wrong to native speakers, an edge case your reviewer missed. You don't want to discover it from all of France at once.
+
+Treat the locale like any other feature: roll it out behind a [feature flag](/flags-experiments/gates/rollouts) before going 100%.
+
+**The idea:** the locale exists and is published, but whether a French-locale user _gets_ French is decided by a gate. Ramp the gate, watch for breakage, then open it to everyone.
+
+## 1. Create the gate
+
+```bash
+shipeasy flags create french-locale --rollout 0
+```
+
+`--rollout 0` ships it dark — the locale is published but nobody is routed to it yet.
+
+## 2. Choose the locale through the gate
+
+Resolve the user's effective locale by combining their browser/account preference with the gate:
+
+```ts
+import { flags } from "@shipeasy/sdk/server";
+
+function effectiveLocale(user: { id: string; pref: string }) {
+  if (user.pref === "fr" && flags.get("french-locale", { user_id: user.id })) {
+    return "fr";
+  }
+  return "en"; // not yet eligible → safe fallback to the source locale
+}
+```
+
+The SDK serves labels for whatever locale you ask it to render. A user who prefers French but isn't in the rollout simply sees English — no missing strings, no broken page.
+
+<Callout type="info" title="The flag gates routing, not the labels">
+  The labels are already published and on the CDN. The gate only decides <em>which</em> users are
+  routed to the new locale. That keeps the fallback clean: ineligible users fall back to your
+  fully-translated source locale.
+</Callout>
+
+## 3. Ramp it
+
+```bash
+shipeasy flags rollout french-locale 10   # a slice of French-preference users
+shipeasy flags rollout french-locale 50   # half, once it looks clean
+shipeasy flags rollout french-locale 100  # everyone — then retire the gate
+```
+
+Each step is sticky per user, so a French user who got French keeps French as you ramp — no flicker between languages.
+
+## Rollout & measurement plan
+
+- **Start with French-preference users only.** The gate is layered _under_ the preference check, so the rollout percentage applies to the population that would actually see French — your sample is the people who matter.
+- **Watch support + layout.** A spike in French-locale bug reports (or [error reports](/feedback/error-reporting) from French routes) is your signal to pause the ramp and fix a string.
+- **Retire the gate at 100%.** Once French is fully live and stable, drop the gate from the locale-resolution code so French becomes unconditional for `fr` users.
+- **Reuse the pattern per locale.** Each new language gets its own gate; you're never ramping two unproven locales on the same switch.
+
+<SeeAlso
+  links={[
+    {
+      href: "/translations/case-studies/launch-a-new-locale",
+      title: "Launch a new locale",
+      note: "Get the locale published first",
+    },
+    {
+      href: "/flags-experiments/gates/rollouts",
+      title: "Rollouts",
+      note: "How the percentage ramp works",
+    },
+    {
+      href: "/translations/profiles",
+      title: "Profiles",
+      note: "The published locale the gate routes to",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/translations/case-studies/launch-a-new-locale", title: "Launch a new locale" }}
+  next={{ href: "/translations/case-studies", title: "Case studies" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/translations/case-studies/gate-a-locale-behind-a-flag.mdx" />

@@ -1,0 +1,96 @@
+---
+title: Launch a new locale end to end
+description: Seed a target profile from your source, AI-draft every key, review the diff, and publish — one locale, start to finish.
+---
+
+<DocMeta
+  status="Tutorial"
+  read="6 min read"
+  updated="June 19, 2026"
+  works="CLI · Dashboard · MCP"
+/>
+
+You ship in English. Sales just closed a deal that needs French. You have a few hundred keys already live in `en:prod` and you want `fr:prod` standing up this week — drafted by AI, reviewed by a human, published without a redeploy.
+
+This is the full locale-launch pipeline: **seed → draft → review → publish.**
+
+## 1. Seed the target from your source profile
+
+A [profile](/translations/profiles) is the versioned set of keys for one locale. Seed the new one from your source so it starts with every key present and untranslated:
+
+```bash
+shipeasy i18n profiles create fr:prod --from en:prod
+```
+
+`fr:prod` now mirrors the key set of `en:prod`, with values empty (or carrying the source string as a placeholder). Nothing is published yet.
+
+## 2. AI-draft every key
+
+Machine-translate the whole profile in one pass. The drafter uses the source value and any per-key context as the prompt:
+
+```bash
+shipeasy i18n translate fr:prod --from en:prod
+```
+
+<Callout type="info" title="Context improves the draft">
+  Keys that carry a context note ("Open — the verb", "Save — the noun, a discount") translate far
+  better. If your source keys already have context, the French draft inherits it. Add context to the
+  ambiguous ones before drafting.
+</Callout>
+
+## 3. Review the draft
+
+Drafts land in a review state, not live. Walk the diff in the dashboard's [drafts](/translations/drafts) view (or export it for a native speaker). You're checking three things:
+
+<Steps>
+  <Step title="Meaning">Did the model pick the right sense of an ambiguous word?</Step>
+  <Step title="Tone & glossary">
+    Brand terms, register, and product nouns match your <a href="/translations/profiles">profile</a>
+    's glossary.
+  </Step>
+  <Step title="Layout">
+    French runs ~20% longer than English — check the strings that live in tight UI.
+  </Step>
+</Steps>
+
+Edit in place. Reviewing is insert-and-correct — you're not re-translating, just approving and fixing.
+
+## 4. Publish the profile
+
+```bash
+shipeasy i18n profiles publish fr:prod
+```
+
+Publishing pushes the locale's labels to the CDN. The SDK picks `fr:prod` up on its next refresh — no redeploy. Your app already reads labels through the SDK, so `t("cta.subscribe")` resolves to French the moment a user's locale is `fr`.
+
+## Rollout & measurement plan
+
+- **Publish to a draft profile first** if you want to dogfood before going live — point internal users at `fr:staging`, verify, then publish `fr:prod`.
+- **Don't go 100% on day one.** A new locale is a great candidate to [gate behind a flag](/translations/case-studies/gate-a-locale-behind-a-flag) — roll French out to a slice of French-locale users, watch for layout breakage and support tickets, then open it to all.
+- **Track the gap.** Run `shipeasy i18n validate` in CI so a new English key can't ship without a French counterpart being queued.
+
+<SeeAlso
+  links={[
+    { href: "/translations/profiles", title: "Profiles", note: "The unit you seed and publish" },
+    {
+      href: "/translations/translations",
+      title: "Translations",
+      note: "Drafting, review, and the key lifecycle",
+    },
+    {
+      href: "/translations/case-studies/gate-a-locale-behind-a-flag",
+      title: "Gate a locale behind a flag",
+      note: "Roll the new language out gradually",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/translations/case-studies", title: "Case studies" }}
+  next={{
+    href: "/translations/case-studies/gate-a-locale-behind-a-flag",
+    title: "Gate a locale behind a flag",
+  }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/translations/case-studies/launch-a-new-locale.mdx" />

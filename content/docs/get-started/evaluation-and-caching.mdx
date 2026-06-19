@@ -1,0 +1,162 @@
+---
+title: Evaluation & caching
+description: The read path in depth — in-memory rules, deterministic murmur3 bucketing, background polling, KV blobs, and infinite-TTL CDN propagation.
+---
+
+<DocMeta
+  status="Production ready"
+  read="6 min read"
+  updated="June 18, 2026"
+  works="Node 20+ · Workers · Bun · Deno · Browser"
+/>
+
+Evaluation is **local, deterministic, and sub-second to update**. Your code never makes a per-request network call to decide a flag. Here is exactly how the read path works.
+
+## The rule set lives in memory
+
+When you call `shipeasy()` on the server, the SDK fetches your rule set once and holds it in memory. Every `getFlag` / `getConfig` / `getExperiment` call evaluates against that in-memory snapshot — no I/O on the hot path.
+
+```ts
+import { getFlag } from "@shipeasy/sdk/server";
+
+// No await, no network — pure local evaluation against the cached rule set:
+if (getFlag("checkout-v2", { user_id: userId })) {
+  /* ... */
+}
+```
+
+This is why evaluation is synchronous and fast enough to call in a render path. The cost of "is this flag on?" is a hash, not a round trip.
+
+## Deterministic murmur3 bucketing
+
+Fractional rollouts and experiment allocation are decided by hashing the unit:
+
+```
+segment = murmur3(`${salt}:${unitId}`) % 10000
+on = segment < rolloutPct        // rolloutPct is an integer 0–10000
+```
+
+- **Same input, same bucket.** The same `unitId` always lands in the same segment, so a user who is in the first 25% stays in as you ramp to 50% — nobody flickers out.
+- **Cross-language identical.** Every SDK uses `MurmurHash3_x86_32`, seed 0, UTF-8 bytes. A user buckets the same way in your Node SSR, your Go backend, and your browser bundle. The hash is published as a fixed test-vector table so every language agrees byte-for-byte.
+- **Integer math, no floats.** Rollout percentages are stored as integers `0–10000` (basis points). Comparison is pure integer — no float drift across languages.
+
+<Callout type="info" title="Two independent hashes for experiments">
+  Experiment allocation (are you in?) and group assignment (which variant?) use **separate** hashes
+  (`…:alloc:…` and `…:group:…`). That decorrelates who is enrolled from which variant they see.
+  Universe holdouts hash on the **universe name**, so the same segment is excluded from every
+  experiment in that universe. See [Identity & bucketing](/get-started/identity-and-bucketing).
+</Callout>
+
+## Background polling at the plan interval
+
+The SDK keeps its in-memory rules fresh by polling in the background — never on your request path.
+
+<Steps>
+  <Step title="Conditional fetch">
+    Each poll sends an `If-None-Match` with the last `ETag`. Unchanged rules come back `304 Not
+    Modified` with no body — cheap, and the CDN absorbs it.
+  </Step>
+  <Step title="Plan-driven cadence">
+    The flags blob polls at your plan's interval. The Worker returns an `X-Poll-Interval` header and
+    the SDK auto-adjusts to it, so changing a plan lever re-paces every SDK on that plan with no
+    redeploy. The experiments blob polls on a longer, fixed cadence because experiments are stable
+    mid-run.
+  </Step>
+  <Step title="Timers don't block shutdown">
+    On the server the poll timers are `unref`'d, so they never keep a process alive. In serverless,
+    fetch once with no background poll — the rules are valid for the life of the invocation.
+  </Step>
+</Steps>
+
+Polling — not streaming. There are **no** Server-Sent Events and **no** Durable Objects: those need persistent connections, which break in serverless (Lambda, Vercel, Workers, PHP-FPM). Polling at the plan interval is correct everywhere and the CDN makes it nearly free.
+
+## Two KV blobs per project
+
+Your rules are served from Cloudflare KV as two separate blobs, fronted by the CDN:
+
+<ApiTable>
+  <ApiRow
+    name=":flags"
+    type="KV blob"
+    desc={
+      <>
+        Gates + dynamic configs. Changes often; served via <code>/sdk/flags</code>. This is what
+        your server SDK polls at the plan interval.
+      </>
+    }
+  />
+  <ApiRow
+    name=":experiments"
+    type="KV blob"
+    desc={
+      <>
+        Universes + experiments. Stable mid-run; served via <code>/sdk/experiments</code> with a
+        longer cache window.
+      </>
+    }
+  />
+</ApiTable>
+
+They are split on purpose: a gate change shouldn't invalidate the experiment cache, and vice versa. Browser clients hit `/sdk/evaluate`, where the Worker reads **both** blobs, evaluates server-side, and returns a flat map — so the client never sees raw rules.
+
+D1 is the source of truth. KV is a globally replicated cache built from D1. Readers on the hot path **never** touch D1.
+
+## Infinite TTL + explicit purge
+
+This is the propagation model, and it's the opposite of what most CDNs do.
+
+The KV blobs are cached at the edge with an effectively **infinite TTL** — they never expire on a timer. Instead, **every write explicitly purges** the relevant blob:
+
+1. You change a flag (UI, CLI, or MCP).
+2. The writer rebuilds the affected KV blob from D1.
+3. The writer issues an explicit CDN purge for that blob.
+4. The next request repopulates the edge from the fresh blob.
+5. Your SDK picks it up on its next background poll.
+
+```
+edit → rebuild :flags → purge CDN → next poll sees new ETag → in-memory rules swap
+```
+
+<Callout type="success" title="Why infinite-TTL beats timed expiry">
+  A TTL forces a tradeoff: short TTL = constant origin load + cache misses; long TTL = stale rules.
+  Explicit purge gives you **both** — the cache stays warm indefinitely **and** changes go live in
+  roughly the time it takes the purge to fan out (~150ms). The purge API is free.
+</Callout>
+
+## Sub-second time-to-visible
+
+Add it up: purge fan-out (~150ms) plus the time until your SDK's next background poll returns a fresh `ETag`. In practice an edit is visible to your fleet **in under a second**. Because evaluation is local, once the new rules are in memory every subsequent `getFlag` reflects the change with zero added latency.
+
+<Callout type="info" title="Re-render on change">
+  The server SDK fires `onChange` listeners after a poll returns new data (HTTP 200, not 304) —
+  invalidate a cache or re-render when a flag flips. The browser SDK exposes the equivalent
+  `subscribe()`.
+</Callout>
+
+<SeeAlso
+  links={[
+    {
+      href: "/get-started/identity-and-bucketing",
+      title: "Identity & bucketing",
+      note: "what unitId feeds the hash",
+    },
+    {
+      href: "/get-started/keys-and-environments",
+      title: "Keys & environments",
+      note: "which env the blobs are scoped to",
+    },
+    {
+      href: "/flags-experiments/gates/rollouts",
+      title: "Rollouts",
+      note: "ramps and per-condition rollout",
+    },
+    { href: "/get-started/plan-limits", title: "Plan limits", note: "poll interval per plan" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/get-started/keys-and-environments", title: "Keys & environments" }}
+  next={{ href: "/get-started/identity-and-bucketing", title: "Identity & bucketing" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/get-started/evaluation-and-caching.mdx" />

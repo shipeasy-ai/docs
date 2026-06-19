@@ -1,0 +1,117 @@
+---
+title: Python
+description: The Shipeasy Python server SDK — local evaluation, configs, experiments, WSGI/ASGI anon middleware, and metric tracking.
+---
+
+<DocMeta
+  status="Production ready"
+  read="4 min read"
+  updated="June 18, 2026"
+  works="Python 3.9+ · Flask · Django · FastAPI"
+/>
+
+Server-side flags, configs, experiments, and tracking for Python. Server-key only — never embed in browsers. Evaluates locally against a background-polled blob — see the [shared evaluation model](/sdks).
+
+## Install
+
+```bash
+pip install shipeasy
+```
+
+## Configure
+
+Initialise once with the **server** key. `init()` starts a background poll; use `init_once()` for serverless (one synchronous fetch, no thread).
+
+```python
+from shipeasy import Client
+
+client = Client(api_key=os.environ["SHIPEASY_SERVER_KEY"])
+client.init()  # use init_once() in Lambda / Cloud Run
+```
+
+## Evaluate a feature flag
+
+```python
+if client.get_flag("new_checkout", {"user_id": "u_123", "country": "US"}):
+    ...
+```
+
+A `default` is returned **only** when the value can't be evaluated (client not ready or gate absent) — a gate that evaluates `False` returns `False`:
+
+```python
+client.get_flag("new_checkout", {"user_id": "u_123"}, default=True)
+```
+
+For the value plus the reason, use `get_flag_detail` — see [Evaluation reasons](/sdks/reasons):
+
+```python
+from shipeasy import RULE_MATCH
+
+d = client.get_flag_detail("new_checkout", {"user_id": "u_123"})
+print(d.value, d.reason)  # e.g. True RULE_MATCH
+```
+
+## Read a dynamic config
+
+```python
+config = client.get_config("billing_copy", default={"title": "Welcome"})
+limit = client.get_config("limits", decode=lambda v: v["max"], default=0)
+```
+
+## Resolve an experiment
+
+```python
+result = client.get_experiment(
+    "checkout_button",
+    user={"user_id": "u_123"},
+    default_params={"color": "blue"},
+)
+if result.in_experiment:
+    print(result.group, result.params)
+```
+
+## Track an event
+
+```python
+client.track("u_123", "purchase", {"amount": 49})
+```
+
+## Anonymous visitors
+
+Mount the middleware once; logged-out requests then bucket on the shared `__se_anon_id` cookie automatically — no per-call wiring:
+
+```python
+# WSGI (Flask, Django)
+from shipeasy.middleware import AnonIdMiddleware
+app.wsgi_app = AnonIdMiddleware(app.wsgi_app)
+
+# ASGI (FastAPI, Starlette)
+from shipeasy.middleware import AnonIdASGIMiddleware
+app.add_middleware(AnonIdASGIMiddleware)
+
+client.get_flag("new_checkout", {})  # buckets on the cookie
+```
+
+## Testing
+
+`Client.for_testing()` does zero network — no api*key, `init`/`track` are no-ops. Seed with `override*\*`and reset with`clear_overrides`. See [Testing](/sdks/testing).
+
+```python
+client = Client.for_testing()
+client.override_flag("new_checkout", True)
+assert client.get_flag("new_checkout", {"user_id": "u_123"}) is True
+client.clear_overrides()
+```
+
+<SeeAlso
+  links={[
+    { href: "/sdks", title: "Shared evaluation model", note: "How every SDK buckets" },
+    { href: "/sdks/reasons", title: "Evaluation reasons", note: "get_flag_detail" },
+    { href: "/sdks/testing", title: "Testing", note: "for_testing" },
+    { href: "/flags-experiments/gates", title: "Feature gates" },
+  ]}
+/>
+
+<DocNav prev={{ href: "/sdks/go", title: "Go" }} next={{ href: "/sdks/ruby", title: "Ruby" }} />
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/sdks/python.mdx" />

@@ -1,0 +1,5 @@
+{
+  "title": "Case studies",
+  "defaultOpen": false,
+  "pages": ["index", "launch-a-new-locale", "gate-a-locale-behind-a-flag", "..."]
+}

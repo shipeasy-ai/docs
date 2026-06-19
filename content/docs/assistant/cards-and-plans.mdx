@@ -1,0 +1,99 @@
+---
+title: Confirmation cards & plans
+description: How the assistant turns an intent into an editable card you confirm — and how plan cards split instant resources from ship-code work.
+---
+
+<DocMeta
+  status="Production ready"
+  read="5 min read"
+  updated="June 19, 2026"
+  works="In-dashboard assistant"
+/>
+
+When the assistant decides a change should happen, it never just does it. It renders the change as an **editable card**. You review, tweak the fields, and confirm — only then does the mutation run. This is the whole safety model of [write mode](/assistant/read-vs-write).
+
+## Confirmation cards
+
+A confirmation card is a form pre-filled with the assistant's proposal. Every write resource has one:
+
+<ApiTable>
+  <ApiRow
+    name="Feature flag"
+    type="card"
+    desc="Name, targeting rules, rollout %, default — edit before you create."
+  />
+  <ApiRow
+    name="Dynamic config"
+    type="card"
+    desc="Key, typed value, targeting. Adjust the value and ship."
+  />
+  <ApiRow
+    name="Kill switch"
+    type="card"
+    desc="Name and default. Confirm to add the break-glass switch."
+  />
+  <ApiRow
+    name="Experiment"
+    type="card"
+    desc="Groups, weights, allocation, success + guardrail metrics."
+  />
+  <ApiRow name="Universe" type="card" desc="Holdout %, mutual-exclusion scope, unit of analysis." />
+  <ApiRow
+    name="Metric / alert rule"
+    type="card"
+    desc="Event, aggregation, threshold, severity — from exp_create_metric and the alert tools."
+  />
+</ApiTable>
+
+The fields are the real resource schema — what you edit in the card is exactly what gets written. Nothing is hidden behind the assistant.
+
+<Steps>
+  <Step title="The assistant proposes">
+    It calls a write tool. Instead of executing, the call surfaces as a card with its arguments
+    pre-filled.
+  </Step>
+  <Step title="You edit">
+    Change the rollout, rename the flag, swap the metric — every field is editable.
+  </Step>
+  <Step title="You confirm">
+    The mutation runs against the same admin endpoints the dashboard and CLI use. The card collapses
+    into a result.
+  </Step>
+</Steps>
+
+<Callout type="info" title="The chooser">
+  When the assistant needs a decision from you mid-flow, the <code>ask_user</code> tool renders a
+  chooser — a small set of options — rather than guessing. Pick one and it continues.
+</Callout>
+
+## Plan cards
+
+For anything bigger than a single resource, the `suggest_plan` tool renders a **plan card** — an ordered set of steps. A plan separates two kinds of work:
+
+- **Instant resources** — flags, configs, metrics the assistant can create directly via confirmation cards.
+- **Ship-code work** — changes that need a developer or a coding agent (wiring the SDK, instrumenting an event). These are filed as tickets for [`ops:work`](/feedback) or an external agent via the [MCP server](/get-started/mcp), not executed in the chat.
+
+This is why the assistant can scope an entire experiment — metric, variants, instrumentation — even though it only writes the parts that are safe to write from a chat.
+
+<SeeAlso
+  links={[
+    { href: "/assistant/read-vs-write", title: "Read vs write mode", note: "Why cards exist" },
+    {
+      href: "/assistant/measurement-plans",
+      title: "Measurement plans",
+      note: "Plans that file tickets",
+    },
+    {
+      href: "/flags-experiments/experiments",
+      title: "Experiments",
+      note: "What an experiment card builds",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/assistant/read-vs-write", title: "Read vs write mode" }}
+  next={{ href: "/assistant/measurement-plans", title: "Measurement plans" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/assistant/cards-and-plans.mdx" />

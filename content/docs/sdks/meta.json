@@ -1,0 +1,29 @@
+{
+  "title": "SDKs",
+  "description": "Server + client SDKs, every language",
+  "root": true,
+  "pages": [
+    "index",
+    "---Languages---",
+    "node-typescript",
+    "browser-react",
+    "go",
+    "python",
+    "ruby",
+    "java",
+    "kotlin",
+    "php",
+    "swift",
+    "---Capabilities---",
+    "reasons",
+    "onchange",
+    "manual-exposure",
+    "bucketby",
+    "private-attributes",
+    "sticky-bucketing",
+    "offline-snapshot",
+    "testing",
+    "devtools-overlay",
+    "openfeature"
+  ]
+}

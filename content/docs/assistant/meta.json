@@ -1,5 +1,13 @@
 {
   "title": "Assistant",
   "description": "The in-dashboard AI assistant",
-  "pages": ["index"]
+  "root": true,
+  "pages": [
+    "index",
+    "read-vs-write",
+    "cards-and-plans",
+    "measurement-plans",
+    "credits",
+    "use-cases"
+  ]
 }

@@ -1,0 +1,80 @@
+---
+title: Reacting to changes
+description: onChange fires after a background poll picks up new rules — use it to invalidate caches or re-render when a flag flips.
+---
+
+<DocMeta
+  status="Production ready"
+  read="3 min read"
+  updated="June 19, 2026"
+  works="@shipeasy/sdk · server + client"
+/>
+
+Reads are synchronous against an in-memory rule set that a background poll keeps fresh. `onChange` lets you react the moment that rule set swaps — for cache busting, re-rendering, or logging a config flip.
+
+## Server
+
+The server `FlagsClient` fires registered listeners after a background poll **returns new data** (HTTP 200, not a 304). It returns an unsubscribe function, and never fires in test or offline mode (no polling happens there).
+
+```ts
+import { FlagsClient } from "@shipeasy/sdk/server";
+
+const client = new FlagsClient({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
+await client.init();
+
+const unsubscribe = client.onChange(() => {
+  console.log("flag rules changed — re-evaluating");
+  rebuildRenderCache();
+});
+
+// on shutdown
+unsubscribe();
+```
+
+<Callout type="info" title="Only fires on real changes">
+  The poll sends an <code>ETag</code>; an unchanged body comes back <code>304</code> and listeners
+  stay quiet. You only wake up when something actually changed in the dashboard.
+</Callout>
+
+## Browser
+
+The browser `FlagsClientBrowser` exposes the equivalent `subscribe()`, which fires after each `identify()` and after any override change — exactly when a re-render is warranted.
+
+```ts
+import { FlagsClientBrowser } from "@shipeasy/sdk/client";
+
+const unsubscribe = client.subscribe(() => {
+  renderFlags();
+});
+```
+
+## When to use it
+
+- **Cache invalidation** — drop a memoized render or a derived config when rules change.
+- **Long-lived servers** — re-evaluate a flag that gates a background job without restarting.
+- **Dashboards** — reflect a flag flip live without a page reload.
+
+For one-shot serverless reads there is nothing to subscribe to — see [init vs initOnce](/sdks/node-typescript#init-vs-initonce-serverless).
+
+<SeeAlso
+  links={[
+    {
+      href: "/sdks/node-typescript",
+      title: "Node / TypeScript",
+      note: "init() + the server client",
+    },
+    {
+      href: "/get-started/evaluation-and-caching",
+      title: "Evaluation & caching",
+      note: "How polling works",
+    },
+    { href: "/sdks/reasons", title: "Evaluation reasons", note: "Why a flag resolved" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/sdks/reasons", title: "Evaluation reasons" }}
+  next={{ href: "/sdks/manual-exposure", title: "Manual exposure" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/sdks/onchange.mdx" />

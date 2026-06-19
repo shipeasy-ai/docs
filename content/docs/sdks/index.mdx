@@ -1,0 +1,187 @@
+---
+title: SDKs
+description: One package for JavaScript (server + browser) plus seven native server languages — all evaluating the same blob, the same way.
+---
+
+<Hero
+  eyebrow="SDKs"
+  title={
+    <>
+      One evaluation model, <em>every</em> language.
+    </>
+  }
+  subtitle="The TypeScript package ships a server and a browser build. Seven native server SDKs — Go, Python, Ruby, Java, Kotlin, PHP, Swift — speak the same wire format and run the same deterministic evaluation locally."
+  primaryHref="/sdks/node-typescript"
+  primaryLabel="Node / TypeScript"
+  secondaryHref="/get-started/install"
+  secondaryLabel="Install guide"
+/>
+
+<DocMeta
+  status="Production ready"
+  read="6 min read"
+  updated="June 18, 2026"
+  works="TS · JS · React · Go · Python · Ruby · Java · Kotlin · PHP · Swift"
+/>
+
+Every Shipeasy SDK is a thin client over two cached blobs — `:flags` (gates + configs + kill switches) and `:experiments` (universes + experiments). The SDK polls them in the background and **evaluates locally**: there is no per-call network round-trip on your hot path.
+
+## The shared evaluation model
+
+All SDKs implement the same contract, so a flag buckets identically whether the call runs in Node, Go, or Swift:
+
+- **Deterministic bucketing.** The rollout bucket is `murmur3("salt:unit") % 10000`. The hash is the cross-language MurmurHash3 x86_32 variant (seed 0), verified against shared test vectors — the same `user_id` lands in the same bucket in every language.
+- **Local evaluation.** Targeting rules, rollout, holdouts, and experiment allocation all run in-process against the polled blob. See [Feature gates](/flags-experiments/gates) for the rule model.
+- **One unit, server + browser.** Logged-out traffic buckets on a shared first-party `__se_anon_id` cookie, so the server and the browser bucket a visitor the same way.
+- **ETag polling.** Each poll sends `If-None-Match`; a `304` skips the parse. The poll interval is plan-driven and pushed via the `X-Poll-Interval` header.
+
+<Callout type="info" title="The Node SDK is canonical">
+  When a native SDK and the TypeScript SDK disagree, the TypeScript SDK is the reference
+  implementation. Native pages stay idiomatic to their language but never add method names that
+  contradict it.
+</Callout>
+
+## What every SDK supports
+
+| Capability        | Method shape                               | Notes                                                               |
+| ----------------- | ------------------------------------------ | ------------------------------------------------------------------- |
+| Feature flags     | `getFlag(name, user[, default])`           | Boolean; default returned only when unevaluable                     |
+| Dynamic configs   | `getConfig(name[, default])`               | Typed JSON value with targeting                                     |
+| Experiments       | `getExperiment(name, user, defaultParams)` | `{ inExperiment, group, params }`                                   |
+| Evaluation detail | `getFlagDetail(name, user)`                | `{ value, reason }` — see [Reasons](/sdks/reasons)                  |
+| Event tracking    | `track(userId, event, props)`              | Fire-and-forget metric ingestion                                    |
+| Change listeners  | `onChange(cb)`                             | Fires after a poll brings new data — see [onChange](/sdks/onchange) |
+| Offline snapshot  | `fromFile` / `fromSnapshot`                | Zero-network eval against a captured blob                           |
+| Test utilities    | `forTesting()` + `override*`               | No key, no network — see [Testing](/sdks/testing)                   |
+
+Defaults are returned **only when a value can't be evaluated** (client not ready, or the key isn't in the blob). A flag that legitimately evaluates `false` returns `false`, never the default.
+
+## Pick your language
+
+<TileGrid>
+  <Tile
+    href="/sdks/node-typescript"
+    icon="◆"
+    title="Node / TypeScript"
+    meta={
+      <>
+        npm · <code>@shipeasy/sdk</code>
+      </>
+    }
+  >
+    The canonical SDK. Server + browser builds in one package.
+  </Tile>
+  <Tile
+    href="/sdks/browser-react"
+    icon="◇"
+    title="Browser &amp; React"
+    meta={<>client build · vanilla JS</>}
+  >
+    Client-key build, identify, devtools overlay, SSR bootstrap.
+  </Tile>
+  <Tile
+    href="/sdks/go"
+    icon="●"
+    title="Go"
+    meta={
+      <>
+        module · <code>shipeasy-ai/sdk-go</code>
+      </>
+    }
+  >
+    Context-aware client, servlet-style middleware for anon ids.
+  </Tile>
+  <Tile
+    href="/sdks/python"
+    icon="●"
+    title="Python"
+    meta={
+      <>
+        PyPI · <code>shipeasy</code>
+      </>
+    }
+  >
+    WSGI + ASGI middleware, decode hooks, dataclass results.
+  </Tile>
+  <Tile
+    href="/sdks/ruby"
+    icon="●"
+    title="Ruby"
+    meta={
+      <>
+        RubyGems · <code>shipeasy</code>
+      </>
+    }
+  >
+    Fork-safe singleton, Rails railtie, i18n view helpers.
+  </Tile>
+  <Tile
+    href="/sdks/java"
+    icon="●"
+    title="Java"
+    meta={
+      <>
+        Maven · <code>ai.shipeasy:shipeasy</code>
+      </>
+    }
+  >
+    AutoCloseable client, servlet AnonIdFilter, Spring-friendly.
+  </Tile>
+  <Tile
+    href="/sdks/kotlin"
+    icon="●"
+    title="Kotlin"
+    meta={
+      <>
+        Maven · <code>ai.shipeasy:shipeasy-kotlin</code>
+      </>
+    }
+  >
+    Coroutine init, JVM/Android, `use {}` lifecycle.
+  </Tile>
+  <Tile
+    href="/sdks/php"
+    icon="●"
+    title="PHP"
+    meta={
+      <>
+        Packagist · <code>shipeasy/sdk</code>
+      </>
+    }
+  >
+    PHP-FPM friendly, per-request init, Laravel/WordPress hosts.
+  </Tile>
+  <Tile
+    href="/sdks/swift"
+    icon="●"
+    title="Swift"
+    meta={
+      <>
+        SwiftPM · <code>sdk-swift</code>
+      </>
+    }
+  >
+    async/await, iOS 15+/macOS 12+, server-key only.
+  </Tile>
+</TileGrid>
+
+<SeeAlso
+  links={[
+    { href: "/get-started/install", title: "Install Shipeasy", note: "Project + first key" },
+    {
+      href: "/get-started/keys-and-environments",
+      title: "Keys & environments",
+      note: "Server vs client keys",
+    },
+    {
+      href: "/flags-experiments/gates",
+      title: "Feature gates",
+      note: "The rule model SDKs evaluate",
+    },
+    { href: "/sdks/reasons", title: "Evaluation reasons", note: "Why a flag resolved" },
+  ]}
+/>
+
+<DocNav next={{ href: "/sdks/node-typescript", title: "Node / TypeScript" }} />
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/sdks/index.mdx" />

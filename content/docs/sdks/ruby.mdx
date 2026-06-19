@@ -1,0 +1,118 @@
+---
+title: Ruby
+description: The Shipeasy Ruby gem — fork-safe singleton, Rails railtie, local evaluation, configs, experiments, and metric tracking.
+---
+
+<DocMeta
+  status="Production ready"
+  read="4 min read"
+  updated="June 18, 2026"
+  works="Ruby 3.0+ · Rails · Sinatra · Hanami"
+/>
+
+Server-side gate evaluation, configs, experiments, and metric ingestion for Ruby. Evaluates locally against a background-polled blob — see the [shared evaluation model](/sdks).
+
+## Install
+
+```ruby
+# Gemfile
+gem "shipeasy"
+```
+
+## Configure
+
+Drop a `config/initializers/shipeasy.rb` with the **server** key. `Shipeasy.flags` is a lazy, fork-safe singleton — it spawns its own client and poll thread on first use, including post-fork Puma workers.
+
+```ruby
+Shipeasy.configure do |c|
+  c.api_key    = ENV.fetch("SHIPEASY_SERVER_KEY")
+  c.public_key = ENV.fetch("SHIPEASY_CLIENT_KEY")  # for i18n view helpers
+end
+```
+
+Outside Rails (Sinatra, Hanami, scripts) the same `configure` block works — the Rails view helpers are simply skipped.
+
+## Evaluate a feature flag
+
+```ruby
+user = { user_id: current_user.id, plan: current_user.plan }
+
+if Shipeasy.flags.get_flag("new_checkout", user)
+  # ship it
+end
+```
+
+A `default:` is returned **only** when the value can't be resolved (client not ready or gate absent) — a gate that evaluates `false` returns `false`:
+
+```ruby
+Shipeasy.flags.get_flag("new_checkout", user, default: true)
+```
+
+For the value plus the reason, use `get_flag_detail` — see [Evaluation reasons](/sdks/reasons):
+
+```ruby
+detail = Shipeasy.flags.get_flag_detail("new_checkout", user)
+detail.value   # => true / false
+detail.reason  # => "RULE_MATCH" / "DEFAULT" / ...
+```
+
+## Read a dynamic config
+
+```ruby
+color = Shipeasy.flags.get_config("button_color", default: "blue")
+max   = Shipeasy.flags.get_config("limits", ->(v) { v["max"] }, default: 0)
+```
+
+## Resolve an experiment
+
+```ruby
+result = Shipeasy.flags.get_experiment("checkout_cta", user, { label: "Buy now" })
+if result.in_experiment
+  result.group   # => "treatment"
+  result.params  # => { label: "Buy now" }
+end
+```
+
+## Track an event
+
+```ruby
+Shipeasy.flags.track(current_user.id.to_s, "checkout_completed", { revenue: 49.99 })
+```
+
+## Serverless & anon visitors
+
+For Lambda / Cloud Run, skip the auto-init facade and call `init_once` for one synchronous fetch:
+
+```ruby
+client = Shipeasy::SDK::FlagsClient.new(api_key: ENV.fetch("SHIPEASY_SERVER_KEY"))
+client.init_once
+```
+
+In Rails the railtie mounts `Shipeasy::SDK::RackMiddleware`, which mints the shared `__se_anon_id` cookie so logged-out traffic buckets like the browser. Bare Rack apps mount it with `use Shipeasy::SDK::RackMiddleware`.
+
+## Testing
+
+`FlagsClient.for_testing` does zero network — no api*key, `init`/`track` are no-ops. Seed with `override*\*`and reset with`clear_overrides`. See [Testing](/sdks/testing).
+
+```ruby
+client = Shipeasy::SDK::FlagsClient.for_testing
+client.override_flag("new_checkout", true)
+client.get_flag("new_checkout", { user_id: "u_1" }) # => true
+client.clear_overrides
+```
+
+<SeeAlso
+  links={[
+    { href: "/sdks", title: "Shared evaluation model", note: "How every SDK buckets" },
+    { href: "/sdks/reasons", title: "Evaluation reasons", note: "get_flag_detail" },
+    { href: "/sdks/testing", title: "Testing", note: "for_testing" },
+    { href: "/flags-experiments/gates", title: "Feature gates" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/sdks/python", title: "Python" }}
+  next={{ href: "/sdks/java", title: "Java" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/sdks/ruby.mdx" />

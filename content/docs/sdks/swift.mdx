@@ -1,0 +1,122 @@
+---
+title: Swift
+description: The Shipeasy Swift server SDK — async/await, SwiftPM, local evaluation, configs, experiments, and tracking.
+---
+
+<DocMeta
+  status="Production ready"
+  read="4 min read"
+  updated="June 18, 2026"
+  works="Swift · SwiftPM · iOS 15+ · macOS 12+"
+/>
+
+Server-side flags, configs, experiments, and tracking for Swift, async/await throughout. Evaluates locally against a background-polled blob — see the [shared evaluation model](/sdks).
+
+<Callout type="warn" title="Server key only">
+  This SDK is server-key only — never embed it in an iOS app bundle. A future
+  <code>ShipeasyClient</code> package will cover client-key, mobile use.
+</Callout>
+
+## Install
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/shipeasy-ai/sdk-swift.git", from: "0.1.0"),
+]
+```
+
+## Configure
+
+Construct with the **server** key and `await initialize()`.
+
+```swift
+import Shipeasy
+
+let client = Client(apiKey: ProcessInfo.processInfo.environment["SHIPEASY_SERVER_KEY"]!)
+try await client.initialize()
+```
+
+## Evaluate a feature flag
+
+```swift
+let enabled = await client.getFlag("new_checkout", user: ["user_id": "u_123"])
+```
+
+An optional `default` is returned **only** when the gate can't be evaluated (client not ready or gate absent) — a gate that evaluates `false` returns `false`:
+
+```swift
+let on = await client.getFlag("new_checkout", user: ["user_id": "u_123"], default: true)
+```
+
+For the value plus the reason, use `getFlagDetail` — see [Evaluation reasons](/sdks/reasons):
+
+```swift
+let d = await client.getFlagDetail("new_checkout", user: ["user_id": "u_123"])
+// d.value  -> Bool
+// d.reason -> one of the FlagReason raw values
+```
+
+## Read a dynamic config
+
+```swift
+let cfg = await client.getConfig("billing_copy", default: ["headline": "Welcome"])
+```
+
+## Resolve an experiment
+
+```swift
+let r = await client.getExperiment(
+    "checkout_button",
+    user: ["user_id": "u_123"],
+    defaultParams: ["color": "blue"],
+)
+if r.inExperiment {
+    r.group   // "treatment"
+    r.params  // ["color": ...]
+}
+```
+
+## Track an event
+
+```swift
+await client.track(userId: "u_123", eventName: "purchase", properties: ["amount": 49])
+```
+
+## Anonymous visitors
+
+The SDK is framework-agnostic, so it ships `AnonId` primitives rather than a middleware. Resolve the shared `__se_anon_id` cookie off the request and echo it back so logged-out traffic buckets like the browser:
+
+```swift
+let resolved = AnonId.resolve(cookieHeader: req.headers["cookie"].first)
+let on = await client.getFlag("new_checkout", user: ["anonymous_id": resolved.id])
+if resolved.minted {
+    res.headers.add(name: "set-cookie", value: AnonId.setCookieHeader(resolved.id, secure: true))
+}
+```
+
+## Testing
+
+`Client.forTesting()` does zero network — no key, `initialize`/`track` are no-ops. Seed with `override*` and reset with `clearOverrides`. See [Testing](/sdks/testing).
+
+```swift
+let client = Client.forTesting()
+await client.overrideFlag("new_checkout", true)
+let enabled = await client.getFlag("new_checkout", user: ["user_id": "u_123"]) // true
+await client.clearOverrides()
+```
+
+<SeeAlso
+  links={[
+    { href: "/sdks", title: "Shared evaluation model", note: "How every SDK buckets" },
+    { href: "/sdks/reasons", title: "Evaluation reasons", note: "getFlagDetail" },
+    { href: "/sdks/testing", title: "Testing", note: "forTesting" },
+    { href: "/flags-experiments/gates", title: "Feature gates" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/sdks/php", title: "PHP" }}
+  next={{ href: "/sdks/reasons", title: "Evaluation reasons" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/sdks/swift.mdx" />

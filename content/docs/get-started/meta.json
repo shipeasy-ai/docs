@@ -2,18 +2,25 @@
   "title": "Get started",
   "root": true,
   "pages": [
-    "how-it-works",
+    "---Start here---",
+    "overview",
+    "quickstart",
     "install",
-    "agents",
-    "triggers",
     "authenticate",
     "sdks",
-    "---",
+    "---Concepts---",
+    "keys-and-environments",
+    "evaluation-and-caching",
+    "identity-and-bucketing",
+    "attributes",
+    "plan-limits",
+    "---Tooling---",
     "cli",
     "cli-reference",
     "mcp",
     "mcp-reference",
-    "---",
-    "attributes"
+    "---AI agents---",
+    "agents",
+    "triggers"
   ]
 }

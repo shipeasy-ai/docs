@@ -1,0 +1,128 @@
+---
+title: Java
+description: The Shipeasy Java server SDK — AutoCloseable client, servlet anon filter, local evaluation, configs, experiments, and tracking.
+---
+
+<DocMeta
+  status="Production ready"
+  read="4 min read"
+  updated="June 18, 2026"
+  works="Java 11+ · Spring Boot · servlet containers"
+/>
+
+Server-side flags, configs, experiments, and tracking for the JVM. Evaluates locally against a background-polled blob — see the [shared evaluation model](/sdks).
+
+## Install
+
+```xml
+<dependency>
+  <groupId>ai.shipeasy</groupId>
+  <artifactId>shipeasy</artifactId>
+  <version>0.1.0</version>
+</dependency>
+```
+
+## Configure
+
+Construct the client with the **server** key and `init()`. `Client` is `AutoCloseable`, so a try-with-resources block stops the poll on close.
+
+```java
+import ai.shipeasy.Client;
+import ai.shipeasy.ExperimentResult;
+import java.util.Map;
+
+try (Client c = new Client(System.getenv("SHIPEASY_SERVER_KEY"))) {
+    c.init();
+    // ...
+}
+```
+
+## Evaluate a feature flag
+
+```java
+boolean enabled = c.getFlag("new_checkout", Map.of("user_id", "u_123"));
+```
+
+A default overload returns the fallback **only** when the value can't be resolved (client not ready or gate absent) — a gate that evaluates `false` returns `false`:
+
+```java
+boolean enabled = c.getFlag("new_checkout", Map.of("user_id", "u_123"), true);
+```
+
+For the value plus the reason, use `getFlagDetail` — see [Evaluation reasons](/sdks/reasons):
+
+```java
+FlagDetail d = c.getFlagDetail("new_checkout", Map.of("user_id", "u_123"));
+d.value();   // boolean
+d.reason();  // one of the FlagDetail.* constants
+```
+
+## Read a dynamic config
+
+```java
+Object cfg  = c.getConfig("billing_copy");
+Object copy = c.getConfig("billing_copy", Map.of("title", "Default"));
+```
+
+## Resolve an experiment
+
+```java
+ExperimentResult r = c.getExperiment("checkout_button",
+    Map.of("user_id", "u_123"),
+    Map.of("color", "blue"));
+if (r.inExperiment) {
+    r.group();  // "treatment"
+    r.params(); // {color=...}
+}
+```
+
+## Track an event
+
+```java
+c.track("u_123", "purchase", Map.of("amount", 49));
+```
+
+## Anonymous visitors
+
+`AnonIdFilter` is a servlet `Filter` that mints the shared `__se_anon_id` cookie so logged-out traffic buckets like the browser:
+
+```java
+@Bean
+FilterRegistrationBean<AnonIdFilter> shipeasyAnonId() {
+    var reg = new FilterRegistrationBean<>(new AnonIdFilter());
+    reg.addUrlPatterns("/*");
+    return reg;
+}
+
+c.getFlag("new_checkout", Map.of()); // buckets on the cookie
+```
+
+`jakarta.servlet-api` is a `provided` dependency. Non-servlet stacks (Ktor, Javalin) use the `AnonId` primitives directly.
+
+## Testing
+
+`Client.forTesting()` does zero network — no key, `init`/`track` are no-ops. Seed with `override*` and reset with `clearOverrides`. See [Testing](/sdks/testing).
+
+```java
+try (Client c = Client.forTesting()) {
+    c.overrideFlag("new_checkout", true);
+    c.getFlag("new_checkout", Map.of()); // true
+    c.clearOverrides();
+}
+```
+
+<SeeAlso
+  links={[
+    { href: "/sdks", title: "Shared evaluation model", note: "How every SDK buckets" },
+    { href: "/sdks/reasons", title: "Evaluation reasons", note: "getFlagDetail" },
+    { href: "/sdks/testing", title: "Testing", note: "forTesting" },
+    { href: "/flags-experiments/gates", title: "Feature gates" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/sdks/ruby", title: "Ruby" }}
+  next={{ href: "/sdks/kotlin", title: "Kotlin" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/sdks/java.mdx" />

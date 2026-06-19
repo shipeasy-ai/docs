@@ -1,0 +1,67 @@
+---
+title: Credits & metering
+description: The assistant runs on prepaid credits — how they're deducted, how to top up, and what happens at zero.
+---
+
+<DocMeta
+  status="Production ready"
+  read="3 min read"
+  updated="June 19, 2026"
+  works="Billing · Assistant"
+/>
+
+The assistant is metered with **prepaid credits**. Each plan includes an allowance; you top up when you want more headroom. Credits keep heavy AI usage predictable instead of metered after the fact.
+
+## How credits are deducted
+
+A credit is consumed per assistant interaction that calls the model. Read-only browsing of your own resources is cheap; longer reasoning, doc search, and multi-step plans cost more. The running balance is shown in the assistant panel and on the billing tab.
+
+<ApiTable>
+  <ApiRow
+    name="Included allowance"
+    type="per plan"
+    desc="Each plan ships with a monthly credit allowance — enough for everyday use."
+  />
+  <ApiRow
+    name="Top-ups"
+    type="prepaid"
+    desc="Buy more credits from the billing tab; they're added to your balance immediately."
+  />
+  <ApiRow
+    name="Balance"
+    type="live"
+    desc="Shown in the assistant panel and the billing tab. Deducted as you go."
+  />
+</ApiTable>
+
+## Topping up
+
+Credit top-ups are part of the main **billing tab** — there's no separate flow. Purchases go through the same Stripe checkout as your subscription and land on your balance right away.
+
+<Callout type="info" title="One billing surface">
+  Assistant credits were merged into billing — manage your subscription and your assistant credits
+  in the same place. Top-ups are a one-time charge, not a plan change.
+</Callout>
+
+## At zero balance
+
+When the balance hits zero, the assistant pauses write and reasoning actions and prompts you to top up. Your flags, experiments, and data are unaffected — only the in-dashboard assistant is gated on credits.
+
+<SeeAlso
+  links={[
+    { href: "/assistant", title: "Assistant", note: "What credits power" },
+    { href: "/assistant/read-vs-write", title: "Read vs write mode" },
+    {
+      href: "/get-started/plan-limits",
+      title: "Plan limits & quotas",
+      note: "What each plan includes",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/assistant/measurement-plans", title: "Measurement plans" }}
+  next={{ href: "/get-started/mcp", title: "MCP server" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/assistant/credits.mdx" />

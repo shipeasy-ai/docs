@@ -1,0 +1,76 @@
+---
+title: Private attributes
+description: Mark attributes as private so they're used for targeting but never persisted or sent to the events store.
+---
+
+<DocMeta
+  status="Production ready"
+  read="3 min read"
+  updated="June 19, 2026"
+  works="@shipeasy/sdk · server + client"
+/>
+
+Some attributes you target on are sensitive — an email, a customer tier, a national ID. You still want to _evaluate_ against them (target `email endsWith "@acme.com"`), but you don't want them leaving the process or landing in the events store. `privateAttributes` does exactly that.
+
+## Declare them once
+
+List the attribute names at client construction. They're used locally for evaluation and stripped from every event the SDK emits:
+
+```ts
+import { FlagsClient } from "@shipeasy/sdk/server";
+
+const client = new FlagsClient({
+  apiKey: process.env.SHIPEASY_SERVER_KEY!,
+  privateAttributes: ["email", "ssn"],
+});
+```
+
+```ts
+// signature
+privateAttributes?: string[];
+```
+
+Now a rule can target `email`, but `email` and `ssn` are removed before any exposure or track event is sent to `/collect`.
+
+```ts
+flags.getFlag("beta_program", {
+  user_id: "u_4f2a",
+  email: "ana@acme.com", // used for targeting…
+  plan: "pro",
+});
+// …never serialized into the exposure event
+```
+
+<Callout type="info" title="Evaluate locally, transmit nothing">
+  Evaluation runs in your process against the in-memory rule set, so a private attribute never has
+  to travel anywhere to be targeted on. Private attributes only ever affect what the SDK{" "}
+  <em>sends</em> — the matching itself is unchanged.
+</Callout>
+
+## What stays and what goes
+
+|                   | Targeting / evaluation | Sent to events store |
+| ----------------- | ---------------------- | -------------------- |
+| Normal attribute  | ✅ used                | ✅ included          |
+| Private attribute | ✅ used                | ❌ stripped          |
+
+Use it for anything you wouldn't want in analytics: PII, billing identifiers, security-sensitive flags.
+
+<SeeAlso
+  links={[
+    { href: "/get-started/attributes", title: "User attributes", note: "What you can target on" },
+    {
+      href: "/flags-experiments/gates/targeting",
+      title: "Targeting rules",
+      note: "Matching on attributes",
+    },
+    { href: "/get-started/identity-and-bucketing", title: "Identity & bucketing" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/sdks/bucketby", title: "Multi-context bucketing" }}
+  next={{ href: "/sdks/sticky-bucketing", title: "Sticky bucketing" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/sdks/private-attributes.mdx" />

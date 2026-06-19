@@ -1,0 +1,85 @@
+---
+title: Manual exposure
+description: Suppress the automatic exposure on getExperiment and log it yourself, so an exposure only counts when the user actually sees the variant.
+---
+
+<DocMeta
+  status="Production ready"
+  read="3 min read"
+  updated="June 19, 2026"
+  works="@shipeasy/sdk · server + client"
+/>
+
+By default, the first `getExperiment` call for a user queues an **exposure** event — the record the daily analysis uses to know who was in the test. Usually that's exactly right. But sometimes you resolve a variant well before the user sees it (a server prefetch, a component that may never mount). Manual exposure lets you decouple _resolving_ the variant from _counting_ the exposure.
+
+## Suppress the automatic exposure
+
+Pass `logExposure: false` in the options to resolve a variant without logging:
+
+```ts
+const result = flags.getExperiment(
+  "checkout_button",
+  { user_id: "u_4f2a" },
+  { color: "blue" },
+  { logExposure: false }, // resolve only — no exposure yet
+);
+```
+
+To suppress auto-exposure for an entire client, set `disableAutoExposure: true` at construction:
+
+```ts
+const client = new FlagsClient({
+  apiKey: process.env.SHIPEASY_SERVER_KEY!,
+  disableAutoExposure: true,
+});
+```
+
+## Log the exposure yourself
+
+Call `logExposure` at the moment the variant is actually rendered:
+
+```ts
+flags.logExposure("u_4f2a", "checkout_button");
+```
+
+```ts
+// signature
+logExposure(user: string | User, name: string): void;
+```
+
+In the browser the visitor is already identified, so you pass just the experiment name.
+
+<Callout type="warn" title="Don't double-count">
+  An exposure that fires twice for the same user in the same experiment is deduped by the pipeline,
+  but the cleanest contract is: suppress the auto-exposure, then call <code>logExposure</code>{" "}
+  exactly once, when the user sees the variant.
+</Callout>
+
+## When to reach for it
+
+- **Server prefetch** — you resolve the variant in a loader but the component may never render.
+- **Lazy UI** — a tab or modal that holds the variant but isn't always opened.
+- **Strict exposure semantics** — you want "exposed" to mean "saw it", not "was assigned".
+
+<SeeAlso
+  links={[
+    {
+      href: "/flags-experiments/experiments",
+      title: "Experiments",
+      note: "How exposures feed analysis",
+    },
+    {
+      href: "/flags-experiments/experiments/analysis",
+      title: "Analysis",
+      note: "What an exposure means to the stats",
+    },
+    { href: "/sdks/node-typescript", title: "Node / TypeScript", note: "getExperiment basics" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/sdks/onchange", title: "Reacting to changes" }}
+  next={{ href: "/sdks/bucketby", title: "Multi-context bucketing" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/sdks/manual-exposure.mdx" />

@@ -1,0 +1,153 @@
+---
+title: Keys & environments
+description: Server key vs client key, where each goes, and how the read environment is derived from the key — never from a query param.
+---
+
+<DocMeta
+  status="Production ready"
+  read="5 min read"
+  updated="June 18, 2026"
+  works="Node 20+ · Workers · Bun · Deno · Browser"
+/>
+
+Shipeasy has exactly two kinds of SDK key. One per entrypoint, one configure call per side. Get this right and everything else — env isolation, public-bundle safety, evaluation scope — falls out for free.
+
+## One key per entrypoint
+
+|            | **Server key**                                        | **Client key**                         |
+| ---------- | ----------------------------------------------------- | -------------------------------------- |
+| Import     | `@shipeasy/sdk/server`                                | `@shipeasy/sdk/client`                 |
+| Field      | `serverKey`                                           | `clientKey`                            |
+| Visibility | **Secret** — never ships to a browser                 | **Public** — ships in your bundle      |
+| Reads      | Full rule set (gates, configs, experiments, SSR i18n) | Only client-readable flags and configs |
+| Writes     | Events                                                | Events, rate-limited by domain         |
+| Env        | Bound to one env; may override per request            | **Locked** to its env                  |
+
+```ts
+// Server (root layout / startup) — server key ONLY
+import { shipeasy } from "@shipeasy/sdk/server";
+await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? "" });
+
+// Client (one "use client" component at startup) — public client key ONLY
+import { shipeasy } from "@shipeasy/sdk/client";
+shipeasy({ clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "" });
+```
+
+<Callout type="danger" title="Never interchange them">
+  Never pass `clientKey` to the server entrypoint or `serverKey` to the client. The server key
+  authenticates the **full** payload and must never leave your server. A leaked server key in a
+  browser bundle exposes every rule you have.
+</Callout>
+
+## Where each key goes
+
+<Steps>
+  <Step title="Server key → secrets">
+    Store it as a deploy secret: `SHIPEASY_SERVER_KEY` in your platform's env, a Cloudflare secret,
+    a Vercel encrypted env var. Read it with `process.env.SHIPEASY_SERVER_KEY`. It never appears in
+    client code or the network tab.
+  </Step>
+  <Step title="Client key → public env">
+    Prefix it so your bundler inlines it: `NEXT_PUBLIC_SHIPEASY_CLIENT_KEY` (Next.js) or
+    `VITE_SHIPEASY_CLIENT_KEY` (Vite). It is meant to be public — the client key only exposes the
+    flags and configs you mark client-readable, and the Worker rate-limits it by domain.
+  </Step>
+  <Step title="Mint and manage">
+    Create, rotate, and revoke keys in **Project → SDK keys**, or with `shipeasy keys`. Each key is
+    bound to its environment **at mint time** — you pick the env when you create the key, not when
+    you use it.
+  </Step>
+</Steps>
+
+## The read environment is derived from the key
+
+This is the part people expect to be a config flag and it isn't. **There is no `?env=` for normal use.** The environment a key reads is baked into the key when you mint it.
+
+- A key minted for `prod` reads `prod` flags and configs. Forever.
+- A key minted for `staging` reads `staging`. Forever.
+
+So you deploy the prod key to prod and the staging key to staging — there is nothing to set in code, and nothing a misconfigured request can override into the wrong env.
+
+<Callout type="info" title="Why not a query param?">
+  Deriving env from the key makes the wrong env **unreachable** by accident. A request can't ask for
+  prod data with a staging key, because the key *is* the env credential. It also means a public
+  client key can't be coaxed into reading another environment from the browser.
+</Callout>
+
+### Client keys are locked; server keys can override
+
+|                | Per-request env override                                                                                                   |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **Client key** | No. The env is locked to the key — a `staging` client key can only ever read `staging`.                                    |
+| **Server key** | Yes, for **local debugging only** — a server key may override per request (e.g. to preview another env from your machine). |
+
+A client key is public, so allowing it to switch environments would let anyone with your bundle read any env. A server key is a trusted secret on your own infrastructure, so the per-request override is safe there — but you should still deploy the right key per environment and treat the override as a debugging convenience, not a deploy strategy.
+
+## Env scoping
+
+Each environment is an isolated slice of your project's rules. A flag at 100% in `staging` can be at 0% in `prod`. Use a **separate key per environment** and let the key carry the scope:
+
+<ApiTable>
+  <ApiRow
+    name="dev"
+    type="env"
+    desc={<>Local development. Often the loosest rollouts — flip things on to see them.</>}
+  />
+  <ApiRow
+    name="staging"
+    type="env"
+    desc={<>Pre-production. Mirror the prod rule shape; ramp ahead of prod to soak changes.</>}
+  />
+  <ApiRow
+    name="prod"
+    type="env"
+    desc={<>Production. The env your real users read; ramp deliberately here.</>}
+  />
+</ApiTable>
+
+<Callout type="warn" title="One client key per environment — don't share">
+  Never reuse a single client key across environments expecting isolation. The key *is* the env
+  boundary; sharing one collapses the boundary. Mint `staging` and `prod` client keys separately and
+  ship each to its own build.
+</Callout>
+
+## SDK key environment variables
+
+<ApiTable>
+  <ApiRow
+    name="SHIPEASY_SERVER_KEY"
+    type="string"
+    desc={<>Server-side key. Read by the server build. Treat as a secret; never expose it.</>}
+  />
+  <ApiRow
+    name="NEXT_PUBLIC_SHIPEASY_CLIENT_KEY"
+    type="string"
+    desc={
+      <>
+        Client-side key. Safe to expose. Vite: <code>VITE_SHIPEASY_CLIENT_KEY</code>.
+      </>
+    }
+  />
+</ApiTable>
+
+Anything passed explicitly to `shipeasy({ ... })` wins over the environment variable.
+
+<SeeAlso
+  links={[
+    { href: "/get-started/install", title: "Install", note: "where the init calls live" },
+    { href: "/get-started/authenticate", title: "Authenticate", note: "CLI login + CI tokens" },
+    {
+      href: "/get-started/evaluation-and-caching",
+      title: "Evaluation & caching",
+      note: "what the key fetches",
+    },
+    { href: "/sdks", title: "SDKs", note: "the same key model in every language" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/get-started/sdks", title: "SDKs" }}
+  next={{ href: "/get-started/evaluation-and-caching", title: "Evaluation & caching" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/get-started/keys-and-environments.mdx" />

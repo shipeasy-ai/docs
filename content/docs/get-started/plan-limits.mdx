@@ -1,0 +1,113 @@
+---
+title: Plan limits & quotas
+description: Per-plan knobs — poll interval, resource caps, retention, and which statistical features are available on each tier.
+---
+
+<DocMeta status="Production ready" read="4 min read" updated="June 18, 2026" works="Free · Team" />
+
+Plan levers are platform knobs we control centrally — they live in the plan config, not per project. Changing a plan value re-paces every project on that plan through the next KV rebuild, with no per-project migration.
+
+<Callout type="warn" title="Numbers here are illustrative">
+  The tables below reflect current defaults but can move. **Your dashboard shows your live limits
+  and usage** — check **Project → Billing** for the authoritative numbers and where you stand
+  against them.
+</Callout>
+
+## Read path
+
+The biggest functional difference between tiers is how often the SDK refreshes its rules.
+
+| Knob               | Free                          | Team                          |
+| ------------------ | ----------------------------- | ----------------------------- |
+| Poll interval      | ~300s                         | ~60s                          |
+| Analysis frequency | Daily                         | Daily                         |
+| Propagation model  | Infinite-TTL + explicit purge | Infinite-TTL + explicit purge |
+
+The poll interval is the worst-case lag between an edit going live at the edge and a given SDK instance noticing it on its next background poll. Evaluation itself is always local and instant — see [Evaluation & caching](/get-started/evaluation-and-caching). The Worker advertises the interval via `X-Poll-Interval` and the SDK auto-adjusts, so a plan change re-paces your fleet without a redeploy.
+
+## Resource caps
+
+`Unlimited` means there's no plan-level cap (platform fair-use ceilings still apply for abuse protection).
+
+| Resource              | Free | Team      |
+| --------------------- | ---- | --------- |
+| Feature flags (gates) | 50   | Unlimited |
+| Dynamic configs       | 20   | Unlimited |
+| Running experiments   | 1    | Unlimited |
+| Universes             | 3    | Unlimited |
+| Groups per experiment | 2    | Unlimited |
+| Metrics               | 15   | Unlimited |
+| Event catalog entries | 20   | Unlimited |
+| SDK keys              | 5    | Unlimited |
+| Team members          | 1    | Unlimited |
+| i18n keys             | 250  | Unlimited |
+| i18n locale profiles  | 1    | Unlimited |
+
+## Included monthly usage
+
+Usage is **notify-only** — events are never dropped or rejected. When a project crosses 80% / 100% of its monthly credit, the usage cron notifies you (and ops, for paid projects). `Uncapped` means no credit tracking.
+
+| Allowance           | Free | Team |
+| ------------------- | ---- | ---- |
+| Events / month      | ~1M  | ~20M |
+| Evaluations / month | ~1M  | ~50M |
+
+## Retention
+
+| Data                          | Free     | Team      |
+| ----------------------------- | -------- | --------- |
+| Experiment results            | ~30 days | ~365 days |
+| Raw events (Analytics Engine) | ~90 days | ~540 days |
+| Audit log                     | ~7 days  | ~365 days |
+
+## Feature availability
+
+Some capabilities — chiefly the heavier statistics — are tier-gated.
+
+| Feature                       | Free | Team |
+| ----------------------------- | ---- | ---- |
+| SRM detection                 | ✅   | ✅   |
+| MCP access                    | ✅   | ✅   |
+| Holdout groups                | —    | ✅   |
+| CUPED variance reduction      | —    | ✅   |
+| Sequential testing            | —    | ✅   |
+| Custom significance threshold | —    | ✅   |
+| Data export                   | —    | ✅   |
+
+<Callout type="info" title="Sequential testing & holdouts">
+  **Sequential testing** lets you peek at results without inflating false positives — available on
+  Team. **Holdouts** live on the universe (a fixed segment excluded from every experiment in it),
+  also a Team feature. SRM detection (sample-ratio-mismatch guard) is on for everyone.
+</Callout>
+
+## Changing plans
+
+Upgrades take effect immediately and re-pace your fleet through KV — nothing to redeploy. Manage your plan in **Project → Billing**, where you'll also see live usage against every limit on this page.
+
+<SeeAlso
+  links={[
+    {
+      href: "/get-started/attributes",
+      title: "Attributes",
+      note: "the data you target and bucket on",
+    },
+    {
+      href: "/get-started/evaluation-and-caching",
+      title: "Evaluation & caching",
+      note: "what the poll interval governs",
+    },
+    {
+      href: "/flags-experiments/experiments/quickstart",
+      title: "Experiments",
+      note: "where holdouts and sequential testing apply",
+    },
+    { href: "/get-started/cli", title: "CLI", note: "manage resources from the terminal" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/get-started/attributes", title: "Attributes" }}
+  next={{ href: "/get-started/cli", title: "CLI" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/get-started/plan-limits.mdx" />

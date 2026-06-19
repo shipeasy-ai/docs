@@ -1,0 +1,144 @@
+---
+title: Browser & React
+description: The client build of @shipeasy/sdk — client-key init, identify, in-browser evaluation, the DevTools overlay, and SSR bootstrap.
+---
+
+<DocMeta
+  status="Production ready"
+  read="6 min read"
+  updated="June 18, 2026"
+  works="Browser · Vite · Webpack · Next.js · React · vanilla JS"
+/>
+
+The client build (`@shipeasy/sdk/client`) runs in the browser. It manages an anonymous-id cookie, fetches an evaluation bundle on init, evaluates locally, and batches event uploads with `navigator.sendBeacon` on page hide.
+
+## Install
+
+<InstallTabs npm="npm install @shipeasy/sdk" />
+
+Same package as the server — bundlers pick the browser build automatically, or import `@shipeasy/sdk/client` explicitly.
+
+## Configure
+
+Initialise once at startup, with the **public client** key. The browser SDK requires the explicit `clientKey` call — there is no bootstrap-key auto-init.
+
+```ts
+import { shipeasy, flags } from "@shipeasy/sdk/client";
+
+shipeasy({
+  clientKey: import.meta.env.VITE_SHIPEASY_CLIENT_KEY ?? "",
+});
+```
+
+<Callout type="warn" title="Client key, client only">
+  Never put a server key in a browser bundle. The two key kinds aren&apos;t interchangeable. See{" "}
+  <a href="/get-started/keys-and-environments">Keys &amp; environments</a>.
+</Callout>
+
+## Identify the user
+
+```ts
+await flags.identify({ user_id: "u_4f2a", plan: "pro" });
+```
+
+`identify()` merges browser context (`locale`, `timezone`, `path`, `referrer`, `screen_*`, `user_agent`) and the persisted `anonymous_id` into the payload — so gate rules can target by locale and holdouts can hash anonymous visitors out of the box.
+
+## Read flags, configs, experiments
+
+The browser API drops the `user` argument — the identified context is implicit:
+
+```ts
+if (flags.get("new_checkout")) {
+  // ship it
+}
+flags.get("new_checkout", true); // default only when not-ready / not-found
+
+const cfg = flags.getConfig<{ max_uploads: number }>("upload_limits");
+
+const { inExperiment, group, params } = flags.getExperiment("hero_cta", {
+  primary_label: "Sign up",
+});
+```
+
+## Track an event
+
+```ts
+flags.track("checkout_viewed", { source: "nav" });
+```
+
+Fire-and-forget — events are batched and flushed with `sendBeacon` on page hide.
+
+## React is a thin wrapper
+
+<Callout type="info" title="Every API works in vanilla JS">
+  React conveniences are a thin layer on top of the framework-agnostic API. There are no React-only
+  methods — drop the SDK into an Astro island, an HTMX page, or a plain
+  <code>&lt;script&gt;</code> and every primitive works without React.
+</Callout>
+
+The browser SDK dispatches `se:override:change` whenever a re-poll updates the cached blob or the devtools overlay flips an override — wrap it in your framework's reactivity:
+
+```tsx
+import { useEffect, useState } from "react";
+import { shipeasy, flags } from "@shipeasy/sdk/client";
+
+shipeasy({ clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "" });
+
+function CheckoutButton() {
+  const [on, setOn] = useState(() => flags.get("new_checkout"));
+  useEffect(() => {
+    const h = () => setOn(flags.get("new_checkout"));
+    window.addEventListener("se:override:change", h);
+    return () => window.removeEventListener("se:override:change", h);
+  }, []);
+  return <button>{on ? "New flow" : "Old flow"}</button>;
+}
+```
+
+## SSR bootstrap & the anon cookie
+
+For Next.js / Remix / SvelteKit, the **server** `await shipeasy({ serverKey })` call evaluates the bundle and lands the same data on `window.__SE_BOOTSTRAP`. Configure the client with `shipeasy({ clientKey })` and the bootstrap auto-hydrates before your first read — no flicker.
+
+Logged-out visitors bucket on a shared first-party `__se_anon_id` cookie, minted by middleware on HTML routes. Because the server and browser read the same cookie, a fractional rollout buckets a visitor **identically** on both sides. The cookie is non-`HttpOnly` by design so the browser SDK can read it.
+
+## DevTools overlay
+
+Press `Shift+Alt+S` on any page running the SDK (or append `?se=1`). The panel mounts in a Shadow DOM overlay and flips every gate / config / experiment / translation **for the current session only** — for QA, demos, and bug repro.
+
+```ts
+import { loadDevtools } from "@shipeasy/sdk/client";
+
+if (process.env.NODE_ENV !== "production") loadDevtools();
+```
+
+Full guide: [DevTools overlay](/sdks/devtools-overlay).
+
+## Testing
+
+```ts
+import { FlagsClientBrowser } from "@shipeasy/sdk/client";
+
+const client = FlagsClientBrowser.forTesting();
+client.overrideFlag("new_checkout", true);
+client.getFlag("new_checkout"); // true — no network
+client.clearOverrides();
+```
+
+Browser override precedence: programmatic override &gt; URL/devtools override (`?se_gate_…`) &gt; the server's evaluation. See [Testing](/sdks/testing).
+
+<SeeAlso
+  links={[
+    { href: "/sdks", title: "Shared evaluation model", note: "How every SDK buckets" },
+    { href: "/sdks/node-typescript", title: "Node / TypeScript", note: "The server build" },
+    { href: "/sdks/devtools-overlay", title: "DevTools overlay", note: "Local overrides" },
+    { href: "/sdks/testing", title: "Testing", note: "forTesting + override*" },
+    { href: "/get-started/keys-and-environments", title: "Keys & environments" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/sdks/node-typescript", title: "Node / TypeScript" }}
+  next={{ href: "/sdks/go", title: "Go" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/sdks/browser-react.mdx" />

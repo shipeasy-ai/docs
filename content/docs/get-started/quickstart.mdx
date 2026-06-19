@@ -1,0 +1,147 @@
+---
+title: Quickstart
+description: Install the SDK and CLI, bind a project, wire one init call, ship a flag at 0%, and ramp — in about five minutes.
+---
+
+<Hero
+  eyebrow="GET STARTED"
+  title={
+    <>
+      Zero to a <em>ramping flag</em> in five minutes
+    </>
+  }
+  subtitle="One SDK, one CLI, one configure call. Create a flag at 0%, wrap your code, then ramp it from your terminal. No card required."
+  primaryHref="#wire"
+  primaryLabel="Start the runway"
+  secondaryHref="/get-started/install"
+  secondaryLabel="Full install guide"
+/>
+
+<DocMeta
+  status="Production ready"
+  read="5 min read"
+  updated="June 18, 2026"
+  works="Node 20+ · Workers · Bun · Deno · Browser"
+/>
+
+This is the universal path. Every product — gates, configs, experiments, and i18n — starts here, then branches. If you only read one page, read this one.
+
+<Quickstart title="Ship a flag in five minutes" time="~5 minutes · no card required">
+  <QuickstartStep num={1} label="INSTALL" title="Add the SDK and CLI" cmd="npm install @shipeasy/sdk && npm install -g @shipeasy/cli">
+    One package, server **and** browser. The CLI is the `shipeasy` binary — it logs in through your browser, so there are no env tokens to copy.
+  </QuickstartStep>
+
+  <QuickstartStep num={2} label="LOGIN" title="Authenticate + bind a project" cmd="shipeasy login">
+    Opens your browser, confirms, and writes a credential file to `~/.shipeasy/credentials` (mode `0600`). Then bind the working directory to a project so every command knows where it points:
+
+    ```bash
+    shipeasy use my-project   # or run inside a repo that already has a binding
+    ```
+
+    Full flow, including CI tokens, lives in [Authenticate](/get-started/authenticate).
+
+  </QuickstartStep>
+
+<QuickstartStep
+  num={3}
+  label="WIRE"
+  title="Configure once, use everywhere"
+  cmd={`// app/layout.tsx — runs once per cold start\nimport { shipeasy } from "@shipeasy/sdk/server";\nawait shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? "" });`}
+>
+  The single `shipeasy()` call boots flags, experiments, **and** i18n. The server SDK polls the rule
+  set in the background and evaluates **locally** — there is no per-request network hop. Env (dev /
+  staging / prod) is derived from the key, not from a query param. See [Keys &
+  environments](/get-started/keys-and-environments).
+</QuickstartStep>
+
+<QuickstartStep
+  num={4}
+  label="CREATE"
+  title="Create a flag at 0%"
+  cmd="shipeasy flags create checkout-v2 --rollout 0"
+>
+  A flag at 0% is **off for everyone** but live in your rule set worldwide. You ship the code dark,
+  then ramp when you're ready. Changes propagate in under a second (see [Evaluation &
+  caching](/get-started/evaluation-and-caching)).
+</QuickstartStep>
+
+<QuickstartStep
+  num={5}
+  label="USE"
+  title="Wrap code with getFlag"
+  cmd={`import { getFlag } from "@shipeasy/sdk/server";\n\nif (getFlag("checkout-v2", { user_id: userId })) {\n  return renderCheckoutV2();\n}\nreturn renderCheckoutV1();`}
+>
+  On the server, pass the user as the second argument so the gate can bucket and target them. In the
+  browser, call `flags.identify()` once and then `getFlag("checkout-v2")` with no user argument.
+</QuickstartStep>
+
+  <QuickstartStep num={6} label="RAMP" title="Ramp it up" cmd="shipeasy flags update checkout-v2 --rollout 25">
+    Bump the rollout from your terminal (or the dashboard). The same deterministic bucketing means anyone in the first 25% stays in as you climb — nobody flickers out. Take it to `--rollout 100` when you're confident.
+  </QuickstartStep>
+</Quickstart>
+
+## What just happened
+
+<Steps>
+  <Step title="One key per side">
+    The server uses `serverKey`; the browser uses `clientKey`. They are never interchanged or passed
+    together. The browser key is public and ships in your bundle; the server key is a secret.
+  </Step>
+  <Step title="Local, deterministic evaluation">
+    Your SDK holds the rule set in memory and buckets each unit with a cross-language `murmur3`
+    hash. The same user always lands in the same bucket, on every surface and in every language.
+  </Step>
+  <Step title="Sub-second propagation">
+    Edits rebuild a KV blob and explicitly purge the CDN. Your SDK picks the change up on its next
+    background poll — under a second to visible.
+  </Step>
+</Steps>
+
+<Callout type="info" title="Browser init looks the same">
+  ```ts
+  import { shipeasy, flags, getFlag } from "@shipeasy/sdk/client";
+
+shipeasy({ clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "" });
+await flags.identify({ user_id: "u_4f2a", plan: "pro" });
+
+if (getFlag("checkout-v2")) {/* ship it */}
+
+```
+Same single configure call, public client key, no user argument on `getFlag` once you've called `flags.identify()`.
+</Callout>
+
+## Branch to your product
+
+You have a flag ramping. Pick where to go deeper.
+
+<CardGrid>
+<Card href="/flags-experiments/gates/quickstart" eyebrow="Feature flags" title="Gates">
+  Targeting rules, per-condition rollouts, gradual ramps, and kill switches.
+</Card>
+<Card href="/configs/quickstart" eyebrow="Dynamic config" title="Configs">
+  Typed JSON values you change at runtime — limits, copy, thresholds — without a deploy.
+</Card>
+<Card href="/flags-experiments/experiments/quickstart" eyebrow="A/B testing" title="Experiments">
+  Allocation, variant groups, holdouts on the universe, and significance verdicts.
+</Card>
+<Card href="/i18n/quickstart" eyebrow="Localization" title="i18n">
+  Translatable strings managed in the same SDK — one key per entrypoint, no separate init.
+</Card>
+</CardGrid>
+
+<SeeAlso
+links={[
+  { href: "/get-started/install", title: "Install", note: "every package, every runtime" },
+  { href: "/get-started/keys-and-environments", title: "Keys & environments", note: "server vs client key, env scoping" },
+  { href: "/get-started/evaluation-and-caching", title: "Evaluation & caching", note: "the read path in depth" },
+  { href: "/get-started/mcp", title: "MCP server", note: "let your AI assistant do the setup" },
+]}
+/>
+
+<DocNav
+prev={{ href: "/get-started/overview", title: "Platform overview" }}
+next={{ href: "/get-started/install", title: "Install" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/get-started/quickstart.mdx" />
+```

@@ -1,6 +1,6 @@
 ---
-title: The Assistant
-description: The in-dashboard AI assistant — what you can ask, what it renders, and how it turns a measurement plan into live resources plus a ticket for the code it can't write.
+title: Assistant
+description: The in-dashboard AI assistant — what it is, how read and write modes differ, what it renders, and how it meters credits.
 ---
 
 <Hero
@@ -10,149 +10,100 @@ description: The in-dashboard AI assistant — what you can ask, what it renders
       Describe the outcome. <em>It</em> wires up the flags, experiments, and metrics.
     </>
   }
-  subtitle="A chat assistant built into the dashboard. It reads your project to answer questions, and proposes every change as a card you confirm — feature flags, configs, kill switches, experiments, metrics, and alert rules. Nothing happens until you approve it."
-  primaryHref="#what-it-produces"
-  primaryLabel="What it can produce"
-  secondaryHref="#measurement-plans"
+  subtitle="A chat assistant built into the dashboard. It reads your project to answer questions, and proposes every change as a card you confirm — feature flags, configs, kill switches, experiments, universes, metrics, and alert rules. Nothing happens until you approve it."
+  primaryHref="/assistant/read-vs-write"
+  primaryLabel="Read vs write mode"
+  secondaryHref="/assistant/measurement-plans"
   secondaryLabel="Measurement plans"
 />
 
-<DocMeta status="Beta" read="4 min read" updated="June 13, 2026" works="In-dashboard chat" />
+<DocMeta status="Beta" read="3 min read" updated="June 18, 2026" works="In-dashboard chat" />
 
-## How it works
+## What it is
 
-Open the assistant from the orb in the dashboard and ask in plain language. It works in two modes,
-and it picks the right one for you:
+Open the assistant from the orb in the dashboard and ask in plain language. It's scoped to the
+project you're viewing and authenticates with your session — it reads live state and proposes
+changes only in that project. It answers product and how-to questions by searching the same docs
+you're reading now (the `search_docs` tool), and cites its sources.
+
+<Callout type="info" title="The in-dashboard counterpart to MCP">
+  The assistant is the in-dashboard sibling of the [MCP server](/get-started/mcp). MCP hands a typed
+  toolkit to an **external coding agent** (Claude Code, Cursor, Windsurf) running in your repo; the
+  assistant is the **same surface inside the dashboard** — it can't touch your code, so anything
+  that needs a code change is handed off as a ticket.
+</Callout>
+
+## Read vs write, at a glance
+
+It works in two modes and picks the right one for you. The split is the whole safety model.
 
 <TileGrid>
-  <Tile href="#what-it-produces" icon="◎" title="Read — answer from your project">
-    To answer a question it calls read-only tools and shows them as a live **thinking trace** ("✓
-    Reading your project", "✓ Checking experiment status"). It never changes anything to answer.
+  <Tile href="/assistant/read-vs-write" icon="◎" title="Read — answer from your project">
+    Read-only tools auto-execute and stream as a **thinking trace** ("✓ Reading your project", "✓
+    Checking experiment status"). It never changes anything to answer.
   </Tile>
-  <Tile href="#what-it-produces" icon="✦" title="Write — propose a change">
-    To change something it emits the matching action as an **editable confirmation card**. The
-    change runs only when you press **Confirm** — so it's safe (and expected) for it to propose a
-    mutation directly instead of asking permission first.
+  <Tile href="/assistant/read-vs-write" icon="✦" title="Write — propose a change">
+    Mutations never auto-run. Each surfaces as an **editable confirmation card** — it applies only
+    when you press **Confirm**. So it's safe (and expected) for the assistant to propose a change
+    directly instead of asking permission first.
   </Tile>
 </TileGrid>
 
-<Callout type="info" title="One key, one project">
-  The assistant is scoped to the project you're viewing and authenticates with your session. It
-  reads live state and proposes changes only in that project.
-</Callout>
-
-## What it produces [#what-it-produces]
+## What it produces
 
 Every reply is built from a small set of interactive elements rather than a wall of text.
 
-### Answers (markdown)
-
-Short, formatted prose — **bold**, inline `code`, and lists — with the result first. Reasoning is
-kept out of the answer; if the model thinks, it's tucked behind a dim "Thought for a moment" toggle.
-
-### Thinking trace
-
-While it works, each read action shows as a trace line that resolves with a check mark — so you can
-see exactly what it looked at (your feature flags, an experiment's enrolment, a page on your site).
-
-### Choice chooser
-
-When it needs a decision to continue, it asks with **clickable options** instead of a numbered
-list. Pick one and the conversation continues with your answer. Some questions also offer a free-text
-**"Something else…"** field.
-
-### Confirmation cards
-
-Any change is an editable card. Tweak the fields, then **Confirm** to apply or **Cancel** to dismiss.
-The assistant can propose:
-
-<TileGrid>
-  <Tile href="/flags-experiments/gates" icon="⌘" title="Feature flags">
-    Create, update, enable/disable, or delete a feature flag — rollout %, targeting rules,
-    environments.
-  </Tile>
-  <Tile href="/flags-experiments/configs" icon="⚙" title="Dynamic configs">
-    Create, update, or delete a typed config value with targeting.
-  </Tile>
-  <Tile href="/flags-experiments/killswitches" icon="⛔" title="Kill switches">
-    Create/update/delete a kill switch, or flip a named per-key override on one environment.
-  </Tile>
-  <Tile href="/flags-experiments/experiments" icon="🧪" title="Experiments">
-    Draft an A/B experiment (groups, allocation, targeting feature flag, success metric), update it,
-    or start/stop it.
-  </Tile>
-  <Tile href="/flags-experiments/experiments/universes" icon="🌐" title="Universes">
-    Create, update, or delete a universe (the holdout boundary experiments share).
-  </Tile>
-  <Tile href="/flags-experiments/metrics" icon="📈" title="Metrics & alert rules">
-    Create an event-backed metric, and a metric-threshold alert rule that watches it.
-  </Tile>
-</TileGrid>
-
-<Callout type="info" title="Confirm-to-apply, and never a false claim">
-  Nothing is created, changed, or deleted until you confirm the card. The assistant never claims an
-  action succeeded — you apply it yourself. Deleting resources is also available in the dashboard
-  UI.
-</Callout>
-
-### Plan cards
-
-For multi-step work — the common case being "measure this" (instrument an event → create a metric →
-maybe add an alert) — it proposes an **approvable plan** instead of a markdown checklist. Each step is
-one of two kinds:
-
-- **Instant** — a resource it can create immediately (a metric, an experiment, an alert rule).
-- **Ship** — code instrumentation it _can't_ write from the dashboard (emitting an event from your
-  app). These are captured for your team to implement.
-
-## Measurement plans & the `measure_plan` ticket [#measurement-plans]
-
-A measurement plan usually needs both kinds of work: create the metric **and** emit the event the
-metric counts. The assistant in the dashboard has no access to your repository, so it does the half it
-can and hands off the half it can't.
-
-<Steps>
-  <Step title="You approve the plan">Press **Approve plan** on the plan card.</Step>
-  <Step title="Instant resources are created on the spot">
-    Metrics, experiments, and alert rules in the plan are created immediately and linked to the
-    plan.
-  </Step>
-  <Step title="Code work becomes a ticket">
-    The event instrumentation (and anything that couldn't be created yet, e.g. a metric whose event
-    isn't emitted in your code) is filed as a single **`measure_plan`** ticket in **Feedback →
-    Measures**, with the linked resources and the exact events to emit.
-  </Step>
-  <Step title="Your ship bot implements it">
-    The [ops:work](/feedback) loop (Claude Code running in your repo) picks up the ticket,
-    instruments the events, creates any pending resources, opens a PR, and flips the ticket to
-    `ready_for_qa`. Once the events flow, the linked metrics start collecting.
-  </Step>
-</Steps>
-
-<Callout type="info" title="In your editor it just does it">
-  The split is by environment, not a setting. Running the same plan from **Claude Code in your
-  project** (via the Shipeasy skills/MCP) implements everything directly — instrumentation included
-  — and files **no** ticket. The `measure_plan` ticket exists only because the website assistant
-  can't touch your code.
-</Callout>
-
-## Credits
-
-Assistant usage is metered in credits (each seat includes a monthly allowance; top up from the panel
-when you run low). If you run out mid-turn, the assistant shows an add-credits prompt and pauses
-until you refill.
-
-## Where to next
-
 <CardGrid>
-  <Card href="/flags-experiments" eyebrow="Create" title="Flags & experiments">
-    What the feature flag / config / experiment cards produce, and how rollouts and analysis work.
+  <Card href="/assistant/read-vs-write" eyebrow="Answers" title="Markdown + thinking trace">
+    Result-first prose, with each read tool shown as a trace line that resolves with a check mark.
+    Doc-grounded answers end with a `Sources:` line.
   </Card>
-  <Card href="/flags-experiments/metrics" eyebrow="Measure" title="Metrics">
-    How event-backed metrics and the metric DSL work — what the assistant builds for a plan.
+  <Card href="/assistant/cards-and-plans" eyebrow="Decide" title="Choice chooser">
+    When it needs a decision to continue (`ask_user`), it asks with clickable options instead of a
+    numbered list — optionally with a free-text "Something else…" field.
   </Card>
-  <Card href="/feedback" eyebrow="Ship" title="Feedback & ops:work">
-    The unified ticket queue (bugs, requests, errors, alerts, and `measure_plan`) your ship bot
-    burns down.
+  <Card href="/assistant/cards-and-plans" eyebrow="Confirm" title="Confirmation cards">
+    Feature flags, configs, kill switches, experiments, universes, metrics, and alert rules — each
+    an editable card you tweak, then **Confirm** to apply.
+  </Card>
+  <Card href="/assistant/cards-and-plans" eyebrow="Approve" title="Plan cards">
+    Multi-step work (`suggest_plan`) as an approvable plan: **instant** resources created on the
+    spot, plus **ship** code work captured for your team.
+  </Card>
+  <Card href="/assistant/measurement-plans" eyebrow="Measure" title="Measurement plans">
+    "Measure this" becomes instrument-event → metric → maybe alert. The code half files a
+    `measure_plan` ticket for an agent to implement.
+  </Card>
+  <Card href="/assistant/credits" eyebrow="Meter" title="Credits">
+    Prepaid credits, deducted per model call. Top up from the billing tab; the chat pauses at zero.
   </Card>
 </CardGrid>
+
+## Where it lives
+
+The orb sits in the dashboard chrome on every project page. Conversations are saved to your
+member history and restore later. The assistant always operates on the project you're currently
+viewing.
+
+## Credits at a glance
+
+Assistant usage is metered in prepaid credits — each seat includes a monthly allowance, and you top
+up from the **billing tab** when you run low. Every model call deducts credits as it finishes. If
+you run out mid-turn, the chat shows an add-credits prompt and pauses until you refill. See
+[Credits & metering](/assistant/credits).
+
+<SeeAlso
+  links={[
+    { href: "/assistant/read-vs-write", title: "Read vs write mode", note: "The safety model" },
+    {
+      href: "/get-started/mcp",
+      title: "MCP server",
+      note: "The same surface for external coding agents",
+    },
+    { href: "/flags-experiments", title: "Flags & experiments", note: "What the cards produce" },
+  ]}
+/>
+
+<DocNav next={{ href: "/assistant/read-vs-write", title: "Read vs write mode" }} />
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/assistant/index.mdx" />

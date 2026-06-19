@@ -1,0 +1,86 @@
+---
+title: Running a low-traffic experiment
+description: How to run an A/B test when you only get a few hundred units a week — sequential testing, longer runtime, and realistic power.
+---
+
+<DocMeta
+  status="Production ready"
+  read="6 min read"
+  updated="June 19, 2026"
+  works="Experiments · Metrics"
+/>
+
+Most A/B advice assumes you have millions of users. You don't. You're testing a change on the settings page that maybe 400 accounts touch a week, or you're a B2B product [bucketing by company](/flags-experiments/case-studies/company-rollout-bucketby) where the _unit_ count is small by construction. The experiment is real and worth running — it just needs different expectations than a high-traffic one.
+
+The traps are: peeking at a tiny sample and calling a winner on noise, or running forever without ever crossing significance because the effect is smaller than your sample can resolve.
+
+## 1. Size it honestly first
+
+Before you start, run the math. The [power calculator](/metrics/power) turns your baseline rate, the smallest effect worth shipping (MDE), and your weekly traffic into a runtime. With low traffic you'll usually find one of two things:
+
+- **The runtime is weeks, not days.** Fine — plan for it, and don't peek early.
+- **The MDE you can detect is large.** If you can only ever resolve a 10pp lift, accept that small wins are invisible to this test and only run it for changes you expect to be big.
+
+<Callout type="warn" title="Small samples punish peeking hardest">
+  At low n, early results swing wildly. A "significant" result on day two of a four-week test is
+  almost always noise. Pick a runtime up front and hold to it.
+</Callout>
+
+## 2. Use sequential testing if you must watch
+
+If you genuinely need to monitor the experiment as it runs (e.g. to bail on a regression), use **sequential testing** rather than repeatedly eyeballing a fixed-horizon p-value. Sequential tests are designed to be looked at continuously and keep the false-positive rate controlled across many peeks — they trade a little power for the right to stop early. Enable it on the experiment's stats settings.
+
+```ts
+import { flags } from "@shipeasy/sdk/server";
+
+const { group } = flags.getExperiment("settings-redesign", {
+  user_id: session.userId,
+  company_id: session.companyId, // bucket by account if units are accounts
+});
+
+if (group === "treatment") renderRedesign();
+else renderControl();
+
+// fire the goal metric event on the action you care about
+flags.track("settings_saved", { user_id: session.userId });
+```
+
+## 3. Give it runtime, then read it
+
+Let it run for the full pre-computed horizon. When you read the result on the [Analysis](/flags-experiments/experiments/analysis) page:
+
+- A **non-significant** result at low n is not "no effect" — it's "this test couldn't tell." Check the confidence interval: if it's wide and spans zero, you're underpowered, not flat.
+- A **significant** result that survived the full run _and_ a sequential boundary is trustworthy.
+
+## Rollout & measurement plan
+
+- **Maximize the units you have.** Run a clean 50/50 split — uneven splits waste power you can't spare. Skip a holdout on this one; reserve scarce units for the comparison that matters.
+- **Pick a sensitive metric.** A ratio or continuous metric (e.g. revenue per session) resolves faster at low n than a rare binary conversion. See [Metrics](/metrics).
+- **Pre-register the decision.** Write down the MDE, the runtime, and "ship if X" _before_ you start, so a noisy mid-run reading can't talk you into a bad call.
+- **Stack experiments instead of overlapping.** With little traffic, run one test at a time per surface rather than diluting units across many.
+
+<SeeAlso
+  links={[
+    { href: "/metrics/power", title: "Power & sample size", note: "Turn traffic into a runtime" },
+    {
+      href: "/flags-experiments/experiments/analysis",
+      title: "Analysis",
+      note: "Reading results, intervals, significance",
+    },
+    {
+      href: "/flags-experiments/case-studies/company-rollout-bucketby",
+      title: "Roll out to companies",
+      note: "When the unit is the account",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{
+    href: "/flags-experiments/case-studies/company-rollout-bucketby",
+    title: "Roll out to companies",
+  }}
+  next={{ href: "/flags-experiments/case-studies", title: "Case studies" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/flags-experiments/case-studies/low-traffic-experiment.mdx" />

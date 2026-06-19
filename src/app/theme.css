@@ -2346,6 +2346,152 @@ button[aria-label="Open Sidebar"] {
 }
 
 /* ──────────────────────────────────────────────────────────────
+   Journey path — ordered linked steps mapping a goal to pages.
+   ────────────────────────────────────────────────────────────── */
+.se-journey {
+  margin: 1.4em 0;
+  padding: 18px;
+  background: var(--se-bg-1);
+  border: 1px solid var(--se-line);
+  border-radius: 14px;
+}
+.se-journey-head {
+  margin-bottom: 12px;
+}
+.se-journey-k {
+  font-family: var(--se-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--se-accent);
+}
+.se-journey-head h4 {
+  margin: 6px 0 2px;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--se-fg);
+}
+.se-journey-head p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--se-fg-2);
+  line-height: 1.55;
+}
+.se-journey-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.se-journey-steps a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border: 1px solid var(--se-line);
+  border-radius: 10px;
+  background: var(--se-bg-2, var(--se-bg-1));
+  text-decoration: none !important;
+  color: var(--se-fg) !important;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.se-journey-steps a:hover {
+  border-color: color-mix(in oklab, var(--se-accent) 35%, transparent);
+  background: color-mix(in oklab, var(--se-accent) 4%, var(--se-bg-1));
+}
+.se-journey-steps .n {
+  font-family: var(--se-mono);
+  font-size: 12px;
+  color: var(--se-accent);
+  flex: none;
+}
+.se-journey-steps .t {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.se-journey-steps .lab {
+  font-family: var(--se-mono);
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--se-fg-4);
+}
+.se-journey-steps .ti {
+  font-size: 13.5px;
+  color: var(--se-fg);
+}
+.se-journey-steps .arr {
+  margin-left: auto;
+  color: var(--se-fg-4);
+  font-family: var(--se-mono);
+}
+.se-journey-steps a:hover .arr {
+  color: var(--se-accent);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   See also — compact related-links list for the leaf-page footer.
+   ────────────────────────────────────────────────────────────── */
+.se-seealso {
+  margin: 40px 0 0;
+  padding: 16px 18px;
+  border: 1px solid var(--se-line);
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--se-accent) 3%, var(--se-bg-1));
+}
+.se-seealso-k {
+  font-family: var(--se-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--se-accent);
+}
+.se-seealso ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.se-seealso a {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 4px;
+  text-decoration: none !important;
+  color: var(--se-fg) !important;
+  border-bottom: 1px solid transparent;
+}
+.se-seealso li + li a {
+  border-top: 1px solid var(--se-line);
+}
+.se-seealso a .ti {
+  font-size: 13.5px;
+  color: var(--se-fg);
+}
+.se-seealso a:hover .ti {
+  color: var(--se-accent);
+}
+.se-seealso a .note {
+  font-size: 12px;
+  color: var(--se-fg-3);
+}
+.se-seealso a .arr {
+  margin-left: auto;
+  color: var(--se-fg-4);
+  font-family: var(--se-mono);
+}
+.se-seealso a:hover .arr {
+  color: var(--se-accent);
+}
+
+/* ──────────────────────────────────────────────────────────────
    Doc nav (prev / next) and feedback footer.
    ────────────────────────────────────────────────────────────── */
 .se-doc-nav {

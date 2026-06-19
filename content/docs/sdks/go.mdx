@@ -1,0 +1,120 @@
+---
+title: Go
+description: The Shipeasy Go server SDK — context-aware client, local evaluation, configs, experiments, and metric tracking.
+---
+
+<DocMeta status="Production ready" read="4 min read" updated="June 18, 2026" works="Go 1.21+" />
+
+Server-side flags, configs, experiments, and tracking for Go. Evaluates locally against a background-polled blob — see the [shared evaluation model](/sdks).
+
+## Install
+
+```bash
+go get github.com/shipeasy-ai/sdk-go
+```
+
+## Configure
+
+Initialise once with the **server** key. `Init` does the first fetch and starts the background poll; `Destroy` stops it.
+
+```go
+import (
+    "context"
+    "os"
+
+    shipeasy "github.com/shipeasy-ai/sdk-go"
+)
+
+c := shipeasy.NewClient(shipeasy.Options{APIKey: os.Getenv("SHIPEASY_SERVER_KEY")})
+if err := c.Init(context.Background()); err != nil {
+    panic(err)
+}
+defer c.Destroy()
+```
+
+## Evaluate a feature flag
+
+```go
+if c.GetFlag("new_checkout", shipeasy.User{"user_id": "u_123"}) {
+    // ship it
+}
+```
+
+Go has no default arguments, so use the `…Or` variant for a fallback. It's returned **only** when the flag can't be evaluated (client not ready or gate absent) — a gate that evaluates `false` returns `false`:
+
+```go
+on := c.GetFlagOr("new_checkout", shipeasy.User{"user_id": "u_123"}, true)
+```
+
+For the value plus the reason, use `GetFlagDetail` — see [Evaluation reasons](/sdks/reasons):
+
+```go
+d := c.GetFlagDetail("new_checkout", shipeasy.User{"user_id": "u_123"})
+// d.Value bool, d.Reason e.g. shipeasy.ReasonRuleMatch
+```
+
+## Read a dynamic config
+
+```go
+cfg, ok := c.GetConfig("billing_copy")
+copy := c.GetConfigOr("billing_copy", map[string]any{"cta": "Buy"})
+```
+
+## Resolve an experiment
+
+```go
+r := c.GetExperiment("checkout_button",
+    shipeasy.User{"user_id": "u_123"},
+    map[string]any{"color": "blue"})
+
+if r.InExperiment {
+    _ = r.Group  // e.g. "treatment"
+    _ = r.Params // map[string]any
+}
+```
+
+## Track an event
+
+```go
+c.Track("u_123", "purchase", map[string]any{"amount": 49})
+```
+
+## Anonymous visitors
+
+`shipeasy.Middleware` mints the shared `__se_anon_id` cookie for any request without one; read it with `shipeasy.AnonID(r)` so the server buckets identically to the browser:
+
+```go
+http.ListenAndServe(":8080", shipeasy.Middleware(mux))
+
+func handler(w http.ResponseWriter, r *http.Request) {
+    user := shipeasy.User{"anonymous_id": shipeasy.AnonID(r)}
+    if c.GetFlag("new_checkout", user) { /* ... */ }
+}
+```
+
+## Testing
+
+`NewTestClient` does zero network — no key, `Init`/`Track` are no-ops. Seed with `Override*` and reset with `ClearOverrides`. See [Testing](/sdks/testing).
+
+```go
+c := shipeasy.NewTestClient()
+c.OverrideFlag("new_checkout", true)
+c.GetFlag("new_checkout", shipeasy.User{"user_id": "u_123"}) // true
+c.ClearOverrides()
+```
+
+<SeeAlso
+  links={[
+    { href: "/sdks", title: "Shared evaluation model", note: "How every SDK buckets" },
+    { href: "/sdks/reasons", title: "Evaluation reasons", note: "GetFlagDetail" },
+    { href: "/sdks/testing", title: "Testing", note: "NewTestClient" },
+    { href: "/flags-experiments/gates", title: "Feature gates" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/sdks/browser-react", title: "Browser & React" }}
+  next={{ href: "/sdks/python", title: "Python" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/sdks/go.mdx" />

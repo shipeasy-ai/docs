@@ -1,0 +1,169 @@
+---
+title: Node / TypeScript
+description: The canonical Shipeasy SDK — one package with a server and a browser build, local evaluation, configs, experiments, and tracking.
+---
+
+<DocMeta
+  status="Production ready"
+  read="8 min read"
+  updated="June 18, 2026"
+  works="Node · Cloudflare Workers · Bun · Deno · Next.js"
+/>
+
+`@shipeasy/sdk` is the reference implementation. It ships conditional exports — `@shipeasy/sdk/server` (Node, Workers, Bun, Deno, Next.js Server Components) and `@shipeasy/sdk/client` (browser). This page covers the **server** build; for the browser see [Browser & React](/sdks/browser-react).
+
+## Install
+
+<InstallTabs npm="npm install @shipeasy/sdk" />
+
+## Configure
+
+Initialise once, with the **server** key, at the entry point that runs per cold start — the Next.js root `layout.tsx`, an Express initialiser, or your Worker `fetch` handler. `shipeasy()` is idempotent.
+
+```ts
+import { shipeasy, flags } from "@shipeasy/sdk/server";
+
+await shipeasy({
+  serverKey: process.env.SHIPEASY_SERVER_KEY ?? "",
+});
+```
+
+<Callout type="warn" title="Server key, server only">
+  Never pass <code>clientKey</code> to <code>/server</code> or <code>serverKey</code> to{" "}
+  <code>/client</code>. The server key reads full payloads and writes events — it must not land in a
+  browser bundle. See <a href="/get-started/keys-and-environments">Keys &amp; environments</a>.
+</Callout>
+
+After `shipeasy()`, reads are **synchronous** — the rule set lives in process memory and is refreshed by a background poll.
+
+## Evaluate a feature flag
+
+```ts
+const enabled = flags.get("new_checkout", {
+  user_id: "u_4f2a",
+  plan: "pro",
+  country: "US",
+});
+```
+
+Pass any attributes the targeting rules reference. A caller-supplied default is returned **only** when the value can't be evaluated — the client isn't ready or the gate isn't in the blob. A gate that evaluates `false` (disabled, denied, or rolled out to 0%) returns `false`, not the default.
+
+```ts
+flags.get("new_checkout", { user_id: "u1" }); // false for a missing flag
+flags.get("new_checkout", { user_id: "u1" }, true); // true only if not-ready / not-found
+```
+
+For the resolved value **and the reason**, use `getFlagDetail` — see [Evaluation reasons](/sdks/reasons):
+
+```ts
+import type { FlagReason } from "@shipeasy/sdk/server";
+
+const d = flags.getFlagDetail("new_checkout", { user_id: "u1" });
+// → { value: true, reason: "RULE_MATCH" }
+```
+
+## Read a dynamic config
+
+```ts
+const pricing = flags.getConfig<{ base: number; currency: string }>("pricing", {
+  defaultValue: { base: 9.99, currency: "USD" },
+});
+const base = pricing?.base ?? 9.99;
+```
+
+Configs are typed via the optional generic. The `defaultValue` is returned when the key is absent.
+
+## Resolve an experiment
+
+```ts
+const result = flags.getExperiment<{ color: "blue" | "green" }>(
+  "checkout_button",
+  { user_id: "u_4f2a" },
+  { color: "blue" }, // defaultParams when not in experiment
+);
+
+if (result.inExperiment) {
+  // result.group       e.g. "control" | "treatment"
+  // result.params.color
+}
+```
+
+Assignment is deterministic by `user_id`. The first call for a user queues an exposure event for the daily analysis pipeline.
+
+## Track an event
+
+```ts
+flags.track("u_4f2a", "purchase", { value: 49.99, sku: "SHIRT-L-BLUE" });
+```
+
+`track()` is fire-and-forget — events are batched and sent to `/collect` on the Shipeasy edge.
+
+## init vs initOnce (serverless)
+
+`shipeasy()` starts a background poll thread, which is what you want in a long-running process. In a short-lived function (Lambda, Cloud Run cold start) you don't want a poll loop — do a single synchronous fetch with `initOnce()`:
+
+```ts
+import { FlagsClient } from "@shipeasy/sdk/server";
+
+const client = new FlagsClient({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
+await client.initOnce(); // one fetch, no background thread
+client.getFlag("new_checkout", { user_id: "u1" });
+```
+
+| Method       | Polls in background | Use when                               |
+| ------------ | ------------------- | -------------------------------------- |
+| `init()`     | yes                 | Long-running server, Worker, container |
+| `initOnce()` | no — one fetch      | Lambda / serverless / scripts          |
+
+## React to rule changes
+
+The server client fires registered listeners after a background poll returns **new** data (HTTP 200, not 304). Returns an unsubscribe function; never fires in test/offline mode. See [onChange](/sdks/onchange).
+
+```ts
+const client = new FlagsClient({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
+await client.init();
+
+const unsubscribe = client.onChange(() => {
+  console.log("flag rules changed — re-evaluating");
+});
+// later…
+unsubscribe();
+```
+
+## Shut down cleanly
+
+In a long-running worker you control, stop the poll thread on shutdown:
+
+```ts
+client.destroy(); // stops polling, flushes pending events
+```
+
+## Testing
+
+Build a no-network client with `forTesting()` and seed overrides — no key, no network, telemetry off, `init`/`track` are no-ops. See [Testing](/sdks/testing).
+
+```ts
+import { FlagsClient } from "@shipeasy/sdk/server";
+
+const client = FlagsClient.forTesting();
+client.overrideFlag("new_checkout", true);
+client.getFlag("new_checkout", { user_id: "u1" }); // true
+client.clearOverrides();
+```
+
+<SeeAlso
+  links={[
+    { href: "/sdks", title: "Shared evaluation model", note: "How every SDK buckets" },
+    { href: "/sdks/browser-react", title: "Browser & React", note: "The client build" },
+    { href: "/sdks/reasons", title: "Evaluation reasons", note: "getFlagDetail" },
+    { href: "/sdks/testing", title: "Testing", note: "forTesting + override*" },
+    { href: "/get-started/keys-and-environments", title: "Keys & environments" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/sdks", title: "SDKs" }}
+  next={{ href: "/sdks/browser-react", title: "Browser & React" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/sdks/node-typescript.mdx" />

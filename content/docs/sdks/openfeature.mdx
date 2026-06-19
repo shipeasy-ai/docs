@@ -1,0 +1,72 @@
+---
+title: OpenFeature provider
+description: Plug Shipeasy in as the backing provider for the CNCF OpenFeature API — a pure adapter over the SDK, server and web.
+---
+
+<DocMeta
+  status="Production ready"
+  read="4 min read"
+  updated="June 19, 2026"
+  works="@openfeature/server-sdk · @openfeature/web-sdk"
+/>
+
+If your app is standardized on the vendor-neutral [OpenFeature](https://openfeature.dev) API, Shipeasy ships a provider for both the server and web SDKs. It's a **pure adapter** over `FlagsClient` — same local evaluation, same deterministic bucketing, just behind the OpenFeature interface.
+
+The OpenFeature SDKs are **optional peer dependencies** — install the one your app uses.
+
+## Server
+
+```ts
+import { OpenFeature } from "@openfeature/server-sdk";
+import { FlagsClient } from "@shipeasy/sdk/server";
+import { ShipeasyProvider } from "@shipeasy/sdk/openfeature-server";
+
+const client = new FlagsClient({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
+await OpenFeature.setProviderAndWait(new ShipeasyProvider(client));
+
+const ofClient = OpenFeature.getClient();
+const on = await ofClient.getBooleanValue("new_checkout", false, { targetingKey: "u1" });
+```
+
+The OpenFeature `targetingKey` maps to the Shipeasy `user_id`; any other context fields become user attributes for targeting.
+
+## Web
+
+```ts
+import { OpenFeature } from "@openfeature/web-sdk";
+import { FlagsClientBrowser } from "@shipeasy/sdk/client";
+import { ShipeasyProvider } from "@shipeasy/sdk/openfeature-web";
+
+const client = new FlagsClientBrowser({ sdkKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY! });
+await OpenFeature.setContext({ targetingKey: "u1", plan: "pro" });
+await OpenFeature.setProviderAndWait(new ShipeasyProvider(client));
+
+const on = OpenFeature.getClient().getBooleanValue("new_checkout", false);
+```
+
+The browser evaluates at the edge, so the provider maps OpenFeature's static context onto `client.identify()` and reads the cached result synchronously in the resolve methods.
+
+## Reason & error mapping
+
+The provider maps Shipeasy [evaluation reasons](/sdks/reasons) onto OpenFeature's `StandardResolutionReasons`, and Shipeasy outcomes onto OpenFeature `ErrorCode`s (e.g. `FLAG_NOT_FOUND`). So `getBooleanDetails(...)` returns a standard OpenFeature `ResolutionDetails` your existing OpenFeature tooling already understands.
+
+<Callout type="info" title="Adapter, not a fork">
+  The provider changes nothing about evaluation — it's a thin translation layer. If you're not
+  already invested in OpenFeature, the native <a href="/sdks/node-typescript">SDK API</a> is simpler
+  and gives you configs, experiments, and tracking directly.
+</Callout>
+
+<SeeAlso
+  links={[
+    { href: "/sdks/reasons", title: "Evaluation reasons", note: "What gets mapped" },
+    { href: "/sdks/node-typescript", title: "Node / TypeScript", note: "The native API" },
+    { href: "/sdks/browser-react", title: "Browser & React" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/sdks/devtools-overlay", title: "Devtools overlay" }}
+  next={{ href: "/flags-experiments", title: "Flags & Experiments" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/sdks/openfeature.mdx" />

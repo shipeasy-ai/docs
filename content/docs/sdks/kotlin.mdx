@@ -1,0 +1,117 @@
+---
+title: Kotlin
+description: The Shipeasy Kotlin server SDK — coroutine init, JVM/Android, local evaluation, configs, experiments, and tracking.
+---
+
+<DocMeta
+  status="Production ready"
+  read="4 min read"
+  updated="June 18, 2026"
+  works="Kotlin · JVM · Android · Spring Boot"
+/>
+
+Server-side flags, configs, experiments, and tracking for Kotlin (JVM/Android-compatible). Evaluates locally against a background-polled blob — see the [shared evaluation model](/sdks).
+
+## Install
+
+```kotlin
+implementation("ai.shipeasy:shipeasy-kotlin:0.3.0")
+```
+
+## Configure
+
+Construct with the **server** key and `init()` inside a coroutine. `Client` is `AutoCloseable` — wrap it in `use { }` or call `close()`.
+
+```kotlin
+import ai.shipeasy.Client
+import kotlinx.coroutines.runBlocking
+
+val c = Client(apiKey = System.getenv("SHIPEASY_SERVER_KEY"))
+runBlocking { c.init() }
+// ... c.close() on shutdown
+```
+
+## Evaluate a feature flag
+
+```kotlin
+c.getFlag("new_checkout", mapOf("user_id" to "u_123"))
+```
+
+An optional `default` is returned **only** when the gate can't be evaluated (client not ready or gate absent) — a gate that evaluates `false` returns `false`:
+
+```kotlin
+c.getFlag("new_checkout", mapOf("user_id" to "u_123"), default = true)
+```
+
+For the value plus the reason, use `getFlagDetail` — see [Evaluation reasons](/sdks/reasons):
+
+```kotlin
+val d: FlagDetail = c.getFlagDetail("new_checkout", mapOf("user_id" to "u_123"))
+d.value   // Boolean
+d.reason  // one of the Reason constants
+```
+
+## Read a dynamic config
+
+```kotlin
+c.getConfig("billing_copy")
+c.getConfig("billing_copy", default = "Pay now")
+```
+
+## Resolve an experiment
+
+```kotlin
+val r = c.getExperiment(
+    "checkout_button",
+    mapOf("user_id" to "u_123"),
+    mapOf("color" to "blue"),
+)
+if (r.inExperiment) {
+    r.group   // "treatment"
+    r.params  // {color=...}
+}
+```
+
+## Track an event
+
+```kotlin
+c.track("u_123", "purchase", mapOf("amount" to 49))
+```
+
+## Anonymous visitors
+
+`AnonIdFilter` is a servlet `Filter` that mints the shared `__se_anon_id` cookie so logged-out traffic buckets like the browser:
+
+```kotlin
+@Bean
+fun shipeasyAnonId() = FilterRegistrationBean(AnonIdFilter())
+
+c.getFlag("new_checkout", emptyMap()) // buckets on the cookie
+```
+
+`jakarta.servlet-api` is `compileOnly`. Non-servlet stacks (Ktor, http4k) use the `AnonId` primitives directly.
+
+## Testing
+
+`Client.forTesting()` does zero network — no key, `init`/`track` are no-ops. Seed with `override*` and reset with `clearOverrides`. See [Testing](/sdks/testing).
+
+```kotlin
+Client.forTesting().use { c ->
+    c.overrideFlag("new_checkout", true)
+    c.getFlag("new_checkout", emptyMap()) // true
+    c.clearOverrides()
+}
+```
+
+<SeeAlso
+  links={[
+    { href: "/sdks", title: "Shared evaluation model", note: "How every SDK buckets" },
+    { href: "/sdks/reasons", title: "Evaluation reasons", note: "getFlagDetail" },
+    { href: "/sdks/testing", title: "Testing", note: "forTesting" },
+    { href: "/flags-experiments/gates", title: "Feature gates" },
+  ]}
+/>
+
+<DocNav prev={{ href: "/sdks/java", title: "Java" }} next={{ href: "/sdks/php", title: "PHP" }} />
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/sdks/kotlin.mdx" />

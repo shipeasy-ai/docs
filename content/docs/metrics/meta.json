@@ -1,4 +1,15 @@
 {
-  "title": "Metrics",
-  "pages": ["index", "quickstart", "aggregations", "grammar", "guardrails", "power"]
+  "title": "Metrics & Alerts",
+  "description": "Event metrics, the metric DSL & threshold alerts",
+  "root": true,
+  "pages": [
+    "index",
+    "quickstart",
+    "aggregations",
+    "grammar",
+    "guardrails",
+    "power",
+    "---Alerts---",
+    "alerts"
+  ]
 }

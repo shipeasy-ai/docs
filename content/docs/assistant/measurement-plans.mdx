@@ -1,0 +1,69 @@
+---
+title: Measurement plans
+description: When a change needs instrumentation it can't do itself, the assistant writes a measurement plan and files measure_plan tickets for an agent to implement.
+---
+
+<DocMeta
+  status="Production ready"
+  read="4 min read"
+  updated="June 19, 2026"
+  works="In-dashboard assistant · ops:work"
+/>
+
+The assistant can create flags, configs, and metrics directly. What it _can't_ do from a chat is edit your codebase — wire the SDK, fire the right `track()` call, add the event. A **measurement plan** bridges that gap: the assistant designs the full measurement, creates the parts it can, and files the rest as tickets for an agent to implement.
+
+## What it produces
+
+When you ask the assistant to "measure whether X works", it produces a plan that typically contains:
+
+<Steps>
+  <Step title="A success metric">
+    Created directly via <code>exp_create_metric</code> — the event, aggregation, and any
+    guardrails.
+  </Step>
+  <Step title="The resources it can build">
+    The experiment or flag, as <a href="/assistant/cards-and-plans">confirmation cards</a> you
+    approve.
+  </Step>
+  <Step title="Instrumentation tickets">
+    The code changes it can't make itself — "fire <code>purchase</code> on checkout success", "wrap
+    the CTA in <code>getExperiment</code>" — filed as <code>measure_plan</code> tickets.
+  </Step>
+</Steps>
+
+## How the tickets get implemented
+
+A `measure_plan` ticket lands in the same operational queue as bugs and feature requests. From there:
+
+- A developer picks it up, or
+- [`ops:work`](/feedback) (the unattended agent loop) implements it as an atomic diff, or
+- An external coding agent via the [MCP server](/get-started/mcp) handles it.
+
+<Callout type="info" title="Why a ticket and not a direct edit">
+  The in-dashboard assistant has no repo access — it can't open a PR. Filing a precise
+  instrumentation ticket is its substitute for implementation: it specifies exactly what to fire and
+  where, so whoever (or whatever) picks it up has an unambiguous spec.
+</Callout>
+
+## The website assistant
+
+The same mechanism powers the marketing-site assistant: a visitor describes what they want to measure, and instead of hand-waving, it files an implementation-ready `measure_plan` so an agent can wire it up once they connect a repo.
+
+<SeeAlso
+  links={[
+    { href: "/metrics", title: "Metrics", note: "What a measurement plan defines" },
+    { href: "/feedback", title: "Bugs & requests", note: "The queue measure_plan tickets land in" },
+    {
+      href: "/assistant/cards-and-plans",
+      title: "Cards & plans",
+      note: "Instant vs ship-code work",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/assistant/cards-and-plans", title: "Confirmation cards & plans" }}
+  next={{ href: "/assistant/credits", title: "Credits & metering" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/assistant/measurement-plans.mdx" />

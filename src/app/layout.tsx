@@ -61,7 +61,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <body>
-        <RootProvider theme={{ enabled: false, defaultTheme: "dark", forcedTheme: "dark" }}>
+        <RootProvider
+          theme={{ enabled: false, defaultTheme: "dark", forcedTheme: "dark" }}
+          search={{ options: { type: "static", api: "/static.json" } }}
+        >
           <DocsLayout
             tree={source.pageTree}
             nav={{

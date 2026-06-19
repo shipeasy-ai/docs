@@ -21,11 +21,13 @@ import {
   DocNav,
   Hero,
   InstallTabs,
+  JourneyPath,
   Out,
   Pill,
   Prompt,
   Quickstart,
   QuickstartStep,
+  SeeAlso,
   Step,
   Steps,
   Terminal,
@@ -55,12 +57,14 @@ const components = {
   DocNav,
   Hero,
   InstallTabs,
+  JourneyPath,
   Mermaid,
   Out,
   Pill,
   Prompt,
   Quickstart,
   QuickstartStep,
+  SeeAlso,
   Step,
   Steps,
   Terminal,
@@ -72,26 +76,8 @@ export default async function Page({ params }: Props) {
   const { slug } = await params;
   const isRoot = !slug || slug.length === 0;
 
-  if (isRoot) {
-    const target = "/get-started/how-it-works";
-    return (
-      <>
-        <meta httpEquiv="refresh" content={`0; url=${target}`} />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `window.location.replace(${JSON.stringify(target)});`,
-          }}
-        />
-        <noscript>
-          <p>
-            Redirecting to <a href={target}>Get started</a>…
-          </p>
-        </noscript>
-      </>
-    );
-  }
-
-  const page = getPage(slug) as Page | undefined;
+  // The home hub (content/docs/index.mdx) is rendered directly at "/".
+  const page = getPage(isRoot ? [] : slug) as Page | undefined;
 
   if (!page) notFound();
 
