@@ -40,6 +40,8 @@ That's the whole stickiness mechanism. No assignment table, no cookie, no server
 
 ## Ramping up keeps existing users in
 
+<RolloutScene />
+
 Bumping the rollout from 5% → 25% does _not_ re-bucket anyone. It changes the cutoff from `500` to
 `2500`, which means buckets `[0..2499]` are now `true`. Every user who was inside the old `[0..499]`
 range stays inside. The expansion is additive — new buckets become `true`; existing `true` buckets

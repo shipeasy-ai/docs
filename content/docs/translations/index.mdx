@@ -147,6 +147,8 @@ description: Localized labels and AI-assisted translations — discovered from y
 
 ## How copy gets to the user [#how-it-works]
 
+<LocaleFanScene />
+
 <Steps>
   <Step title="Codemod or scan">
     `shipeasy i18n scan ./src` (or the MCP `i18n_codemod_apply`) discovers strings and rewrites them as `t("key")`. Skipped strings (dynamic interpolations, rich HTML) land in `i18n-codemod-review.json` for manual review.

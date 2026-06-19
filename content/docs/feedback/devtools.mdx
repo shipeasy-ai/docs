@@ -5,6 +5,8 @@ description: Mount the in-app devtools overlay so you and your team can file bug
 
 <DocMeta status="Beta" read="5 min read" updated="June 12, 2026" works="Browser SDK · Devtools" />
 
+<DevtoolsHero />
+
 The **devtools overlay** is the in-app panel behind every bug report and feature
 request. It mounts as an isolated, shadow-DOM floating rail on your own site,
 captures the page context for you, and posts straight into your project's feedback
@@ -126,6 +128,8 @@ that token — no cookies, no SDK key embedded in the page.
 The bug form asks for a title, steps to reproduce, actual result, expected result,
 and an optional priority. On top of what the user types, the overlay attaches the
 page context automatically:
+
+<CaptureScene />
 
 <TileGrid>
   <Tile icon="◎" title="Auto-attached context">

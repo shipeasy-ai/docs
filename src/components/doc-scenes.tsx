@@ -142,10 +142,7 @@ export function CaptureScene() {
    ────────────────────────────────────────────────────────────── */
 export function RolloutScene() {
   return (
-    <SceneFrame
-      label="bucketing"
-      caption="Ramping 5% → 25% only adds buckets — every user already inside stays inside. No re-shuffle."
-    >
+    <SceneFrame caption="Ramping 5% → 25% only adds buckets — every user already inside stays inside. No re-shuffle.">
       <div className="se-roll">
         <div className="se-roll-head">
           <span className="se-roll-name">checkout-v2</span>
@@ -155,16 +152,11 @@ export function RolloutScene() {
         </div>
         <div className="se-roll-track">
           <div className="se-roll-fill" />
-          <div className="se-roll-cut" />
-          <span className="se-roll-tick" style={{ left: "0%" }}>
-            0
-          </span>
-          <span className="se-roll-tick" style={{ left: "50%" }}>
-            5,000
-          </span>
-          <span className="se-roll-tick" style={{ left: "100%" }}>
-            9,999
-          </span>
+        </div>
+        <div className="se-roll-scale">
+          <span>0</span>
+          <span>5,000</span>
+          <span>9,999</span>
         </div>
         <div className="se-roll-legend">
           <span className="in">
@@ -187,11 +179,9 @@ export function RolloutScene() {
    ────────────────────────────────────────────────────────────── */
 export function ConfidenceScene() {
   return (
-    <SceneFrame
-      label="purchase_conversion · 7d"
-      caption="A 95% CI that excludes the zero line — narrow and to the right. That is a result you can ship."
-    >
+    <SceneFrame caption="A 95% CI that excludes the zero line — narrow and to the right. That is a result you can ship.">
       <div className="se-ci">
+        <div className="se-ci-h">purchase_conversion · last 7 days</div>
         <div className="se-ci-zero" aria-hidden>
           <span className="se-ci-zero-lab">0</span>
         </div>
