@@ -1,0 +1,104 @@
+---
+title: Drop-in script loader
+description: Add feature flags and configs to a no-build or static site with a single <script> tag and a window global — no bundler required.
+---
+
+<DocMeta
+  status="Production ready"
+  read="3 min read"
+  updated="June 18, 2026"
+  works="Any HTML page · no bundler"
+/>
+
+For static sites, server-rendered pages, or anywhere you can't run a bundler, the SDK ships as a drop-in `<script>` loader. One tag boots the client, identifies the visitor from `data-*` attributes, and exposes a `window.shipeasy` global.
+
+## Add the tag
+
+```html
+<script
+  src="https://cdn.shipeasy.ai/sdk/loader.js"
+  data-sdk-key="sdk_client_..."
+  data-user-id="user-123"
+  data-user-email="u@x.com"
+  data-user-plan="pro"
+  data-attrs='{"country":"US"}'
+  defer
+></script>
+```
+
+The `data-sdk-key` is your **public client key** (`sdk_client_…`) — it's safe to embed in HTML. The `data-user-*` attributes and `data-attrs` (a JSON object of extra targeting attributes) become the identified user, so gate rules and experiments can target by plan, country, and so on.
+
+## Use the global
+
+Initialization is asynchronous. Await `window.shipeasy.ready` before reading flags:
+
+```html
+<script>
+  await window.shipeasy.ready;
+  if (window.shipeasy.getFlag("new_checkout")) {
+    /* show the new checkout */
+  }
+</script>
+```
+
+<Callout type="info" title="How the loader is published">
+  The loader IIFE is published to a public R2 bucket on every SDK release: an immutable,
+  1-year-cached `loader-vX.Y.Z.js`, plus a rolling 5-minute `loader.js`. Point at `loader.js` to
+  ride the latest, or pin the versioned URL for stability.
+</Callout>
+
+## When to use it (and when not to)
+
+<CardGrid>
+  <Card eyebrow="Good fit" title="No-build & static sites">
+    Plain HTML, a CMS template, a landing page, or a server-rendered app where you just want a flag
+    check in a script tag.
+  </Card>
+  <Card eyebrow="Use the npm SDK instead" title="Bundled apps">
+    A React/Vue/Svelte app or any project with a bundler should install <code>@shipeasy/sdk</code>{" "}
+    directly — you get types, tree-shaking, and the full client API.
+  </Card>
+</CardGrid>
+
+The loader is the **browser client** under a different delivery mechanism: it reads flags, configs, and experiments for the identified visitor. For server-side evaluation, use the server SDK with your **server** key — never put a server key in a `<script>` tag.
+
+```bash
+# Bundled projects: install the SDK instead of using the loader
+npm install @shipeasy/sdk
+```
+
+```ts
+// Same capability, with types, once you have a bundler:
+import { FlagsClientBrowser } from "@shipeasy/sdk/client";
+
+const client = new FlagsClientBrowser({ sdkKey: "sdk_client_..." });
+await client.identify({ user_id: "user-123", plan: "pro" });
+client.getFlag("new_checkout");
+```
+
+<SeeAlso
+  links={[
+    {
+      href: "/sdks/browser-react",
+      title: "Browser & React SDK",
+      note: "The full client SDK for bundled apps.",
+    },
+    {
+      href: "/get-started/keys-and-environments",
+      title: "Keys & environments",
+      note: "Client key vs server key — never mix them.",
+    },
+    {
+      href: "/get-started/identity-and-bucketing",
+      title: "Identity & bucketing",
+      note: "How the identified user drives targeting.",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/sdks/devtools-overlay", title: "Devtools overlay" }}
+  next={{ href: "/sdks/openfeature", title: "OpenFeature" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/sdks/script-loader.mdx" />

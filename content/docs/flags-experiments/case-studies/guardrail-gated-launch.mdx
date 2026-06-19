@@ -1,0 +1,82 @@
+---
+title: Ship the winner only if guardrails hold
+description: Pair a primary metric with guardrail metrics (latency, error rate) so a "winning" experiment still gets held if a core surface regresses.
+---
+
+<DocMeta
+  status="Production ready"
+  read="4 min read"
+  updated="June 19, 2026"
+  works="Dashboard · Server SDK"
+/>
+
+Your checkout-v2 experiment lifts conversion 4% — a clear win, ship it. Except: it also added 120ms of p95 latency and bumped the error rate, and you wouldn't have noticed until the launch was live and the on-call queue lit up. A primary metric answers "did it win?" It does **not** answer "did it quietly break something else?"
+
+That's what [guardrail metrics](/metrics/guardrails) are for. The primary is the goal; a guardrail is a metric that must _not_ regress — and the dashboard holds the "win" call if one does.
+
+**The two roles.** When you attach a metric to an experiment you give it a role. The **primary** decides the experiment (its lift, CI, and p-value). A **guardrail** is the safety check — the dashboard flags any guardrail that moves significantly in the wrong direction, regardless of what the primary did.
+
+## Attach a primary and its guardrails
+
+```bash
+# the metric the experiment is trying to move
+shipeasy experiments update checkout-v2 --primary conversion_rate
+
+# the metrics that must NOT regress for the win to count
+shipeasy experiments update checkout-v2 --guardrail p95_latency
+shipeasy experiments update checkout-v2 --guardrail error_rate
+```
+
+The default guardrails for almost any product experiment are latency, error rate, and whatever your primary could secretly cannibalise (a `clicks` primary should guard `bounce_rate`; a `signup` primary should guard `signup_quality`).
+
+<Callout type="warn" title="A primary win + a guardrail regression is a draw, not a win">
+  The dashboard reads a significant guardrail move in the wrong direction as a stop sign. A 4%
+  conversion lift that costs you latency and errors is not a launch — it's a result to investigate.
+</Callout>
+
+## Rollout & measurement plan
+
+<Steps>
+  <Step title="Declare guardrails before you start">
+    Pick one primary and 2–4 guardrails up front, so the stop conditions are decided before you can
+    be tempted by a good-looking primary.
+  </Step>
+  <Step title="Read all metrics, not just the primary">
+    A green primary with a red guardrail is not a launch. Latency, error rate, and engagement are
+    the usual suspects.
+  </Step>
+  <Step title="Hold or roll back on a guardrail regression">
+    If a guardrail moved against you, don't ship the variant — flip it back and dig into the cause.
+  </Step>
+</Steps>
+
+The green light is the full set: primary `p < 0.05`, CI excludes 0, direction matches your hypothesis, **and** no guardrail regressed, and no SRM warning.
+
+<SeeAlso
+  links={[
+    { href: "/metrics/guardrails", title: "Guardrail metrics", note: "Primary vs guardrail roles" },
+    {
+      href: "/flags-experiments/experiments/analysis",
+      title: "Analysis",
+      note: "Reading the full result, not just the primary",
+    },
+    {
+      href: "/flags-experiments/case-studies/mutually-exclusive-experiments",
+      title: "Mutually exclusive experiments",
+      note: "Keep the result attributable",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{
+    href: "/flags-experiments/case-studies/mutually-exclusive-experiments",
+    title: "Run conflicting experiments without interference",
+  }}
+  next={{
+    href: "/flags-experiments/case-studies/per-tenant-killswitch",
+    title: "Disable one tenant without flipping everyone",
+  }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/flags-experiments/case-studies/guardrail-gated-launch.mdx" />

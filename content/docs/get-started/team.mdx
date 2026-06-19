@@ -1,0 +1,87 @@
+---
+title: Team & permissions
+description: Invite teammates to a project, assign roles, and control who can publish to production.
+---
+
+<DocMeta
+  status="Production ready"
+  read="3 min read"
+  updated="June 18, 2026"
+  works="Dashboard · per project"
+/>
+
+Each project has its own roster. Open **Team** in the dashboard (`/dashboard/<projectId>/team`) to see members, pending invites, and what each role can do.
+
+## Roles
+
+Membership is role-based. There are three roles:
+
+| Role       | What they can do                                                                                                       |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **Admin**  | Full control. Manage members, billing, and API keys. Publish to production.                                            |
+| **Editor** | Create and edit experiments, feature flags, and configs. Promote to staging. Cannot publish to prod or invite members. |
+| **Viewer** | Read-only. See dashboards, metrics, and experiment results. Useful for stakeholders.                                   |
+
+The **owner** of the project is always an admin and can't be removed without first transferring ownership (see [Project settings → Danger zone](/get-started/modules#danger-zone)).
+
+## Inviting members
+
+<Steps>
+  <Step title="Open the invite dialog">
+    On the **Team** page, click **Invite people**. Only the workspace owner or an admin can invite —
+    for everyone else the button is disabled.
+  </Step>
+  <Step title="Add emails">
+    Type an email and press **Enter** or comma to add it as a chip; paste a list to bulk-invite.
+    Pick a **default role** (Editor by default) that applies to everyone in this batch.
+  </Step>
+  <Step title="Send">
+    Leave **Send email notification** checked to email each invitee. They sign in with the same
+    providers as your workspace — GitHub, Google, or magic link — and land in the project once they
+    accept.
+  </Step>
+</Steps>
+
+<Callout type="info" title="Invites stay pending until accepted">
+  A freshly-invited member shows as **pending** on the roster with who invited them. Use **Resend
+  invite** from the row if the email got lost. Once they sign in, the row flips to active.
+</Callout>
+
+## Managing members
+
+From the members table:
+
+- **Change a role** — pick a new role from the per-row role dropdown. Role changes are owner-only.
+- **Resend an invite** — re-send the email for a pending member.
+- **Remove a member** — revoke their access to the project. Removal is owner-only.
+
+## Seats and plans
+
+Team size is a plan limit (**max team members**). The current count against your cap shows on **Settings → Billing** as `used / cap seats`. The Free plan is single-seat; paid plans raise or remove the cap. See [Plan limits](/get-started/plan-limits) for the full table.
+
+<SeeAlso
+  links={[
+    {
+      href: "/get-started/plan-limits",
+      title: "Plan limits",
+      note: "Seat caps and every other plan-level limit.",
+    },
+    {
+      href: "/get-started/modules",
+      title: "Project settings & modules",
+      note: "Transfer ownership, delete a project, toggle modules.",
+    },
+    {
+      href: "/get-started/authenticate",
+      title: "Authenticate",
+      note: "How sign-in and sessions work.",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/get-started/triggers", title: "Triggers" }}
+  next={{ href: "/get-started/modules", title: "Project settings & modules" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/get-started/team.mdx" />

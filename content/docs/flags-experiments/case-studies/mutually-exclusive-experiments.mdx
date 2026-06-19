@@ -1,0 +1,85 @@
+---
+title: Run conflicting experiments on one surface without interference
+description: Put two experiments that touch the same surface in the same universe so a user is assigned to at most one — and neither confounds the other.
+---
+
+<DocMeta
+  status="Production ready"
+  read="4 min read"
+  updated="June 19, 2026"
+  works="Server SDK · Dashboard"
+/>
+
+Two teams want to experiment on the checkout page at the same time — one on button copy, one on the layout. Run them independently and a user can land in _both_, so the layout change quietly inflates or masks the copy result and vice-versa. Now neither experiment can be trusted: the lift you measure on one is partly the other.
+
+The fix is a [universe](/flags-experiments/experiments/universes) with **mutual exclusion**: put both experiments in the same universe and a user is assigned to at most one of them. They can't confound each other because no user is ever in both.
+
+**The primitive.** A universe is the world an experiment lives in; every experiment belongs to exactly one. A universe with mutual exclusion guarantees at most one experiment in it assigns each user — so two experiments touching the same surface can't overlap.
+
+## Put both experiments in one universe
+
+Create a universe for the surface, then create both experiments inside it:
+
+```bash
+# one universe for the checkout surface, 5% global holdout
+shipeasy universes create checkout --holdout 0,499
+
+# both experiments live in it — a user gets at most one
+shipeasy experiments create checkout-copy --universe checkout
+shipeasy experiments create checkout-layout --universe checkout
+```
+
+Bucketing is deterministic per universe — `hash(universe_salt, user_id)` — so the assignment is stable across processes and deploys. In code you read each experiment as usual; the universe handles the "at most one" guarantee:
+
+```ts
+import { flags } from "@shipeasy/sdk/server";
+
+const copy = flags.getExperiment("checkout-copy", { user_id });
+const layout = flags.getExperiment("checkout-layout", { user_id });
+// a given user is enrolled in at most one of these
+```
+
+<Callout type="info" title="Mutual exclusion has a cost">
+  Splitting one population across two experiments means each gets a slice, not the whole. Use mutual
+  exclusion when the experiments genuinely interact on the same surface — not as a default.
+  Independent surfaces can run concurrently without it.
+</Callout>
+
+## Rollout & measurement plan
+
+- **One universe per interacting surface.** Group experiments that touch the same UI/flow; leave unrelated experiments in the `default` universe so they keep full traffic.
+- **Mind the sample split.** Each experiment now draws from a fraction of the population — budget for a longer run or a larger effect to reach significance.
+- **The holdout measures the program.** A universe holdout is a clean global control: compare holdout vs non-holdout to estimate the net effect of _all_ the experimentation on that surface.
+
+<SeeAlso
+  links={[
+    {
+      href: "/flags-experiments/experiments/universes",
+      title: "Universes & holdouts",
+      note: "Mutual exclusion and the holdout slice",
+    },
+    {
+      href: "/flags-experiments/experiments/analysis",
+      title: "Analysis",
+      note: "Why overlap confounds results",
+    },
+    {
+      href: "/flags-experiments/case-studies/guardrail-gated-launch",
+      title: "Ship the winner only if guardrails hold",
+      note: "Deciding the result safely",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{
+    href: "/flags-experiments/case-studies/qa-with-devtools",
+    title: "QA a flag before you ramp",
+  }}
+  next={{
+    href: "/flags-experiments/case-studies/guardrail-gated-launch",
+    title: "Ship the winner only if guardrails hold",
+  }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/flags-experiments/case-studies/mutually-exclusive-experiments.mdx" />

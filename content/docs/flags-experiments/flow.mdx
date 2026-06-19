@@ -1,0 +1,91 @@
+---
+title: Flow & dependencies
+description: A live dependency graph of your events, metrics, experiments, and alerts — trace what feeds what before you change it.
+---
+
+<DocMeta
+  status="Production ready"
+  read="4 min read"
+  updated="June 18, 2026"
+  works="Dashboard · per project"
+/>
+
+**Flow** is a live graph of how your instrumentation hangs together: events feed metrics, metrics drive experiments and alerts. It lives in the dashboard under **Experiments → Flow** (`/dashboard/<projectId>/flow`). Use it to see the blast radius of a change before you make it — which experiments read a metric, which alerts watch it, and which event a metric is built on.
+
+## What the graph shows
+
+The graph is assembled server-side from your project's real lists — events, metrics, experiments, alert rules, and currently-active alerts — and re-fetched after every write, so it always matches the underlying resources.
+
+There are four node types and the edges between them describe the data pipeline:
+
+| Node           | Edge into it         | What the edge means                                                                                            |
+| -------------- | -------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Event**      | —                    | A logged event (or an SDK auto-event like `__auto_lcp`).                                                       |
+| **Metric**     | `agg`                | The metric aggregates this event (`count`, `sum(value)`, `p95(value)`, a `ratio` of two events, …).            |
+| **Experiment** | `goal` / `secondary` | The metric is the experiment's goal metric (`goal`) or a guardrail (`secondary`).                              |
+| **Alert**      | `alert`              | An alert rule watches this metric, with its comparator/threshold/window shown on the edge (e.g. `> 200 · 1h`). |
+
+<Callout type="info" title="Status is live">
+  Alert nodes render as **firing**, **armed**, or **paused**; experiment nodes carry their real
+  status. Metric and event nodes are enriched with live analytics — a 7-day sparkline, current
+  value, and period delta on metrics, and a per-day volume on events. Enrichment is cached ~1 hour;
+  the graph structure itself is rebuilt on every view, so newly-created resources appear
+  immediately.
+</Callout>
+
+## How nodes cluster
+
+Nodes group into **clusters**. If you use folders, the folder is the cluster. Otherwise Flow auto-clusters by connectivity — each event → metric → experiment/alert pipeline becomes its own self-contained band, named after its hub (the highest-degree metric, then experiment). Unconnected SDK auto-events are hidden until a metric reads them, so the canvas stays clean.
+
+## Impact analysis before a change
+
+The point of Flow is to answer "what depends on this?" before you touch a metric or an event.
+
+<Steps>
+  <Step title="Find the node">
+    Open **Flow** and locate the metric, event, or experiment you're about to change. Drag to
+    rearrange and hover to trace its edges.
+  </Step>
+  <Step title="Read its downstream edges">
+    Follow the edges *out* of the node. A metric with a `goal` edge into an experiment means that
+    experiment's primary result is computed from it — renaming the event it aggregates, or changing
+    the metric's query, will move that experiment's numbers. An `alert` edge means an alert rule is
+    armed on it.
+  </Step>
+  <Step title="Check what feeds it">
+    Follow the edges *in*. A metric's `agg` edge names the exact event and aggregation it reads — so
+    you know which event you must keep emitting.
+  </Step>
+</Steps>
+
+<Callout type="warn" title="Changing an upstream resource ripples">
+  If you stop logging an event, every metric with an `agg` edge from it goes blank, and every
+  experiment/alert downstream of those metrics loses its data. Trace the chain in Flow first — the
+  edges show you exactly which resources to update together.
+</Callout>
+
+## Building from a node
+
+Flow isn't read-only. From a node you can spin up the next resource in the pipeline — add an SDK auto-event from the top-bar catalog (which also creates the metric that reads it), or create a downstream experiment/alert that's pre-attached to a metric. The new resource is created against the same folder and shows up in the graph on the next reload.
+
+<SeeAlso
+  links={[
+    {
+      href: "/flags-experiments/experiments",
+      title: "Experiments",
+      note: "Goal metrics and guardrails are the goal/secondary edges in Flow.",
+    },
+    {
+      href: "/flags-experiments/decision",
+      title: "Gates vs configs vs experiments",
+      note: "How the pieces fit together conceptually.",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/flags-experiments/decision", title: "Which primitive?" }}
+  next={{ href: "/flags-experiments/gates", title: "Feature flags (gates)" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/flags-experiments/flow.mdx" />

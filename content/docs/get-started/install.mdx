@@ -94,14 +94,73 @@ That&apos;s the whole runway from zero to working. Everything below is detail.
 
 <Steps>
   <Step title="Install the package">
-    ```bash
-    npm install @shipeasy/sdk
-    # pnpm add @shipeasy/sdk
-    # yarn add @shipeasy/sdk
-    # bun add @shipeasy/sdk
-    ```
+    Pick your language — every tab pulls the install/registry line straight from that SDK's [reference page](/sdks).
 
-    The package ships **both** server (Node, Shipeasy, Bun, Deno) and browser builds via conditional exports. Your bundler picks the right one automatically; you can also import the explicit subpath (`/server`, `/client`) when you want to be unambiguous (e.g. inside a monorepo with a shared util used from both).
+    <Tabs items={["TypeScript", "Python", "Go", "Ruby", "Java", "Kotlin", "PHP", "Swift"]}>
+      <Tab value="TypeScript">
+
+      <InstallTabs npm="npm install @shipeasy/sdk" />
+
+      The package ships **both** server (Node, Workers, Bun, Deno) and browser builds via conditional exports. Your bundler picks the right one automatically; you can also import the explicit subpath (`/server`, `/client`) when you want to be unambiguous (e.g. inside a monorepo with a shared util used from both).
+
+      </Tab>
+      <Tab value="Python">
+
+      ```bash
+      pip install shipeasy
+      ```
+
+      </Tab>
+      <Tab value="Go">
+
+      ```bash
+      go get github.com/shipeasy-ai/sdk-go
+      ```
+
+      </Tab>
+      <Tab value="Ruby">
+
+      ```ruby
+      # Gemfile
+      gem "shipeasy"
+      ```
+
+      </Tab>
+      <Tab value="Java">
+
+      ```xml
+      <dependency>
+        <groupId>ai.shipeasy</groupId>
+        <artifactId>shipeasy</artifactId>
+        <version>0.1.0</version>
+      </dependency>
+      ```
+
+      </Tab>
+      <Tab value="Kotlin">
+
+      ```kotlin
+      implementation("ai.shipeasy:shipeasy-kotlin:0.3.0")
+      ```
+
+      </Tab>
+      <Tab value="PHP">
+
+      ```bash
+      composer require shipeasy/sdk
+      ```
+
+      </Tab>
+      <Tab value="Swift">
+
+      ```swift
+      dependencies: [
+          .package(url: "https://github.com/shipeasy-ai/sdk-swift.git", from: "0.1.0"),
+      ]
+      ```
+
+      </Tab>
+    </Tabs>
 
   </Step>
 

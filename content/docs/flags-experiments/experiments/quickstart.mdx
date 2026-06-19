@@ -79,15 +79,94 @@ This walks through a complete experiment end to end: a button-label test on the 
 
     Then on the request path:
 
-    ```ts
-    const result = flags.getExperiment<{ label: string }>(
-      "checkout-cta",
-      { user_id, plan, country },
-      { label: "Pay" }, // defaultParams
-    );
+    <Tabs items={["TypeScript", "Python", "Go", "Ruby", "Java", "Kotlin", "PHP", "Swift"]}>
+      <Tab value="TypeScript">
 
-    const label = result.params.label; // "Pay" or whatever the variant assigns
-    ```
+      ```ts
+      const result = flags.getExperiment<{ label: string }>(
+        "checkout-cta",
+        { user_id, plan, country },
+        { label: "Pay" }, // defaultParams
+      );
+
+      const label = result.params.label; // "Pay" or whatever the variant assigns
+      ```
+
+      </Tab>
+      <Tab value="Python">
+
+      ```python
+      result = client.get_experiment(
+          "checkout-cta",
+          user={"user_id": user_id},
+          default_params={"label": "Pay"},
+      )
+      label = result.params["label"]
+      ```
+
+      </Tab>
+      <Tab value="Go">
+
+      ```go
+      r := c.GetExperiment("checkout-cta",
+          shipeasy.User{"user_id": userID},
+          map[string]any{"label": "Pay"})
+
+      label := r.Params["label"]
+      ```
+
+      </Tab>
+      <Tab value="Ruby">
+
+      ```ruby
+      result = Shipeasy.flags.get_experiment("checkout-cta", user, { label: "Pay" })
+      label  = result.params[:label]
+      ```
+
+      </Tab>
+      <Tab value="Java">
+
+      ```java
+      ExperimentResult r = c.getExperiment("checkout-cta",
+          Map.of("user_id", userId),
+          Map.of("label", "Pay"));
+      Object label = r.params().get("label");
+      ```
+
+      </Tab>
+      <Tab value="Kotlin">
+
+      ```kotlin
+      val r = c.getExperiment(
+          "checkout-cta",
+          mapOf("user_id" to userId),
+          mapOf("label" to "Pay"),
+      )
+      val label = r.params["label"]
+      ```
+
+      </Tab>
+      <Tab value="PHP">
+
+      ```php
+      $r = $c->getExperiment('checkout-cta', ['user_id' => $userId], ['label' => 'Pay']);
+      $label = $r->params['label'];
+      ```
+
+      </Tab>
+      <Tab value="Swift">
+
+      ```swift
+      let r = await client.getExperiment(
+          "checkout-cta",
+          user: ["user_id": userId],
+          defaultParams: ["label": "Pay"],
+      )
+      let label = r.params["label"]
+      ```
+
+      </Tab>
+    </Tabs>
 
     The first call to `flags.getExperiment(...)` for a given user logs an
     **exposure** event automatically. Subsequent calls in the same process

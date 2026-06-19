@@ -1,0 +1,95 @@
+---
+title: Count an exposure only when the variant is actually seen
+description: Resolve a variant in a prefetch or lazy component with logExposure:false, then log the exposure by hand the moment it renders.
+---
+
+<DocMeta
+  status="Production ready"
+  read="3 min read"
+  updated="June 19, 2026"
+  works="@shipeasy/sdk · server + client"
+/>
+
+Your experiment lives in a tab that most users never open. But your server loader resolves the variant for everyone up front to render the page — so every user gets an **exposure**, including the ones who never see the tab. Your "exposed" population is now mostly people who weren't exposed to anything, and the effect you're measuring is diluted toward zero.
+
+The fix is [manual exposure](/sdks/manual-exposure): resolve the variant without counting it, then count it at the exact moment it renders.
+
+**The shape:** decouple _resolving_ from _logging_. Pass `logExposure: false` when you read the variant, and call `logExposure` later, once, when the user actually sees it.
+
+## 1. Resolve without logging
+
+```ts
+import { flags } from "@shipeasy/sdk/server";
+
+const result = flags.getExperiment(
+  "checkout_button",
+  { user_id: "u_4f2a" },
+  { color: "blue" }, // default params
+  { logExposure: false }, // resolve only — no exposure yet
+);
+```
+
+If a whole client should never auto-log, set it once at construction instead:
+
+```ts
+const client = new FlagsClient({
+  apiKey: process.env.SHIPEASY_SERVER_KEY!,
+  disableAutoExposure: true,
+});
+```
+
+## 2. Log it when the variant renders
+
+Fire the exposure from the code path that mounts the variant — not the loader:
+
+```ts
+// in the component / handler that actually shows the variant
+flags.logExposure("u_4f2a", "checkout_button");
+```
+
+In the browser the visitor is already identified, so you pass just the experiment name: `flags.logExposure("checkout_button")`.
+
+<Callout type="warn" title="Exactly once, on render">
+  A duplicate exposure for the same user/experiment is deduped by the pipeline, but the clean
+  contract is: suppress the auto-exposure, then call <code>logExposure</code> exactly once — when
+  the user sees the variant, not when you computed it.
+</Callout>
+
+## Rollout & measurement plan
+
+- **"Exposed" should mean "saw it."** With manual exposure your denominator is the people who actually reached the surface, so the measured lift is the real one.
+- **Audit the render path.** The bug to avoid is logging in a code path that runs even when the component doesn't mount — put the `logExposure` call as close to the render as you can.
+- **Prefetch + lazy UI are the classic cases.** Server loaders, tabs, modals, and routes that may never open are exactly where auto-exposure over-counts.
+
+<SeeAlso
+  links={[
+    {
+      href: "/sdks/manual-exposure",
+      title: "Manual exposure",
+      note: "logExposure + disableAutoExposure",
+    },
+    {
+      href: "/flags-experiments/experiments/analysis",
+      title: "Analysis",
+      note: "What an exposure means to the stats",
+    },
+    {
+      href: "/flags-experiments/case-studies/sticky-rebalance",
+      title: "Re-balance an experiment",
+      note: "Another keep-the-stats-clean case",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{
+    href: "/flags-experiments/case-studies/sticky-rebalance",
+    title: "Re-balance a running experiment",
+  }}
+  next={{
+    href: "/flags-experiments/case-studies/private-attribute-targeting",
+    title: "Target on PII without leaking it",
+  }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/flags-experiments/case-studies/exposure-when-seen.mdx" />

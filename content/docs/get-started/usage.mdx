@@ -1,0 +1,70 @@
+---
+title: Usage & quotas
+description: See per-evaluation usage across feature flags, configs, killswitches, experiments, and events — and how it tracks against your plan's included credit.
+---
+
+<DocMeta
+  status="Production ready"
+  read="3 min read"
+  updated="June 18, 2026"
+  works="Dashboard · per project"
+/>
+
+The **Usage** page (`/dashboard/<projectId>/usage`) shows how much your project reads from Shipeasy: per-evaluation activity over the last **30 days**, counted at the edge from SDK telemetry beacons.
+
+<Callout type="info" title="Counts are sampled and daily">
+  Usage is approximate (sampled) and refreshes **once daily**. It's an activity view, not a billing
+  meter — nothing on this page rejects or drops traffic.
+</Callout>
+
+## What's counted
+
+Reads are bucketed into five features, each with its own headline tile and daily sparkline, plus a **Total reads** tile:
+
+| Feature           | Counts                  |
+| ----------------- | ----------------------- |
+| **Feature flags** | Gate evaluations.       |
+| **Configs**       | Config reads.           |
+| **Killswitches**  | Killswitch checks.      |
+| **Experiments**   | Experiment assignments. |
+| **Events**        | Logged events ingested. |
+
+Below the tiles, **Busiest resources** lists your highest-volume individual flags/configs/experiments/events with a per-resource sparkline and total, so you can see which specific resource is driving the numbers.
+
+## Included credit & quotas
+
+Some plans include a monthly allowance of events and evaluations. When you cross **80%** of the included credit for the month, a banner appears on this page showing usage vs the allowance; at 100% the banner turns red.
+
+<Callout type="warn" title="Nothing is dropped">
+  Exceeding the included credit is **informational only** — evaluations and events keep flowing. The
+  banner is a heads-up to consider upgrading if the volume is your new normal.
+</Callout>
+
+Other limits (number of flags, configs, running experiments, universes, i18n keys, SDK keys, team seats) are hard caps rather than usage meters — see [Plan limits](/get-started/plan-limits) for the full table and the [Billing tab](/get-started/modules#billing--plan-limits) for your current plan's numbers.
+
+<SeeAlso
+  links={[
+    {
+      href: "/get-started/plan-limits",
+      title: "Plan limits",
+      note: "The hard caps behind every plan.",
+    },
+    {
+      href: "/get-started/modules",
+      title: "Project settings & modules",
+      note: "Billing, plan switching, and included credit.",
+    },
+    {
+      href: "/get-started/evaluation-and-caching",
+      title: "Evaluation & caching",
+      note: "How reads happen on the hot path.",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/get-started/modules", title: "Project settings & modules" }}
+  next={{ href: "/get-started/plan-limits", title: "Plan limits" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/get-started/usage.mdx" />

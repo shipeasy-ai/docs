@@ -86,18 +86,95 @@ shipeasy keys create --kind server
   </Step>
 
   <Step title="Put a feature flag around your code">
-    ```ts
-    import { flags } from "@shipeasy/sdk/server";
+    <Tabs items={["TypeScript", "Python", "Go", "Ruby", "Java", "Kotlin", "PHP", "Swift"]}>
+      <Tab value="TypeScript">
 
-    export async function getCheckoutComponent(user) {
-      if (flags.get("new-checkout-flow", user)) {
-        return import("./checkout/new");
+      ```ts
+      import { flags } from "@shipeasy/sdk/server";
+
+      export async function getCheckoutComponent(user) {
+        if (flags.get("new-checkout-flow", user)) {
+          return import("./checkout/new");
+        }
+        return import("./checkout/legacy");
       }
-      return import("./checkout/legacy");
-    }
-    ```
+      ```
 
-    `flags.get()` is synchronous and reads from the in-process cache. Pass any user attributes you want available to targeting rules — at minimum `{ user_id }`. The shape of `user` is just a plain object:
+      </Tab>
+      <Tab value="Python">
+
+      ```python
+      if client.get_flag("new-checkout-flow", user):
+          return load_new_checkout()
+      return load_legacy_checkout()
+      ```
+
+      </Tab>
+      <Tab value="Go">
+
+      ```go
+      if c.GetFlag("new-checkout-flow", user) {
+          return loadNewCheckout()
+      }
+      return loadLegacyCheckout()
+      ```
+
+      </Tab>
+      <Tab value="Ruby">
+
+      ```ruby
+      if Shipeasy.flags.get_flag("new-checkout-flow", user)
+        load_new_checkout
+      else
+        load_legacy_checkout
+      end
+      ```
+
+      </Tab>
+      <Tab value="Java">
+
+      ```java
+      if (c.getFlag("new-checkout-flow", user)) {
+          return loadNewCheckout();
+      }
+      return loadLegacyCheckout();
+      ```
+
+      </Tab>
+      <Tab value="Kotlin">
+
+      ```kotlin
+      if (c.getFlag("new-checkout-flow", user)) {
+          loadNewCheckout()
+      } else {
+          loadLegacyCheckout()
+      }
+      ```
+
+      </Tab>
+      <Tab value="PHP">
+
+      ```php
+      if ($c->getFlag('new-checkout-flow', $user)) {
+          return loadNewCheckout();
+      }
+      return loadLegacyCheckout();
+      ```
+
+      </Tab>
+      <Tab value="Swift">
+
+      ```swift
+      if await client.getFlag("new-checkout-flow", user: user) {
+          return loadNewCheckout()
+      }
+      return loadLegacyCheckout()
+      ```
+
+      </Tab>
+    </Tabs>
+
+    `flags.get()` is synchronous and reads from the in-process cache (the method is `get_flag` / `GetFlag` in the other SDKs). Pass any user attributes you want available to targeting rules — at minimum `{ user_id }`. The shape of `user` is just a plain object:
 
     ```ts
     {

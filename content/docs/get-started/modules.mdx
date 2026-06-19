@@ -1,0 +1,87 @@
+---
+title: Project settings & modules
+description: Toggle which Shipeasy modules a project exposes, set experiment defaults, and manage notifications, ownership, and deletion.
+---
+
+<DocMeta
+  status="Production ready"
+  read="4 min read"
+  updated="June 18, 2026"
+  works="Dashboard · per project"
+/>
+
+Everything about a project — its name, which features it exposes, experiment defaults, billing, and the danger zone — lives under **Settings** (`/dashboard/<projectId>/settings`). The page has a left nav rail with tabs: **General**, **Modules**, **Experiments**, **Notifications**, **Billing**, and **Danger**.
+
+## Modules
+
+The **Modules** tab toggles which parts of Shipeasy are exposed in this project's devtools overlay and admin tabs. Turning a module off hides its surface; it doesn't delete data.
+
+| Module key     | Tab name                | What it controls                                                           |
+| -------------- | ----------------------- | -------------------------------------------------------------------------- |
+| `gates`        | Gatekeepers             | Feature flags with targeting rules and percentage rollouts.                |
+| `configs`      | Configs                 | Per-environment JSON config values published to your SDK clients.          |
+| `experiments`  | Experiments             | A/B tests with universes, metrics, and statistical analysis.               |
+| `translations` | Translations            | i18n profiles, drafts, and label keys served from the CDN.                 |
+| `feedback`     | Bugs & feature requests | In-app bug reports and feature requests captured via the devtools overlay. |
+| `events`       | Events                  | Live SDK event stream (evaluations, overrides) in the devtools overlay.    |
+| `user`         | User                    | Devtools tab for inspecting and overriding the current SDK user.           |
+
+<Callout type="info" title="Modules are per project">
+  Each project chooses its own module set, so a flags-only project and an experimentation project
+  can live in the same workspace without clutter.
+</Callout>
+
+## General
+
+The **General** tab sets the project **name**, **default environment** (`dev` / `staging` / `prod`), **timezone**, and an optional **domain** and **logo**. The default environment is the one the dashboard assumes when an environment isn't specified.
+
+## Experiment defaults
+
+The **Experiments** tab sets project-wide defaults applied to new experiments:
+
+- **Statistical method** — `sequential`, `fixed`, or `bayesian`.
+- **Significance threshold** — default `0.05`.
+- **Auto-rollback** — stop and revert an experiment automatically on a guardrail breach.
+- **Minimum sample days** — the floor before a result is called (default 14).
+
+## Notifications
+
+The **Notifications** tab manages per-event notification preferences for the project.
+
+## Billing & plan limits
+
+The **Billing** tab shows your subscription status, lets you upgrade/downgrade or switch billing interval, top up assistant credits, and lists the hard limits for your current plan (flags, configs, running experiments, universes, i18n keys, SDK keys, team seats, and SDK poll interval). See [Plan limits](/get-started/plan-limits) for what each limit means.
+
+## Danger zone
+
+The **Danger** tab holds the two irreversible, owner-only actions:
+
+<Callout type="danger" title="Owner-only and irreversible">
+  Both actions require you to be the project owner and ask you to confirm the project name.
+</Callout>
+
+- **Transfer ownership** — move the project to a different admin, who gains full control. You pick the new owner from the existing active members.
+- **Delete project** — removes all experiments, gates, configs, and audit logs after a **14-day grace period**.
+
+<SeeAlso
+  links={[
+    {
+      href: "/get-started/team",
+      title: "Team & permissions",
+      note: "Roles and who can change settings.",
+    },
+    { href: "/get-started/plan-limits", title: "Plan limits", note: "Every plan-level cap." },
+    {
+      href: "/get-started/keys-and-environments",
+      title: "Keys & environments",
+      note: "What the default environment drives.",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/get-started/team", title: "Team & permissions" }}
+  next={{ href: "/get-started/usage", title: "Usage & quotas" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/get-started/modules.mdx" />

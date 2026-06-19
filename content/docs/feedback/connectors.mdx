@@ -1,0 +1,112 @@
+---
+title: Connectors
+description: Mirror new bug reports and feature requests out to a GitHub repo or a Google Sheet as they come in.
+---
+
+<DocMeta
+  status="Production ready"
+  read="4 min read"
+  updated="June 18, 2026"
+  works="Dashboard · per project"
+/>
+
+**Connectors** push every new bug report and feature request out to an external tool, so triage doesn't have to start in Shipeasy. Open them from the **Connectors** button on the **Feedback** page (`/dashboard/<projectId>/feedback`).
+
+## Which destinations are wired
+
+Two outbound destinations ship today:
+
+<TileGrid>
+  <Tile icon="◇" title="GitHub" meta={<>OAuth · GitHub App</>}>
+    Opens an <b>Issue</b> (with labels) in a repository you pick for every selected event.
+  </Tile>
+  <Tile icon="▤" title="Google Sheets" meta={<>OAuth · Drive</>}>
+    Appends a <b>row</b> to a spreadsheet + tab of your choice for every selected event.
+  </Tile>
+</TileGrid>
+
+<Callout type="info" title="Want Slack, Linear, Jira, Notion…?">
+  Those aren't wired yet. The connectors panel has a **"Need a connector we don't have yet?"**
+  banner — tell us where you want bugs and requests to land and it goes straight to the Shipeasy
+  team as a feature request. Until then, GitHub and Google Sheets are the two providers available.
+</Callout>
+
+## Events you can forward
+
+Each connector subscribes to one or more lifecycle events:
+
+| Event                     | Fires when                      |
+| ------------------------- | ------------------------------- |
+| `bug.created`             | A bug is reported.              |
+| `feature_request.created` | A feature request is submitted. |
+
+By default both are selected.
+
+## Setting up a GitHub connector
+
+<Steps>
+  <Step title="Create the connector">
+    **Connectors → New connector**, pick **GitHub**, name it, choose the events to forward, and
+    **Continue**.
+  </Step>
+  <Step title="Install the GitHub App">
+    You're redirected to install the Shipeasy GitHub App and pick which repos it can access. After
+    consent you land back in the configure view.
+  </Step>
+  <Step title="Pick a repo and labels">
+    Select the **repository**, optionally set **bug labels** and **feature labels**
+    (comma-separated) to apply to opened issues, tick **Enabled**, and **Save**. Use **Send test**
+    to open a throwaway issue and confirm the wiring.
+  </Step>
+</Steps>
+
+## Setting up a Google Sheets connector
+
+<Steps>
+  <Step title="Create the connector">
+    **Connectors → New connector**, pick **Google Sheets**, name it, choose events, and
+    **Continue**.
+  </Step>
+  <Step title="Authorize Google">
+    Authorize Shipeasy to access your Drive. After consent you come back to configure.
+  </Step>
+  <Step title="Pick a spreadsheet and tab">
+    Choose the **spreadsheet** and **tab** to append rows to, tick **Enabled**, and **Save**.
+  </Step>
+</Steps>
+
+## Status & health
+
+Each connector in the list shows a status — **Needs OAuth**, **Needs repo** / **Needs sheet** (target not picked yet), **Active**, **Disabled**, or **Failing** (last dispatch errored). The configure view surfaces the last error and last successful delivery time, so you can tell at a glance whether mirroring is healthy.
+
+<Callout type="info" title="Connectors only forward — they don't pull back">
+  A connector is one-way: new bugs/requests flow out to GitHub or Sheets. Status changes you make in
+  GitHub don't sync back into Shipeasy.
+</Callout>
+
+<SeeAlso
+  links={[
+    {
+      href: "/feedback/getting-started",
+      title: "Feedback overview",
+      note: "Where bugs and feature requests are captured.",
+    },
+    {
+      href: "/feedback/errors",
+      title: "Errors dashboard & triage",
+      note: "File an error as an issue, then mirror it via a connector.",
+    },
+    {
+      href: "/feedback/devtools",
+      title: "Devtools overlay",
+      note: "The in-page nub that captures bugs and requests.",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/feedback/errors", title: "Errors dashboard & triage" }}
+  next={{ href: "/feedback/case-studies", title: "Case studies" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/feedback/connectors.mdx" />

@@ -18,15 +18,24 @@ Everything lives **once** in the [`shipeasy-ai/shipeasy`](https://github.com/shi
 
 These hosts have a plugin system, so a single install bundles skills + MCP. (Claude Code additionally gets the `/shipeasy:<area>:<verb>` slash commands — no other host has a plugin slash-command primitive.)
 
+<Tabs items={["Claude Code", "GitHub Copilot CLI", "Codex"]}>
+  <Tab value="Claude Code">
+
 ```bash title="Claude Code"
 claude plugin marketplace add shipeasy-ai/shipeasy
 claude plugin install shipeasy@shipeasy
 ```
 
+  </Tab>
+  <Tab value="GitHub Copilot CLI">
+
 ```bash title="GitHub Copilot CLI"
 copilot plugin marketplace add shipeasy-ai/shipeasy
 copilot plugin install shipeasy@shipeasy
 ```
+
+  </Tab>
+  <Tab value="Codex">
 
 For **Codex**, add the source from inside the TUI (`/plugins` opens the browser):
 
@@ -34,6 +43,9 @@ For **Codex**, add the source from inside the TUI (`/plugins` opens the browser)
 /plugin marketplace add shipeasy-ai/shipeasy
 /plugin install shipeasy@shipeasy
 ```
+
+  </Tab>
+</Tabs>
 
 On Codex and Copilot, invoke the plugin explicitly with `@shipeasy`, or just describe the task and let a skill trigger.
 
@@ -53,7 +65,10 @@ npx skills add https://github.com/shipeasy-ai/shipeasy/tree/main/shipeasy -a <ag
   The `skills` CLI handles skill text only — it does not register MCP servers. Do Step 2 separately.
 </Callout>
 
-**Step 2 — MCP server.** Add `shipeasy` to the agent's MCP config. Most agents use the standard `mcpServers` object:
+**Step 2 — MCP server.** Add `shipeasy` to the agent's MCP config. Most agents use the standard `mcpServers` object; pick your host:
+
+<Tabs items={["Cursor", "Windsurf / Gemini CLI / Cline", "OpenCode", "Continue"]}>
+  <Tab value="Cursor">
 
 ```json title="Cursor — .cursor/mcp.json (or ~/.cursor/mcp.json)"
 {
@@ -66,7 +81,24 @@ npx skills add https://github.com/shipeasy-ai/shipeasy/tree/main/shipeasy -a <ag
 }
 ```
 
+  </Tab>
+  <Tab value="Windsurf / Gemini CLI / Cline">
+
 The same `mcpServers` block works for **Windsurf** (`~/.codeium/windsurf/mcp_config.json`), **Gemini CLI** (`~/.gemini/settings.json`, or run `gemini mcp add shipeasy npx -y @shipeasy/mcp@latest`), and **Cline** (open _Configure MCP Servers_ → `cline_mcp_settings.json`).
+
+```json
+{
+  "mcpServers": {
+    "shipeasy": {
+      "command": "npx",
+      "args": ["-y", "@shipeasy/mcp@latest"]
+    }
+  }
+}
+```
+
+  </Tab>
+  <Tab value="OpenCode">
 
 **OpenCode** uses a `mcp` key with `type: "local"` and the command as an array (skills also auto-discover from `.agents/skills/`, so Step 1 just works):
 
@@ -83,6 +115,9 @@ The same `mcpServers` block works for **Windsurf** (`~/.codeium/windsurf/mcp_con
 }
 ```
 
+  </Tab>
+  <Tab value="Continue">
+
 **Continue** uses a YAML list (and MCP only runs in _agent_ mode):
 
 ```yaml title="Continue — .continue/config.yaml"
@@ -94,6 +129,9 @@ mcpServers:
       - "-y"
       - "@shipeasy/mcp@latest"
 ```
+
+  </Tab>
+</Tabs>
 
 <Callout type="warn">
   Windows / Cline `spawn npx ENOENT`: wrap the command as `"command": "cmd", "args": ["/c", "npx",

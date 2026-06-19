@@ -10,7 +10,7 @@ description: Flags & experiments, metrics & alerts, and feedback — one SDK, on
       Everything you ship, <em>behind one SDK</em>.
     </>
   }
-  subtitle="Roll out features behind a flag, run rigorous A/B tests with automated statistics, track metrics and alert on regressions, and capture bugs and errors straight into your tooling. One SDK, one API key — drivable by hand, by CLI, or by an AI agent."
+  subtitle="Feature flags, A/B experiments with managed statistics, metrics & threshold alerts, and bug + error capture — one SDK, one API key. Drive it by hand, by CLI, or by an AI agent."
   primaryHref="/get-started/quickstart"
   primaryLabel="Quickstart"
   secondaryHref="/get-started/overview"
@@ -20,14 +20,120 @@ description: Flags & experiments, metrics & alerts, and feedback — one SDK, on
 <DocMeta
   status="Production ready"
   read="3 min read"
-  updated="June 18, 2026"
+  updated="June 19, 2026"
   works="Next · Vite · Remix · Expo · Workers · 8 server languages"
 />
 
-## Pick your journey
+## Start here
 
-Most teams arrive with a goal, not a primitive. Pick the outcome you're after — each path is an
-ordered set of pages that takes you from install to shipped.
+<CardGrid>
+  <Card href="/get-started/quickstart" eyebrow="5 minutes" title="Quickstart">
+    Install, wire one `shipeasy()` call, ship a flag — from zero to live in five minutes.
+  </Card>
+  <Card href="/get-started/overview" eyebrow="Concept" title="How it works">
+    Fast local reads, explicit edge writes, sub-second propagation. The mental model behind every
+    product.
+  </Card>
+  <Card href="/sdks" eyebrow="Reference" title="Browse the SDKs">
+    One package for server + browser, plus native ports for Go, Python, Ruby, Java, Kotlin, PHP and
+    Swift.
+  </Card>
+</CardGrid>
+
+## Explore by product
+
+<TileGrid>
+  <Tile
+    href="/flags-experiments"
+    icon="⌗"
+    title="Flags & Experiments"
+    meta={
+      <>
+        <span>flags · configs · killswitches · A/B</span>
+      </>
+    }
+  >
+    Feature flags for ramps, configs for typed values, killswitches for break-glass, and experiments
+    with automated statistics.
+  </Tile>
+  <Tile
+    href="/metrics"
+    icon="📈"
+    title="Metrics & Alerts"
+    meta={
+      <>
+        <span>event metrics</span>
+        <span>·</span>
+        <span>threshold alerts</span>
+      </>
+    }
+  >
+    Turn events into metrics with a small DSL, attach them to experiments, and raise threshold
+    alerts that file their own tickets.
+  </Tile>
+  <Tile
+    href="/feedback"
+    icon="✦"
+    title="Bugs & Requests"
+    meta={
+      <>
+        <span>devtools widget</span>
+        <span>·</span>
+        <span>error reporting</span>
+      </>
+    }
+  >
+    User-reported bugs, feature requests, and handled errors — captured in-app and routed into your
+    tooling.
+  </Tile>
+  <Tile
+    href="/sdks"
+    icon="◇"
+    title="SDKs"
+    meta={
+      <>
+        <span>8 server languages</span>
+        <span>·</span>
+        <span>browser + React</span>
+      </>
+    }
+  >
+    One package, server + browser builds, plus native ports for Go, Python, Ruby, Java, Kotlin, PHP
+    and Swift.
+  </Tile>
+  <Tile
+    href="/assistant"
+    icon="◆"
+    title="Assistant"
+    meta={
+      <>
+        <span>in-dashboard AI</span>
+      </>
+    }
+  >
+    Ask questions about your project, and let the assistant draft flags, configs, experiments, and
+    measurement plans as editable cards.
+  </Tile>
+  <Tile
+    href="/get-started"
+    icon="✱"
+    title="Get started"
+    meta={
+      <>
+        <span>install · CLI · MCP</span>
+        <span>·</span>
+        <span>AI agents</span>
+      </>
+    }
+  >
+    Install the SDK, authenticate, learn the core concepts, and hand setup to a coding agent.
+  </Tile>
+</TileGrid>
+
+## Or start from a goal
+
+Most teams arrive with an outcome in mind. Each path is an ordered set of pages that takes you from
+install to shipped.
 
 <JourneyPath
   title="Ship a feature behind a flag"
@@ -82,97 +188,6 @@ ordered set of pages that takes you from install to shipped.
     { href: "/llms", label: "Run", title: "AI-agent runbooks" },
   ]}
 />
-
-## The products
-
-<TileGrid>
-  <Tile
-    href="/flags-experiments"
-    icon="⌗"
-    title="Flags & Experiments"
-    meta={
-      <>
-        <span>flags · configs · killswitches · A/B</span>
-      </>
-    }
-  >
-    Feature flags for ramps, configs for typed values, killswitches for break-glass, and experiments
-    with automated statistics.
-  </Tile>
-  <Tile
-    href="/metrics"
-    icon="📈"
-    title="Metrics & Alerts"
-    meta={
-      <>
-        <span>event metrics</span>
-        <span>·</span>
-        <span>threshold alerts</span>
-      </>
-    }
-  >
-    Turn events into metrics with a small DSL, attach them to experiments, and raise threshold
-    alerts that file their own tickets.
-  </Tile>
-  <Tile
-    href="/feedback"
-    icon="✦"
-    title="Bugs & Requests"
-    meta={
-      <>
-        <span>devtools widget</span>
-        <span>·</span>
-        <span>error reporting</span>
-      </>
-    }
-  >
-    User-reported bugs, feature requests, and handled errors — captured in-app and routed into your
-    tooling.
-  </Tile>
-  <Tile
-    href="/assistant"
-    icon="◆"
-    title="Assistant"
-    meta={
-      <>
-        <span>in-dashboard AI</span>
-      </>
-    }
-  >
-    Ask questions about your project, and let the assistant draft flags, configs, experiments, and
-    measurement plans as editable cards.
-  </Tile>
-  <Tile
-    href="/sdks"
-    icon="◇"
-    title="SDKs"
-    meta={
-      <>
-        <span>8 server languages</span>
-        <span>·</span>
-        <span>browser + React</span>
-      </>
-    }
-  >
-    One package, server + browser builds, plus native ports for Go, Python, Ruby, Java, Kotlin, PHP
-    and Swift.
-  </Tile>
-  <Tile
-    href="/get-started/overview"
-    icon="✱"
-    title="How it works"
-    meta={
-      <>
-        <span>architecture</span>
-        <span>·</span>
-        <span>read/write model</span>
-      </>
-    }
-  >
-    Fast local reads, explicit edge writes, sub-second propagation. The mental model behind every
-    product.
-  </Tile>
-</TileGrid>
 
 ## Not sure which primitive?
 

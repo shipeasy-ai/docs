@@ -1,0 +1,85 @@
+---
+title: Disable one tenant or route without flipping the whole killswitch
+description: Use the killswitch per-key "switches" feature to set a named override on one tenant or route in one environment — without killing the feature for everyone.
+---
+
+<DocMeta
+  status="Production ready"
+  read="3 min read"
+  updated="June 19, 2026"
+  works="Server SDK · CLI · Dashboard"
+/>
+
+One tenant is hammering your export pipeline and degrading it for everyone else. You have a killswitch for exports — but flipping it stops exports for _all_ customers, which is a much bigger blast radius than the one account causing the problem. You want to pause exports for that single tenant and leave everyone else running.
+
+That's the killswitch [per-key **switches**](/flags-experiments/killswitches) feature: a named per-key boolean override, set on one environment, layered on top of the killswitch's global state.
+
+**The shape.** A killswitch has one global default. A _switch_ is a named override on a specific key — `tenant:acme`, `route:/exports` — that you set or unset independently, per environment. The global switch stays off; the per-key override scopes the kill to exactly one tenant or route.
+
+## Set a per-key override on one env
+
+```bash
+# pause exports for just this tenant, in prod only
+shipeasy killswitch toggle exports.pipeline --switch tenant:acme --on --env prod
+```
+
+In code the killswitch read carries the key so the SDK can apply the right override:
+
+```ts
+import { flags } from "@shipeasy/sdk/server";
+
+export async function runExport(tenantId: string) {
+  // resolves the per-key switch for this tenant, falling back to the global state
+  if (flags.get("exports.pipeline", { user_id: tenantId, key: `tenant:${tenantId}` })) {
+    return { status: "paused", reason: "Exports are briefly paused for your account." };
+  }
+  return processExport(tenantId);
+}
+```
+
+When the tenant recovers, unset the one switch — every other tenant was never affected:
+
+```bash
+shipeasy killswitch toggle exports.pipeline --switch tenant:acme --off --env prod
+```
+
+<Callout type="info" title="Scoped blast radius, full audit trail">
+  The per-key override is recorded in the audit log like any killswitch flip — who, when, which key,
+  which env. You get the surgical scope of a per-tenant pause with the same incident-grade trail as
+  the global switch.
+</Callout>
+
+## Rollout & measurement plan
+
+- **Reach for it instead of the global flip.** When the problem is one tenant or one route, a per-key switch contains the blast radius to exactly that key.
+- **Scope to the right env.** Switches are per-environment — set the override in `prod` only, so staging keeps testing the normal path.
+- **Clean up after the incident.** Unset the switch once the tenant recovers; a forgotten per-key override is a quiet, account-specific outage waiting to confuse the next person.
+
+<SeeAlso
+  links={[
+    {
+      href: "/flags-experiments/killswitches",
+      title: "Killswitches",
+      note: "Switches and the global kill",
+    },
+    {
+      href: "/flags-experiments/case-studies/maintenance-mode",
+      title: "Maintenance mode",
+      note: "The whole-subsystem version of the same lever",
+    },
+    { href: "/metrics/alerts", title: "Alerts", note: "Page yourself when the symptom appears" },
+  ]}
+/>
+
+<DocNav
+  prev={{
+    href: "/flags-experiments/case-studies/guardrail-gated-launch",
+    title: "Ship the winner only if guardrails hold",
+  }}
+  next={{
+    href: "/flags-experiments/case-studies/variant-across-login",
+    title: "Keep a variant across anonymous → logged-in",
+  }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/flags-experiments/case-studies/per-tenant-killswitch.mdx" />

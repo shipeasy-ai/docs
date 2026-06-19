@@ -1,0 +1,95 @@
+---
+title: Re-balance a running experiment without corrupting results
+description: Ramp an experiment's allocation 10% → 50% mid-flight while sticky bucketing keeps already-assigned users in the group they started in.
+---
+
+<DocMeta
+  status="Production ready"
+  read="4 min read"
+  updated="June 19, 2026"
+  works="@shipeasy/sdk · server + client"
+/>
+
+Your new checkout experiment looks healthy at 10% and you want more power, so you bump allocation to 50%. But bucketing is a hash over the allocation boundaries — move the boundaries and some users who were in **control** silently slide into **treatment** (or vice-versa). Now a chunk of your sample saw _both_ variants, their exposures are mislabeled, and the t-test is reading contaminated data.
+
+The fix is [sticky bucketing](/sdks/sticky-bucketing): lock each user's _first_ assignment so it survives the weight change. You ramp; nobody already enrolled moves.
+
+**Why this is the right primitive.** Deterministic bucketing alone tracks the _current_ allocation — that's what you want for a flag rollout, but it's wrong for an in-flight experiment. A sticky store records "u_4f2a → treatment" the first time it resolves and replays that on every later evaluation, even after you reshuffle the weights.
+
+## 1. Give the server client a sticky store
+
+In-memory works for one long-lived process; back it with Redis for a fleet so a user keeps their variant no matter which instance they hit:
+
+```ts
+import { FlagsClient, type StickyBucketStore } from "@shipeasy/sdk/server";
+
+const store: StickyBucketStore = {
+  get: async (key) => redis.get(key),
+  set: async (key, value) => void redis.set(key, value),
+};
+
+const client = new FlagsClient({
+  apiKey: process.env.SHIPEASY_SERVER_KEY!,
+  stickyStore: store,
+});
+```
+
+The browser client is sticky **by default** — it persists the assignment map in a first-party cookie and replays it, so a returning visitor keeps their variant with no extra wiring.
+
+## 2. Ramp the allocation
+
+<Steps>
+  <Step title="Confirm sticky is live before you touch weights">
+    Sticky bucketing only protects users who were assigned while the store was in place. Ship the
+    store first, let it warm, then ramp.
+  </Step>
+  <Step title="Bump allocation in the dashboard or CLI">
+    Take the experiment from 10% to 50%. New traffic fills the larger groups; everyone already
+    enrolled stays put.
+  </Step>
+  <Step title="Verify nobody flipped">
+    Spot-check a few known user ids before and after — same group both times.
+  </Step>
+</Steps>
+
+<Callout type="info" title="Sticky vs deterministic">
+  If you never change allocation mid-experiment, deterministic bucketing is enough — the hash is
+  already stable. The sticky store earns its keep precisely when you <em>deliberately</em> move the
+  weights on a running test.
+</Callout>
+
+## Rollout & measurement plan
+
+- **Ramp early, ramp once.** The cleanest experiment never changes weights. If you must, do it once, early, and before exposures pile up.
+- **Watch for an SRM warning.** A sample-ratio mismatch after a ramp is the tell that bucketing slipped — sticky bucketing is what keeps the ratio honest.
+- **The store is the source of truth.** A returning user is only sticky if their first assignment was written. Back it with a durable store (Redis) for any multi-instance deployment.
+
+<SeeAlso
+  links={[
+    {
+      href: "/sdks/sticky-bucketing",
+      title: "Sticky bucketing",
+      note: "The StickyBucketStore in full",
+    },
+    {
+      href: "/flags-experiments/experiments/analysis",
+      title: "Analysis",
+      note: "Why a mid-flight flip corrupts the t-test",
+    },
+    {
+      href: "/flags-experiments/case-studies/company-rollout-bucketby",
+      title: "Roll out by company",
+      note: "Deterministic bucketing on a coarser unit",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/flags-experiments/case-studies", title: "Case studies" }}
+  next={{
+    href: "/flags-experiments/case-studies/exposure-when-seen",
+    title: "Count an exposure only when seen",
+  }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/flags-experiments/case-studies/sticky-rebalance.mdx" />

@@ -84,6 +84,9 @@ Alternatively, create it in the dashboard: **Flags → New feature flag → Save
 
 ## 3. Wrap the code path
 
+<Tabs items={["TypeScript", "Python", "Go", "Ruby", "Java", "Kotlin", "PHP", "Swift"]}>
+  <Tab value="TypeScript">
+
 ```ts title="app/checkout/page.tsx"
 import { flags } from "@shipeasy/sdk/server";
 
@@ -96,6 +99,80 @@ export default async function CheckoutPage() {
   return <CheckoutV1 />;
 }
 ```
+
+  </Tab>
+  <Tab value="Python">
+
+```python
+if client.get_flag("checkout-v2", {"user_id": user_id}):
+    return checkout_v2()
+return checkout_v1()
+```
+
+  </Tab>
+  <Tab value="Go">
+
+```go
+if c.GetFlag("checkout-v2", shipeasy.User{"user_id": userID}) {
+    return checkoutV2()
+}
+return checkoutV1()
+```
+
+  </Tab>
+  <Tab value="Ruby">
+
+```ruby
+if Shipeasy.flags.get_flag("checkout-v2", { user_id: user_id })
+  render CheckoutV2
+else
+  render CheckoutV1
+end
+```
+
+  </Tab>
+  <Tab value="Java">
+
+```java
+if (c.getFlag("checkout-v2", Map.of("user_id", userId))) {
+    return checkoutV2();
+}
+return checkoutV1();
+```
+
+  </Tab>
+  <Tab value="Kotlin">
+
+```kotlin
+if (c.getFlag("checkout-v2", mapOf("user_id" to userId))) {
+    checkoutV2()
+} else {
+    checkoutV1()
+}
+```
+
+  </Tab>
+  <Tab value="PHP">
+
+```php
+if ($c->getFlag('checkout-v2', ['user_id' => $userId])) {
+    return checkoutV2();
+}
+return checkoutV1();
+```
+
+  </Tab>
+  <Tab value="Swift">
+
+```swift
+if await client.getFlag("checkout-v2", user: ["user_id": userId]) {
+    return checkoutV2()
+}
+return checkoutV1()
+```
+
+  </Tab>
+</Tabs>
 
 Two things to note:
 

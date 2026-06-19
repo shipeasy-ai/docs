@@ -24,6 +24,7 @@
     "offline-snapshot",
     "testing",
     "devtools-overlay",
+    "script-loader",
     "openfeature"
   ]
 }

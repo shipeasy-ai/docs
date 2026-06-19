@@ -52,8 +52,11 @@ SDK has fetched the first blob, reads return `false` (the safer default for
 
 ## 2. Wire it into the code path
 
-Wrap the dangerous call with `flags.ks(name)` — returns `true` when the
+Wrap the dangerous call with the killswitch read — it returns `true` when the
 killswitch is flipped, `false` (or the SDK default) otherwise:
+
+<Tabs items={["TypeScript", "Python", "Go", "Ruby", "Java", "Kotlin", "PHP", "Swift"]}>
+  <Tab value="TypeScript">
 
 ```ts title="src/lib/mailer.ts"
 import { flags } from "@shipeasy/sdk/server";
@@ -67,6 +70,44 @@ export async function sendOrderEmail(order: Order) {
   await mailer.send(order);
 }
 ```
+
+  </Tab>
+  <Tab value="Python">
+
+Killswitches ride the same blob as flags. Read them from the evaluate result; see [Python](/sdks/python) for the full client API.
+
+  </Tab>
+  <Tab value="Go">
+
+Killswitches ride the same blob as flags. Read them from the evaluate result; see [Go](/sdks/go) for the full client API.
+
+  </Tab>
+  <Tab value="Ruby">
+
+Killswitches ride the same blob as flags. Read them from the evaluate result; see [Ruby](/sdks/ruby) for the full client API.
+
+  </Tab>
+  <Tab value="Java">
+
+Killswitches ride the same blob as flags. Read them from the evaluate result; see [Java](/sdks/java) for the full client API.
+
+  </Tab>
+  <Tab value="Kotlin">
+
+Killswitches ride the same blob as flags. Read them from the evaluate result; see [Kotlin](/sdks/kotlin) for the full client API.
+
+  </Tab>
+  <Tab value="PHP">
+
+Killswitches ride the same blob as flags. Read them from the evaluate result; see [PHP](/sdks/php) for the full client API.
+
+  </Tab>
+  <Tab value="Swift">
+
+Killswitches ride the same blob as flags. Read them from the evaluate result; see [Swift](/sdks/swift) for the full client API.
+
+  </Tab>
+</Tabs>
 
 Three things to internalise:
 

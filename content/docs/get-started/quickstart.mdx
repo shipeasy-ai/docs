@@ -80,6 +80,126 @@ This is the universal path. Every product — gates, configs, experiments, and i
   </QuickstartStep>
 </Quickstart>
 
+## Configure and read a flag, in your language
+
+The runway above is TypeScript. The same two moves — configure once with the **server** key, then read a flag locally — exist in every server SDK. Pick yours:
+
+<Tabs items={["TypeScript", "Python", "Go", "Ruby", "Java", "Kotlin", "PHP", "Swift"]}>
+  <Tab value="TypeScript">
+
+```ts
+import { shipeasy, flags } from "@shipeasy/sdk/server";
+
+await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? "" });
+
+if (flags.get("checkout-v2", { user_id: "u_123" })) {
+  // ship it
+}
+```
+
+  </Tab>
+  <Tab value="Python">
+
+```python
+from shipeasy import Client
+
+client = Client(api_key=os.environ["SHIPEASY_SERVER_KEY"])
+client.init()
+
+if client.get_flag("checkout-v2", {"user_id": "u_123"}):
+    ...
+```
+
+  </Tab>
+  <Tab value="Go">
+
+```go
+import (
+    "context"
+    "os"
+
+    shipeasy "github.com/shipeasy-ai/sdk-go"
+)
+
+c := shipeasy.NewClient(shipeasy.Options{APIKey: os.Getenv("SHIPEASY_SERVER_KEY")})
+if err := c.Init(context.Background()); err != nil {
+    panic(err)
+}
+defer c.Destroy()
+
+if c.GetFlag("checkout-v2", shipeasy.User{"user_id": "u_123"}) {
+    // ship it
+}
+```
+
+  </Tab>
+  <Tab value="Ruby">
+
+```ruby
+Shipeasy.configure do |c|
+  c.api_key = ENV.fetch("SHIPEASY_SERVER_KEY")
+end
+
+if Shipeasy.flags.get_flag("checkout-v2", { user_id: "u_123" })
+  # ship it
+end
+```
+
+  </Tab>
+  <Tab value="Java">
+
+```java
+import ai.shipeasy.Client;
+import java.util.Map;
+
+try (Client c = new Client(System.getenv("SHIPEASY_SERVER_KEY"))) {
+    c.init();
+    boolean enabled = c.getFlag("checkout-v2", Map.of("user_id", "u_123"));
+}
+```
+
+  </Tab>
+  <Tab value="Kotlin">
+
+```kotlin
+import ai.shipeasy.Client
+import kotlinx.coroutines.runBlocking
+
+val c = Client(apiKey = System.getenv("SHIPEASY_SERVER_KEY"))
+runBlocking { c.init() }
+
+c.getFlag("checkout-v2", mapOf("user_id" to "u_123"))
+```
+
+  </Tab>
+  <Tab value="PHP">
+
+```php
+use Shipeasy\Client;
+
+$c = new Client(getenv('SHIPEASY_SERVER_KEY'));
+$c->init();
+
+$enabled = $c->getFlag('checkout-v2', ['user_id' => 'u_123']);
+```
+
+  </Tab>
+  <Tab value="Swift">
+
+```swift
+import Shipeasy
+
+let client = Client(apiKey: ProcessInfo.processInfo.environment["SHIPEASY_SERVER_KEY"]!)
+try await client.initialize()
+
+let enabled = await client.getFlag("checkout-v2", user: ["user_id": "u_123"])
+```
+
+  </Tab>
+</Tabs>
+
+The browser build is separate — see the client init below. For the full per-language API, each SDK has its own page under [SDKs](/sdks).
+
 ## What just happened
 
 <Steps>

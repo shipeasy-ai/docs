@@ -1,0 +1,89 @@
+---
+title: Keep a user's variant across anonymous → logged-in
+description: Bucket on anonymous_id before login, identify() after, and let identity stitching keep the variant — and stitch the exposures — across the boundary.
+---
+
+<DocMeta
+  status="Production ready"
+  read="4 min read"
+  updated="June 19, 2026"
+  works="@shipeasy/sdk · client + server"
+/>
+
+Your onboarding experiment starts on a logged-out landing page and finishes after sign-up. A visitor sees variant B, signs up, and — because they now have a `user_id` instead of an `anonymous_id` — re-buckets into variant A on the post-login page. They experienced both variants, and the conversion you care about (the sign-up they just did) gets attributed to the wrong group, or to a different "user" entirely.
+
+[Identity stitching](/get-started/identity-and-bucketing) fixes both halves: the variant stays put across the login boundary, and the pre-login and post-login activity roll up to one person.
+
+**The unit.** Bucketing keys on `user.user_id ?? user.anonymous_id`. Logged out, the visitor buckets on a stable `anonymous_id` (a first-party `__se_anon_id` cookie). After login you call `identify()` with both ids — that ties them together so the same person isn't split in two.
+
+## 1. Bucket on anonymous_id pre-login
+
+The browser SDK already minted the anon cookie, so logged-out reads bucket deterministically on it — no extra work. The visitor in variant B stays in variant B for the whole logged-out flow.
+
+## 2. identify() after sign-up — pass the anon id
+
+The moment authentication completes, alias the two ids:
+
+```ts
+import { flags } from "@shipeasy/sdk/client";
+
+// call right after authentication
+flags.identify({
+  user_id: authenticatedUser.id,
+  anonymous_id: currentAnonId, // the UUID that did the anonymous bucketing
+});
+```
+
+This emits an `identify` (alias) event. The analysis pipeline resolves the alias before aggregation, so pre-login and post-login exposures and conversions roll up to one user.
+
+<Callout type="info" title="Bucketing is locked at first exposure">
+  Once an <code>anonymous_id</code> is stitched to a <code>user_id</code>, the original group
+  assignment is preserved — the user is <em>not</em> re-bucketed. After login, live bucketing keys
+  on <code>user_id</code>; the anon cookie sticks around for logged-out surfaces.
+</Callout>
+
+## Rollout & measurement plan
+
+<Steps>
+  <Step title="Confirm the anon id is stable pre-login">
+    The <code>__se_anon_id</code> cookie must persist across the logged-out pages of the flow, or
+    the visitor re-buckets before they ever sign in.
+  </Step>
+  <Step title="Call identify() with both ids at the login boundary">
+    Pass the same anon UUID that did the bucketing — that's the join key the pipeline aliases on.
+  </Step>
+  <Step title="Verify exposures stitch in analysis">
+    A correctly stitched experiment shows one user, one group, spanning the login — not two users in
+    two groups.
+  </Step>
+</Steps>
+
+<SeeAlso
+  links={[
+    {
+      href: "/get-started/identity-and-bucketing",
+      title: "Identity & bucketing",
+      note: "anonymous_id, identify(), and the alias",
+    },
+    {
+      href: "/sdks/sticky-bucketing",
+      title: "Sticky bucketing",
+      note: "Keeping the variant stable another way",
+    },
+    {
+      href: "/flags-experiments/case-studies/exposure-when-seen",
+      title: "Count an exposure only when seen",
+      note: "Getting the exposure timing right",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{
+    href: "/flags-experiments/case-studies/per-tenant-killswitch",
+    title: "Disable one tenant without flipping everyone",
+  }}
+  next={{ href: "/flags-experiments/case-studies", title: "Case studies" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/flags-experiments/case-studies/variant-across-login.mdx" />
