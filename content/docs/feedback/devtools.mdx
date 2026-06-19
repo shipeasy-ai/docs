@@ -13,22 +13,32 @@ captures the page context for you, and posts straight into your project's feedba
 queue. The same overlay also surfaces your flags, configs, experiments, and i18n
 keys, so it doubles as a control panel while you're building.
 
-It ships in `@shipeasy/devtools` and rides the bundle that base setup already wired
-into your root layout — in the common case there is **nothing to install**.
+It ships as a standalone script that works on **any platform** — Next.js, Rails,
+Django, Laravel, static HTML — without requiring a server-side SDK or a build step.
 
-## Already wired: just add `?se`
+## Add the script tag
 
-If you ran `/shipeasy:setup`, your root layout renders `getBootstrapHtml()` into
-`<head>`. That snippet lazily loads the overlay from
-`https://shipeasy.ai/se-devtools.js` **only when the URL contains `?se` (or
-`?se_devtools`)** — so it costs your users nothing until someone asks for it.
+Drop this into your HTML `<head>` (or your framework's equivalent):
+
+```html
+<script
+  src="https://cdn.shipeasy.ai/se-devtools.js"
+  data-client-api-key="YOUR_CLIENT_KEY"
+  data-project-id="YOUR_PROJECT_ID"
+></script>
+```
+
+Both attributes are **required**. If either is missing the script logs a clear
+`console.error` and exits without mounting anything.
+
+| Attribute             | Where to find it                                                    |
+| --------------------- | ------------------------------------------------------------------- |
+| `data-client-api-key` | Dashboard → Settings → API Keys → Client key (public, safe in HTML) |
+| `data-project-id`     | Dashboard → Settings → Project ID                                   |
 
 <Quickstart title="Open the overlay" time="~30 seconds">
-  <QuickstartStep num={1} label="VERIFY" title="Confirm the bootstrap is in <head>" cmd="// app/layout.tsx — from base setup, already present:
-import { shipeasy } from '@shipeasy/sdk/server';
-const se = await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? '' });
-// …then render se.getBootstrapHtml() into <head>.">
-    No bootstrap, no overlay. If it's missing, re-run `/shipeasy:setup`.
+  <QuickstartStep num={1} label="ADD" title="Drop the script tag into <head>" cmd='<script\n  src="https://cdn.shipeasy.ai/se-devtools.js"\n  data-client-api-key="YOUR_CLIENT_KEY"\n  data-project-id="YOUR_PROJECT_ID"\n></script>'>
+    Works in any HTML template regardless of backend language or framework.
   </QuickstartStep>
 
 <QuickstartStep
@@ -47,28 +57,56 @@ const se = await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? '' });
 </Quickstart>
 
 <Callout type="info">
-  `Shift+Alt+S` toggles the overlay open and closed; `?se-devtools` in the URL opens it immediately
-  on load.
+  The overlay is loaded lazily — the script tag itself adds no visible weight to normal page loads.
+  It only activates when `?se=1` is in the URL or the user presses `Shift+Alt+S`.
 </Callout>
 
-## Mount it unconditionally with init()
+### Next.js / TypeScript
 
-When you want the rail present without the `?se` gate — an internal tool, a staging
-build, a demo — call `init()` once from a client component at app boot:
+In a Next.js App Router root layout, read the keys from env:
 
-```ts
-"use client";
-import { init as initDevtools } from "@shipeasy/devtools";
-import { useEffect } from "react";
-
-export function Devtools() {
-  useEffect(() => initDevtools({ accentColor: "var(--brand)" }), []);
-  return null;
+```tsx
+// app/layout.tsx
+export default async function RootLayout({ children }) {
+  return (
+    <html>
+      <head>
+        <script
+          src={
+            process.env.NODE_ENV !== "production"
+              ? "/se-devtools.js" // local build
+              : "https://cdn.shipeasy.ai/se-devtools.js"
+          }
+          data-client-api-key={process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY}
+          data-project-id={process.env.NEXT_PUBLIC_SHIPEASY_PROJECT_ID}
+        />
+      </head>
+      <body>{children}</body>
+    </html>
+  );
 }
 ```
 
-`init()` is framework-agnostic — call it from any `useEffect`, `onMounted`, or a
-plain `<script>`. It is idempotent and tears itself down via `destroy()`.
+Add to `.env.local` (or your CI secrets):
+
+```
+NEXT_PUBLIC_SHIPEASY_CLIENT_KEY=se_live_client_…
+NEXT_PUBLIC_SHIPEASY_PROJECT_ID=<your-project-id>
+```
+
+## Mount it unconditionally with init()
+
+For programmatic control — always-on internal tools, staging builds, demos — call
+`init()` directly from any JavaScript:
+
+```ts
+import { init as initDevtools } from "@shipeasy/devtools";
+
+initDevtools({ accentColor: "var(--brand)" });
+```
+
+`init()` is framework-agnostic — call it from a `useEffect`, `onMounted`, or a
+plain inline `<script>`. It is idempotent and tears itself down via `destroy()`.
 
 <ApiTable>
   <ApiRow
@@ -118,9 +156,10 @@ to the admin endpoints (`POST /api/admin/bugs`, `/api/admin/feature-requests`) w
 that token — no cookies, no SDK key embedded in the page.
 
 <Callout type="warn">
-  If the sign-in popup never returns or the overlay never appears, base setup is
-  incomplete — `getBootstrapHtml()` isn't rendering into `<head>`. Re-run
-  `/shipeasy:setup` before debugging anything else.
+  If the sign-in popup never returns or the overlay never appears, check that the
+  `<script>` tag with both `data-client-api-key` and `data-project-id` is present
+  in the page source. Open the browser console — a missing attribute logs a clear
+  error.
 </Callout>
 
 ## What a report captures
