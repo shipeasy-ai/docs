@@ -26,7 +26,7 @@ html {
   --se-line-2: rgba(255, 255, 255, 0.14);
   --se-line-3: rgba(255, 255, 255, 0.22);
   --se-fg: #f5f5f4;
-  --se-fg-2: rgba(245, 245, 244, 0.72);
+  --se-fg-2: rgba(245, 245, 244, 0.8);
   --se-fg-3: rgba(245, 245, 244, 0.48);
   --se-fg-4: rgba(245, 245, 244, 0.28);
 
@@ -72,27 +72,52 @@ body {
   color: var(--se-fg);
   font-family: var(--se-sans);
   font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-body {
-  /* The atmospheric grid + spotlight from the marketing landing. */
+/* Atmospheric backdrop — a 56px line grid that's crisp under the header
+   and dissolves into the page, plus a layered accent bloom and a bottom
+   vignette. Both layers are viewport-fixed (they don't scroll) and sit
+   behind the body content but above the base background colour. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
   background-image:
+    linear-gradient(transparent calc(56px - 1px), var(--se-line) 56px),
+    linear-gradient(90deg, transparent calc(56px - 1px), var(--se-line) 56px);
+  background-size: 56px 56px;
+  background-position: center top;
+  -webkit-mask: radial-gradient(
+    128% 72% at 50% -10%,
+    #000 0%,
+    rgba(0, 0, 0, 0.5) 40%,
+    transparent 72%
+  );
+  mask: radial-gradient(128% 72% at 50% -10%, #000 0%, rgba(0, 0, 0, 0.5) 40%, transparent 72%);
+}
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
     radial-gradient(
-      900px 520px at 50% -180px,
-      color-mix(in oklab, var(--se-accent) 20%, transparent) 0%,
+      820px 460px at 50% -150px,
+      color-mix(in oklab, var(--se-accent) 24%, transparent) 0%,
       transparent 70%
     ),
-    linear-gradient(transparent 95%, var(--se-line) 95%),
-    linear-gradient(90deg, transparent 95%, var(--se-line) 95%);
-  background-size:
-    auto,
-    56px 56px,
-    56px 56px;
-  background-position:
-    center top,
-    center,
-    center;
-  background-attachment: fixed, fixed, fixed;
+    radial-gradient(
+      420px 220px at 50% -40px,
+      color-mix(in oklab, var(--se-accent) 12%, transparent) 0%,
+      transparent 72%
+    ),
+    linear-gradient(to bottom, transparent 55%, rgba(0, 0, 0, 0.45) 100%);
 }
 
 /* Selection — accent fill */
@@ -110,6 +135,10 @@ article h1,
 .fd-page h1 {
   letter-spacing: -0.025em;
   font-weight: 500;
+  line-height: 1.06;
+}
+article h2 {
+  letter-spacing: -0.012em;
 }
 article h1 em,
 article h2 em {
@@ -122,6 +151,7 @@ article h2 em {
 
 article :is(p, li) {
   color: var(--se-fg-2);
+  line-height: 1.75;
 }
 article strong {
   color: var(--se-fg);
