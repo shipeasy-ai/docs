@@ -1,5 +1,6 @@
 ---
-title: Enable a feature flag
+title: Enable a gate
+description: "Sets enabled: true. The current rollout_pct is preserved."
 full: true
 _openapi:
   method: POST
@@ -11,7 +12,7 @@ _openapi:
           Sets `enabled: true`. The current `rollout_pct` is preserved.
 
 
-          **Use case:** Re-enable a previously disabled feature flag without re-issuing
+          **Use case:** Re-enable a previously disabled gate without re-issuing
           a full update.
 ---
 
@@ -19,7 +20,7 @@ _openapi:
 
 Sets `enabled: true`. The current `rollout_pct` is preserved.
 
-**Use case:** Re-enable a previously disabled feature flag without re-issuing a full update.
+**Use case:** Re-enable a previously disabled gate without re-issuing a full update.
 
 <APIPage
   document={"../../packages/openapi/openapi.json"}

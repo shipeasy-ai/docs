@@ -1,5 +1,8 @@
 ---
 title: Update an experiment
+description: >-
+  Partial update. allocation_pct, groups, salt, universe, params are immutable
+  while running — returns 409 if you try. Stop the experiment first.
 full: true
 _openapi:
   method: PATCH

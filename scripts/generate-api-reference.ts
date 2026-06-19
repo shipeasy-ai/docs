@@ -31,6 +31,25 @@ const SPEC = "../../packages/openapi/openapi.json";
 // Feedback), split this into multiple `generateFiles` calls keyed by tag.
 const OUT = join(__dirname, "../content/docs/flags-experiments/api/operations");
 
+// Derive a clean, plain-text meta description from the operation's OpenAPI
+// `description` (which is rich MDX — bold, lists, inline code, a "**Use case:**"
+// callout). We take the lead paragraph, strip markdown, collapse whitespace,
+// and truncate to a search-snippet-friendly length so the value is safe to drop
+// straight into YAML frontmatter and `<meta name="description">`.
+function toMetaDescription(raw: string | undefined, fallback: string): string {
+  if (!raw || !raw.trim()) return fallback;
+  const lead = raw.split(/\n\s*\n/)[0] ?? raw;
+  const plain = lead
+    .replace(/\*\*(.+?)\*\*/g, "$1") // bold
+    .replace(/`(.+?)`/g, "$1") // inline code
+    .replace(/\[(.+?)\]\([^)]*\)/g, "$1") // links → label
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!plain) return fallback;
+  if (plain.length <= 160) return plain;
+  return `${plain.slice(0, 157).replace(/\s+\S*$/, "")}…`;
+}
+
 async function main() {
   // Wipe the previous output so removed operations don't leave orphan MDX.
   rmSync(OUT, { recursive: true, force: true });
@@ -46,12 +65,13 @@ async function main() {
     // code) in our resource descriptors leaks into `<DocsDescription>` and
     // shows up as literal `**bold**` / dash bullets above the operation.
     includeDescription: true,
-    // Keep the short, one-line `summary` as the frontmatter description so
-    // sidebar cards / SEO meta stay readable. The full description is
-    // rendered inside the body via `includeDescription`.
-    frontmatter: (title, _description) => ({
+    // Keep a short, plain-text description in the frontmatter so the page has a
+    // real `<meta name="description">` and OG description for SEO (and a sidebar
+    // subtitle). The full rich description still renders in the body via
+    // `includeDescription`; `toMetaDescription` flattens its lead paragraph.
+    frontmatter: (title, description) => ({
       title,
-      description: undefined,
+      description: toMetaDescription(description, title),
       full: true,
     }),
   });

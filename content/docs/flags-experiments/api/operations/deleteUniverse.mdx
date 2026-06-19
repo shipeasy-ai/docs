@@ -1,5 +1,8 @@
 ---
 title: Delete a universe
+description: >-
+  Soft-deletes the universe. Returns 409 if any non-archived experiment still
+  references it — archive those experiments first.
 full: true
 _openapi:
   method: DELETE

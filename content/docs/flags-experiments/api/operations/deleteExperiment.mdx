@@ -1,5 +1,8 @@
 ---
 title: Delete an experiment
+description: >-
+  Archives the experiment (soft-delete via status transition). Returns 409 if
+  the experiment is still running — stop it first.
 full: true
 _openapi:
   method: DELETE
