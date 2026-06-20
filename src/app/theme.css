@@ -3705,6 +3705,432 @@ button[aria-label="Open Sidebar"] {
   text-align: right;
 }
 
+/* ── Assistant scenes — static replicas of the in-dashboard assistant cards
+   (read trace, ask_user chooser, write confirmation card, suggest_plan plan).
+   Components: apps/docs/src/components/doc-scenes.tsx. Fully static — no
+   animation, so nothing to freeze under prefers-reduced-motion. ─────────── */
+.se-asst,
+.se-asst-chooser,
+.se-asst-card,
+.se-asst-plan {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--se-fg-2);
+}
+
+/* Read-mode trace + answer */
+.se-asst {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.se-asst-user {
+  align-self: flex-end;
+  max-width: 86%;
+  padding: 8px 12px;
+  border-radius: 12px 12px 4px 12px;
+  background: color-mix(in oklab, var(--se-accent) 14%, var(--se-bg-2));
+  border: 1px solid color-mix(in oklab, var(--se-accent) 28%, var(--se-line));
+  color: var(--se-fg);
+}
+.se-asst-trace {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-left: 2px;
+}
+.se-asst-tstep {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--se-fg-3);
+}
+.se-asst-tick {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--se-accent-fg);
+  background: var(--se-accent);
+}
+.se-asst-answer {
+  padding: 12px 14px;
+  border: 1px solid var(--se-line-2);
+  border-radius: 12px;
+  background: var(--se-bg-2);
+  color: var(--se-fg);
+}
+.se-asst-list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--se-fg-2);
+}
+.se-asst-list code,
+.se-asst-answer code {
+  font-family: var(--se-mono);
+  font-size: 12px;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--se-bg-3);
+  color: var(--se-fg);
+}
+.se-asst-sources {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--se-line-2);
+  font-size: 11px;
+  color: var(--se-fg-3);
+}
+
+/* ask_user chooser */
+.se-asst-q {
+  font-weight: 600;
+  color: var(--se-fg);
+  margin-bottom: 10px;
+}
+.se-asst-opts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.se-asst-opt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border: 1px solid var(--se-line-2);
+  border-radius: 10px;
+  background: var(--se-bg-2);
+}
+.se-asst-opt[data-on="true"] {
+  border-color: color-mix(in oklab, var(--se-accent) 55%, var(--se-line));
+  background: color-mix(in oklab, var(--se-accent) 9%, var(--se-bg-2));
+}
+.se-asst-box {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--se-line-3);
+  background: var(--se-bg);
+}
+.se-asst-opt[data-on="true"] .se-asst-box {
+  border-color: var(--se-accent);
+  background: var(--se-accent);
+}
+.se-asst-box-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--se-accent-fg);
+}
+.se-asst-box-check {
+  font-size: 11px;
+  line-height: 1;
+  color: var(--se-accent-fg);
+}
+.se-asst-opt-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.se-asst-opt-label {
+  font-weight: 550;
+  color: var(--se-fg);
+}
+.se-asst-opt-detail {
+  font-size: 11px;
+  color: var(--se-fg-3);
+}
+.se-asst-opt-other .se-asst-opt-input {
+  font-size: 12px;
+  color: var(--se-fg-4);
+}
+.se-asst-confirm {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* shared static buttons (non-interactive — these are screenshots) */
+.se-asst-btn {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 550;
+  padding: 6px 13px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+}
+.se-asst-btn.primary {
+  color: var(--se-accent-fg);
+  background: var(--se-accent);
+}
+.se-asst-btn.ghost {
+  color: var(--se-fg-2);
+  border-color: var(--se-line-2);
+  background: var(--se-bg);
+}
+
+/* write confirmation card */
+.se-asst-card {
+  border: 1px solid var(--se-line-2);
+  border-radius: 14px;
+  background: var(--se-bg-2);
+  padding: 14px;
+}
+.se-asst-card-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--se-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--se-fg-3);
+}
+.se-asst-card-ico {
+  font-size: 13px;
+}
+.se-asst-card-name {
+  margin: 8px 0 12px;
+  font-family: var(--se-mono);
+  font-size: 14px;
+  color: var(--se-fg);
+  padding: 4px 8px;
+  border: 1px dashed var(--se-line-2);
+  border-radius: 7px;
+  display: inline-block;
+}
+.se-asst-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.se-asst-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.se-asst-row-k {
+  flex-shrink: 0;
+  width: 78px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--se-fg-3);
+}
+.se-asst-row-v {
+  color: var(--se-fg);
+}
+.se-asst-row-v code {
+  font-family: var(--se-mono);
+  font-size: 12px;
+  color: var(--se-fg);
+}
+.se-asst-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.se-asst-chip {
+  font-family: var(--se-mono);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--se-line-2);
+  background: var(--se-bg);
+  color: var(--se-fg-2);
+}
+.se-asst-chip b {
+  color: var(--se-accent);
+  font-weight: 600;
+}
+.se-asst-rollout {
+  flex: 1;
+  min-width: 90px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--se-bg-3);
+  overflow: hidden;
+}
+.se-asst-rollout-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--se-accent);
+}
+.se-asst-groups {
+  flex: 1;
+  display: flex;
+  min-width: 160px;
+  height: 22px;
+  border-radius: 7px;
+  overflow: hidden;
+  border: 1px solid var(--se-line-2);
+}
+.se-asst-grp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-family: var(--se-mono);
+  color: var(--se-fg-2);
+  background: color-mix(in oklab, var(--se-fg-3) 14%, var(--se-bg));
+  border-right: 1px solid var(--se-line-2);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.se-asst-grp.v {
+  background: color-mix(in oklab, var(--se-accent) 22%, var(--se-bg));
+  color: var(--se-fg);
+}
+.se-asst-grp.v2 {
+  background: color-mix(in oklab, var(--se-purple) 22%, var(--se-bg));
+  color: var(--se-fg);
+  border-right: none;
+}
+.se-asst-card-hint {
+  margin: 12px 0 0;
+  font-size: 11px;
+  color: var(--se-fg-4);
+}
+.se-asst-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* suggest_plan plan card */
+.se-asst-plan {
+  border: 1px solid var(--se-line-2);
+  border-radius: 14px;
+  background: var(--se-bg-2);
+  overflow: hidden;
+}
+.se-asst-plan-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--se-line);
+  background: color-mix(in oklab, var(--se-accent) 6%, var(--se-bg-2));
+}
+.se-asst-plan-badge {
+  font-family: var(--se-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: var(--se-accent-fg);
+  background: var(--se-accent);
+}
+.se-asst-plan-title {
+  font-weight: 600;
+  color: var(--se-fg);
+}
+.se-asst-plan-body {
+  display: flex;
+  flex-direction: column;
+}
+.se-asst-pstep {
+  display: flex;
+  gap: 11px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--se-line);
+}
+.se-asst-pnum {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-family: var(--se-mono);
+  color: var(--se-fg-2);
+  border: 1px solid var(--se-line-2);
+  background: var(--se-bg);
+}
+.se-asst-pbody {
+  min-width: 0;
+}
+.se-asst-plabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  color: var(--se-fg);
+  font-weight: 550;
+}
+.se-asst-pkind {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--se-line-2);
+}
+.se-asst-pkind.instant {
+  color: var(--se-accent);
+  border-color: color-mix(in oklab, var(--se-accent) 40%, var(--se-line));
+  background: color-mix(in oklab, var(--se-accent) 10%, transparent);
+}
+.se-asst-pkind.ship {
+  color: var(--se-warn);
+  border-color: color-mix(in oklab, var(--se-warn) 40%, var(--se-line));
+  background: color-mix(in oklab, var(--se-warn) 10%, transparent);
+}
+.se-asst-pdetail {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--se-fg-3);
+}
+.se-asst-plan-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 11px;
+  color: var(--se-fg-3);
+  background: var(--se-bg-1);
+}
+.se-asst-plan-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--se-warn);
+}
+.se-asst-plan-done {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 14px;
+  font-size: 12px;
+  color: var(--se-fg);
+  background: color-mix(in oklab, var(--se-accent) 8%, var(--se-bg-2));
+}
+.se-asst-plan .se-asst-card-actions {
+  padding: 12px 14px;
+  margin-top: 0;
+}
+
 /* ── Respect reduced motion: freeze every scene to its rest state ──────── */
 @media (prefers-reduced-motion: reduce) {
   .se-dvt-blob,

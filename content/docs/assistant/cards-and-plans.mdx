@@ -47,6 +47,8 @@ A confirmation card is a form pre-filled with the assistant's proposal. Every wr
 
 The fields are the real resource schema — what you edit in the card is exactly what gets written. Nothing is hidden behind the assistant.
 
+<AssistantCardScene kind="experiment" />
+
 <Steps>
   <Step title="The assistant proposes">
     It calls a write tool. Instead of executing, the call surfaces as a card with its arguments
@@ -66,12 +68,22 @@ The fields are the real resource schema — what you edit in the card is exactly
   chooser — a small set of options — rather than guessing. Pick one and it continues.
 </Callout>
 
+A chooser comes in two shapes. **Single-choice** offers radio options and resumes the moment you
+pick one; **multi-select** offers checkboxes and submits the set together on **Confirm**. Both can
+carry a free-text "Something else…" escape hatch.
+
+<AssistantChooserScene />
+
+<AssistantChooserScene multi />
+
 ## Plan cards
 
 For anything bigger than a single resource, the `suggest_plan` tool renders a **plan card** — an ordered set of steps. A plan separates two kinds of work:
 
 - **Instant resources** — flags, configs, metrics the assistant can create directly via confirmation cards.
 - **Ship-code work** — changes that need a developer or a coding agent (wiring the SDK, instrumenting an event). These are filed as tickets for [`ops:work`](/feedback) or an external agent via the [MCP server](/get-started/mcp), not executed in the chat.
+
+<AssistantPlanScene />
 
 This is why the assistant can scope an entire experiment — metric, variants, instrumentation — even though it only writes the parts that are safe to write from a chat.
 

@@ -37,6 +37,8 @@ The assistant scopes the whole thing and surfaces it as [confirmation cards](/as
 
 You confirm the cards; the experiment is drafted and ready to start.
 
+<AssistantCardScene kind="experiment" />
+
 ## 2. Generate a measurement plan
 
 You shipped a change and want to know if it worked, but the instrumentation isn't there yet.
@@ -44,6 +46,8 @@ You shipped a change and want to know if it worked, but the instrumentation isn'
 > **You:** "Did the new onboarding flow improve activation? Set up whatever we need to measure it."
 
 The assistant produces a [measurement plan](/assistant/measurement-plans): it creates the activation metric directly, proposes the experiment or flag as cards, and files precise `measure_plan` tickets for the code it can't write — "fire `activated` on the first project created", "wrap step 3 in `getExperiment`".
+
+<AssistantPlanScene />
 
 <Callout type="info" title="Why a ticket and not an edit">
   The in-dashboard assistant has no repo access. A measurement plan is its way of being complete: it
@@ -58,6 +62,8 @@ Sometimes you just want answers, not changes. In [read mode](/assistant/read-vs-
 > **You:** "Which feature flags are still at 100% but haven't been touched in 90 days? Any I can retire?"
 
 It queries your flags, configs, and experiments and answers in the chat — listing stale flags, configs no targeting rule references, and experiments that finished but were never archived. It cites what it found; you decide what to clean up.
+
+<AssistantReadScene />
 
 <ApiTable>
   <ApiRow
