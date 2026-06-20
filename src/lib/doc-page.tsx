@@ -9,8 +9,8 @@ import { ogSlugToParam } from "@/lib/og";
 import { BASE_URL, pageUrl } from "@/lib/urls";
 import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 import { Mermaid } from "@/components/mermaid";
+import { AlertChartLive } from "@/components/alert-chart-live";
 import {
-  AlertChartScene,
   AssistantCardScene,
   AssistantChooserScene,
   AssistantPlanScene,
@@ -90,7 +90,7 @@ function buildJsonLd(page: Page, slug: string[]): object[] {
 
 const components = {
   ...defaultMdxComponents,
-  AlertChartScene,
+  AlertChartLive,
   APIPage,
   ApiList,
   ApiRow,
