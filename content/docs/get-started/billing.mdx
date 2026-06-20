@@ -1,0 +1,80 @@
+---
+title: Billing
+description: How Shipeasy bills — plans, the monthly/annual interval, usage overage, downgrades, and the prepaid credits that power the Jarvis assistant.
+---
+
+<DocMeta status="Production ready" read="4 min read" updated="June 20, 2026" works="Free · Team" />
+
+Everything billing lives in one place: **Project → Settings → Billing**. Your subscription, payment method, plan limits, live usage, and the Jarvis assistant's credit balance are all managed from that tab — there is no separate billing flow.
+
+<Callout type="warn" title="The dashboard is authoritative">
+  Prices and allowances below are illustrative and can change. The **Billing** tab shows your live
+  plan, the exact amounts, and where your usage stands against every limit. Treat it as the source
+  of truth.
+</Callout>
+
+## Plans
+
+| Plan           | Price                                  | For                                                             |
+| -------------- | -------------------------------------- | --------------------------------------------------------------- |
+| **Free**       | $0 / forever                           | Trying things out and small projects — generous caps, no card.  |
+| **Team**       | $49 / mo (or $39 / mo billed annually) | Production use — uncapped resources, the full statistics suite. |
+| **Enterprise** | Contact sales                          | Custom limits, retention, and support.                          |
+
+Team comes with a **14-day free trial** and is **usage-based** on top of the flat fee (see [overage](#usage--overage)). What each tier includes — resource caps, retention, and tier-gated features — is detailed in [Plan limits & quotas](/get-started/plan-limits).
+
+## Upgrading
+
+Pick **Team** in the plan picker and check out — payment runs through Stripe, and the upgrade takes effect **immediately**. There's nothing to redeploy: changing plans re-paces your fleet through the next KV rebuild. Once subscribed, **Manage billing** opens the Stripe customer portal, where you can update your card, download invoices, or cancel.
+
+## Monthly vs annual
+
+Toggle the billing interval in the plan picker. Annual is cheaper per month but billed once a year. Switching **monthly → annual** or **annual → monthly** is **deferred to the end of your current period** — your existing plan stays active until then, with no refund for the remaining term. A banner on the Billing tab shows any scheduled switch and lets you cancel it before it applies.
+
+## Usage & overage
+
+Team is metered on top of the flat fee. Each plan includes a monthly allowance of events and evaluations; past the included amount you're billed for the overage.
+
+| Metered usage       | Included (Team) | Overage rate              |
+| ------------------- | --------------- | ------------------------- |
+| Events / month      | ~20M            | $1 per additional 100k    |
+| Evaluations / month | ~50M            | $0.10 per additional 100k |
+
+<Callout type="info" title="Nothing is ever dropped">
+  Usage is **notify-only** — events and evaluations always flow, even past your included credit.
+  You're notified at 80% and 100%, and any overage is billed at the rates above. The
+  [Usage](/get-started/usage) page shows your activity over the last 30 days.
+</Callout>
+
+## Downgrading
+
+Downgrading to Free is **scheduled to the end of your billing period** — paid features keep working until then, and the Billing tab shows the effective date with an option to resume. Before the switch lands, the dashboard previews what a downgrade would affect (running experiments, enabled flags, and live configs over the Free caps) so there are no surprises.
+
+## Jarvis assistant credits
+
+The in-dashboard **Jarvis** assistant is metered separately with **prepaid credits**, not the subscription fee. Each plan ships with a monthly credit allowance; you can top up anytime from the same Billing tab (larger packs include bonus credits, and purchased credits never expire). Read-only browsing is cheap; longer reasoning, doc search, and multi-step setup flows cost more. When the balance hits zero the assistant pauses its write and reasoning actions and prompts you to top up — your flags, experiments, and data are unaffected.
+
+See [Credits & metering](/assistant/credits) for exactly how credits are deducted and what happens at zero.
+
+<SeeAlso
+  links={[
+    {
+      href: "/get-started/plan-limits",
+      title: "Plan limits & quotas",
+      note: "What each plan includes",
+    },
+    {
+      href: "/get-started/usage",
+      title: "Usage & quotas",
+      note: "Your activity vs included credit",
+    },
+    { href: "/assistant/credits", title: "Credits & metering", note: "How Jarvis is billed" },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/get-started/usage", title: "Usage & quotas" }}
+  next={{ href: "/assistant/credits", title: "Credits & metering" }}
+/>
+
+<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/get-started/billing.mdx" />
