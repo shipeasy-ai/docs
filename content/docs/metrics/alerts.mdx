@@ -26,7 +26,7 @@ The dashed line is the threshold; wherever the metric crosses to the breaching
 side, that stretch is shaded in the rule's severity colour and the marker shows
 the moment it fired. One band = one alert ticket.
 
-<AlertChartScene feature="breach" />
+<AlertChartLive feature="breach" />
 
 ### It compares the window average, not the raw spike
 
@@ -35,7 +35,7 @@ bright line) against the threshold. A brief blip that punches over the line
 averages back out and never pages; only a sustained move fires. Widen the window
 to smooth more, narrow it to catch faster.
 
-<AlertChartScene feature="window" />
+<AlertChartLive feature="window" />
 
 ### It can guard a floor, not just a ceiling
 
@@ -43,7 +43,7 @@ Flip the comparator to `<` (or `<=`) and the rule watches a **floor** — it fir
 when the metric falls _below_ the line. Useful for "signups per hour", "active
 sessions", or any health number that's bad when it drops.
 
-<AlertChartScene feature="floor" />
+<AlertChartLive feature="floor" />
 
 ## The event → metric → alert chain
 

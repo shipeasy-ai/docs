@@ -24,6 +24,7 @@
     "next": "16.2.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "recharts": "^3.8.0",
     "remark": "^15.0.1",
     "remark-gfm": "^4.0.1",
     "remark-rehype": "^11.1.2",
