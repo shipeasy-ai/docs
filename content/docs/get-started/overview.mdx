@@ -168,7 +168,38 @@ The same worker also handles the CLI device-auth flow and runs the cron + queue 
 
 ## The lifecycle of a write
 
-When you flip a flag, six things happen — all within about a second.
+When you flip a flag, six things happen — all within about a second. The write path
+fans out from the admin app; the read path and event ingestion live entirely on the
+edge worker; analysis closes the loop back to the database overnight.
+
+<Mermaid
+  chart={`flowchart LR
+  subgraph admin["Admin app · writes"]
+    dash["Dashboard / CLI"]:::exp
+  end
+  d1[("Database<br/><small>source of truth</small>")]:::metric
+  kv[("KV blobs<br/><small>:flags · :experiments</small>")]:::sink
+  subgraph edge["Edge worker · reads"]
+    sdkp["/sdk/*"]:::event
+    col["/collect"]:::event
+  end
+  ae[("Events store")]:::sink
+  app["Your app + SDK<br/><small>in-memory rules</small>"]:::exp
+
+dash -- "1 · write row" --> d1
+d1 -- "2 · rebuild + 3 · purge" --> kv
+kv -- "served at edge" --> sdkp
+sdkp -- "4 · background poll" --> app
+app -- "exposure / track" --> col
+col --> ae
+ae -- "5 · cron + queue · t-test" --> d1
+
+classDef event fill:#15151b,stroke:#3c3a47,color:#e8e6f0;
+classDef metric fill:#1a1430,stroke:#8b5cf6,color:#ece9fb;
+classDef exp fill:#211842,stroke:#a78bfa,color:#f1edff;
+classDef sink fill:#131318,stroke:#2e2c38,color:#cbc9d6;
+`}
+/>
 
 <Steps>
   <Step title="You change something in the dashboard or CLI">

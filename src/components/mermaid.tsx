@@ -23,17 +23,20 @@ async function ensureMermaid() {
       },
       themeVariables: {
         background: "transparent",
-        // Decision (rhombus) nodes
-        primaryColor: "#0f1813",
-        primaryTextColor: "#e6f2eb",
-        primaryBorderColor: "#3a4a42",
+        // Default node fill (un-classed + decision rhombus nodes)
+        primaryColor: "#16131c",
+        primaryTextColor: "#ece9f5",
+        primaryBorderColor: "#4a4458",
         // Edges
-        lineColor: "#5a6f64",
+        lineColor: "#6b6478",
         // Node labels + edge labels
-        edgeLabelBackground: "#0a0f0c",
-        // Cluster / secondary
-        secondaryColor: "#0e1a14",
-        tertiaryColor: "#0a0f0c",
+        edgeLabelBackground: "#0f0f10",
+        // Cluster / subgraph backgrounds
+        secondaryColor: "#141119",
+        tertiaryColor: "#0f0f10",
+        clusterBkg: "#100e16",
+        clusterBorder: "#2e2c38",
+        titleColor: "#cbc9d6",
         fontSize: "14px",
       },
     });

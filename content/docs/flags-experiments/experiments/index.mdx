@@ -108,6 +108,32 @@ You define what you want to measure (a **metric**), set up variant payloads (the
   </Tile>
 </TileGrid>
 
+Here is how the five pieces connect — assignment happens live in the SDK, the math happens overnight:
+
+<Mermaid
+  chart={`flowchart LR
+  uni["Universe<br/><small>holdout · mutual-excl</small>"]:::sink
+  exp["Experiment<br/><small>groups + params</small>"]:::exp
+  met["Metric<br/><small>primary + guardrails</small>"]:::metric
+  evt["Events<br/><small>$exposure + track()</small>"]:::event
+  ana["Analysis<br/><small>Welch t-test</small>"]:::metric
+  res["Result<br/><small>lift · p · 95% CI</small>"]:::exp
+
+uni --> exp
+exp -- "getExperiment() → assign" --> evt
+evt -- "aggregated daily" --> met
+met -- "goal / guardrail" --> exp
+evt -- "join on exposure" --> ana
+met --> ana
+ana --> res
+
+classDef event fill:#15151b,stroke:#3c3a47,color:#e8e6f0;
+classDef metric fill:#1a1430,stroke:#8b5cf6,color:#ece9fb;
+classDef exp fill:#211842,stroke:#a78bfa,color:#f1edff;
+classDef sink fill:#131318,stroke:#2e2c38,color:#cbc9d6;
+`}
+/>
+
 ## The 5-minute mental model
 
 You ship feature X behind a flag. You believe it&apos;ll lift `purchase_conversion`. So instead of just putting it behind a feature flag, you make it an **experiment**: half the eligible users see X, half don&apos;t. Both groups are tracked. The next day, you look at the dashboard and read either _"X lifts conversion by 3.1% (p=0.002)"_ — or _"no significant difference, scrap it."_

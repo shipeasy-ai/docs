@@ -173,6 +173,29 @@ tail attaches local debug context (kept on the mark, never sent).
 
 ## From see() to a ticket
 
+<Mermaid
+  chart={`flowchart LR
+  see["see(err)<br/><small>.causes_the().to()</small>"]:::exp
+  col["/collect<br/><small>dedup 30s</small>"]:::event
+  grp["fingerprint + group<br/><small>errors table</small>"]:::metric
+  thr{"count ≥ 10?"}:::decision
+  tic["feedback ticket<br/><small>type: error</small>"]:::alert
+  ops["/shipeasy:ops:work<br/><small>triage</small>"]:::exp
+  grow["count++<br/><small>stays in feed</small>"]:::sink
+
+see --> col --> grp --> thr
+thr -- "yes" --> tic --> ops
+thr -- "not yet" --> grow
+
+classDef event fill:#15151b,stroke:#3c3a47,color:#e8e6f0;
+classDef metric fill:#1a1430,stroke:#8b5cf6,color:#ece9fb;
+classDef exp fill:#211842,stroke:#a78bfa,color:#f1edff;
+classDef alert fill:#2a2014,stroke:#e6b34d,color:#f7e7c4;
+classDef decision fill:#161620,stroke:#5b5470,color:#dcd9e8;
+classDef sink fill:#131318,stroke:#2e2c38,color:#cbc9d6;
+`}
+/>
+
 1. **Dispatch.** `see()` posts a structured event to `/collect` — `sendBeacon`
    in the browser, fire-and-forget `fetch` on the server. A 30-second dedup
    window and a per-session cap keep a loop from flooding the feed.

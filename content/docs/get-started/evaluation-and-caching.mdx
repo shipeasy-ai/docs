@@ -117,6 +117,26 @@ The KV blobs are cached at the edge with an effectively **infinite TTL** — the
 edit → rebuild :flags → purge CDN → next poll sees new ETag → in-memory rules swap
 ```
 
+<Mermaid
+  chart={`flowchart LR
+  edit["edit flag<br/><small>UI · CLI · MCP</small>"]:::exp
+  d1[("Database<br/><small>source of truth</small>")]:::metric
+  reb["rebuild :flags blob"]:::sink
+  pur["purge CDN URL"]:::sink
+  cdn[("CDN<br/><small>infinite TTL</small>")]:::sink
+  poll["SDK poll<br/><small>If-None-Match</small>"]:::event
+  mem["in-memory rules<br/><small>swap atomically</small>"]:::exp
+
+edit --> d1 --> reb --> pur --> cdn
+cdn -- "next poll · new ETag" --> poll --> mem
+
+classDef event fill:#15151b,stroke:#3c3a47,color:#e8e6f0;
+classDef metric fill:#1a1430,stroke:#8b5cf6,color:#ece9fb;
+classDef exp fill:#211842,stroke:#a78bfa,color:#f1edff;
+classDef sink fill:#131318,stroke:#2e2c38,color:#cbc9d6;
+`}
+/>
+
 <Callout type="success" title="Why infinite-TTL beats timed expiry">
   A TTL forces a tradeoff: short TTL = constant origin load + cache misses; long TTL = stale rules.
   Explicit purge gives you **both** — the cache stays warm indefinitely **and** changes go live in

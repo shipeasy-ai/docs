@@ -1711,6 +1711,21 @@ button[aria-label="Open Sidebar"] {
   max-width: 100%;
   height: auto;
 }
+/* Mermaid measures label width in a detached node, BEFORE our `.se-mermaid`
+   typography (custom font, letter-spacing, uppercase edge labels) applies — so
+   the painted text is a hair wider than the box it sized and the default
+   `overflow:hidden` clips the last glyph. Let labels paint past their measured
+   box; they stay visually centered and the node padding absorbs the overflow. */
+.se-mermaid foreignObject {
+  overflow: visible;
+}
+.se-mermaid .nodeLabel,
+.se-mermaid .nodeLabel p,
+.se-mermaid .edgeLabel,
+.se-mermaid .edgeLabel p {
+  white-space: nowrap;
+  overflow: visible;
+}
 /* Decision-tree leaf nodes (the four primitive choices) — accent */
 .se-mermaid .node[id*="-EXP-"] rect,
 .se-mermaid .node[id*="-KS-"] rect,
@@ -1740,18 +1755,42 @@ button[aria-label="Open Sidebar"] {
   letter-spacing: 0.005em;
   line-height: 1.35;
 }
+/* Second-line type tag inside a node label, e.g. `name<br/><small>metric</small>`.
+   Sits on its own line (a <br/> precedes it) so Mermaid sizes the node for it. */
+.se-mermaid .nodeLabel small {
+  font-family: var(--se-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
 .se-mermaid .edgeLabel {
   font-family: var(--se-mono);
   font-size: 11.5px;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--se-fg-2);
-  background: var(--se-bg-1) !important;
-  padding: 2px 6px !important;
-  border-radius: 4px;
+  /* No solid fill: a flat near-black box reads as a dark bar against the
+     panel's purple gradient. A soft text-shadow keeps the label legible where
+     it crosses the thin edge line instead. */
+  background: transparent !important;
+  padding: 0 4px !important;
+  text-shadow:
+    0 0 4px var(--se-bg-1),
+    0 0 4px var(--se-bg-1),
+    0 0 2px var(--se-bg-1);
 }
+/* htmlLabels wraps the edge label in a `.labelBkg` div (and a sibling <rect>)
+   that paint a hard dark box sized to the pre-overflow measured width, leaving a
+   thin sliver behind the label. Make both transparent so only the text shows —
+   it reads cleanly against the dark canvas. */
 .se-mermaid .edgeLabel rect {
-  fill: var(--se-bg-1) !important;
+  fill: transparent !important;
+}
+.se-mermaid .edgeLabel .labelBkg,
+.se-mermaid .labelBkg {
+  background: transparent !important;
 }
 .se-mermaid .flowchart-link {
   stroke-width: 1.5px;
@@ -1759,6 +1798,23 @@ button[aria-label="Open Sidebar"] {
 .se-mermaid marker path {
   fill: var(--se-fg-3);
   stroke: var(--se-fg-3);
+}
+/* Subgraph / cluster framing — a soft panel behind grouped nodes. */
+.se-mermaid .cluster rect {
+  rx: 12;
+  ry: 12;
+  fill: color-mix(in oklab, var(--se-accent) 4%, #100e16) !important;
+  stroke: var(--se-line-2) !important;
+  stroke-width: 1px !important;
+}
+.se-mermaid .cluster .cluster-label,
+.se-mermaid .cluster-label .nodeLabel {
+  font-family: var(--se-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--se-fg-3);
+  font-weight: 600;
 }
 .se-mermaid-error {
   border: 1px solid color-mix(in oklab, #f87171 60%, transparent);

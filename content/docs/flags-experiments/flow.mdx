@@ -12,6 +12,30 @@ description: A live dependency graph of your events, metrics, experiments, and a
 
 **Flow** is a live graph of how your instrumentation hangs together: events feed metrics, metrics drive experiments and alerts. It lives in the dashboard under **Experiments → Flow** (`/dashboard/<projectId>/flow`). Use it to see the blast radius of a change before you make it — which experiments read a metric, which alerts watch it, and which event a metric is built on.
 
+<Mermaid
+  chart={`flowchart LR
+  evt1["purchase<br/><small>event</small>"]:::event
+  evt2["page_load_ms<br/><small>event</small>"]:::event
+  m1["purchase_conversion<br/><small>metric</small>"]:::metric
+  m2["p95_page_load<br/><small>metric</small>"]:::metric
+  exp["checkout-cta<br/><small>experiment</small>"]:::exp
+  al["Page load too slow<br/><small>alert rule</small>"]:::alert
+
+evt1 -- "agg" --> m1
+evt2 -- "agg" --> m2
+m1 -- "goal" --> exp
+m2 -- "secondary" --> exp
+m2 -- "alert · &gt; 200 · 1h" --> al
+
+classDef event fill:#15151b,stroke:#3c3a47,color:#e8e6f0;
+classDef metric fill:#1a1430,stroke:#8b5cf6,color:#ece9fb;
+classDef exp fill:#211842,stroke:#a78bfa,color:#f1edff;
+classDef alert fill:#2a2014,stroke:#e6b34d,color:#f7e7c4;
+`}
+/>
+
+Read it left to right: an **event** is aggregated (`agg`) into a **metric**; a metric feeds an **experiment** as its `goal` or a `secondary` guardrail, and an **alert** rule watches it with a comparator, threshold, and window. That's the whole vocabulary — four node types, four edge kinds.
+
 ## What the graph shows
 
 The graph is assembled server-side from your project's real lists — events, metrics, experiments, alert rules, and currently-active alerts — and re-fetched after every write, so it always matches the underlying resources.

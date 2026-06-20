@@ -34,6 +34,31 @@ is a three-link chain:
   </Tile>
 </TileGrid>
 
+<Mermaid
+  chart={`flowchart LR
+  evt["checkout_error<br/><small>event</small>"]:::event
+  m["checkout-errors<br/><small>metric · count</small>"]:::metric
+  rule{"value &gt; 50<br/>over 1h?"}:::decision
+  rec["alert raised<br/><small>danger</small>"]:::alert
+  ok["within threshold<br/><small>auto-resolves</small>"]:::sink
+  tic["feedback ticket<br/><small>type: alert</small>"]:::sink
+  note["notification<br/><small>feed + email</small>"]:::sink
+
+evt -- "agg" --> m
+m -- "cron · ~10 min" --> rule
+rule -- "breach" --> rec
+rule -- "no breach" --> ok
+rec --> tic
+rec --> note
+
+classDef event fill:#15151b,stroke:#3c3a47,color:#e8e6f0;
+classDef metric fill:#1a1430,stroke:#8b5cf6,color:#ece9fb;
+classDef alert fill:#2a2014,stroke:#e6b34d,color:#f7e7c4;
+classDef decision fill:#161620,stroke:#5b5470,color:#dcd9e8;
+classDef sink fill:#131318,stroke:#2e2c38,color:#cbc9d6;
+`}
+/>
+
 ```bash
 # 1. a metric over the event (DSL grammar: /shipeasy:metrics:grammar)
 shipeasy metrics create checkout-errors \
