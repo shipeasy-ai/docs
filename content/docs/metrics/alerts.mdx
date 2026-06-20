@@ -14,6 +14,37 @@ where you already triage.
 Alerts are evaluated server-side by a cron — there's no SDK call and nothing to
 poll. You only define the rule.
 
+## What an alert chart shows
+
+Every rule renders as a 14-day chart of its metric with the alert story drawn on
+top. Three things it surfaces — each a different facet of how a rule reads its
+metric:
+
+### It shades every breach
+
+The dashed line is the threshold; wherever the metric crosses to the breaching
+side, that stretch is shaded in the rule's severity colour and the marker shows
+the moment it fired. One band = one alert ticket.
+
+<AlertChartScene feature="breach" />
+
+### It compares the window average, not the raw spike
+
+A rule never fires on a single reading — it compares the **window average** (the
+bright line) against the threshold. A brief blip that punches over the line
+averages back out and never pages; only a sustained move fires. Widen the window
+to smooth more, narrow it to catch faster.
+
+<AlertChartScene feature="window" />
+
+### It can guard a floor, not just a ceiling
+
+Flip the comparator to `<` (or `<=`) and the rule watches a **floor** — it fires
+when the metric falls _below_ the line. Useful for "signups per hour", "active
+sessions", or any health number that's bad when it drops.
+
+<AlertChartScene feature="floor" />
+
 ## The event → metric → alert chain
 
 An alert rule doesn't read raw events; it reads a **metric**. So a working alert

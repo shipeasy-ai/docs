@@ -10,6 +10,11 @@ import { BASE_URL, pageUrl } from "@/lib/urls";
 import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 import { Mermaid } from "@/components/mermaid";
 import {
+  AlertChartScene,
+  AssistantCardScene,
+  AssistantChooserScene,
+  AssistantPlanScene,
+  AssistantReadScene,
   CaptureScene,
   ConfidenceScene,
   DevtoolsHero,
@@ -85,10 +90,15 @@ function buildJsonLd(page: Page, slug: string[]): object[] {
 
 const components = {
   ...defaultMdxComponents,
+  AlertChartScene,
   APIPage,
   ApiList,
   ApiRow,
   ApiTable,
+  AssistantCardScene,
+  AssistantChooserScene,
+  AssistantPlanScene,
+  AssistantReadScene,
   Callout,
   CaptureScene,
   Card,
