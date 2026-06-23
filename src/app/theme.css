@@ -2638,32 +2638,144 @@ button[aria-label="Open Sidebar"] {
 }
 
 .se-feedback {
-  margin: 28px 0 0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  margin: 40px 0 0;
+  padding: 14px 16px;
+  border: 1px solid var(--se-line);
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--se-bg-2), var(--se-bg-1));
   font-family: var(--se-mono);
   font-size: 11.5px;
   color: var(--se-fg-3);
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+.se-feedback[data-voted] {
+  border-color: color-mix(in srgb, var(--se-accent) 40%, var(--se-line));
+}
+.se-feedback-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   flex-wrap: wrap;
 }
 .se-feedback .q {
   color: var(--se-fg-2);
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
 }
-.se-feedback button {
-  padding: 5px 10px;
+.se-feedback-tick {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--se-accent);
+  color: var(--se-bg-1);
+  font-size: 10px;
+  line-height: 1;
+}
+.se-feedback-btns {
+  display: inline-flex;
+  gap: 8px;
+}
+.se-feedback-btns button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
   border: 1px solid var(--se-line-2);
-  border-radius: 6px;
-  background: var(--se-bg-2);
+  border-radius: 8px;
+  background: var(--se-bg-1);
   color: var(--se-fg-2);
   font-family: var(--se-mono);
   font-size: 11px;
   cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.1s ease;
 }
-.se-feedback button:hover {
+.se-feedback-btns button:hover {
   color: var(--se-fg);
   border-color: var(--se-accent);
   background: var(--se-bg-3);
+  transform: translateY(-1px);
+}
+.se-feedback-btns button:active {
+  transform: translateY(0);
+}
+.se-feedback-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 8px;
+  font-size: 11px;
+  border: 1px solid var(--se-line-2);
+  background: var(--se-bg-1);
+  color: var(--se-fg-2);
+}
+.se-feedback-chip.up {
+  border-color: color-mix(in srgb, var(--se-accent) 45%, var(--se-line-2));
+}
+.se-feedback-edit {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--se-fg-3);
+}
+.se-feedback-edit:hover {
+  color: var(--se-fg);
+}
+.se-feedback-followup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--se-line);
+}
+.se-feedback-followup input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 11px;
+  border: 1px solid var(--se-line-2);
+  border-radius: 8px;
+  background: var(--se-bg-1);
+  color: var(--se-fg);
+  font-family: var(--se-mono);
+  font-size: 11px;
+}
+.se-feedback-followup input::placeholder {
+  color: var(--se-fg-4);
+}
+.se-feedback-followup input:focus {
+  outline: none;
+  border-color: var(--se-accent);
+}
+.se-feedback-followup button {
+  padding: 7px 14px;
+  border: 1px solid var(--se-accent);
+  border-radius: 8px;
+  background: var(--se-accent);
+  color: var(--se-bg-1);
+  font-family: var(--se-mono);
+  font-size: 11px;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.se-feedback-followup button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.se-feedback-followup .done {
+  color: var(--se-fg-2);
 }
 
 /* ──────────────────────────────────────────────────────────────

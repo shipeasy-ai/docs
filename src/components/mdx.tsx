@@ -423,29 +423,10 @@ export function DocNav({
   );
 }
 
-export function DocFeedback({ editHref }: { editHref?: string }) {
-  return (
-    <div className="se-feedback not-prose">
-      <span className="q">Was this page helpful?</span>
-      <button type="button">👍 Yes</button>
-      <button type="button">👎 Not quite</button>
-      {editHref ? (
-        <a
-          href={editHref}
-          style={{
-            marginLeft: "auto",
-            color: "var(--se-fg-3)",
-            display: "inline-flex",
-            gap: 6,
-            alignItems: "center",
-          }}
-        >
-          ✎ Edit on GitHub
-        </a>
-      ) : null}
-    </div>
-  );
-}
+// The "Was this page helpful?" footer is interactive (beacons votes to the edge
+// worker) and lives in its own "use client" module. It's rendered once per page
+// by `DocPageView` — not hand-placed in MDX — so it's guaranteed on every page.
+export { DocFeedback } from "./doc-feedback";
 
 /* ──────────────────────────────────────────────────────────────
    Doc meta row — pill + read time + updated date.

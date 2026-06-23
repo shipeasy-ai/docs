@@ -53,6 +53,10 @@ import {
 
 type Page = InferPageType<typeof import("@/lib/source").source>;
 
+// "Edit this page" target — the source MDX in the monorepo. `page.path` is the
+// virtual path relative to the content dir (e.g. "sdks/node-typescript.mdx").
+const EDIT_BASE = "https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs";
+
 // JSON-LD for a doc page: a TechArticle node plus a BreadcrumbList walking the
 // slug prefixes (each segment resolved to its page title). Rendered as a single
 // `application/ld+json` script so Google can build rich results + breadcrumbs.
@@ -162,6 +166,13 @@ export function DocPageView({ slug }: { slug: string[] }) {
       ) : null}
       <DocsBody>
         <MDX components={components} />
+        {/* Rendered once per page (not in MDX) so every page carries it. */}
+        {!isRoot ? (
+          <DocFeedback
+            page={slug.join("/")}
+            editHref={page.path ? `${EDIT_BASE}/${page.path}` : undefined}
+          />
+        ) : null}
       </DocsBody>
     </>
   );
