@@ -1,6 +1,6 @@
 ---
 title: Connectors
-description: Mirror new bug reports and feature requests out to a GitHub repo or a Google Sheet as they come in.
+description: Mirror new bug reports and feature requests out to a GitHub repo, a Google Sheet, or a Slack channel as they come in.
 ---
 
 <DocMeta
@@ -14,7 +14,7 @@ description: Mirror new bug reports and feature requests out to a GitHub repo or
 
 ## Which destinations are wired
 
-Two outbound destinations ship today:
+Three outbound destinations ship today:
 
 <TileGrid>
   <Tile icon="◇" title="GitHub" meta={<>OAuth · GitHub App</>}>
@@ -23,12 +23,17 @@ Two outbound destinations ship today:
   <Tile icon="▤" title="Google Sheets" meta={<>OAuth · Drive</>}>
     Appends a <b>row</b> to a spreadsheet + tab of your choice for every selected event.
   </Tile>
+  <Tile icon="▣" title="Slack" meta={<>OAuth · Slack App</>}>
+    Posts a <b>message</b> to a channel you pick — with <b>buttons</b> to mark the item resolved or
+    ready-for-QA right from Slack.
+  </Tile>
 </TileGrid>
 
-<Callout type="info" title="Want Slack, Linear, Jira, Notion…?">
+<Callout type="info" title="Want Linear, Jira, Notion…?">
   Those aren't wired yet. The connectors panel has a **"Need a connector we don't have yet?"**
   banner — tell us where you want bugs and requests to land and it goes straight to the Shipeasy
-  team as a feature request. Until then, GitHub and Google Sheets are the two providers available.
+  team as a feature request. Until then, GitHub, Google Sheets and Slack are the providers
+  available.
 </Callout>
 
 ## Events you can forward
@@ -75,13 +80,46 @@ By default both are selected.
   </Step>
 </Steps>
 
+## Setting up a Slack connector
+
+<Steps>
+  <Step title="Create the connector">
+    **Connectors → New connector**, pick **Slack**, name it, choose events, and **Continue**.
+  </Step>
+  <Step title="Add to Slack">
+    You're redirected to authorize the Shipeasy Slack app in your workspace. After consent you land
+    back in the configure view.
+  </Step>
+  <Step title="Pick a channel">
+    Choose the **feedback channel** new bugs/requests post to. Optionally pick a separate
+    **notifications channel** for platform events (significance, guardrails, alerts) — leave it on
+    *Same as feedback channel* to share one. Tick **Enabled**, **Save**, and use **Send test** to
+    post a throwaway message.
+  </Step>
+</Steps>
+
+### Resolve from Slack
+
+Each posted message carries **Mark resolved** and **Mark ready for QA** buttons. Clicking one
+updates the item's status in Shipeasy and edits the Slack message in place to stamp who actioned it.
+When you later [link a pull request](/feedback/getting-started) to the item, the original Slack
+message is edited to show the PR link.
+
+### Slack notifications
+
+Beyond the feedback stream, platform notifications (experiment significance, guardrail breaches,
+triggered alerts) can post to your **notifications channel**. Toggle which events go to Slack in
+**Settings → Notifications** — the Slack column is live once a Slack connector is linked. Alert
+messages include **Resolve** / **Dismiss** buttons.
+
 ## Status & health
 
-Each connector in the list shows a status — **Needs OAuth**, **Needs repo** / **Needs sheet** (target not picked yet), **Active**, **Disabled**, or **Failing** (last dispatch errored). The configure view surfaces the last error and last successful delivery time, so you can tell at a glance whether mirroring is healthy.
+Each connector in the list shows a status — **Needs OAuth**, **Needs repo** / **Needs sheet** / **Needs channel** (target not picked yet), **Active**, **Disabled**, or **Failing** (last dispatch errored). The configure view surfaces the last error and last successful delivery time, so you can tell at a glance whether mirroring is healthy.
 
-<Callout type="info" title="Connectors only forward — they don't pull back">
-  A connector is one-way: new bugs/requests flow out to GitHub or Sheets. Status changes you make in
-  GitHub don't sync back into Shipeasy.
+<Callout type="info" title="Connectors forward out — and Slack actions flow back">
+  The GitHub and Sheets connectors are one-way: new bugs/requests flow out, and status changes you
+  make there don't sync back. The Slack connector is the exception — its message buttons (resolve /
+  ready-for-QA, resolve / dismiss alert) write straight back into Shipeasy.
 </Callout>
 
 <SeeAlso
