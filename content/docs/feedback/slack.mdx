@@ -44,15 +44,15 @@ project member), and tells you exactly what it did.
 It can do everything the dashboard assistant can — **read and change** your
 entire platform:
 
-| Ask @Shipeasy to…   | …and it will                                                          |
-| ------------------- | --------------------------------------------------------------------- |
-| **Feature flags**   | create a gate, roll it to a %, add targeting rules, enable/disable it |
-| **Dynamic configs** | create a config, change its value                                     |
-| **Kill switches**   | create one, flip it on/off, set per-environment switches              |
-| **A/B experiments** | draft it, start/stop it, ship a winning group, check significance     |
-| **Alerts**          | create a threshold alert on any metric                                |
-| **Metrics**         | create an event-backed metric                                         |
-| **Just ask**        | list what you have, get an experiment's status, "what changed today?" |
+| Ask @Shipeasy to…   | …and it will                                                             |
+| ------------------- | ------------------------------------------------------------------------ |
+| **Feature flags**   | create a flag, roll it out to a %, choose who sees it, turn it on/off    |
+| **Dynamic configs** | create a config, change what it returns                                  |
+| **Kill switches**   | create one, flip it on or off                                            |
+| **A/B experiments** | set one up, start or stop it, ship the winning version, read the results |
+| **Alerts**          | tell you when a number gets too high or too low                          |
+| **Metrics**         | start tracking something people do                                       |
+| **Just ask**        | list what you have, check how a test is doing, "what changed today?"     |
 
 ### Create anything, just by asking
 
@@ -60,22 +60,21 @@ entire platform:
   caption="No dashboard, no syntax — describe what you want and @Shipeasy creates it, acting as you. Each reply confirms exactly what happened."
   turns={[
     {
-      you: "create a feature flag new-pricing-page at 10%",
-      reply: "✅ Created gate new-pricing-page — rolled to 10% in prod.",
+      you: "create a feature flag for the new pricing page and roll it to 10%",
+      reply: "✅ Created the “new pricing page” flag and rolled it to 10% in prod.",
     },
     {
-      you: "add a kill switch for the payments path",
-      reply: "✅ Created kill switch payments-pause (off).",
+      you: "add a kill switch for payments",
+      reply: "✅ Created a “payments” kill switch — it’s off for now.",
     },
     {
-      you: "set up an A/B test new-checkout in the web universe, goal checkout_completed",
+      you: "set up an A/B test for the new checkout, and measure how often people finish checking out",
       reply:
-        "✅ Drafted new-checkout: control/treatment 50-50, goal count_users(checkout_completed). Say “start it” to launch.",
+        "✅ Drafted the “new checkout” test — an even split between the old and new versions, measuring completed checkouts. Say “start it” to launch.",
     },
     {
-      you: "alert me when api-errors goes above 50 over a day",
-      reply:
-        "✅ Created alert “high error rate” — api-errors > 50 / 24h. It’ll post here when it fires.",
+      you: "let me know when our API error rate gets too high",
+      reply: "✅ Created the “high API error rate” alert — I’ll post here the moment it spikes.",
     },
   ]}
 />
@@ -83,15 +82,15 @@ entire platform:
 It's just as good at **reading** and **changing** what already exists:
 
 <SlackAssistantScene
-  prompt="which experiments are significant right now?"
-  reply="📊 2 of 4 are significant: new-checkout (treatment +12%) and pricing-test (B +6%). The other two need more data."
-  caption="Ask questions too — @Shipeasy reads your gates, experiments, configs and metrics and answers in the thread."
+  prompt="which tests are showing a clear winner right now?"
+  reply="📊 2 of 4 have a clear winner: the new checkout (new version up 12%) and the pricing test (variant B up 6%). The other two need more data."
+  caption="Ask questions too — @Shipeasy reads your flags, tests, configs and metrics and answers in the thread."
 />
 
 <SlackAssistantScene
-  prompt="roll new-pricing-page to 50%"
-  reply="✅ new-pricing-page is now at 50% rollout in prod."
-  caption="One sentence to change a rollout — the change goes through the real admin path, so it propagates everywhere immediately."
+  prompt="roll the new pricing page out to half of everyone"
+  reply="✅ The new pricing page is now live for 50% of users in prod."
+  caption="One sentence to change a rollout — the change goes live everywhere immediately."
 />
 
 <Callout type="info" title="It always acts as you">
@@ -112,6 +111,12 @@ stamped with who acted, the border flipped to green. **Dismiss** leaves a distin
 grey, and **Mute rule** disables the rule that fired so it stops nagging.
 
 <SlackNotifyScene kind="alert-resolved" />
+
+When a specific error caught by [`see()`](/feedback/error-reporting) starts
+**spiking**, that lands too — with a little chart of the last hour so you can see
+how bad it is at a glance, and the same resolve / dismiss / mute controls:
+
+<SlackNotifyScene kind="error" />
 
 The same loop runs for everything you set up. Start an experiment and, when it
 reaches significance, the result lands with the actions that matter:
@@ -135,6 +140,7 @@ who did it, and recolours the card. Here's the full set:
 | Event                               | Card actions                                                       |
 | ----------------------------------- | ------------------------------------------------------------------ |
 | **Alert triggered**                 | `Resolve` · `Dismiss` · `Mute rule` (disables the rule that fired) |
+| **Error spiking** (from `see()`)    | `Resolve` · `Dismiss` · `Mute this error` (with a trend chart)     |
 | **Experiment reached significance** | `Ship "<group>"` · `Stop experiment` · `Keep running`              |
 | **Guardrail breached**              | `Stop experiment` · `Acknowledge`                                  |
 | **Kill switch flipped**             | `Flip back` (one-click revert)                                     |
@@ -190,11 +196,14 @@ context.
 
 ## Prefer a quick slash command?
 
-For a fast, no-chat shortcut, `/shipeasy alert <metric> <gt|gte|lt|lte>
+For a fast, no-chat shortcut, `/shipeasy` creates a metric alert from inside a
+channel — the alert posts back to that channel, and the reply is private to you:
 
-<threshold> [name]` creates a metric alert that posts back to the channel you ran
-it in — e.g. `/shipeasy alert api-errors gt 50 high error rate`. The reply is
-private to you. For anything beyond a quick alert, just talk to **@Shipeasy**.
+```text
+/shipeasy alert <metric> <gt|gte|lt|lte> <threshold> [name]
+```
+
+For anything beyond a quick alert, just talk to **@Shipeasy**.
 
 ## Drive Shipeasy from Slack's AI
 

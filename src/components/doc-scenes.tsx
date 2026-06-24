@@ -592,6 +592,33 @@ const SLACK_TONE = {
   red: "#ef4444",
 } as const;
 
+/** A tiny inline sparkline (pure SVG) — flat baseline then a spike, last point
+ *  marked. Used on the error-spike and alert cards to show the trend at a glance. */
+function Sparkline({
+  color = SLACK_TONE.red,
+  data = [5, 6, 4, 6, 5, 7, 6, 8, 13, 21, 33],
+}: {
+  color?: string;
+  data?: number[];
+}) {
+  const w = 240;
+  const h = 44;
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const span = max - min || 1;
+  const x = (i: number) => +((i / (data.length - 1)) * (w - 4) + 2).toFixed(1);
+  const y = (v: number) => +(h - 4 - ((v - min) / span) * (h - 10)).toFixed(1);
+  const line = data.map((v, i) => `${x(i)},${y(v)}`).join(" ");
+  const area = `2,${h - 2} ${line} ${w - 2},${h - 2}`;
+  return (
+    <svg className="se-spark" viewBox={`0 0 ${w} ${h}`} role="img" aria-label="trend sparkline">
+      <polygon points={area} fill={color} opacity="0.12" />
+      <polyline points={line} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" />
+      <circle cx={x(data.length - 1)} cy={y(data[data.length - 1])} r="3" fill={color} />
+    </svg>
+  );
+}
+
 function SlackShell({
   tone,
   time = "10:42 AM",
@@ -652,17 +679,18 @@ export function SlackFeedbackScene({ state = "open" }: { state?: "open" | "pr" |
             🔗 <b>Pull request</b>: <a className="se-slack-link">#128</a>
           </div>
         )}
-        {state === "open" && (
-          <div className="se-slack-actions">
+        <div className="se-slack-actions">
+          {state === "open" && (
             <span className="se-slack-select">
               Open <span className="se-slack-caret">▾</span>
             </span>
-          </div>
-        )}
+          )}
+          <span className="se-slack-btn">View in Shipeasy ↗</span>
+        </div>
         {state === "resolved" ? (
           <div className="se-slack-ctx">✅ Resolved by @dana</div>
         ) : (
-          <div className="se-slack-ctx">Filed by Shipeasy · bug_4f2c</div>
+          <div className="se-slack-ctx">Filed by Shipeasy</div>
         )}
       </SlackShell>
     </SceneFrame>
@@ -675,12 +703,35 @@ export function SlackNotifyScene({
   kind?:
     | "alert"
     | "alert-resolved"
+    | "error"
     | "significance"
     | "guardrail"
     | "killswitch"
     | "config"
     | "attention";
 }) {
+  if (kind === "error") {
+    return (
+      <SceneFrame
+        label="notification · error spike"
+        caption="When a specific error caught by see() spikes, it posts here with a sparkline of the last hour. View it in Shipeasy, or resolve / mute it right from the card."
+      >
+        <SlackShell tone="red">
+          <div className="se-slack-h">🛑 LoginTimeoutError is spiking</div>
+          <div className="se-slack-detail">
+            47 in the last hour — up from ~3/hour. First seen 11 minutes ago, affecting 12 users.
+          </div>
+          <Sparkline />
+          <a className="se-slack-link">View in Shipeasy ↗</a>
+          <div className="se-slack-actions">
+            <span className="se-slack-btn primary">Resolve</span>
+            <span className="se-slack-btn">Dismiss</span>
+            <span className="se-slack-btn">Mute this error</span>
+          </div>
+        </SlackShell>
+      </SceneFrame>
+    );
+  }
   if (kind === "alert-resolved") {
     return (
       <SceneFrame
@@ -688,10 +739,8 @@ export function SlackNotifyScene({
         caption="After you click Resolve the same card is rewritten in place — buttons gone, stamped with who acted, border flipped to green. Dismiss would leave a distinct grey instead."
       >
         <SlackShell tone="green">
-          <div className="se-slack-h">🔴 Error rate above 5%</div>
-          <div className="se-slack-detail">
-            <code>api-errors</code> hit 87 over the last 24h (threshold 50).
-          </div>
+          <div className="se-slack-h">🔴 API error rate is too high</div>
+          <div className="se-slack-detail">The API error rate hit 8.7% over the last 24 hours.</div>
           <div className="se-slack-ctx">✅ Resolved by @dana</div>
         </SlackShell>
       </SceneFrame>
@@ -704,13 +753,13 @@ export function SlackNotifyScene({
         caption="A guardrail metric moved the wrong way. Stop the experiment on the spot, or acknowledge to mark it seen."
       >
         <SlackShell tone="amber">
-          <div className="se-slack-h">🛡️ Guardrail breached on new-checkout</div>
+          <div className="se-slack-h">🛡️ A safety check slipped on the new checkout test</div>
           <div className="se-slack-detail">
-            <code>checkout_latency</code> is up 8.1% in <code>treatment</code> vs control.
+            Checkout is 8.1% slower for the new version than the old one.
           </div>
           <a className="se-slack-link">View in dashboard</a>
           <div className="se-slack-actions">
-            <span className="se-slack-btn">Stop experiment</span>
+            <span className="se-slack-btn">Stop the test</span>
             <span className="se-slack-btn">Acknowledge</span>
           </div>
         </SlackShell>
@@ -724,7 +773,7 @@ export function SlackNotifyScene({
         caption="A dynamic config was published to prod. The card links to the change and lets you acknowledge it."
       >
         <SlackShell tone="blue">
-          <div className="se-slack-h">⚙️ pricing-config published to prod</div>
+          <div className="se-slack-h">⚙️ Pricing settings published to production</div>
           <div className="se-slack-detail">Version 7 — published by ana@acme.co.</div>
           <a className="se-slack-link">View in dashboard</a>
           <div className="se-slack-actions">
@@ -743,11 +792,11 @@ export function SlackNotifyScene({
         <SlackShell tone="blue">
           <div className="se-slack-h">🤖 Bug #42 needs your attention</div>
           <div className="se-slack-detail">
-            Can’t reproduce the checkout 500 without a prod Stripe key.
+            Can’t reproduce the checkout failure without a test payment key.
             <br />
-            1. Add <code>STRIPE_TEST_KEY</code> to <code>.dev.vars</code>
+            1. Add a test payment key to the local setup
             <br />
-            2. Re-run the checkout e2e
+            2. Re-run the checkout test
           </div>
           <a className="se-slack-link">Open the issue ↗</a>
           <div className="se-slack-actions">
@@ -764,15 +813,14 @@ export function SlackNotifyScene({
         caption="An experiment reached significance. Ship the winning group, stop, or keep running — Ship and Stop go through the admin path and check your project membership first."
       >
         <SlackShell tone="blue">
-          <div className="se-slack-h">📈 new-checkout reached significance</div>
+          <div className="se-slack-h">📈 The new checkout test has a clear winner</div>
           <div className="se-slack-detail">
-            <code>treatment</code> is winning on <code>checkout_completed</code> — +12.4% vs
-            control.
+            The new version is winning on completed checkouts — up 12.4% vs the old one.
           </div>
           <a className="se-slack-link">View in dashboard</a>
           <div className="se-slack-actions">
-            <span className="se-slack-btn primary">Ship “treatment”</span>
-            <span className="se-slack-btn">Stop experiment</span>
+            <span className="se-slack-btn primary">Ship the new version</span>
+            <span className="se-slack-btn">Stop the test</span>
             <span className="se-slack-btn">Keep running</span>
           </div>
         </SlackShell>
@@ -786,11 +834,11 @@ export function SlackNotifyScene({
         caption="A kill switch flipped. One click flips it back — gated to project members and routed through the admin path so the change propagates."
       >
         <SlackShell tone="blue">
-          <div className="se-slack-h">🔁 Kill switch payments-pause turned on</div>
-          <div className="se-slack-detail">Default value is now on for prod.</div>
+          <div className="se-slack-h">🔁 The payments kill switch was turned on</div>
+          <div className="se-slack-detail">Payments are paused in production right now.</div>
           <a className="se-slack-link">View in dashboard</a>
           <div className="se-slack-actions">
-            <span className="se-slack-btn">Flip back off</span>
+            <span className="se-slack-btn">Flip it back off</span>
           </div>
         </SlackShell>
       </SceneFrame>
@@ -802,10 +850,9 @@ export function SlackNotifyScene({
       caption="A triggered alert, bordered by severity. Resolve or dismiss the activation, or Mute rule to disable the rule that fired — all write straight back into Shipeasy."
     >
       <SlackShell tone="red">
-        <div className="se-slack-h">🔴 Error rate above 5%</div>
-        <div className="se-slack-detail">
-          <code>api-errors</code> hit 87 over the last 24h (threshold 50).
-        </div>
+        <div className="se-slack-h">🔴 API error rate is too high</div>
+        <div className="se-slack-detail">The API error rate hit 8.7% over the last 24 hours.</div>
+        <Sparkline data={[2, 3, 2, 4, 3, 5, 4, 6, 9, 7, 11]} />
         <a className="se-slack-link">View in dashboard</a>
         <div className="se-slack-actions">
           <span className="se-slack-btn primary">Resolve</span>
@@ -818,8 +865,8 @@ export function SlackNotifyScene({
 }
 
 export function SlackAssistantScene({
-  prompt = "roll the new-checkout gate to 25%",
-  reply = "✅ Done — new-checkout is now at 25% rollout in prod.",
+  prompt = "roll the new checkout flag out to 25%",
+  reply = "✅ Done — the new checkout is now live for 25% of users in prod.",
   you = "Dana",
   initial = "D",
   label = "@Shipeasy · chat",
