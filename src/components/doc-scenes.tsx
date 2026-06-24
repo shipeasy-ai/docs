@@ -714,12 +714,14 @@ export function SlackNotifyScene({
     return (
       <SceneFrame
         label="notification · error spike"
-        caption="When a specific error caught by see() spikes, it posts here with a sparkline of the last hour. View it in Shipeasy, or resolve / mute it right from the card."
+        caption="A specific error caught by see() — its consequence, the raw error, and a sparkline of the last hour. View it in Shipeasy, or resolve / mute it right from the card."
       >
         <SlackShell tone="red">
-          <div className="se-slack-h">🛑 LoginTimeoutError is spiking</div>
+          <div className="se-slack-h">🛑 Checkout is failing for users — error spiking</div>
           <div className="se-slack-detail">
-            47 in the last hour — up from ~3/hour. First seen 11 minutes ago, affecting 12 users.
+            <code>PaymentGatewayTimeout</code> — the payment provider didn’t respond in 8s.
+            <br />
+            Caught by <code>see()</code> · 47× in the last hour (up from ~3/hr) · 12 users affected.
           </div>
           <Sparkline />
           <a className="se-slack-link">View in Shipeasy ↗</a>
