@@ -1,0 +1,191 @@
+---
+title: Slack
+description: The complete Shipeasy ↔ Slack integration — bugs & requests in a channel, status controls and platform-event actions you drive from Slack, a /shipeasy command, an @Shipeasy assistant, and a Slack-AI (MCP) connection. One connection, every surface.
+---
+
+<DocMeta
+  status="Production ready"
+  read="6 min read"
+  updated="June 23, 2026"
+  works="Dashboard · per project"
+/>
+
+Connect Slack **once** per project and you unlock every Shipeasy ↔ Slack
+surface: new bugs and requests stream into a channel, platform events post in,
+you act on them with buttons and dropdowns, and you can drive your whole flags &
+experiments platform from Slack — by slash command, by @-mention, or through
+Slack's own AI assistant.
+
+## Connect Slack
+
+<Steps>
+  <Step title="Add the connector">
+    On the **Feedback** page open **Connectors → New connector**, pick **Slack**, name it, choose
+    the events to forward, and **Continue**.
+  </Step>
+  <Step title="Add to Slack">
+    You're redirected to authorize the Shipeasy Slack app in your workspace. After consent you land
+    back in the configure view.
+  </Step>
+  <Step title="Pick channels">
+    Choose the **feedback channel** new bugs/requests post to. Optionally pick a separate
+    **notifications channel** for platform events — leave it on *Same as feedback channel* to share
+    one. Tick **Enabled**, **Save**, and use **Send test** to post a throwaway message.
+  </Step>
+</Steps>
+
+<Callout type="info" title="One connection, every surface">
+  The same Slack connection powers all of the features below — feedback, notifications, the buttons,
+  the `/shipeasy` command, the `@Shipeasy` assistant, and the Slack-AI connection. Connect once and
+  they all light up.
+</Callout>
+
+## Bugs & requests in a channel
+
+Every new **bug report** and **feature request** posts to your feedback channel,
+with the title, reporter, page URL, and full details (steps / actual / expected
+for bugs; description / use-case / priority for requests).
+
+### Status control — a dropdown right on the card
+
+Each feedback card has a **Status ▾** dropdown covering the whole lifecycle:
+
+| Status                  | Border   |
+| ----------------------- | -------- |
+| Open                    | 🔵 blue  |
+| In progress             | 🟠 amber |
+| Ready for QA            | 🟠 amber |
+| Resolved                | 🟢 green |
+| **Won't fix / Dismiss** | ⚪ grey  |
+
+Pick one and the item's status updates in Shipeasy, the card stamps who changed
+it, and the **coloured left border** flips to match. **Won't fix / Dismiss is a
+distinct grey — never the green of Resolved** — so dropped and done read
+differently at a glance. When you later
+[link a pull request](/feedback/getting-started), the card is edited to show the
+PR link and turns amber (work in flight).
+
+## Platform notifications — and acting on them
+
+Internal platform events post to your **notifications channel**, and most of them
+carry **action buttons** so you can respond without leaving Slack. Choose which
+events go to Slack in **Settings → Notifications** (the Slack column is live once
+a connector exists).
+
+| Event                               | Card actions                                                       |
+| ----------------------------------- | ------------------------------------------------------------------ |
+| **Alert triggered**                 | `Resolve` · `Dismiss` · `Mute rule` (disables the rule that fired) |
+| **Experiment reached significance** | `Ship "<group>"` · `Stop experiment` · `Keep running`              |
+| **Guardrail breached**              | `Stop experiment` · `Acknowledge`                                  |
+| **Kill switch flipped**             | `Flip back` (one-click revert)                                     |
+| **Config published to prod**        | `Acknowledge`                                                      |
+| **Agent needs your attention**      | `Open the issue ↗` · `Acknowledge`                                 |
+| Weekly digest · New team member     | _(informational — link only)_                                      |
+
+Each action writes straight back into Shipeasy, records an audit entry, stamps
+who did it, and recolours the card. Alert cards are bordered by severity
+(🔴 danger / 🟠 warn / 🔵 info) and turn 🟢 green on resolve or ⚪ grey on dismiss.
+
+<Callout type="info" title="Privileged actions check your membership">
+  Stopping or shipping an experiment and flipping a kill switch go through the real admin path (so
+  the change propagates), and they verify **you're a member of the project** first — your Slack
+  identity is matched to your Shipeasy email. If you're not a member, only you see a quiet "ask an
+  admin to invite you" — the shared card is left untouched for everyone else.
+</Callout>
+
+### Agent-attention opens the issue
+
+When an unattended agent run gets blocked it raises an **"Agent needs your
+attention"** card. Its **Open the issue ↗** button takes you straight to the
+specific item it's stuck on (not a generic dashboard landing), where the full
+escalation — the summary and the numbered steps the agent left — is shown
+in context.
+
+## `/shipeasy` — create an alert from a channel
+
+Type the slash command in any channel to stand up a metric alert whose
+notifications post back to **that** channel:
+
+```text
+/shipeasy alert <metric> <gt|gte|lt|lte> <threshold> [name]
+```
+
+For example `/shipeasy alert api-errors gt 50 high error rate` fires when
+`api-errors` exceeds 50 over 24h and posts to the channel you ran it in. The
+reply is private to you.
+
+## `@Shipeasy` — run the platform by chat
+
+Mention **@Shipeasy** in a channel and ask in plain language. The assistant can
+**read and change** your **feature flags, dynamic configs, kill switches, A/B
+experiments, alert rules, and metrics** — the same toolset the dashboard
+assistant has:
+
+```text
+@Shipeasy roll the new-checkout gate to 25%
+@Shipeasy which experiments are significant right now?
+@Shipeasy create a kill switch for the payments path
+```
+
+It replies in the same thread and tells you what it did.
+
+## Drive Shipeasy from Slack's AI
+
+If you'd rather use **Slack's own AI assistant**, Shipeasy is also available there
+as an MCP connection — the same flags, configs, kill switches, experiments, and
+metrics. Your workspace admin enables it once under the Slack App's **MCP Server
+Connection** (Slack identity auth). After that, ask Slack's assistant to manage
+Shipeasy and it calls through to your project.
+
+<Callout type="info" title="Everything acts as you">
+  Every "do something" surface — the card buttons, `/shipeasy`, `@Shipeasy`, and the Slack-AI
+  connection — acts as **you**: your Slack identity is matched to your Shipeasy email, and you must
+  be a **member of the project**. A non-member gets a clear "ask an admin to invite you," never
+  silent access.
+</Callout>
+
+## Channel routing
+
+- **Feedback channel** — where new bugs and requests land.
+- **Notifications channel** — where platform events post (defaults to the feedback channel).
+- **Per-alert channel** — an alert created with `/shipeasy` (or with a channel chosen in the
+  dashboard) posts to that specific channel, overriding the project default.
+
+## Status & health
+
+The connector in the list shows a status — **Needs OAuth**, **Needs channel**
+(target not picked yet), **Active**, **Disabled**, or **Failing** (last dispatch
+errored). The configure view surfaces the last error and last successful delivery
+time, so you can tell at a glance whether mirroring is healthy.
+
+<Callout type="warn" title="The bot needs your email">
+  The `/shipeasy` command, `@Shipeasy` assistant, privileged card actions, and the Slack-AI
+  connection resolve access by your Slack email, which needs the `users:read.email` scope. If you
+  connected Slack before this was added, click **Add to Slack** again to re-grant — otherwise those
+  features can't tell who you are.
+</Callout>
+
+<SeeAlso
+  links={[
+    {
+      href: "/feedback/connectors",
+      title: "Connectors overview",
+      note: "GitHub and Google Sheets destinations alongside Slack.",
+    },
+    {
+      href: "/feedback/getting-started",
+      title: "Feedback overview",
+      note: "Where bugs and feature requests are captured.",
+    },
+    {
+      href: "/feedback/errors",
+      title: "Errors & alerts",
+      note: "What feeds the alert notifications you can resolve from Slack.",
+    },
+  ]}
+/>
+
+<DocNav
+  prev={{ href: "/feedback/connectors", title: "Connectors" }}
+  next={{ href: "/feedback/case-studies", title: "Case studies" }}
+/>

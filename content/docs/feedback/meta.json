@@ -8,6 +8,7 @@
     "error-reporting",
     "errors",
     "connectors",
+    "slack",
     "---",
     "case-studies",
     "edge-cases",

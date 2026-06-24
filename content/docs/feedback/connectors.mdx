@@ -24,8 +24,9 @@ Three outbound destinations ship today:
     Appends a <b>row</b> to a spreadsheet + tab of your choice for every selected event.
   </Tile>
   <Tile icon="▣" title="Slack" meta={<>OAuth · Slack App</>}>
-    Posts a <b>message</b> to a channel you pick — with <b>buttons</b> to mark the item resolved or
-    ready-for-QA right from Slack.
+    Posts a <b>message</b> to a channel you pick — plus action buttons, notifications, a
+    <code>/shipeasy</code> command and an <b>@Shipeasy</b> assistant.{" "}
+    <a href="/feedback/slack">Full Slack page →</a>
   </Tile>
 </TileGrid>
 
@@ -98,19 +99,11 @@ By default both are selected.
   </Step>
 </Steps>
 
-### Resolve from Slack
-
-Each posted message carries **Mark resolved** and **Mark ready for QA** buttons. Clicking one
-updates the item's status in Shipeasy and edits the Slack message in place to stamp who actioned it.
-When you later [link a pull request](/feedback/getting-started) to the item, the original Slack
-message is edited to show the PR link.
-
-### Slack notifications
-
-Beyond the feedback stream, platform notifications (experiment significance, guardrail breaches,
-triggered alerts) can post to your **notifications channel**. Toggle which events go to Slack in
-**Settings → Notifications** — the Slack column is live once a Slack connector is linked. Alert
-messages include **Resolve** / **Dismiss** buttons.
+<Callout type="info" title="Slack does much more than mirror">
+  Posted messages carry **resolve / ready-for-QA** buttons, a **coloured status border**, platform
+  **notifications**, a **`/shipeasy`** slash command, and an **`@Shipeasy`** assistant that runs
+  your flags and experiments by chat. It's all on the dedicated **[Slack page](/feedback/slack)**.
+</Callout>
 
 ## Status & health
 
@@ -144,5 +137,5 @@ Each connector in the list shows a status — **Needs OAuth**, **Needs repo** / 
 
 <DocNav
   prev={{ href: "/feedback/errors", title: "Errors dashboard & triage" }}
-  next={{ href: "/feedback/case-studies", title: "Case studies" }}
+  next={{ href: "/feedback/slack", title: "Slack" }}
 />
