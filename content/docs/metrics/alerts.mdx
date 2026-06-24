@@ -155,6 +155,12 @@ shipeasy alert-rules list
     optional
     desc="Whether the cron evaluates the rule. Defaults to true; pass --disabled to create it dormant."
   />
+  <ApiRow
+    name="notify"
+    type="{ slackChannel?, email? }"
+    optional
+    desc="Where this rule's alert is delivered, overriding the project default — a Slack channel (requires a connected Slack connector) and/or an email address. Omit to inherit the project default."
+  />
 </ApiTable>
 
 <Callout type="warn">
@@ -202,6 +208,50 @@ A fired alert does three things at once:
 
 When the metric recovers, the alert resolves and no new ticket is filed. If it
 breaches again after resolving, a fresh alert and ticket are raised.
+
+## Where alerts are delivered
+
+By default a notification follows your **project default delivery** (set on
+Settings → Notifications): a default Slack channel and a default email. With no
+default set, email falls back to the project owner and Slack to the connector's
+configured channel. Any rule can override that with its own **target** —
+useful for routing, say, billing alerts to `#finance` and on-call alerts to
+`#incidents`.
+
+The Slack channel is always **picked from your project's real channels** (a
+typeahead in the wizard, the in-dashboard assistant, the CLI `channels`
+command) — Shipeasy never guesses a channel. A Slack target requires a
+connected Slack connector; the email target works with no connector.
+
+```bash
+# list the channels the bot can post to
+shipeasy alert-rules channels
+
+# create a rule that posts to #incidents and emails on-call
+shipeasy alert-rules create "Checkout errors spiking" \
+  --metric checkout-errors --comparator gt --threshold 50 \
+  --slack-channel '#incidents' --email oncall@acme.com
+
+# move an existing rule's target, or clear it back to the project default
+shipeasy alert-rules update "Checkout errors spiking" --slack-channel '#billing'
+shipeasy alert-rules update "Checkout errors spiking" --clear-target
+```
+
+Over MCP the same control is the `notify` argument on `exp_create_alert_rule` /
+`exp_update_alert_rule` (`{ slack_channel: { id, name }, email }`), and the
+in-dashboard assistant renders the **same** channel typeahead before it writes
+the rule.
+
+<Callout type="info">
+  **From Slack:** the `/shipeasy alert <metric> <gt|gte|lt|lte> <threshold> [name]`
+  slash command creates a rule from a channel and automatically targets **that
+  channel** — the alert posts back to where you set it up. Requires the Slack app
+  to be connected to the project.
+</Callout>
+
+Which channels fire (in-app, email, Slack) is still governed by your per-event
+notification preferences — the target only decides _where_ each enabled channel
+delivers.
 
 ## Tuning a rule
 
