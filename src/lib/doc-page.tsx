@@ -22,6 +22,7 @@ import {
   MetricPulseScene,
   RolloutScene,
   SlackAssistantScene,
+  SlackAssistantThreadScene,
   SlackFeedbackScene,
   SlackNotifyScene,
 } from "@/components/doc-scenes";
@@ -131,6 +132,7 @@ const components = {
   RolloutScene,
   SeeAlso,
   SlackAssistantScene,
+  SlackAssistantThreadScene,
   SlackFeedbackScene,
   SlackNotifyScene,
   Step,

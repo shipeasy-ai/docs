@@ -1,27 +1,27 @@
 ---
 title: Slack
-description: The complete Shipeasy ↔ Slack integration — bugs & requests in a channel, status controls and platform-event actions you drive from Slack, a /shipeasy command, an @Shipeasy assistant, and a Slack-AI (MCP) connection. One connection, every surface.
+description: Run your whole flags & experiments platform from Slack by chatting with @Shipeasy — create gates, configs, kill switches, experiments, alerts and metrics in plain language, then act on everything as it streams back into the channel as interactive cards.
 ---
 
 <DocMeta
   status="Production ready"
-  read="6 min read"
+  read="7 min read"
   updated="June 23, 2026"
   works="Dashboard · per project"
 />
 
-Connect Slack **once** per project and you unlock every Shipeasy ↔ Slack
-surface: new bugs and requests stream into a channel, platform events post in,
-you act on them with buttons and dropdowns, and you can drive your whole flags &
-experiments platform from Slack — by slash command, by @-mention, or through
-Slack's own AI assistant.
+Slack is a full front-end to Shipeasy. Connect it **once**, then talk to
+**@Shipeasy** in plain language to create and change anything — feature flags,
+dynamic configs, kill switches, A/B experiments, alerts, metrics — and watch it
+all stream back into the channel as **interactive cards** you act on without ever
+opening the dashboard. Bugs, requests and platform events land the same way.
 
 ## Connect Slack
 
 <Steps>
   <Step title="Add the connector">
-    On the **Feedback** page open **Connectors → New connector**, pick **Slack**, name it, choose
-    the events to forward, and **Continue**.
+    On the **Feedback** page open **Connectors → New connector**, pick **Slack**, name it, and
+    **Continue**.
   </Step>
   <Step title="Add to Slack">
     You're redirected to authorize the Shipeasy Slack app in your workspace. After consent you land
@@ -30,49 +30,107 @@ Slack's own AI assistant.
   <Step title="Pick channels">
     Choose the **feedback channel** new bugs/requests post to. Optionally pick a separate
     **notifications channel** for platform events — leave it on *Same as feedback channel* to share
-    one. Tick **Enabled**, **Save**, and use **Send test** to post a throwaway message.
+    one. Tick **Enabled** and **Save**.
   </Step>
 </Steps>
 
-<Callout type="info" title="One connection, every surface">
-  The same Slack connection powers all of the features below — feedback, notifications, the buttons,
-  the `/shipeasy` command, the `@Shipeasy` assistant, and the Slack-AI connection. Connect once and
-  they all light up.
+## Meet @Shipeasy — run the whole platform from chat
+
+Mention **@Shipeasy** in any channel it's in and ask for what you want. There's
+nothing to memorise — no flags, no syntax. It understands plain language, **acts
+as you** (your Slack identity is matched to your Shipeasy email, and you must be a
+project member), and tells you exactly what it did.
+
+It can do everything the dashboard assistant can — **read and change** your
+entire platform:
+
+| Ask @Shipeasy to…   | …and it will                                                          |
+| ------------------- | --------------------------------------------------------------------- |
+| **Feature flags**   | create a gate, roll it to a %, add targeting rules, enable/disable it |
+| **Dynamic configs** | create a config, change its value                                     |
+| **Kill switches**   | create one, flip it on/off, set per-environment switches              |
+| **A/B experiments** | draft it, start/stop it, ship a winning group, check significance     |
+| **Alerts**          | create a threshold alert on any metric                                |
+| **Metrics**         | create an event-backed metric                                         |
+| **Just ask**        | list what you have, get an experiment's status, "what changed today?" |
+
+### Create anything, just by asking
+
+<SlackAssistantThreadScene
+  caption="No dashboard, no syntax — describe what you want and @Shipeasy creates it, acting as you. Each reply confirms exactly what happened."
+  turns={[
+    {
+      you: "create a feature flag new-pricing-page at 10%",
+      reply: "✅ Created gate new-pricing-page — rolled to 10% in prod.",
+    },
+    {
+      you: "add a kill switch for the payments path",
+      reply: "✅ Created kill switch payments-pause (off).",
+    },
+    {
+      you: "set up an A/B test new-checkout in the web universe, goal checkout_completed",
+      reply:
+        "✅ Drafted new-checkout: control/treatment 50-50, goal count_users(checkout_completed). Say “start it” to launch.",
+    },
+    {
+      you: "alert me when api-errors goes above 50 over a day",
+      reply:
+        "✅ Created alert “high error rate” — api-errors > 50 / 24h. It’ll post here when it fires.",
+    },
+  ]}
+/>
+
+It's just as good at **reading** and **changing** what already exists:
+
+<SlackAssistantScene
+  prompt="which experiments are significant right now?"
+  reply="📊 2 of 4 are significant: new-checkout (treatment +12%) and pricing-test (B +6%). The other two need more data."
+  caption="Ask questions too — @Shipeasy reads your gates, experiments, configs and metrics and answers in the thread."
+/>
+
+<SlackAssistantScene
+  prompt="roll new-pricing-page to 50%"
+  reply="✅ new-pricing-page is now at 50% rollout in prod."
+  caption="One sentence to change a rollout — the change goes through the real admin path, so it propagates everywhere immediately."
+/>
+
+<Callout type="info" title="It always acts as you">
+  @Shipeasy runs every action as **you** — your Slack identity → your Shipeasy email → a project
+  membership check. A non-member gets a quiet "ask an admin to invite you," never silent access.
 </Callout>
 
-## Bugs & requests in a channel
+## From chat to channel — what you set up comes back to you
 
-Every new **bug report** and **feature request** posts to your feedback channel,
-with the title, reporter, page URL, and full details (steps / actual / expected
-for bugs; description / use-case / priority for requests).
+The alert you just asked @Shipeasy to create doesn't disappear into a settings
+page. When it **fires**, it posts into your channel as a card — and you control
+its whole lifecycle right there.
 
-<SlackFeedbackScene />
+<SlackNotifyScene kind="alert" />
 
-### Status control — a dropdown right on the card
+Click **Resolve** and the same message is rewritten in place — buttons gone,
+stamped with who acted, the border flipped to green. **Dismiss** leaves a distinct
+grey, and **Mute rule** disables the rule that fired so it stops nagging.
 
-Each feedback card has a **Status ▾** dropdown covering the whole lifecycle:
+<SlackNotifyScene kind="alert-resolved" />
 
-| Status                  | Border   |
-| ----------------------- | -------- |
-| Open                    | 🔵 blue  |
-| In progress             | 🟠 amber |
-| Ready for QA            | 🟠 amber |
-| Resolved                | 🟢 green |
-| **Won't fix / Dismiss** | ⚪ grey  |
+The same loop runs for everything you set up. Start an experiment and, when it
+reaches significance, the result lands with the actions that matter:
 
-Pick one and the item's status updates in Shipeasy, the card stamps who changed
-it, and the **coloured left border** flips to match. **Won't fix / Dismiss is a
-distinct grey — never the green of Resolved** — so dropped and done read
-differently at a glance. When you later
-[link a pull request](/feedback/getting-started), the card is edited to show the
-PR link and turns amber (work in flight).
+<SlackNotifyScene kind="significance" />
 
-## Platform notifications — and acting on them
+…and if a guardrail moves the wrong way, you can stop it on the spot:
 
-Internal platform events post to your **notifications channel**, and most of them
-carry **action buttons** so you can respond without leaving Slack. Choose which
-events go to Slack in **Settings → Notifications** (the Slack column is live once
-a connector exists).
+<SlackNotifyScene kind="guardrail" />
+
+Flip a kill switch and the channel offers a one-click revert; publish a config to
+prod and the change is announced with a link:
+
+<SlackNotifyScene kind="killswitch" />
+
+<SlackNotifyScene kind="config" />
+
+Every action writes straight back into Shipeasy, records an audit entry, stamps
+who did it, and recolours the card. Here's the full set:
 
 | Event                               | Card actions                                                       |
 | ----------------------------------- | ------------------------------------------------------------------ |
@@ -84,93 +142,86 @@ a connector exists).
 | **Agent needs your attention**      | `Open the issue ↗` · `Acknowledge`                                 |
 | Weekly digest · New team member     | _(informational — link only)_                                      |
 
-Each action writes straight back into Shipeasy, records an audit entry, stamps
-who did it, and recolours the card. Alert cards are bordered by severity
-(🔴 danger / 🟠 warn / 🔵 info) and turn 🟢 green on resolve or ⚪ grey on dismiss.
-
-<SlackNotifyScene kind="alert" />
-
-<SlackNotifyScene kind="significance" />
+Choose which of these post to Slack in **Settings → Notifications** (the Slack
+column is live once a connector exists).
 
 <Callout type="info" title="Privileged actions check your membership">
-  Stopping or shipping an experiment and flipping a kill switch go through the real admin path (so
-  the change propagates), and they verify **you're a member of the project** first — your Slack
-  identity is matched to your Shipeasy email. If you're not a member, only you see a quiet "ask an
-  admin to invite you" — the shared card is left untouched for everyone else.
+  Stopping or shipping an experiment, flipping a kill switch, and muting an alert rule go through
+  the real admin path (so the change propagates) and verify **you're a member of the project**
+  first. If you're not, only you see a quiet "ask an admin to invite you" — the shared card is
+  untouched for everyone else.
 </Callout>
 
-### Agent-attention opens the issue
+## Bugs & requests — the other inbound stream
 
-When an unattended agent run gets blocked it raises an **"Agent needs your
-attention"** card. Its **Open the issue ↗** button takes you straight to the
-specific item it's stuck on (not a generic dashboard landing), where the full
-escalation — the summary and the numbered steps the agent left — is shown
-in context.
+New **bug reports** and **feature requests** post to your feedback channel with
+the title, reporter, page URL and full details. Each carries a **Status ▾**
+dropdown covering the whole lifecycle.
 
-## `/shipeasy` — create an alert from a channel
+<SlackFeedbackScene state="open" />
 
-Type the slash command in any channel to stand up a metric alert whose
-notifications post back to **that** channel:
+| Status                  | Border   |
+| ----------------------- | -------- |
+| Open                    | 🔵 blue  |
+| In progress             | 🟠 amber |
+| Ready for QA            | 🟠 amber |
+| Resolved                | 🟢 green |
+| **Won't fix / Dismiss** | ⚪ grey  |
 
-```text
-/shipeasy alert <metric> <gt|gte|lt|lte> <threshold> [name]
-```
+Pick one and the card recolours its **left border** to match — **Won't fix is a
+distinct grey, never the green of Resolved**. Link a PR to the item in Shipeasy
+and the same message is edited in place to show it:
 
-For example `/shipeasy alert api-errors gt 50 high error rate` fires when
-`api-errors` exceeds 50 over 24h and posts to the channel you ran it in. The
-reply is private to you.
+<SlackFeedbackScene state="pr" />
 
-## `@Shipeasy` — run the platform by chat
+…and when it's done, the card stamps who closed it and turns green:
 
-Mention **@Shipeasy** in a channel and ask in plain language. The assistant can
-**read and change** your **feature flags, dynamic configs, kill switches, A/B
-experiments, alert rules, and metrics** — the same toolset the dashboard
-assistant has:
+<SlackFeedbackScene state="resolved" />
 
-```text
-@Shipeasy roll the new-checkout gate to 25%
-@Shipeasy which experiments are significant right now?
-@Shipeasy create a kill switch for the payments path
-```
+## When an agent gets stuck — open the issue
 
-It replies in the same thread and tells you what it did.
+Unattended agent runs (the ops loop burning down your queue) raise an **"Agent
+needs your attention"** card when they're blocked. **Open the issue ↗** takes you
+straight to the item it's stuck on — not a generic dashboard landing — where the
+full escalation (the summary and the numbered steps the agent left) is shown in
+context.
 
-<SlackAssistantScene />
+<SlackNotifyScene kind="attention" />
+
+## Prefer a quick slash command?
+
+For a fast, no-chat shortcut, `/shipeasy alert <metric> <gt|gte|lt|lte>
+
+<threshold> [name]` creates a metric alert that posts back to the channel you ran
+it in — e.g. `/shipeasy alert api-errors gt 50 high error rate`. The reply is
+private to you. For anything beyond a quick alert, just talk to **@Shipeasy**.
 
 ## Drive Shipeasy from Slack's AI
 
 If you'd rather use **Slack's own AI assistant**, Shipeasy is also available there
-as an MCP connection — the same flags, configs, kill switches, experiments, and
+as an MCP connection — the same flags, configs, kill switches, experiments and
 metrics. Your workspace admin enables it once under the Slack App's **MCP Server
-Connection** (Slack identity auth). After that, ask Slack's assistant to manage
-Shipeasy and it calls through to your project.
-
-<Callout type="info" title="Everything acts as you">
-  Every "do something" surface — the card buttons, `/shipeasy`, `@Shipeasy`, and the Slack-AI
-  connection — acts as **you**: your Slack identity is matched to your Shipeasy email, and you must
-  be a **member of the project**. A non-member gets a clear "ask an admin to invite you," never
-  silent access.
-</Callout>
+Connection** (Slack identity auth); after that, ask Slack's assistant to manage
+Shipeasy and it calls through to your project under the same membership check.
 
 ## Channel routing
 
 - **Feedback channel** — where new bugs and requests land.
 - **Notifications channel** — where platform events post (defaults to the feedback channel).
-- **Per-alert channel** — an alert created with `/shipeasy` (or with a channel chosen in the
-  dashboard) posts to that specific channel, overriding the project default.
+- **Per-alert channel** — an alert created in a specific channel posts back to that channel,
+  overriding the project default.
 
 ## Status & health
 
-The connector in the list shows a status — **Needs OAuth**, **Needs channel**
-(target not picked yet), **Active**, **Disabled**, or **Failing** (last dispatch
-errored). The configure view surfaces the last error and last successful delivery
-time, so you can tell at a glance whether mirroring is healthy.
+The connector in the list shows a status — **Needs OAuth**, **Needs channel**,
+**Active**, **Disabled**, or **Failing** (last dispatch errored). The configure
+view surfaces the last error and last successful delivery time, so you can tell at
+a glance whether mirroring is healthy.
 
 <Callout type="warn" title="The bot needs your email">
-  The `/shipeasy` command, `@Shipeasy` assistant, privileged card actions, and the Slack-AI
+  The `@Shipeasy` assistant, privileged card actions, the `/shipeasy` command, and the Slack-AI
   connection resolve access by your Slack email, which needs the `users:read.email` scope. If you
-  connected Slack before this was added, click **Add to Slack** again to re-grant — otherwise those
-  features can't tell who you are.
+  connected Slack before this was added, click **Add to Slack** again to re-grant.
 </Callout>
 
 <SeeAlso

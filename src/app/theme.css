@@ -3014,6 +3014,20 @@ button[aria-label="Open Sidebar"] {
   padding: 0 3px;
   font-weight: 600;
 }
+.se-slack-turn {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding-bottom: 13px;
+  border-bottom: 1px dashed var(--se-line);
+}
+.se-slack-turn:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+.se-slack-bot {
+  color: var(--se-fg-2);
+}
 
 /* ── Devtools hero ─────────────────────────────────────────────────────── */
 .se-dvt-hero {

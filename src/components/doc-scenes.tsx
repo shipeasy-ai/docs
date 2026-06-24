@@ -620,13 +620,17 @@ function SlackShell({
   );
 }
 
-export function SlackFeedbackScene() {
+export function SlackFeedbackScene({ state = "open" }: { state?: "open" | "pr" | "resolved" }) {
+  const tone = state === "resolved" ? "green" : state === "pr" ? "amber" : "blue";
+  const caption =
+    state === "pr"
+      ? "Link a PR to the item in Shipeasy and the same Slack message is edited in place — the PR appears and the border turns amber (work in flight)."
+      : state === "resolved"
+        ? "Pick Resolved from the dropdown and the card stamps who closed it and turns green — the buttons collapse away."
+        : "A bug report posted to Slack. The blue left border is its status; the Status ▾ dropdown moves it through the lifecycle (a distinct grey for Won't fix), recolouring the border in place.";
   return (
-    <SceneFrame
-      label="feedback · status"
-      caption="A bug report posted to Slack. The blue left border is its status; the Status ▾ dropdown moves it through the lifecycle (and a distinct grey for Won't fix), recolouring the border in place."
-    >
-      <SlackShell tone="blue">
+    <SceneFrame label={`feedback · ${state}`} caption={caption}>
+      <SlackShell tone={tone}>
         <div className="se-slack-h">🐞 Bug report: Login button does nothing</div>
         <div className="se-slack-fields">
           <span>
@@ -643,12 +647,23 @@ export function SlackFeedbackScene() {
           <br />
           Click “Log in” — nothing happens, no dialog.
         </div>
-        <div className="se-slack-actions">
-          <span className="se-slack-select">
-            Open <span className="se-slack-caret">▾</span>
-          </span>
-        </div>
-        <div className="se-slack-ctx">Filed by Shipeasy · bug_4f2c</div>
+        {state === "pr" && (
+          <div className="se-slack-detail">
+            🔗 <b>Pull request</b>: <a className="se-slack-link">#128</a>
+          </div>
+        )}
+        {state === "open" && (
+          <div className="se-slack-actions">
+            <span className="se-slack-select">
+              Open <span className="se-slack-caret">▾</span>
+            </span>
+          </div>
+        )}
+        {state === "resolved" ? (
+          <div className="se-slack-ctx">✅ Resolved by @dana</div>
+        ) : (
+          <div className="se-slack-ctx">Filed by Shipeasy · bug_4f2c</div>
+        )}
       </SlackShell>
     </SceneFrame>
   );
@@ -657,8 +672,91 @@ export function SlackFeedbackScene() {
 export function SlackNotifyScene({
   kind = "alert",
 }: {
-  kind?: "alert" | "significance" | "killswitch";
+  kind?:
+    | "alert"
+    | "alert-resolved"
+    | "significance"
+    | "guardrail"
+    | "killswitch"
+    | "config"
+    | "attention";
 }) {
+  if (kind === "alert-resolved") {
+    return (
+      <SceneFrame
+        label="notification · resolved"
+        caption="After you click Resolve the same card is rewritten in place — buttons gone, stamped with who acted, border flipped to green. Dismiss would leave a distinct grey instead."
+      >
+        <SlackShell tone="green">
+          <div className="se-slack-h">🔴 Error rate above 5%</div>
+          <div className="se-slack-detail">
+            <code>api-errors</code> hit 87 over the last 24h (threshold 50).
+          </div>
+          <div className="se-slack-ctx">✅ Resolved by @dana</div>
+        </SlackShell>
+      </SceneFrame>
+    );
+  }
+  if (kind === "guardrail") {
+    return (
+      <SceneFrame
+        label="notification · guardrail"
+        caption="A guardrail metric moved the wrong way. Stop the experiment on the spot, or acknowledge to mark it seen."
+      >
+        <SlackShell tone="amber">
+          <div className="se-slack-h">🛡️ Guardrail breached on new-checkout</div>
+          <div className="se-slack-detail">
+            <code>checkout_latency</code> is up 8.1% in <code>treatment</code> vs control.
+          </div>
+          <a className="se-slack-link">View in dashboard</a>
+          <div className="se-slack-actions">
+            <span className="se-slack-btn">Stop experiment</span>
+            <span className="se-slack-btn">Acknowledge</span>
+          </div>
+        </SlackShell>
+      </SceneFrame>
+    );
+  }
+  if (kind === "config") {
+    return (
+      <SceneFrame
+        label="notification · config"
+        caption="A dynamic config was published to prod. The card links to the change and lets you acknowledge it."
+      >
+        <SlackShell tone="blue">
+          <div className="se-slack-h">⚙️ pricing-config published to prod</div>
+          <div className="se-slack-detail">Version 7 — published by ana@acme.co.</div>
+          <a className="se-slack-link">View in dashboard</a>
+          <div className="se-slack-actions">
+            <span className="se-slack-btn">Acknowledge</span>
+          </div>
+        </SlackShell>
+      </SceneFrame>
+    );
+  }
+  if (kind === "attention") {
+    return (
+      <SceneFrame
+        label="notification · agent attention"
+        caption="When an unattended agent run gets blocked it raises this card. Open the issue ↗ takes you straight to the item it's stuck on, where the full escalation (summary + steps) is shown in context."
+      >
+        <SlackShell tone="blue">
+          <div className="se-slack-h">🤖 Bug #42 needs your attention</div>
+          <div className="se-slack-detail">
+            Can’t reproduce the checkout 500 without a prod Stripe key.
+            <br />
+            1. Add <code>STRIPE_TEST_KEY</code> to <code>.dev.vars</code>
+            <br />
+            2. Re-run the checkout e2e
+          </div>
+          <a className="se-slack-link">Open the issue ↗</a>
+          <div className="se-slack-actions">
+            <span className="se-slack-btn">Acknowledge</span>
+          </div>
+        </SlackShell>
+      </SceneFrame>
+    );
+  }
   if (kind === "significance") {
     return (
       <SceneFrame
@@ -719,24 +817,35 @@ export function SlackNotifyScene({
   );
 }
 
-export function SlackAssistantScene() {
+export function SlackAssistantScene({
+  prompt = "roll the new-checkout gate to 25%",
+  reply = "✅ Done — new-checkout is now at 25% rollout in prod.",
+  you = "Dana",
+  initial = "D",
+  label = "@Shipeasy · chat",
+  caption = "Mention @Shipeasy in any channel and ask in plain language — it reads and changes your flags, configs, kill switches, experiments, and metrics, acting as you.",
+}: {
+  prompt?: string;
+  reply?: string;
+  you?: string;
+  initial?: string;
+  label?: string;
+  caption?: string;
+}) {
   return (
-    <SceneFrame
-      label="@Shipeasy · chat"
-      caption="Mention @Shipeasy in any channel and ask in plain language — it reads and changes your flags, configs, kill switches, experiments, and metrics, acting as you."
-    >
+    <SceneFrame label={label} caption={caption}>
       <div className="se-slack-thread">
         <div className="se-slack-line">
           <div className="se-slack-avatar user" aria-hidden>
-            D
+            {initial}
           </div>
           <div className="se-slack-line-body">
             <div className="se-slack-meta">
-              <b>Dana</b>
+              <b>{you}</b>
               <span className="se-slack-time">10:41 AM</span>
             </div>
             <div className="se-slack-say">
-              <span className="se-slack-mention">@Shipeasy</span> roll the new-checkout gate to 25%
+              <span className="se-slack-mention">@Shipeasy</span> {prompt}
             </div>
           </div>
         </div>
@@ -750,11 +859,50 @@ export function SlackAssistantScene() {
               <span className="se-slack-app">APP</span>
               <span className="se-slack-time">10:41 AM</span>
             </div>
-            <div className="se-slack-say">
-              ✅ Done — <b>new-checkout</b> is now at <b>25%</b> rollout in prod.
-            </div>
+            <div className="se-slack-say">{reply}</div>
           </div>
         </div>
+      </div>
+    </SceneFrame>
+  );
+}
+
+/** A multi-turn @Shipeasy thread — several create/read exchanges in one frame,
+ *  to show the assistant's range. Each row is `[you, assistant]`. */
+export function SlackAssistantThreadScene({
+  label = "@Shipeasy · create anything",
+  caption = "One place to run the whole platform: ask @Shipeasy in plain language and it creates and changes flags, configs, kill switches, experiments, alerts, and metrics — acting as you.",
+  turns,
+}: {
+  label?: string;
+  caption?: string;
+  turns: { you: string; reply: string }[];
+}) {
+  return (
+    <SceneFrame label={label} caption={caption}>
+      <div className="se-slack-thread">
+        {turns.map((t, i) => (
+          <div className="se-slack-turn" key={i}>
+            <div className="se-slack-line">
+              <div className="se-slack-avatar user" aria-hidden>
+                D
+              </div>
+              <div className="se-slack-line-body">
+                <div className="se-slack-say">
+                  <span className="se-slack-mention">@Shipeasy</span> {t.you}
+                </div>
+              </div>
+            </div>
+            <div className="se-slack-line">
+              <div className="se-slack-avatar" aria-hidden>
+                S
+              </div>
+              <div className="se-slack-line-body">
+                <div className="se-slack-say se-slack-bot">{t.reply}</div>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </SceneFrame>
   );
