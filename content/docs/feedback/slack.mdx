@@ -46,6 +46,8 @@ Every new **bug report** and **feature request** posts to your feedback channel,
 with the title, reporter, page URL, and full details (steps / actual / expected
 for bugs; description / use-case / priority for requests).
 
+<SlackFeedbackScene />
+
 ### Status control — a dropdown right on the card
 
 Each feedback card has a **Status ▾** dropdown covering the whole lifecycle:
@@ -85,6 +87,10 @@ a connector exists).
 Each action writes straight back into Shipeasy, records an audit entry, stamps
 who did it, and recolours the card. Alert cards are bordered by severity
 (🔴 danger / 🟠 warn / 🔵 info) and turn 🟢 green on resolve or ⚪ grey on dismiss.
+
+<SlackNotifyScene kind="alert" />
+
+<SlackNotifyScene kind="significance" />
 
 <Callout type="info" title="Privileged actions check your membership">
   Stopping or shipping an experiment and flipping a kill switch go through the real admin path (so
@@ -128,6 +134,8 @@ assistant has:
 ```
 
 It replies in the same thread and tells you what it did.
+
+<SlackAssistantScene />
 
 ## Drive Shipeasy from Slack's AI
 

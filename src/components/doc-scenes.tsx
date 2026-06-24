@@ -575,3 +575,187 @@ export function AssistantPlanScene({ resolved = false }: { resolved?: boolean })
     </SceneFrame>
   );
 }
+
+/* ──────────────────────────────────────────────────────────────
+   Slack scenes — faithful mock Slack cards for the Slack page, so a
+   reader sees the actual surfaces (coloured status border, the status
+   dropdown, the notification action buttons, the @Shipeasy thread)
+   before reading about them. Pure presentational; the left-border
+   colour is the real palette (status → colour) passed inline.
+   ────────────────────────────────────────────────────────────── */
+
+const SLACK_TONE = {
+  blue: "#3b82f6",
+  amber: "#f59e0b",
+  green: "#22c55e",
+  grey: "#9ca3af",
+  red: "#ef4444",
+} as const;
+
+function SlackShell({
+  tone,
+  time = "10:42 AM",
+  children,
+}: {
+  tone: keyof typeof SLACK_TONE;
+  time?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="se-slack-msg">
+      <div className="se-slack-avatar" aria-hidden>
+        S
+      </div>
+      <div className="se-slack-body">
+        <div className="se-slack-meta">
+          <b>Shipeasy</b>
+          <span className="se-slack-app">APP</span>
+          <span className="se-slack-time">{time}</span>
+        </div>
+        <div className="se-slack-card" style={{ borderLeftColor: SLACK_TONE[tone] }}>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function SlackFeedbackScene() {
+  return (
+    <SceneFrame
+      label="feedback · status"
+      caption="A bug report posted to Slack. The blue left border is its status; the Status ▾ dropdown moves it through the lifecycle (and a distinct grey for Won't fix), recolouring the border in place."
+    >
+      <SlackShell tone="blue">
+        <div className="se-slack-h">🐞 Bug report: Login button does nothing</div>
+        <div className="se-slack-fields">
+          <span>
+            <span className="se-slack-k">Reporter</span>
+            dana@acme.co
+          </span>
+          <span>
+            <span className="se-slack-k">Page</span>
+            /login
+          </span>
+        </div>
+        <div className="se-slack-detail">
+          <b>Steps to reproduce</b>
+          <br />
+          Click “Log in” — nothing happens, no dialog.
+        </div>
+        <div className="se-slack-actions">
+          <span className="se-slack-select">
+            Open <span className="se-slack-caret">▾</span>
+          </span>
+        </div>
+        <div className="se-slack-ctx">Filed by Shipeasy · bug_4f2c</div>
+      </SlackShell>
+    </SceneFrame>
+  );
+}
+
+export function SlackNotifyScene({
+  kind = "alert",
+}: {
+  kind?: "alert" | "significance" | "killswitch";
+}) {
+  if (kind === "significance") {
+    return (
+      <SceneFrame
+        label="notification · experiment"
+        caption="An experiment reached significance. Ship the winning group, stop, or keep running — Ship and Stop go through the admin path and check your project membership first."
+      >
+        <SlackShell tone="blue">
+          <div className="se-slack-h">📈 new-checkout reached significance</div>
+          <div className="se-slack-detail">
+            <code>treatment</code> is winning on <code>checkout_completed</code> — +12.4% vs
+            control.
+          </div>
+          <a className="se-slack-link">View in dashboard</a>
+          <div className="se-slack-actions">
+            <span className="se-slack-btn primary">Ship “treatment”</span>
+            <span className="se-slack-btn">Stop experiment</span>
+            <span className="se-slack-btn">Keep running</span>
+          </div>
+        </SlackShell>
+      </SceneFrame>
+    );
+  }
+  if (kind === "killswitch") {
+    return (
+      <SceneFrame
+        label="notification · kill switch"
+        caption="A kill switch flipped. One click flips it back — gated to project members and routed through the admin path so the change propagates."
+      >
+        <SlackShell tone="blue">
+          <div className="se-slack-h">🔁 Kill switch payments-pause turned on</div>
+          <div className="se-slack-detail">Default value is now on for prod.</div>
+          <a className="se-slack-link">View in dashboard</a>
+          <div className="se-slack-actions">
+            <span className="se-slack-btn">Flip back off</span>
+          </div>
+        </SlackShell>
+      </SceneFrame>
+    );
+  }
+  return (
+    <SceneFrame
+      label="notification · alert"
+      caption="A triggered alert, bordered by severity. Resolve or dismiss the activation, or Mute rule to disable the rule that fired — all write straight back into Shipeasy."
+    >
+      <SlackShell tone="red">
+        <div className="se-slack-h">🔴 Error rate above 5%</div>
+        <div className="se-slack-detail">
+          <code>api-errors</code> hit 87 over the last 24h (threshold 50).
+        </div>
+        <a className="se-slack-link">View in dashboard</a>
+        <div className="se-slack-actions">
+          <span className="se-slack-btn primary">Resolve</span>
+          <span className="se-slack-btn">Dismiss</span>
+          <span className="se-slack-btn">Mute rule</span>
+        </div>
+      </SlackShell>
+    </SceneFrame>
+  );
+}
+
+export function SlackAssistantScene() {
+  return (
+    <SceneFrame
+      label="@Shipeasy · chat"
+      caption="Mention @Shipeasy in any channel and ask in plain language — it reads and changes your flags, configs, kill switches, experiments, and metrics, acting as you."
+    >
+      <div className="se-slack-thread">
+        <div className="se-slack-line">
+          <div className="se-slack-avatar user" aria-hidden>
+            D
+          </div>
+          <div className="se-slack-line-body">
+            <div className="se-slack-meta">
+              <b>Dana</b>
+              <span className="se-slack-time">10:41 AM</span>
+            </div>
+            <div className="se-slack-say">
+              <span className="se-slack-mention">@Shipeasy</span> roll the new-checkout gate to 25%
+            </div>
+          </div>
+        </div>
+        <div className="se-slack-line">
+          <div className="se-slack-avatar" aria-hidden>
+            S
+          </div>
+          <div className="se-slack-line-body">
+            <div className="se-slack-meta">
+              <b>Shipeasy</b>
+              <span className="se-slack-app">APP</span>
+              <span className="se-slack-time">10:41 AM</span>
+            </div>
+            <div className="se-slack-say">
+              ✅ Done — <b>new-checkout</b> is now at <b>25%</b> rollout in prod.
+            </div>
+          </div>
+        </div>
+      </div>
+    </SceneFrame>
+  );
+}

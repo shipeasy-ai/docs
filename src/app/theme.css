@@ -2866,6 +2866,155 @@ button[aria-label="Open Sidebar"] {
   color: var(--se-fg-3);
 }
 
+/* ── Slack scenes ──────────────────────────────────────────────────────────
+   Mock Slack message cards for the Slack page. The coloured left border on
+   `.se-slack-card` is the real status palette (passed inline). */
+.se-slack-msg,
+.se-slack-line {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--se-fg);
+}
+.se-slack-avatar {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: #fff;
+  background: linear-gradient(
+    150deg,
+    var(--se-accent),
+    color-mix(in oklab, var(--se-accent) 55%, #7c3aed)
+  );
+}
+.se-slack-avatar.user {
+  background: linear-gradient(150deg, #2eb67d, #1a8a5f);
+}
+.se-slack-body,
+.se-slack-line-body {
+  min-width: 0;
+  flex: 1;
+}
+.se-slack-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-bottom: 4px;
+}
+.se-slack-meta b {
+  font-weight: 700;
+}
+.se-slack-app {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--se-fg-3);
+  background: var(--se-bg-3);
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+.se-slack-time {
+  font-size: 11px;
+  color: var(--se-fg-4);
+}
+.se-slack-card {
+  border: 1px solid var(--se-line);
+  border-left: 4px solid var(--se-accent);
+  border-radius: 8px;
+  background: var(--se-bg-2);
+  padding: 11px 13px;
+}
+.se-slack-h {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 7px;
+}
+.se-slack-fields {
+  display: flex;
+  gap: 26px;
+  margin-bottom: 8px;
+  font-size: 12.5px;
+}
+.se-slack-fields > span {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.se-slack-k {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--se-fg-4);
+}
+.se-slack-detail {
+  font-size: 12.5px;
+  color: var(--se-fg-2);
+  margin-bottom: 9px;
+}
+.se-slack-link {
+  display: inline-block;
+  margin-bottom: 9px;
+  font-size: 12.5px;
+  color: var(--se-accent);
+}
+.se-slack-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.se-slack-btn,
+.se-slack-select {
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: 5px;
+  border: 1px solid var(--se-line-2);
+  background: var(--se-bg);
+  color: var(--se-fg);
+}
+.se-slack-btn.primary {
+  background: #007a5a;
+  border-color: #007a5a;
+  color: #fff;
+}
+.se-slack-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.se-slack-caret {
+  color: var(--se-fg-4);
+  font-size: 10px;
+}
+.se-slack-ctx {
+  margin-top: 9px;
+  font-size: 11px;
+  color: var(--se-fg-4);
+}
+.se-slack-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.se-slack-say {
+  font-size: 13.5px;
+}
+.se-slack-mention {
+  color: var(--se-accent);
+  background: color-mix(in oklab, var(--se-accent) 14%, transparent);
+  border-radius: 4px;
+  padding: 0 3px;
+  font-weight: 600;
+}
+
 /* ── Devtools hero ─────────────────────────────────────────────────────── */
 .se-dvt-hero {
   --dur: 9s;

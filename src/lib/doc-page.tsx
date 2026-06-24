@@ -21,6 +21,9 @@ import {
   LocaleFanScene,
   MetricPulseScene,
   RolloutScene,
+  SlackAssistantScene,
+  SlackFeedbackScene,
+  SlackNotifyScene,
 } from "@/components/doc-scenes";
 import { ApiList, ApiProvider } from "@/components/api-list";
 import { ApiDocsPage } from "@/components/api-docs-page";
@@ -127,6 +130,9 @@ const components = {
   QuickstartStep,
   RolloutScene,
   SeeAlso,
+  SlackAssistantScene,
+  SlackFeedbackScene,
+  SlackNotifyScene,
   Step,
   Steps,
   Tab,
