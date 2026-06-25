@@ -262,44 +262,38 @@ The MCP server uses your CLI credentials — no extra env vars, no separate toke
 
 The SDK reads the following from `process.env` (and `import.meta.env` in Vite). Anything passed explicitly to `configure({ ... })` wins.
 
-<ApiTable>
-  <ApiRow
-    name="SHIPEASY_SERVER_KEY"
-    optional
-    type="string"
-    desc={<>Server-side SDK key. Used by the server build. Treat as a secret.</>}
-  />
-  <ApiRow
-    name="NEXT_PUBLIC_SHIPEASY_CLIENT_KEY"
-    optional
-    type="string"
-    desc={
-      <>
-        Client-side SDK key. Safe to expose. Vite users: <code>VITE_SHIPEASY_CLIENT_KEY</code>.
-      </>
-    }
-  />
-  <ApiRow
-    name="SHIPEASY_API_BASE_URL"
-    optional
-    type="string"
-    desc={
-      <>
-        Override the admin API base URL (CLI default <code>https://shipeasy.ai</code>).
-      </>
-    }
-  />
-  <ApiRow
-    name="SHIPEASY_APP_BASE_URL"
-    optional
-    type="string"
-    desc={
-      <>
-        Override the dashboard URL the CLI links to (default <code>https://shipeasy.ai</code>).
-      </>
-    }
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    SHIPEASY_SERVER_KEY: {
+      type: "string",
+      description: <>Server-side SDK key. Used by the server build. Treat as a secret.</>,
+    },
+    NEXT_PUBLIC_SHIPEASY_CLIENT_KEY: {
+      type: "string",
+      description: (
+        <>
+          Client-side SDK key. Safe to expose. Vite users: <code>VITE_SHIPEASY_CLIENT_KEY</code>.
+        </>
+      ),
+    },
+    SHIPEASY_API_BASE_URL: {
+      type: "string",
+      description: (
+        <>
+          Override the admin API base URL (CLI default <code>https://shipeasy.ai</code>).
+        </>
+      ),
+    },
+    SHIPEASY_APP_BASE_URL: {
+      type: "string",
+      description: (
+        <>
+          Override the dashboard URL the CLI links to (default <code>https://shipeasy.ai</code>).
+        </>
+      ),
+    },
+  }}
+/>
 
 ## Frameworks [#frameworks]
 

@@ -192,86 +192,74 @@ The flip side of "how many users do I need" is "given the users I have, what's t
 
 ## API · `metrics.create`
 
-<ApiTable>
-  <ApiRow
-    name="name"
-    required
-    type="string"
-    desc="Stable identifier. Used in result rows and the CLI."
-  />
-  <ApiRow
-    name="type"
-    required
-    type='"conversion" | "count" | "sum" | "mean" | "ratio"'
-    desc="Aggregation function applied per user."
-  />
-  <ApiRow
-    name="event"
-    required
-    type="string"
-    desc={
-      <>
-        Event name to aggregate. For <code>ratio</code>, use <code>numerator_event</code> +{" "}
-        <code>denominator_event</code> instead.
-      </>
-    }
-  />
-  <ApiRow
-    name="property"
-    optional
-    type="string"
-    desc={
-      <>
-        Numeric property on the event to aggregate. Required for <code>sum</code> and{" "}
-        <code>mean</code>.
-      </>
-    }
-  />
-  <ApiRow
-    name="filter"
-    optional
-    type="Rule[]"
-    desc="Same shape as a feature flag rule. Only events matching all rules are aggregated."
-  />
-  <ApiRow
-    name="winsorise"
-    optional
-    type='"p95" | "p99" | "p99.9"'
-    desc={
-      <>
-        Percentile clip for <code>sum</code>/<code>mean</code>. Default <code>p99</code>.
-      </>
-    }
-  />
-  <ApiRow
-    name="cap"
-    optional
-    type="number"
-    desc="Absolute clip. Mutually exclusive with winsorise."
-  />
-  <ApiRow
-    name="zero_handling"
-    optional
-    type='"include" | "drop"'
-    desc={
-      <>
-        How to count exposed users with no matching event. Default <code>include</code> (treats them
-        as 0).
-      </>
-    }
-  />
-  <ApiRow
-    name="direction"
-    optional
-    type='"up" | "down"'
-    desc={
-      <>
-        Which direction is "good". Used to colour result rows and trigger guardrail alerts. Defaults
-        to <code>up</code>.
-      </>
-    }
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    name: {
+      type: "string",
+      required: true,
+      description: "Stable identifier. Used in result rows and the CLI.",
+    },
+    type: {
+      type: '"conversion" | "count" | "sum" | "mean" | "ratio"',
+      required: true,
+      description: "Aggregation function applied per user.",
+    },
+    event: {
+      type: "string",
+      required: true,
+      description: (
+        <>
+          Event name to aggregate. For <code>ratio</code>, use <code>numerator_event</code> +{" "}
+          <code>denominator_event</code> instead.
+        </>
+      ),
+    },
+    property: {
+      type: "string",
+      description: (
+        <>
+          Numeric property on the event to aggregate. Required for <code>sum</code> and{" "}
+          <code>mean</code>.
+        </>
+      ),
+    },
+    filter: {
+      type: "Rule[]",
+      description:
+        "Same shape as a feature flag rule. Only events matching all rules are aggregated.",
+    },
+    winsorise: {
+      type: '"p95" | "p99" | "p99.9"',
+      description: (
+        <>
+          Percentile clip for <code>sum</code>/<code>mean</code>. Default <code>p99</code>.
+        </>
+      ),
+    },
+    cap: {
+      type: "number",
+      description: "Absolute clip. Mutually exclusive with winsorise.",
+    },
+    zero_handling: {
+      type: '"include" | "drop"',
+      description: (
+        <>
+          How to count exposed users with no matching event. Default <code>include</code> (treats
+          them as 0).
+        </>
+      ),
+    },
+    direction: {
+      type: '"up" | "down"',
+      description: (
+        <>
+          Which direction is "good". Used to colour result rows and trigger guardrail alerts.
+          Defaults to <code>up</code>.
+        </>
+      ),
+    },
+  }}
+/>
 
 ## Where to next
 

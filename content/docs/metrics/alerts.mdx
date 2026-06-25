@@ -112,56 +112,49 @@ shipeasy alert-rules list
 
 ## The rule fields
 
-<ApiTable>
-  <ApiRow
-    name="name"
-    type="string"
-    required
-    desc="Human label (1–120 chars), shown on the rule and on every alert it raises."
-  />
-  <ApiRow
-    name="metric"
-    type="metric id or name"
-    required
-    desc="The metric to watch. Immutable once set — to point a rule at a different metric, delete it and create a new one."
-  />
-  <ApiRow
-    name="comparator"
-    type='"gt" | "gte" | "lt" | "lte"'
-    required
-    desc="How the value is compared to the threshold: > ≥ < ≤."
-  />
-  <ApiRow
-    name="threshold"
-    type="number"
-    required
-    desc="The line the metric value is compared against."
-  />
-  <ApiRow
-    name="window"
-    type="integer (hours)"
-    optional
-    desc="Lookback window in whole hours, 1–720 (30 days). Defaults to 24."
-  />
-  <ApiRow
-    name="severity"
-    type='"danger" | "warn" | "info"'
-    optional
-    desc="Severity of the raised alert. Defaults to warn."
-  />
-  <ApiRow
-    name="enabled"
-    type="boolean"
-    optional
-    desc="Whether the cron evaluates the rule. Defaults to true; pass --disabled to create it dormant."
-  />
-  <ApiRow
-    name="notify"
-    type="{ slackChannel?, email? }"
-    optional
-    desc="Where this rule's alert is delivered, overriding the project default — a Slack channel (requires a connected Slack connector) and/or an email address. Omit to inherit the project default."
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    name: {
+      type: "string",
+      required: true,
+      description: "Human label (1–120 chars), shown on the rule and on every alert it raises.",
+    },
+    metric: {
+      type: "metric id or name",
+      required: true,
+      description:
+        "The metric to watch. Immutable once set — to point a rule at a different metric, delete it and create a new one.",
+    },
+    comparator: {
+      type: '"gt" | "gte" | "lt" | "lte"',
+      required: true,
+      description: "How the value is compared to the threshold: > ≥ < ≤.",
+    },
+    threshold: {
+      type: "number",
+      required: true,
+      description: "The line the metric value is compared against.",
+    },
+    window: {
+      type: "integer (hours)",
+      description: "Lookback window in whole hours, 1–720 (30 days). Defaults to 24.",
+    },
+    severity: {
+      type: '"danger" | "warn" | "info"',
+      description: "Severity of the raised alert. Defaults to warn.",
+    },
+    enabled: {
+      type: "boolean",
+      description:
+        "Whether the cron evaluates the rule. Defaults to true; pass --disabled to create it dormant.",
+    },
+    notify: {
+      type: "{ slackChannel?, email? }",
+      description:
+        "Where this rule's alert is delivered, overriding the project default — a Slack channel (requires a connected Slack connector) and/or an email address. Omit to inherit the project default.",
+    },
+  }}
+/>
 
 <Callout type="warn">
   **Windows are whole hours.** The minimum is 1 hour and there are no sub-hour windows — a "last 30

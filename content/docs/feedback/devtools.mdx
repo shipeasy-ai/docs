@@ -108,44 +108,39 @@ initDevtools({ accentColor: "var(--brand)" });
 `init()` is framework-agnostic — call it from a `useEffect`, `onMounted`, or a
 plain inline `<script>`. It is idempotent and tears itself down via `destroy()`.
 
-<ApiTable>
-  <ApiRow
-    name="adminUrl"
-    type="string"
-    optional
-    desc="Admin endpoint the overlay talks to. Defaults to the script origin, then window.location.origin. Override for staging or a separate admin deploy."
-  />
-  <ApiRow
-    name="accentColor"
-    type="string"
-    optional
-    desc="Overrides the overlay --accent. Any CSS color or var(…) — pass var(--brand) to inherit the host page's brand."
-  />
-  <ApiRow
-    name="hideAdminLinks"
-    type="boolean"
-    optional
-    desc="Hides every deep link back into the Shipeasy dashboard. For white-labelled embeds. Can also be flipped at runtime by a feature flag."
-  />
-  <ApiRow
-    name="hideRail"
-    type="boolean"
-    optional
-    desc="Always mount expanded; the collapse button tears the overlay down instead of docking to an edge rail. Use when your page owns the open/close button."
-  />
-  <ApiRow
-    name="onClose"
-    type="() => void"
-    optional
-    desc="Called when the user closes the overlay while hideRail is set. Defaults to a full destroy()."
-  />
-  <ApiRow
-    name="seed"
-    type="{ session, project, activePanel }"
-    optional
-    desc="Pre-seed auth and project state — demo mode. See below."
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    adminUrl: {
+      type: "string",
+      description:
+        "Admin endpoint the overlay talks to. Defaults to the script origin, then window.location.origin. Override for staging or a separate admin deploy.",
+    },
+    accentColor: {
+      type: "string",
+      description:
+        "Overrides the overlay --accent. Any CSS color or var(…) — pass var(--brand) to inherit the host page's brand.",
+    },
+    hideAdminLinks: {
+      type: "boolean",
+      description:
+        "Hides every deep link back into the Shipeasy dashboard. For white-labelled embeds. Can also be flipped at runtime by a feature flag.",
+    },
+    hideRail: {
+      type: "boolean",
+      description:
+        "Always mount expanded; the collapse button tears the overlay down instead of docking to an edge rail. Use when your page owns the open/close button.",
+    },
+    onClose: {
+      type: "() => void",
+      description:
+        "Called when the user closes the overlay while hideRail is set. Defaults to a full destroy().",
+    },
+    seed: {
+      type: "{ session, project, activePanel }",
+      description: "Pre-seed auth and project state — demo mode. See below.",
+    },
+  }}
+/>
 
 ## Signing in
 

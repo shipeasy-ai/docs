@@ -123,48 +123,48 @@ The same worker also handles the CLI device-auth flow and runs the cron + queue 
 
 ### Shared state [#shared-state]
 
-<ApiTable>
-  <ApiRow
-    name="Database (SQLite)"
-    required
-    type="row store"
-    desc={
-      <>
-        Source of truth — feature flags, configs, experiments, profiles, keys, exposures, daily
-        results. Project-scoped on every query.
-      </>
-    }
-  />
-  <ApiRow
-    name="KV"
-    required
-    type="read cache"
-    desc={
-      <>
-        Two blobs per project: <code>:flags</code> (feature flags + configs) and{" "}
-        <code>:experiments</code> (universes + experiments). Plus per-profile chunks for i18n
-        labels.
-      </>
-    }
-  />
-  <ApiRow
-    name="Events store"
-    required
-    type="event store"
-    desc={<>Append-only telemetry. Written from the worker only, never from the admin app.</>}
-  />
-  <ApiRow
-    name="Queues"
-    required
-    type="async pipeline"
-    desc={
-      <>
-        The cron enqueues one message per project. The consumer runs analysis and writes results
-        back to the database.
-      </>
-    }
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    "Database (SQLite)": {
+      type: "row store",
+      required: true,
+      description: (
+        <>
+          Source of truth — feature flags, configs, experiments, profiles, keys, exposures, daily
+          results. Project-scoped on every query.
+        </>
+      ),
+    },
+    KV: {
+      type: "read cache",
+      required: true,
+      description: (
+        <>
+          Two blobs per project: <code>:flags</code> (feature flags + configs) and{" "}
+          <code>:experiments</code> (universes + experiments). Plus per-profile chunks for i18n
+          labels.
+        </>
+      ),
+    },
+    "Events store": {
+      type: "event store",
+      required: true,
+      description: (
+        <>Append-only telemetry. Written from the worker only, never from the admin app.</>
+      ),
+    },
+    Queues: {
+      type: "async pipeline",
+      required: true,
+      description: (
+        <>
+          The cron enqueues one message per project. The consumer runs analysis and writes results
+          back to the database.
+        </>
+      ),
+    },
+  }}
+/>
 
 ## The lifecycle of a write
 
@@ -267,30 +267,30 @@ There is no per-evaluation network call, no rate limit on `getFlag()`, and no as
 
 `@shipeasy/sdk` ships **server** and **browser** builds in the same npm package, picked by your bundler via conditional exports (`node` → `dist/server`, `browser` → `dist/client`). Both share the same evaluation core, but differ in their environment assumptions:
 
-<ApiTable>
-  <ApiRow
-    name="Server build"
-    required
-    type="@shipeasy/sdk/server"
-    desc={
-      <>
-        For Node, Workers, Bun, Deno, RSC. Polls in the background. Bind a `Client` to the user,
-        then read with no per-call user argument.
-      </>
-    }
-  />
-  <ApiRow
-    name="Client build"
-    required
-    type="@shipeasy/sdk/client"
-    desc={
-      <>
-        For browsers. Manages an <code>anonymous_id</code> cookie. Identifies once, reuses the user.
-        Ships a devtools overlay.
-      </>
-    }
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    "Server build": {
+      type: "@shipeasy/sdk/server",
+      required: true,
+      description: (
+        <>
+          For Node, Workers, Bun, Deno, RSC. Polls in the background. Bind a `Client` to the user,
+          then read with no per-call user argument.
+        </>
+      ),
+    },
+    "Client build": {
+      type: "@shipeasy/sdk/client",
+      required: true,
+      description: (
+        <>
+          For browsers. Manages an <code>anonymous_id</code> cookie. Identifies once, reuses the
+          user. Ships a devtools overlay.
+        </>
+      ),
+    },
+  }}
+/>
 
 For the native server SDKs (Go, Python, Ruby, Java, Kotlin, PHP, Swift) the evaluation model is identical — same blob, same deterministic bucketing. See the [SDKs](/sdks) reference.
 

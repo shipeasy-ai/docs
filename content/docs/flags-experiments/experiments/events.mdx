@@ -218,41 +218,37 @@ For the daily-aggregation case this almost never matters — `conversion` collap
 
 ## API · `flags.track`
 
-<ApiTable>
-  <ApiRow
-    name="user_id"
-    required
-    type="string"
-    desc={
-      <>
-        Stable user identifier. Or pass <code>anonymous_id</code> from the browser SDK.
-      </>
-    }
-  />
-  <ApiRow
-    name="event"
-    required
-    type="string"
-    desc="Snake_case event name. Avoid `$`-prefixed names — those are reserved."
-  />
-  <ApiRow
-    name="properties"
-    optional
-    type="Record<string, string|number|boolean>"
-    desc="Flat, ≤4 KB serialised."
-  />
-  <ApiRow
-    name="options"
-    optional
-    type="{ timestamp?: number; sample?: number }"
-    desc={
-      <>
-        Override defaults. <code>timestamp</code> for backfill, <code>sample</code> for per-call
-        sampling.
-      </>
-    }
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    user_id: {
+      type: "string",
+      required: true,
+      description: (
+        <>
+          Stable user identifier. Or pass <code>anonymous_id</code> from the browser SDK.
+        </>
+      ),
+    },
+    event: {
+      type: "string",
+      required: true,
+      description: "Snake_case event name. Avoid `$`-prefixed names — those are reserved.",
+    },
+    properties: {
+      type: "Record<string, string|number|boolean>",
+      description: "Flat, ≤4 KB serialised.",
+    },
+    options: {
+      type: "{ timestamp?: number; sample?: number }",
+      description: (
+        <>
+          Override defaults. <code>timestamp</code> for backfill, <code>sample</code> for per-call
+          sampling.
+        </>
+      ),
+    },
+  }}
+/>
 
 <ConvertCTA
   eyebrow="NEXT"

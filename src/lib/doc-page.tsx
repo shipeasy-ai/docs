@@ -26,11 +26,10 @@ import {
   SlackFeedbackScene,
   SlackNotifyScene,
 } from "@/components/doc-scenes";
+import { TypeTable } from "fumadocs-ui/components/type-table";
 import { ApiList, ApiProvider } from "@/components/api-list";
 import { ApiDocsPage } from "@/components/api-docs-page";
 import {
-  ApiRow,
-  ApiTable,
   Callout,
   Card,
   CardGrid,
@@ -53,6 +52,8 @@ import {
   Terminal,
   Tile,
   TileGrid,
+  ToolRow,
+  ToolTable,
 } from "@/components/mdx";
 
 type Page = InferPageType<typeof import("@/lib/source").source>;
@@ -101,8 +102,6 @@ const components = {
   AlertChartLive,
   APIPage,
   ApiList,
-  ApiRow,
-  ApiTable,
   AssistantCardScene,
   AssistantChooserScene,
   AssistantPlanScene,
@@ -142,6 +141,9 @@ const components = {
   Terminal,
   Tile,
   TileGrid,
+  ToolRow,
+  ToolTable,
+  TypeTable,
 };
 
 // Renders a doc page for the given slug (empty array = the home hub at "/").

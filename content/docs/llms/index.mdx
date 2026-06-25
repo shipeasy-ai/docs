@@ -135,10 +135,9 @@ Shipeasy ships every product behind a typed **MCP server** (`shipeasy-mcp`). The
 
 The `shipeasy-mcp` binary advertises a typed tool surface grouped by product. Every guide on this site is a recipe for chaining these tools:
 
-<ApiTable>
-  <ApiRow
+<ToolTable>
+  <ToolRow
     name="auth_check"
-    type="tool"
     desc={
       <>
         Returns <code>{`{ authenticated: boolean, user, project }`}</code>. First call in every
@@ -147,14 +146,12 @@ The `shipeasy-mcp` binary advertises a typed tool surface grouped by product. Ev
       </>
     }
   />
-  <ApiRow
+  <ToolRow
     name="auth_login / auth_logout"
-    type="tool"
     desc="Wrap the device-code flow. Login opens a browser; the human clicks once. The agent waits for the tool to return."
   />
-  <ApiRow
+  <ToolRow
     name="detect_project"
-    type="tool"
     desc={
       <>
         Inspects the working directory and returns <code>frameworks</code>,{" "}
@@ -163,9 +160,8 @@ The `shipeasy-mcp` binary advertises a typed tool surface grouped by product. Ev
       </>
     }
   />
-  <ApiRow
+  <ToolRow
     name="list_resources / get_resource"
-    type="tool"
     desc={
       <>
         Read-only views into the project — list <code>profiles</code>, <code>keys</code>,{" "}
@@ -174,9 +170,8 @@ The `shipeasy-mcp` binary advertises a typed tool surface grouped by product. Ev
       </>
     }
   />
-  <ApiRow
+  <ToolRow
     name="i18n_*"
-    type="11 tools"
     desc={
       <>
         Polylang surface — <code>install_loader</code>, <code>create_profile</code>,{" "}
@@ -186,9 +181,8 @@ The `shipeasy-mcp` binary advertises a typed tool surface grouped by product. Ev
       </>
     }
   />
-  <ApiRow
+  <ToolRow
     name="exp_*"
-    type="6 tools"
     desc={
       <>
         Configs / experiments surface — <code>create_gate</code>, <code>create_config</code>,{" "}
@@ -197,12 +191,11 @@ The `shipeasy-mcp` binary advertises a typed tool surface grouped by product. Ev
       </>
     }
   />
-  <ApiRow
+  <ToolRow
     name="get_sdk_snippet"
-    type="tool"
     desc="Returns ready-to-paste init code for the detected framework, scoped to the current project's API key."
   />
-</ApiTable>
+</ToolTable>
 
 <Callout type="info" title="No tool runs your shell">
   MCP tools mutate Shipeasy state through the public API. Anything that touches your filesystem (the

@@ -176,42 +176,40 @@ poll resolves, you get `false` (or the bootstrap value when SSR has
 provided one) — never a thrown error. `configure()` is idempotent; call
 it once per cold start.
 
-<ApiTable>
-  <ApiRow
-    name="name"
-    required
-    type="string"
-    desc="Stable identifier — used in the dashboard, the CLI, and as the KV key suffix. kebab-case."
-  />
-  <ApiRow
-    name="ctx"
-    required
-    type="EvalContext"
-    desc={
-      <>
-        Evaluation context. Must contain <code>user_id</code> for deterministic bucketing. Add any
-        attributes used by your targeting rules.
-      </>
-    }
-  />
-  <ApiRow
-    name="defaultValue"
-    optional
-    type="boolean"
-    desc="Returned when the feature flag is missing from the bundle (e.g. SDK not initialised). Defaults to false — fail closed."
-  />
-  <ApiRow
-    name="bucketBy"
-    optional
-    type="string"
-    desc={
-      <>
-        Override the bucketing key for this call. Defaults to <code>user_id</code>. Use{" "}
-        <code>account_id</code> for B2B cohort consistency.
-      </>
-    }
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    name: {
+      type: "string",
+      required: true,
+      description:
+        "Stable identifier — used in the dashboard, the CLI, and as the KV key suffix. kebab-case.",
+    },
+    ctx: {
+      type: "EvalContext",
+      required: true,
+      description: (
+        <>
+          Evaluation context. Must contain <code>user_id</code> for deterministic bucketing. Add any
+          attributes used by your targeting rules.
+        </>
+      ),
+    },
+    defaultValue: {
+      type: "boolean",
+      description:
+        "Returned when the feature flag is missing from the bundle (e.g. SDK not initialised). Defaults to false — fail closed.",
+    },
+    bucketBy: {
+      type: "string",
+      description: (
+        <>
+          Override the bucketing key for this call. Defaults to <code>user_id</code>. Use{" "}
+          <code>account_id</code> for B2B cohort consistency.
+        </>
+      ),
+    },
+  }}
+/>
 
 The return is a plain `boolean`. There is no async, no Promise, no fetch — the bundle is in memory.
 

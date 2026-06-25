@@ -204,61 +204,56 @@ profile is the authoritative configuration surface.
 
 ## Settings reference
 
-<ApiTable>
-  <ApiRow
-    name="source"
-    required
-    type="Locale"
-    desc={
-      <>
-        The language your source code is written in. Usually <code>"en"</code>.
-      </>
-    }
-  />
-  <ApiRow
-    name="targets"
-    required
-    type="Locale[]"
-    desc={
-      <>
-        BCP-47 codes to translate into. Use region tags (<code>pt-BR</code>) when register matters.
-      </>
-    }
-  />
-  <ApiRow
-    name="files"
-    optional
-    type="string[]"
-    desc="Globs to scan for user-facing strings. Defaults to your framework's source dirs."
-  />
-  <ApiRow
-    name="tone"
-    optional
-    type="string"
-    desc="One-line voice guide. Claude reads this every translation. Keep it short — tonal, not exhaustive."
-  />
-  <ApiRow
-    name="glossary"
-    optional
-    type="Record<string,string>"
-    desc={
-      <>
-        Terms to lock or remap. Map a term to itself to mark <em>do-not-translate</em>.
-      </>
-    }
-  />
-  <ApiRow
-    name="provider"
-    optional
-    type="Provider"
-    desc={
-      <>
-        Defaults to hosted. Swap to{" "}
-        <code>{`{ kind: "anthropic", apiKey: env.ANTHROPIC_KEY }`}</code> for BYOK.
-      </>
-    }
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    source: {
+      type: "Locale",
+      required: true,
+      description: (
+        <>
+          The language your source code is written in. Usually <code>"en"</code>.
+        </>
+      ),
+    },
+    targets: {
+      type: "Locale[]",
+      required: true,
+      description: (
+        <>
+          BCP-47 codes to translate into. Use region tags (<code>pt-BR</code>) when register
+          matters.
+        </>
+      ),
+    },
+    files: {
+      type: "string[]",
+      description:
+        "Globs to scan for user-facing strings. Defaults to your framework's source dirs.",
+    },
+    tone: {
+      type: "string",
+      description:
+        "One-line voice guide. Claude reads this every translation. Keep it short — tonal, not exhaustive.",
+    },
+    glossary: {
+      type: "Record<string,string>",
+      description: (
+        <>
+          Terms to lock or remap. Map a term to itself to mark <em>do-not-translate</em>.
+        </>
+      ),
+    },
+    provider: {
+      type: "Provider",
+      description: (
+        <>
+          Defaults to hosted. Swap to{" "}
+          <code>{`{ kind: "anthropic", apiKey: env.ANTHROPIC_KEY }`}</code> for BYOK.
+        </>
+      ),
+    },
+  }}
+/>
 
 ## Use it in your app
 

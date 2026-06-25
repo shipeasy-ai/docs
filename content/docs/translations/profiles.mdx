@@ -203,62 +203,56 @@ at it.
 
 The same operations are available over HTTPS for programmatic use; the CLI is a thin wrapper over these.
 
-<ApiTable>
-  <ApiRow
-    name="POST /translations/profiles"
-    required
-    type="endpoint"
-    desc={
-      <>
-        Create a profile. Body: <code>{`{ name, locale, role? }`}</code>.
-      </>
-    }
-  />
-  <ApiRow
-    name="GET /translations/profiles"
-    required
-    type="endpoint"
-    desc="List profiles for the project. Returns id, name, current version, key/missing/stale counts."
-  />
-  <ApiRow
-    name="GET /translations/profiles/:name"
-    required
-    type="endpoint"
-    desc="Profile detail with current version and loader URL."
-  />
-  <ApiRow
-    name="POST /translations/profiles/:name/publish"
-    required
-    type="endpoint"
-    desc="Publish current draft set. Returns new version id and CDN purge status."
-  />
-  <ApiRow
-    name="POST /translations/profiles/:name/rollback"
-    required
-    type="endpoint"
-    desc={
-      <>
-        Republish a prior version. Body: <code>{`{ version }`}</code>.
-      </>
-    }
-  />
-  <ApiRow
-    name="GET /translations/profiles/:name/versions"
-    optional
-    type="endpoint"
-    desc="List versions kept under the current plan."
-  />
-  <ApiRow
-    name="GET /translations/profiles/:name/diff"
-    optional
-    type="endpoint"
-    desc={
-      <>
-        Diff between two versions. Query: <code>?from=v15&amp;to=v17</code>.
-      </>
-    }
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    "POST /translations/profiles": {
+      type: "endpoint",
+      required: true,
+      description: (
+        <>
+          Create a profile. Body: <code>{`{ name, locale, role? }`}</code>.
+        </>
+      ),
+    },
+    "GET /translations/profiles": {
+      type: "endpoint",
+      required: true,
+      description:
+        "List profiles for the project. Returns id, name, current version, key/missing/stale counts.",
+    },
+    "GET /translations/profiles/:name": {
+      type: "endpoint",
+      required: true,
+      description: "Profile detail with current version and loader URL.",
+    },
+    "POST /translations/profiles/:name/publish": {
+      type: "endpoint",
+      required: true,
+      description: "Publish current draft set. Returns new version id and CDN purge status.",
+    },
+    "POST /translations/profiles/:name/rollback": {
+      type: "endpoint",
+      required: true,
+      description: (
+        <>
+          Republish a prior version. Body: <code>{`{ version }`}</code>.
+        </>
+      ),
+    },
+    "GET /translations/profiles/:name/versions": {
+      type: "endpoint",
+      description: "List versions kept under the current plan.",
+    },
+    "GET /translations/profiles/:name/diff": {
+      type: "endpoint",
+      description: (
+        <>
+          Diff between two versions. Query: <code>?from=v15&amp;to=v17</code>.
+        </>
+      ),
+    },
+  }}
+/>
 
 All endpoints take a personal access token or a CI key. The runtime SDK key cannot create or publish profiles — it is read-only against the loader URL.
 

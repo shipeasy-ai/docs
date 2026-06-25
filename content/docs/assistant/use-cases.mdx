@@ -65,18 +65,18 @@ It queries your flags, configs, and experiments and answers in the chat — list
 
 <AssistantReadScene />
 
-<ApiTable>
-  <ApiRow
-    name="Read mode"
-    type="execute"
-    desc="Queries run immediately and answer in chat — no card, nothing changes."
-  />
-  <ApiRow
-    name="Write mode"
-    type="confirm"
-    desc="Every mutation surfaces as an editable card you approve first."
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    "Read mode": {
+      type: "execute",
+      description: "Queries run immediately and answer in chat — no card, nothing changes.",
+    },
+    "Write mode": {
+      type: "confirm",
+      description: "Every mutation surfaces as an editable card you approve first.",
+    },
+  }}
+/>
 
 This read/write split is the assistant's core safety model: reads are free, writes are always confirmed.
 

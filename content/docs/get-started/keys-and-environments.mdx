@@ -87,23 +87,24 @@ A client key is public, so allowing it to switch environments would let anyone w
 
 Each environment is an isolated slice of your project's rules. A flag at 100% in `staging` can be at 0% in `prod`. Use a **separate key per environment** and let the key carry the scope:
 
-<ApiTable>
-  <ApiRow
-    name="dev"
-    type="env"
-    desc={<>Local development. Often the loosest rollouts — flip things on to see them.</>}
-  />
-  <ApiRow
-    name="staging"
-    type="env"
-    desc={<>Pre-production. Mirror the prod rule shape; ramp ahead of prod to soak changes.</>}
-  />
-  <ApiRow
-    name="prod"
-    type="env"
-    desc={<>Production. The env your real users read; ramp deliberately here.</>}
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    dev: {
+      type: "env",
+      description: <>Local development. Often the loosest rollouts — flip things on to see them.</>,
+    },
+    staging: {
+      type: "env",
+      description: (
+        <>Pre-production. Mirror the prod rule shape; ramp ahead of prod to soak changes.</>
+      ),
+    },
+    prod: {
+      type: "env",
+      description: <>Production. The env your real users read; ramp deliberately here.</>,
+    },
+  }}
+/>
 
 <Callout type="warn" title="One client key per environment — don't share">
   Never reuse a single client key across environments expecting isolation. The key *is* the env
@@ -113,22 +114,24 @@ Each environment is an isolated slice of your project's rules. A flag at 100% in
 
 ## SDK key environment variables
 
-<ApiTable>
-  <ApiRow
-    name="SHIPEASY_SERVER_KEY"
-    type="string"
-    desc={<>Server-side key. Read by the server build. Treat as a secret; never expose it.</>}
-  />
-  <ApiRow
-    name="NEXT_PUBLIC_SHIPEASY_CLIENT_KEY"
-    type="string"
-    desc={
-      <>
-        Client-side key. Safe to expose. Vite: <code>VITE_SHIPEASY_CLIENT_KEY</code>.
-      </>
-    }
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    SHIPEASY_SERVER_KEY: {
+      type: "string",
+      description: (
+        <>Server-side key. Read by the server build. Treat as a secret; never expose it.</>
+      ),
+    },
+    NEXT_PUBLIC_SHIPEASY_CLIENT_KEY: {
+      type: "string",
+      description: (
+        <>
+          Client-side key. Safe to expose. Vite: <code>VITE_SHIPEASY_CLIENT_KEY</code>.
+        </>
+      ),
+    },
+  }}
+/>
 
 Anything passed explicitly to `configure({ ... })` wins over the environment variable.
 

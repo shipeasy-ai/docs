@@ -120,41 +120,40 @@ API tokens skip the device-auth flow entirely. They&apos;re scoped to one projec
 
 ## SDK keys vs API tokens — pick the right one
 
-<ApiTable>
-  <ApiRow
-    name="Server SDK key"
-    required
-    type="server runtime"
-    desc={
-      <>
-        Read-only. Lets the server SDK fetch flag/experiment blobs and ship exposure events. Cannot
-        mutate.
-      </>
-    }
-  />
-  <ApiRow
-    name="Client SDK key"
-    required
-    type="browser runtime"
-    desc={
-      <>
-        Read-only and scoped — exposes only flags/configs marked client-readable.
-        Domain-rate-limited.
-      </>
-    }
-  />
-  <ApiRow
-    name="API token"
-    required
-    type="CLI / CI / programmatic"
-    desc={
-      <>
-        Acts as a user. Read-only or read-write. Use these for CI, scripts, and human terminals (via{" "}
-        <code>shipeasy login</code>).
-      </>
-    }
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    "Server SDK key": {
+      type: "server runtime",
+      required: true,
+      description: (
+        <>
+          Read-only. Lets the server SDK fetch flag/experiment blobs and ship exposure events.
+          Cannot mutate.
+        </>
+      ),
+    },
+    "Client SDK key": {
+      type: "browser runtime",
+      required: true,
+      description: (
+        <>
+          Read-only and scoped — exposes only flags/configs marked client-readable.
+          Domain-rate-limited.
+        </>
+      ),
+    },
+    "API token": {
+      type: "CLI / CI / programmatic",
+      required: true,
+      description: (
+        <>
+          Acts as a user. Read-only or read-write. Use these for CI, scripts, and human terminals
+          (via <code>shipeasy login</code>).
+        </>
+      ),
+    },
+  }}
+/>
 
 A common mistake is to use an API token in the SDK at runtime. Don&apos;t — they&apos;re much more powerful than they need to be, and they don&apos;t enforce per-domain rate limits. Use SDK keys for the SDK, API tokens for everything else.
 

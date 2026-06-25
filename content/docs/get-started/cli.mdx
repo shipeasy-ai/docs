@@ -51,30 +51,28 @@ The CLI doesn't have process-wide global options today — each
 subcommand declares its own flags. Two flags are accepted by nearly
 every write command, though:
 
-<ApiTable>
-  <ApiRow
-    name="--project <id>"
-    optional
-    type="string"
-    desc={
-      <>
-        Override the active project for this call. Wins over <code>SHIPEASY_PROJECT_ID</code>
-        and the <code>.shipeasy</code> file in the cwd.
-      </>
-    }
-  />
-  <ApiRow
-    name="--json"
-    optional
-    type="boolean"
-    desc={
-      <>
-        On read commands, emit machine-readable JSON to stdout. On write commands, emit the
-        created/updated resource as JSON instead of the human-readable confirmation line.
-      </>
-    }
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    "--project <id>": {
+      type: "string",
+      description: (
+        <>
+          Override the active project for this call. Wins over <code>SHIPEASY_PROJECT_ID</code>
+          and the <code>.shipeasy</code> file in the cwd.
+        </>
+      ),
+    },
+    "--json": {
+      type: "boolean",
+      description: (
+        <>
+          On read commands, emit machine-readable JSON to stdout. On write commands, emit the
+          created/updated resource as JSON instead of the human-readable confirmation line.
+        </>
+      ),
+    },
+  }}
+/>
 
 Env scoping is per-subcommand (e.g. `configs draft --env staging`)
 rather than a global `--env` flag.
@@ -259,50 +257,47 @@ shipeasy setup --yes --agents claude,cursor # non-interactive subset
 
 ## Environment variables
 
-<ApiTable>
-  <ApiRow
-    name="SHIPEASY_CLI_TOKEN"
-    optional
-    type="string"
-    desc={
-      <>
-        Long-lived admin token used in CI. Bypasses interactive <code>shipeasy login</code>.
-      </>
-    }
-  />
-  <ApiRow
-    name="SHIPEASY_API_BASE_URL"
-    optional
-    type="string"
-    desc={
-      <>
-        Override the admin API base URL (default <code>https://shipeasy.ai</code>).
-      </>
-    }
-  />
-  <ApiRow
-    name="SHIPEASY_APP_BASE_URL"
-    optional
-    type="string"
-    desc={
-      <>
-        Override the Shipeasy dashboard base URL the CLI links to from its device-auth output
-        (default <code>https://shipeasy.ai</code>).
-      </>
-    }
-  />
-  <ApiRow
-    name="SHIPEASY_PROJECT_ID"
-    optional
-    type="string"
-    desc={
-      <>
-        Default project id when no <code>--project</code> flag is passed.
-      </>
-    }
-  />
-  <ApiRow name="NO_COLOR" optional type="any" desc={<>Disable ANSI colour output.</>} />
-</ApiTable>
+<TypeTable
+  type={{
+    SHIPEASY_CLI_TOKEN: {
+      type: "string",
+      description: (
+        <>
+          Long-lived admin token used in CI. Bypasses interactive <code>shipeasy login</code>.
+        </>
+      ),
+    },
+    SHIPEASY_API_BASE_URL: {
+      type: "string",
+      description: (
+        <>
+          Override the admin API base URL (default <code>https://shipeasy.ai</code>).
+        </>
+      ),
+    },
+    SHIPEASY_APP_BASE_URL: {
+      type: "string",
+      description: (
+        <>
+          Override the Shipeasy dashboard base URL the CLI links to from its device-auth output
+          (default <code>https://shipeasy.ai</code>).
+        </>
+      ),
+    },
+    SHIPEASY_PROJECT_ID: {
+      type: "string",
+      description: (
+        <>
+          Default project id when no <code>--project</code> flag is passed.
+        </>
+      ),
+    },
+    NO_COLOR: {
+      type: "any",
+      description: <>Disable ANSI colour output.</>,
+    },
+  }}
+/>
 
 ## Exit codes
 

@@ -67,21 +67,26 @@ On the **browser**, the edge pre-evaluates the gate's enabled/killed state into 
 
 Use plain `getFlag` everywhere else — it's the same evaluation with the reason discarded.
 
-<ApiTable>
-  <ApiRow name="name" required type="string" desc="The gate name." />
-  <ApiRow
-    name="user"
-    type="User"
-    desc={
-      <>
-        Only on the low-level <code>Engine</code> form (<code>getFlagDetail(name, user)</code>).
-        Evaluation context — include <code>user_id</code> for deterministic bucketing plus any
-        attributes your rules target. The bound <code>Client</code> omits this (the user is already
-        bound).
-      </>
-    }
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    name: {
+      type: "string",
+      required: true,
+      description: "The gate name.",
+    },
+    user: {
+      type: "User",
+      description: (
+        <>
+          Only on the low-level <code>Engine</code> form (<code>getFlagDetail(name, user)</code>).
+          Evaluation context — include <code>user_id</code> for deterministic bucketing plus any
+          attributes your rules target. The bound <code>Client</code> omits this (the user is
+          already bound).
+        </>
+      ),
+    },
+  }}
+/>
 
 <SeeAlso
   links={[

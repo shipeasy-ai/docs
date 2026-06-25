@@ -252,48 +252,42 @@ If you have an in-house or contracted human translation team, you can still use 
 
 ## API
 
-<ApiTable>
-  <ApiRow
-    name="POST /translations/translate"
-    required
-    type="endpoint"
-    desc={
-      <>
-        Start a translation job. Body:{" "}
-        <code>{`{ profile, mode, chunk?, keys?, model?, reflow? }`}</code>. Returns{" "}
-        <code>job_id</code>.
-      </>
-    }
-  />
-  <ApiRow
-    name="GET /translations/translate/jobs/:id"
-    required
-    type="endpoint"
-    desc="Job status: queued, running, completed, failed. Includes counts and cost."
-  />
-  <ApiRow
-    name="GET /translations/translate/jobs/:id/events"
-    optional
-    type="endpoint"
-    desc="SSE stream of per-key progress events."
-  />
-  <ApiRow
-    name="POST /translations/translate/jobs/:id/cancel"
-    optional
-    type="endpoint"
-    desc="Cancel a running job. Already-translated keys remain in the draft."
-  />
-  <ApiRow
-    name="GET /translations/translate/cost-estimate"
-    optional
-    type="endpoint"
-    desc={
-      <>
-        Dry-run cost estimate. Query: <code>?profile=fr&amp;model=claude-sonnet-4-6</code>.
-      </>
-    }
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    "POST /translations/translate": {
+      type: "endpoint",
+      required: true,
+      description: (
+        <>
+          Start a translation job. Body:{" "}
+          <code>{`{ profile, mode, chunk?, keys?, model?, reflow? }`}</code>. Returns{" "}
+          <code>job_id</code>.
+        </>
+      ),
+    },
+    "GET /translations/translate/jobs/:id": {
+      type: "endpoint",
+      required: true,
+      description: "Job status: queued, running, completed, failed. Includes counts and cost.",
+    },
+    "GET /translations/translate/jobs/:id/events": {
+      type: "endpoint",
+      description: "SSE stream of per-key progress events.",
+    },
+    "POST /translations/translate/jobs/:id/cancel": {
+      type: "endpoint",
+      description: "Cancel a running job. Already-translated keys remain in the draft.",
+    },
+    "GET /translations/translate/cost-estimate": {
+      type: "endpoint",
+      description: (
+        <>
+          Dry-run cost estimate. Query: <code>?profile=fr&amp;model=claude-sonnet-4-6</code>.
+        </>
+      ),
+    },
+  }}
+/>
 
 <ConvertCTA
   eyebrow="THAT'S IT"

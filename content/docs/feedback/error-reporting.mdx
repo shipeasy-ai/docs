@@ -132,44 +132,39 @@ tail attaches local debug context (kept on the mark, never sent).
 
 ## What lands where
 
-<ApiTable>
-  <ApiRow
-    name="see(error)"
-    type="Error"
-    required
-    desc="The caught exception. Stack and error type are preserved and fingerprinted."
-  />
-  <ApiRow
-    name=".causes_the(subject)"
-    type="string"
-    required
-    desc="The affected feature, as a bare noun phrase. Part of the fingerprint."
-  />
-  <ApiRow
-    name=".to(outcome)"
-    type="string"
-    required
-    desc="The degraded behavior, as a low-cardinality class. Part of the fingerprint."
-  />
-  <ApiRow
-    name=".extras({…})"
-    type="Record<string, string | number | boolean>"
-    optional
-    desc="Debugging context. Merges across calls. Strings clamp to 200 chars, max 20 keys."
-  />
-  <ApiRow
-    name="see.Violation(name)"
-    type="string"
-    optional
-    desc="Report a non-exception problem. name is the stable fingerprint key."
-  />
-  <ApiRow
-    name="see.ControlFlowException(e).because(reason)"
-    type="(unknown) → chain"
-    optional
-    desc="Mark an expected throw so auto-capture skips it. reason must start with 'because'. Optional .extras({…}) tail for local debug context (never sent)."
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    "see(error)": {
+      type: "Error",
+      required: true,
+      description: "The caught exception. Stack and error type are preserved and fingerprinted.",
+    },
+    ".causes_the(subject)": {
+      type: "string",
+      required: true,
+      description: "The affected feature, as a bare noun phrase. Part of the fingerprint.",
+    },
+    ".to(outcome)": {
+      type: "string",
+      required: true,
+      description: "The degraded behavior, as a low-cardinality class. Part of the fingerprint.",
+    },
+    ".extras({…})": {
+      type: "Record<string, string | number | boolean>",
+      description:
+        "Debugging context. Merges across calls. Strings clamp to 200 chars, max 20 keys.",
+    },
+    "see.Violation(name)": {
+      type: "string",
+      description: "Report a non-exception problem. name is the stable fingerprint key.",
+    },
+    "see.ControlFlowException(e).because(reason)": {
+      type: "(unknown) → chain",
+      description:
+        "Mark an expected throw so auto-capture skips it. reason must start with 'because'. Optional .extras({…}) tail for local debug context (never sent).",
+    },
+  }}
+/>
 
 ## From see() to a ticket
 

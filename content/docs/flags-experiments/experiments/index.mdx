@@ -215,32 +215,31 @@ don't re-log — exposures are deduplicated.
 
 The user is bound on the `Client` (`new Client(user)`); `getExperiment` itself takes only the name and default params.
 
-<ApiTable>
-  <ApiRow
-    name="name"
-    required
-    type="string"
-    desc="The experiment name. Stable identifier, used in URLs and result rows."
-  />
-  <ApiRow
-    name="user (on the Client)"
-    required
-    type="EvalContext"
-    desc={
-      <>
-        Bound when you construct the client: <code>new Client(user)</code>. An object with at least{" "}
-        <code>user_id</code>. Add attributes used by the targeting feature flag (<code>plan</code>,{" "}
-        <code>country</code>, …).
-      </>
-    }
-  />
-  <ApiRow
-    name="defaultParams"
-    optional
-    type="T"
-    desc="Returned when the experiment is stopped, the user is in the holdout, or assignment fails. Defaults to the control group's params."
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    name: {
+      type: "string",
+      required: true,
+      description: "The experiment name. Stable identifier, used in URLs and result rows.",
+    },
+    "user (on the Client)": {
+      type: "EvalContext",
+      required: true,
+      description: (
+        <>
+          Bound when you construct the client: <code>new Client(user)</code>. An object with at
+          least <code>user_id</code>. Add attributes used by the targeting feature flag (
+          <code>plan</code>, <code>country</code>, …).
+        </>
+      ),
+    },
+    defaultParams: {
+      type: "T",
+      description:
+        "Returned when the experiment is stopped, the user is in the holdout, or assignment fails. Defaults to the control group's params.",
+    },
+  }}
+/>
 
 The return shape:
 

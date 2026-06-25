@@ -17,49 +17,46 @@ with no confirmation — they only ever look, never change. Each one streams to 
 
 <AssistantReadScene />
 
-<ApiTable>
-  <ApiRow
-    name="search_docs"
-    type="read"
-    desc={
-      <>
-        Search the official Shipeasy docs and return the most relevant sections, each with a
-        canonical <code>docs.shipeasy.ai</code> URL. Called <strong>before</strong> answering any
-        how-it-works / how-to question, then cited in a <code>Sources:</code> line.
-      </>
-    }
-  />
-  <ApiRow
-    name="list_resources"
-    type="read"
-    desc={
-      <>
-        List the project's gates, configs, experiments, universes, and kill switches (filterable by
-        kind).
-      </>
-    }
-  />
-  <ApiRow
-    name="get_resource"
-    type="read"
-    desc={<>Fetch one config, experiment, or kill switch by name or id.</>}
-  />
-  <ApiRow
-    name="exp_experiment_status"
-    type="read"
-    desc={<>Enrolment + significance state for one experiment.</>}
-  />
-  <ApiRow
-    name="fetch_site_page"
-    type="read"
-    desc={
-      <>
-        Fetch a page from the project's configured website and return its readable text. Only the
-        configured domain may be fetched; unavailable when no domain is set.
-      </>
-    }
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    search_docs: {
+      type: "read",
+      description: (
+        <>
+          Search the official Shipeasy docs and return the most relevant sections, each with a
+          canonical <code>docs.shipeasy.ai</code> URL. Called <strong>before</strong> answering any
+          how-it-works / how-to question, then cited in a <code>Sources:</code> line.
+        </>
+      ),
+    },
+    list_resources: {
+      type: "read",
+      description: (
+        <>
+          List the project's gates, configs, experiments, universes, and kill switches (filterable
+          by kind).
+        </>
+      ),
+    },
+    get_resource: {
+      type: "read",
+      description: <>Fetch one config, experiment, or kill switch by name or id.</>,
+    },
+    exp_experiment_status: {
+      type: "read",
+      description: <>Enrolment + significance state for one experiment.</>,
+    },
+    fetch_site_page: {
+      type: "read",
+      description: (
+        <>
+          Fetch a page from the project's configured website and return its readable text. Only the
+          configured domain may be fetched; unavailable when no domain is set.
+        </>
+      ),
+    },
+  }}
+/>
 
 <Callout type="info" title="Doc-grounded, not from memory">
   The assistant doesn't answer product questions from its training data. It calls{" "}

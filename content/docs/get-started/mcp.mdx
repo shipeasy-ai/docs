@@ -98,181 +98,131 @@ That&apos;s why the MCP server is the recommended surface for any AI-driven setu
 
 The MCP server exposes ~30 tools, grouped by area. The agent sees them as `mcp__shipeasy__<name>`.
 
+Every row is a tool the agent can call as `mcp__shipeasy__<name>` — these tables just name each one and say what it does.
+
 ### Auth & project
 
-<ApiTable>
-  <ApiRow
+<ToolTable>
+  <ToolRow
     name="auth_check"
-    required
-    type="tool"
     desc={
       <>
         Returns <code>{`{ authenticated, project_id, user_email }`}</code>.
       </>
     }
   />
-  <ApiRow
+  <ToolRow
     name="auth_login"
-    required
-    type="tool"
     desc={
       <>
         Triggers <code>shipeasy login</code> — asks the human to click.
       </>
     }
   />
-  <ApiRow name="auth_logout" required type="tool" desc={<>Wipes credentials.</>} />
-  <ApiRow
+  <ToolRow name="auth_logout" desc={<>Wipes credentials.</>} />
+  <ToolRow
     name="detect_project"
-    required
-    type="tool"
     desc={<>Detects framework, source root, loader script presence, SDK install status.</>}
   />
-</ApiTable>
+</ToolTable>
 
 ### Inspection
 
-<ApiTable>
-  <ApiRow
+<ToolTable>
+  <ToolRow
     name="list_resources"
-    required
-    type="tool"
     desc={<>List flags, configs, experiments, profiles, keys — everything in the project.</>}
   />
-  <ApiRow name="get_resource" required type="tool" desc={<>Fetch a single resource by name.</>} />
-  <ApiRow
+  <ToolRow name="get_resource" desc={<>Fetch a single resource by name.</>} />
+  <ToolRow
     name="get_sdk_snippet"
-    required
-    type="tool"
     desc={<>Returns a copy-pasteable SDK init snippet for the detected framework.</>}
   />
-</ApiTable>
+</ToolTable>
 
 ### Flags & experiments
 
-<ApiTable>
-  <ApiRow name="exp_create_gate" required type="tool" desc={<>Create a feature flag.</>} />
-  <ApiRow name="exp_create_config" required type="tool" desc={<>Create a dynamic config.</>} />
-  <ApiRow
+<ToolTable>
+  <ToolRow name="exp_create_gate" desc={<>Create a feature flag.</>} />
+  <ToolRow name="exp_create_config" desc={<>Create a dynamic config.</>} />
+  <ToolRow
     name="exp_create_experiment"
-    required
-    type="tool"
     desc={<>Create an experiment with a universe and group spec.</>}
   />
-  <ApiRow
+  <ToolRow
     name="exp_start_experiment"
-    required
-    type="tool"
     desc={
       <>
         Move from <code>draft</code> → <code>running</code>.
       </>
     }
   />
-  <ApiRow
+  <ToolRow
     name="exp_stop_experiment"
-    required
-    type="tool"
     desc={
       <>
         Move to <code>stopped</code>.
       </>
     }
   />
-  <ApiRow
+  <ToolRow
     name="exp_experiment_status"
-    required
-    type="tool"
     desc={<>Latest results — lift, p-value, CI per metric per group.</>}
   />
-</ApiTable>
+</ToolTable>
 
 ### i18n (Polylang)
 
-<ApiTable>
-  <ApiRow
+<ToolTable>
+  <ToolRow
     name="i18n_discover_site"
-    required
-    type="tool"
     desc={
       <>
         Read the <code>/.well-known/i18n.json</code> manifest from a deployed site.
       </>
     }
   />
-  <ApiRow
+  <ToolRow
     name="i18n_install_loader"
-    required
-    type="tool"
     desc={
       <>
         Generate the loader <code>{"<script>"}</code> tag and create a client key.
       </>
     }
   />
-  <ApiRow
-    name="i18n_scan_code"
-    required
-    type="tool"
-    desc={<>Find candidate translatable strings in source.</>}
-  />
-  <ApiRow
+  <ToolRow name="i18n_scan_code" desc={<>Find candidate translatable strings in source.</>} />
+  <ToolRow
     name="i18n_codemod_preview"
-    required
-    type="tool"
     desc={<>Dry-run the JSX literal codemod and show diffs.</>}
   />
-  <ApiRow
+  <ToolRow
     name="i18n_codemod_apply"
-    required
-    type="tool"
     desc={
       <>
         Apply the codemod — wraps JSX literals with <code>t()</code>.
       </>
     }
   />
-  <ApiRow
+  <ToolRow
     name="i18n_create_profile"
-    required
-    type="tool"
     desc={
       <>
         Create a <code>locale:env</code> profile.
       </>
     }
   />
-  <ApiRow
-    name="i18n_create_key"
-    required
-    type="tool"
-    desc={<>Create a single key on a profile.</>}
-  />
-  <ApiRow
-    name="i18n_push_keys"
-    required
-    type="tool"
-    desc={<>Sync codemod-discovered keys to the dashboard.</>}
-  />
-  <ApiRow
+  <ToolRow name="i18n_create_key" desc={<>Create a single key on a profile.</>} />
+  <ToolRow name="i18n_push_keys" desc={<>Sync codemod-discovered keys to the dashboard.</>} />
+  <ToolRow
     name="i18n_translate_draft"
-    required
-    type="tool"
     desc={<>Generate a translation draft via the configured AI provider.</>}
   />
-  <ApiRow
+  <ToolRow
     name="i18n_validate_keys"
-    required
-    type="tool"
     desc={<>Fail if any code reference is missing from a profile.</>}
   />
-  <ApiRow
-    name="i18n_publish_profile"
-    required
-    type="tool"
-    desc={<>Push to KV — live in seconds.</>}
-  />
-</ApiTable>
+  <ToolRow name="i18n_publish_profile" desc={<>Push to KV — live in seconds.</>} />
+</ToolTable>
 
 ## Onboarding prompts
 
@@ -352,13 +302,82 @@ The agent will:
 
 The whole flow takes a few minutes and the only thing you click is the browser confirmation during login. For the canonical step-by-step the agent follows, see [LLM Guides → String Manager](/llms/i18n-strings).
 
-## Auth model
+## Auth model (local server)
 
-The MCP server is launched as a subprocess of your AI assistant. It reads `~/.shipeasy/credentials` on every tool call — the same file the CLI writes. There are three implications worth knowing:
+The `@shipeasy/mcp` server above runs **locally** — launched as a subprocess of your AI assistant over stdio. It reads `~/.shipeasy/credentials` on every tool call — the same file the CLI writes. There are three implications worth knowing:
 
 1. **One login covers everything.** Run `shipeasy login` once on your machine, and every MCP tool in every assistant is authenticated.
 2. **Refresh happens transparently.** If the access token has expired, the MCP server refreshes it before the tool call — same behaviour as the CLI.
 3. **Tokens never appear in MCP config.** Your `mcp.json` only contains the launcher command. Stealing the config gives an attacker nothing.
+
+## Hosted MCP server
+
+We also run a **hosted, remote** MCP server on Cloudflare — no `npx`, no local subprocess, no credentials file. It speaks JSON-RPC over Streamable HTTP at:
+
+```
+https://slack.shipeasy.ai/mcp
+```
+
+This is the server behind Shipeasy in **Slack** — it powers Slack's built-in AI assistant ("MCP Server Connection") and the `@Shipeasy` bot. It exposes the flags / configs / kill-switch / experiment tools (`exp_*`), scoped to the Shipeasy project your Slack workspace is connected to.
+
+<Callout
+  type="info"
+  title="It authenticates you by your Slack identity — there is no token to paste"
+>
+  The hosted server is designed for an MCP client that can vouch for who you are (Slack does this).
+  You don&apos;t put a key in any config; the client injects your verified identity and the server
+  maps it to your Shipeasy account.
+</Callout>
+
+### How auth works
+
+Discovery is open; **acting** is gated. `initialize`, `ping`, and `tools/list` answer without auth so a client can connect and enumerate tools. Every `tools/call` runs through the full chain:
+
+<ToolTable>
+  <ToolRow
+    name="1 · Signed request"
+    desc={
+      <>
+        The request must carry a valid Slack v0 signature (<code>X-Slack-Signature</code> +{" "}
+        <code>X-Slack-Request-Timestamp</code>), verified against the app&apos;s signing secret.
+        Unsigned tool calls are rejected.
+      </>
+    }
+  />
+  <ToolRow
+    name="2 · Workspace → project"
+    desc={
+      <>
+        Your Slack <code>team_id</code> (from <code>_meta.slack</code>) is resolved to the Shipeasy
+        project via the workspace&apos;s <strong>Slack connector</strong>. No connector → no access.
+      </>
+    }
+  />
+  <ToolRow
+    name="3 · You → member"
+    desc={
+      <>
+        Your Slack <code>user_id</code> is resolved to your email (Slack{" "}
+        <code>users:read.email</code>
+        ), and that email must be a <strong>member of the project</strong>. Non-members get a clear
+        &ldquo;ask an admin to invite you&rdquo; — never silent access.
+      </>
+    }
+  />
+</ToolTable>
+
+Every action then runs **as that verified member** against the admin API, which re-checks membership — so the service can only ever act as someone who is genuinely on the project.
+
+### Connecting to it
+
+You don&apos;t configure this endpoint by hand. Add the Shipeasy app to your Slack workspace and connect the **Slack connector** in the dashboard; Slack then talks to `https://slack.shipeasy.ai/mcp` for you (Slack App → _MCP Server Connection_, auth type _Slack identity_). See the [Slack integration guide](/feedback/devtools) for the workspace setup.
+
+<Callout type="warn" title="This endpoint is not a drop-in for Claude Code / Cursor">
+  The hosted server trusts Slack&apos;s injected identity, so a generic MCP client that can&apos;t
+  present a Slack-signed identity can reach discovery but every `tools/call` will fail the signature
+  gate. For coding assistants, use the local `@shipeasy/mcp` server above — it covers the full
+  ~30-tool surface against your CLI login.
+</Callout>
 
 ## Troubleshooting
 

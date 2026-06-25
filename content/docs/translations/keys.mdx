@@ -22,83 +22,74 @@ Shipeasy Translations's job is to make keys feel invisible: you write English in
 
 ## Schema
 
-<ApiTable>
-  <ApiRow
-    name="key"
-    required
-    type="string"
-    desc={
-      <>
-        Stable identifier. Either explicit (<code>checkout.cta_label</code>) or auto-derived from
-        the source value's hash plus the file path namespace.
-      </>
-    }
-  />
-  <ApiRow
-    name="value"
-    required
-    type="string"
-    desc={
-      <>
-        The string in this profile. Plain text; placeholders use <code>{`{{name}}`}</code> ICU
-        MessageFormat syntax.
-      </>
-    }
-  />
-  <ApiRow
-    name="hash"
-    required
-    type="string"
-    desc={
-      <>
-        SHA-256 of the source value, truncated to 12 chars. Used for change detection — when the
-        English changes, the hash changes, target translations are marked stale.
-      </>
-    }
-  />
-  <ApiRow
-    name="chunk"
-    optional
-    type="string"
-    desc="Grouping for lazy loading by route or feature. One chunk per HTTP fetch."
-  />
-  <ApiRow
-    name="namespace"
-    optional
-    type="string"
-    desc="Auto-derived from file path (e.g. src/checkout/Page.tsx → checkout). Used for sibling-key context in AI translation."
-  />
-  <ApiRow
-    name="description"
-    optional
-    type="string"
-    desc={
-      <>
-        <b>Highly recommended.</b> Free-form notes for translators and the AI. Read on every Claude
-        call.
-      </>
-    }
-  />
-  <ApiRow
-    name="max_length"
-    optional
-    type="number"
-    desc="Soft limit nudged into the AI prompt. Useful for buttons and table headers."
-  />
-  <ApiRow
-    name="placeholders"
-    optional
-    type="string[]"
-    desc="List of allowed placeholder names. Validated on translation upload."
-  />
-  <ApiRow name="created_at" optional type="datetime" desc="Auto." />
-  <ApiRow
-    name="last_seen_in_code"
-    optional
-    type="datetime"
-    desc="Updated by every code scan. Drives the Unused keys view."
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    key: {
+      type: "string",
+      required: true,
+      description: (
+        <>
+          Stable identifier. Either explicit (<code>checkout.cta_label</code>) or auto-derived from
+          the source value's hash plus the file path namespace.
+        </>
+      ),
+    },
+    value: {
+      type: "string",
+      required: true,
+      description: (
+        <>
+          The string in this profile. Plain text; placeholders use <code>{`{{name}}`}</code> ICU
+          MessageFormat syntax.
+        </>
+      ),
+    },
+    hash: {
+      type: "string",
+      required: true,
+      description: (
+        <>
+          SHA-256 of the source value, truncated to 12 chars. Used for change detection — when the
+          English changes, the hash changes, target translations are marked stale.
+        </>
+      ),
+    },
+    chunk: {
+      type: "string",
+      description: "Grouping for lazy loading by route or feature. One chunk per HTTP fetch.",
+    },
+    namespace: {
+      type: "string",
+      description:
+        "Auto-derived from file path (e.g. src/checkout/Page.tsx → checkout). Used for sibling-key context in AI translation.",
+    },
+    description: {
+      type: "string",
+      description: (
+        <>
+          <b>Highly recommended.</b> Free-form notes for translators and the AI. Read on every
+          Claude call.
+        </>
+      ),
+    },
+    max_length: {
+      type: "number",
+      description: "Soft limit nudged into the AI prompt. Useful for buttons and table headers.",
+    },
+    placeholders: {
+      type: "string[]",
+      description: "List of allowed placeholder names. Validated on translation upload.",
+    },
+    created_at: {
+      type: "datetime",
+      description: "Auto.",
+    },
+    last_seen_in_code: {
+      type: "datetime",
+      description: "Updated by every code scan. Drives the Unused keys view.",
+    },
+  }}
+/>
 
 ## Identity: explicit keys vs hashed keys
 

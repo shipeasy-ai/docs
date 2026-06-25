@@ -75,28 +75,28 @@ Polling — not streaming. There are **no** Server-Sent Events and **no** Durabl
 
 Your rules are served from Cloudflare KV as two separate blobs, fronted by the CDN:
 
-<ApiTable>
-  <ApiRow
-    name=":flags"
-    type="KV blob"
-    desc={
-      <>
-        Gates + dynamic configs. Changes often; served via <code>/sdk/flags</code>. This is what
-        your server SDK polls at the plan interval.
-      </>
-    }
-  />
-  <ApiRow
-    name=":experiments"
-    type="KV blob"
-    desc={
-      <>
-        Universes + experiments. Stable mid-run; served via <code>/sdk/experiments</code> with a
-        longer cache window.
-      </>
-    }
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    ":flags": {
+      type: "KV blob",
+      description: (
+        <>
+          Gates + dynamic configs. Changes often; served via <code>/sdk/flags</code>. This is what
+          your server SDK polls at the plan interval.
+        </>
+      ),
+    },
+    ":experiments": {
+      type: "KV blob",
+      description: (
+        <>
+          Universes + experiments. Stable mid-run; served via <code>/sdk/experiments</code> with a
+          longer cache window.
+        </>
+      ),
+    },
+  }}
+/>
 
 They are split on purpose: a gate change shouldn't invalidate the experiment cache, and vice versa. Browser clients hit `/sdk/evaluate`, where the Worker reads **both** blobs, evaluates server-side, and returns a flat map — so the client never sees raw rules.
 

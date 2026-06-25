@@ -16,23 +16,23 @@ The assistant is metered with **prepaid credits**. Each plan includes an allowan
 
 A credit is consumed per assistant interaction that calls the model. Read-only browsing of your own resources is cheap; longer reasoning, doc search, and multi-step plans cost more. The running balance is shown in the assistant panel and on the billing tab.
 
-<ApiTable>
-  <ApiRow
-    name="Included allowance"
-    type="per plan"
-    desc="Each plan ships with a monthly credit allowance — enough for everyday use."
-  />
-  <ApiRow
-    name="Top-ups"
-    type="prepaid"
-    desc="Buy more credits from the billing tab; they're added to your balance immediately."
-  />
-  <ApiRow
-    name="Balance"
-    type="live"
-    desc="Shown in the assistant panel and the billing tab. Deducted as you go."
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    "Included allowance": {
+      type: "per plan",
+      description: "Each plan ships with a monthly credit allowance — enough for everyday use.",
+    },
+    "Top-ups": {
+      type: "prepaid",
+      description:
+        "Buy more credits from the billing tab; they're added to your balance immediately.",
+    },
+    Balance: {
+      type: "live",
+      description: "Shown in the assistant panel and the billing tab. Deducted as you go.",
+    },
+  }}
+/>
 
 ## Topping up
 

@@ -2180,19 +2180,30 @@ button[aria-label="Open Sidebar"] {
 }
 .se-api-row .name {
   color: var(--se-fg);
+  min-width: 0;
 }
-.se-api-row .name .req {
-  margin-left: 6px;
-  font-size: 9px;
-  color: var(--se-danger);
-  letter-spacing: 0.04em;
+.se-api-row .name .id {
+  overflow-wrap: anywhere;
 }
-.se-api-row .type {
+
+/* 2-column variant for tool / command listings (name → description). */
+.se-tool-table .se-api-row {
+  grid-template-columns: 220px 1fr;
+}
+.se-tool-table .se-api-row .name {
   color: var(--se-accent);
-  font-size: 11.5px;
 }
-.se-api-row .type .opt {
+.se-tool-caption {
+  padding: 10px 14px;
+  font-family: var(--se-sans);
+  font-size: 12px;
   color: var(--se-fg-4);
+  background: var(--se-bg-2);
+}
+@media (max-width: 720px) {
+  .se-tool-table .se-api-row {
+    grid-template-columns: 1fr;
+  }
 }
 .se-api-row .desc {
   font-family: var(--se-sans);

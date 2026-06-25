@@ -235,50 +235,41 @@ export function InstallTabs({
 }
 
 /* ──────────────────────────────────────────────────────────────
-   API reference table.
+   Tool reference table — a 2-column (name → description) listing for
+   MCP tools / CLI commands, where every row is the same kind of thing
+   so a "Type" column would just repeat "tool" and "required" is
+   meaningless. Reuses the API-table shell with a 2-column modifier.
    Use:
-     <ApiTable>
-       <ApiRow name="source" required type="Locale" desc="…" />
-       <ApiRow name="targets" type="Locale[]" desc="…" />
-     </ApiTable>
+     <ToolTable>
+       <ToolRow name="auth_check" desc="Returns the auth + project status." />
+     </ToolTable>
    ────────────────────────────────────────────────────────────── */
-export function ApiTable({ children }: { children: ReactNode }) {
+export function ToolTable({ caption, children }: { caption?: ReactNode; children: ReactNode }) {
   return (
-    <div className="se-api-table not-prose">
+    <div className="se-api-table se-tool-table not-prose">
       <div className="se-api-row head">
-        <div>Field</div>
-        <div>Type</div>
-        <div>Description</div>
+        <div>Tool</div>
+        <div>What it does</div>
       </div>
       {children}
+      {caption ? <div className="se-tool-caption">{caption}</div> : null}
     </div>
   );
 }
 
-export function ApiRow({
+export function ToolRow({
   name,
-  type,
-  required,
-  optional,
   desc,
   children,
 }: {
   name: string;
-  type: string;
-  required?: boolean;
-  optional?: boolean;
   desc?: ReactNode;
   children?: ReactNode;
 }) {
   return (
     <div className="se-api-row">
       <div className="name">
-        {name}
-        {required ? <span className="req">required</span> : null}
-      </div>
-      <div className="type">
-        {type}
-        {optional ? <span className="opt"> ?</span> : null}
+        <span className="id">{name}</span>
       </div>
       <div className="desc">{desc ?? children}</div>
     </div>

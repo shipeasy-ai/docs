@@ -76,12 +76,30 @@ rateLimiter.configure(ent.apiRatePerMin);
 
 Provide a fallback object on every `getConfig` call. If the config is missing or the SDK bundle hasn't loaded yet, you serve the safe Free-tier entitlements rather than crashing or silently granting Enterprise.
 
-<ApiTable>
-  <ApiRow name="seats" required type="number" desc="Max active seats for the tier." />
-  <ApiRow name="apiRatePerMin" required type="number" desc="Per-minute API budget." />
-  <ApiRow name="advancedExports" required type="boolean" desc="Unlocks the exports surface." />
-  <ApiRow name="sso" required type="boolean" desc="Enterprise SSO entitlement." />
-</ApiTable>
+<TypeTable
+  type={{
+    seats: {
+      type: "number",
+      required: true,
+      description: "Max active seats for the tier.",
+    },
+    apiRatePerMin: {
+      type: "number",
+      required: true,
+      description: "Per-minute API budget.",
+    },
+    advancedExports: {
+      type: "boolean",
+      required: true,
+      description: "Unlocks the exports surface.",
+    },
+    sso: {
+      type: "boolean",
+      required: true,
+      description: "Enterprise SSO entitlement.",
+    },
+  }}
+/>
 
 ## Rollout & measurement plan
 

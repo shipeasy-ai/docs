@@ -175,63 +175,56 @@ This is the single best argument for keeping a holdout: it's the only way to det
 
 ## API · `universes.create`
 
-<ApiTable>
-  <ApiRow
-    name="name"
-    required
-    type="string"
-    desc={
-      <>
-        Stable identifier. Used in URLs and result rows. Snake-case or kebab-case, e.g.{" "}
-        <code>checkout</code>.
-      </>
-    }
-  />
-  <ApiRow
-    name="holdout"
-    optional
-    type="number"
-    desc={
-      <>
-        Holdout percentage, <code>0</code>–<code>20</code>. Defaults to <code>0</code>. Bumping
-        later reshuffles bucketing — set it once and leave it.
-      </>
-    }
-  />
-  <ApiRow
-    name="mutex"
-    optional
-    type="boolean"
-    desc={
-      <>
-        If <code>true</code>, at most one running experiment per user in this universe. Defaults to{" "}
-        <code>false</code>.
-      </>
-    }
-  />
-  <ApiRow
-    name="targeting_gate"
-    optional
-    type="string"
-    desc={
-      <>
-        Name of a feature flag that decides eligibility. Users for whom the feature flag returns{" "}
-        <code>false</code> are excluded entirely (no holdout, no experiment, not in analysis).
-      </>
-    }
-  />
-  <ApiRow
-    name="salt"
-    optional
-    type="string"
-    desc={
-      <>
-        Custom hash salt. Defaults to the universe name. Change only when you want to deliberately
-        reshuffle every bucket — irreversible for ongoing analyses.
-      </>
-    }
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    name: {
+      type: "string",
+      required: true,
+      description: (
+        <>
+          Stable identifier. Used in URLs and result rows. Snake-case or kebab-case, e.g.{" "}
+          <code>checkout</code>.
+        </>
+      ),
+    },
+    holdout: {
+      type: "number",
+      description: (
+        <>
+          Holdout percentage, <code>0</code>–<code>20</code>. Defaults to <code>0</code>. Bumping
+          later reshuffles bucketing — set it once and leave it.
+        </>
+      ),
+    },
+    mutex: {
+      type: "boolean",
+      description: (
+        <>
+          If <code>true</code>, at most one running experiment per user in this universe. Defaults
+          to <code>false</code>.
+        </>
+      ),
+    },
+    targeting_gate: {
+      type: "string",
+      description: (
+        <>
+          Name of a feature flag that decides eligibility. Users for whom the feature flag returns{" "}
+          <code>false</code> are excluded entirely (no holdout, no experiment, not in analysis).
+        </>
+      ),
+    },
+    salt: {
+      type: "string",
+      description: (
+        <>
+          Custom hash salt. Defaults to the universe name. Change only when you want to deliberately
+          reshuffle every bucket — irreversible for ongoing analyses.
+        </>
+      ),
+    },
+  }}
+/>
 
 ## Switching a user out of the holdout
 

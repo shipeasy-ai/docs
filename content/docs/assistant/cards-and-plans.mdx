@@ -16,34 +16,35 @@ When the assistant decides a change should happen, it never just does it. It ren
 
 A confirmation card is a form pre-filled with the assistant's proposal. Every write resource has one:
 
-<ApiTable>
-  <ApiRow
-    name="Feature flag"
-    type="card"
-    desc="Name, targeting rules, rollout %, default — edit before you create."
-  />
-  <ApiRow
-    name="Dynamic config"
-    type="card"
-    desc="Key, typed value, targeting. Adjust the value and ship."
-  />
-  <ApiRow
-    name="Kill switch"
-    type="card"
-    desc="Name and default. Confirm to add the break-glass switch."
-  />
-  <ApiRow
-    name="Experiment"
-    type="card"
-    desc="Groups, weights, allocation, success + guardrail metrics."
-  />
-  <ApiRow name="Universe" type="card" desc="Holdout %, mutual-exclusion scope, unit of analysis." />
-  <ApiRow
-    name="Metric / alert rule"
-    type="card"
-    desc="Event, aggregation, threshold, severity — from exp_create_metric and the alert tools."
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    "Feature flag": {
+      type: "card",
+      description: "Name, targeting rules, rollout %, default — edit before you create.",
+    },
+    "Dynamic config": {
+      type: "card",
+      description: "Key, typed value, targeting. Adjust the value and ship.",
+    },
+    "Kill switch": {
+      type: "card",
+      description: "Name and default. Confirm to add the break-glass switch.",
+    },
+    Experiment: {
+      type: "card",
+      description: "Groups, weights, allocation, success + guardrail metrics.",
+    },
+    Universe: {
+      type: "card",
+      description: "Holdout %, mutual-exclusion scope, unit of analysis.",
+    },
+    "Metric / alert rule": {
+      type: "card",
+      description:
+        "Event, aggregation, threshold, severity — from exp_create_metric and the alert tools.",
+    },
+  }}
+/>
 
 The fields are the real resource schema — what you edit in the card is exactly what gets written. Nothing is hidden behind the assistant.
 

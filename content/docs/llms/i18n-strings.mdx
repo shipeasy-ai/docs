@@ -21,104 +21,96 @@ If you&apos;re a human reading this to decide whether to delegate — yes, hand 
 
 Every step below references one of these MCP tools, all under the `mcp__shipeasy__` prefix. If your client doesn&apos;t expose them, the user hasn&apos;t installed the MCP server — see [the LLM index](/llms) for setup.
 
-<ApiTable>
-  <ApiRow
-    name="auth_check"
-    type="() → { authenticated, user?, project? }"
-    desc="Idempotent. Call first, and again after any login."
-  />
-  <ApiRow
-    name="detect_project"
-    type="() → { frameworks, entry_points, shipeasy }"
-    desc={
-      <>
-        Reads the cwd. Skip if the user already declared the framework in <code>CLAUDE.md</code>.
-      </>
-    }
-  />
-  <ApiRow
-    name="i18n_install_loader"
-    required
-    type="{ profile }"
-    desc={
-      <>
-        Returns <code>{`{ data_key, profile, loader_url, script_tag, next_step }`}</code>.
-      </>
-    }
-  />
-  <ApiRow
-    name="i18n_create_profile"
-    required
-    type="{ name, locale, environment }"
-    desc={
-      <>
-        Creates a <code>locale:env</code> profile. Idempotent on <code>name</code>.
-      </>
-    }
-  />
-  <ApiRow
-    name="i18n_scan_code"
-    type="{ paths }"
-    desc="Returns candidate strings without rewriting. Use for non-JSX frameworks."
-  />
-  <ApiRow
-    name="i18n_codemod_preview"
-    required
-    type="{ files, profile }"
-    desc="Returns proposed diffs. Always call before apply."
-  />
-  <ApiRow
-    name="i18n_codemod_apply"
-    required
-    type="{ files, profile, confirm: true }"
-    desc={
-      <>
-        Writes files. Refuses without <code>confirm: true</code>.
-      </>
-    }
-  />
-  <ApiRow
-    name="i18n_push_keys"
-    required
-    type='{ profile, source: "codemod" | "scan" }'
-    desc={
-      <>
-        Returns <code>{`{ pushed_count, skipped_count, failed_keys }`}</code>.
-      </>
-    }
-  />
-  <ApiRow
-    name="i18n_create_key"
-    type="{ profile, key, value, description }"
-    desc="Use to add or refine a description. Same shape as discovered keys."
-  />
-  <ApiRow
-    name="i18n_validate_keys"
-    required
-    type="{ profile, paths }"
-    desc="Cross-checks code references against the profile. Must return clean before publishing."
-  />
-  <ApiRow
-    name="i18n_translate_draft"
-    type="{ profile, source_profile? }"
-    desc="Generates AI translations for a target profile. Lands as a draft, never auto-published."
-  />
-  <ApiRow
-    name="i18n_publish_profile"
-    required
-    type="{ profile }"
-    desc="Promotes the profile to KV + purges CDN. Live worldwide in seconds."
-  />
-  <ApiRow
-    name="i18n_discover_site"
-    type="{ url }"
-    desc={
-      <>
-        Optional. Reads <code>/.well-known/i18n.json</code> from a deployed URL to reconcile state.
-      </>
-    }
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    auth_check: {
+      type: "() → { authenticated, user?, project? }",
+      description: "Idempotent. Call first, and again after any login.",
+    },
+    detect_project: {
+      type: "() → { frameworks, entry_points, shipeasy }",
+      description: (
+        <>
+          Reads the cwd. Skip if the user already declared the framework in <code>CLAUDE.md</code>.
+        </>
+      ),
+    },
+    i18n_install_loader: {
+      type: "{ profile }",
+      required: true,
+      description: (
+        <>
+          Returns <code>{`{ data_key, profile, loader_url, script_tag, next_step }`}</code>.
+        </>
+      ),
+    },
+    i18n_create_profile: {
+      type: "{ name, locale, environment }",
+      required: true,
+      description: (
+        <>
+          Creates a <code>locale:env</code> profile. Idempotent on <code>name</code>.
+        </>
+      ),
+    },
+    i18n_scan_code: {
+      type: "{ paths }",
+      description: "Returns candidate strings without rewriting. Use for non-JSX frameworks.",
+    },
+    i18n_codemod_preview: {
+      type: "{ files, profile }",
+      required: true,
+      description: "Returns proposed diffs. Always call before apply.",
+    },
+    i18n_codemod_apply: {
+      type: "{ files, profile, confirm: true }",
+      required: true,
+      description: (
+        <>
+          Writes files. Refuses without <code>confirm: true</code>.
+        </>
+      ),
+    },
+    i18n_push_keys: {
+      type: '{ profile, source: "codemod" | "scan" }',
+      required: true,
+      description: (
+        <>
+          Returns <code>{`{ pushed_count, skipped_count, failed_keys }`}</code>.
+        </>
+      ),
+    },
+    i18n_create_key: {
+      type: "{ profile, key, value, description }",
+      description: "Use to add or refine a description. Same shape as discovered keys.",
+    },
+    i18n_validate_keys: {
+      type: "{ profile, paths }",
+      required: true,
+      description:
+        "Cross-checks code references against the profile. Must return clean before publishing.",
+    },
+    i18n_translate_draft: {
+      type: "{ profile, source_profile? }",
+      description:
+        "Generates AI translations for a target profile. Lands as a draft, never auto-published.",
+    },
+    i18n_publish_profile: {
+      type: "{ profile }",
+      required: true,
+      description: "Promotes the profile to KV + purges CDN. Live worldwide in seconds.",
+    },
+    i18n_discover_site: {
+      type: "{ url }",
+      description: (
+        <>
+          Optional. Reads <code>/.well-known/i18n.json</code> from a deployed URL to reconcile
+          state.
+        </>
+      ),
+    },
+  }}
+/>
 
 ---
 
@@ -522,69 +514,67 @@ Translation quality drops sharply without context. For every key the codemod cre
 
 ## Failure modes — quick reference
 
-<ApiTable>
-  <ApiRow
-    name="auth_check returns false after login"
-    type="env"
-    desc={
-      <>
-        Credentials file unreadable. Ask the human to <code>cat ~/.shipeasy/credentials</code> — if
-        missing, re-run <code>shipeasy login</code>; if present, check file permissions (should be
-        600).
-      </>
-    }
-  />
-  <ApiRow
-    name="detect_project returns needs_clarification"
-    type="layout"
-    desc="Monorepo with multiple apps. Ask the human which subdirectory and pass it as cwd."
-  />
-  <ApiRow
-    name="codemod_preview shows code identifiers as strings"
-    type="false positive"
-    desc={
-      <>
-        Pass an explicit narrower set of <code>files</code> to
-        <code>i18n_codemod_preview</code> (and re-preview), or skip those rows with the per-row{" "}
-        {`{include: false}`} override before applying.
-      </>
-    }
-  />
-  <ApiRow
-    name="codemod_apply refused"
-    type="missing arg"
-    desc={
-      <>
-        You forgot <code>confirm: true</code>. The refusal is intentional.
-      </>
-    }
-  />
-  <ApiRow
-    name="push_keys reports failed_keys"
-    type="naming"
-    desc="Key names with whitespace, leading digits, or reserved characters. Fix in source and re-run."
-  />
-  <ApiRow
-    name="validate_keys shows missing_in_profile"
-    type="drift"
-    desc="Re-run push_keys or create the missing keys explicitly. Never publish with this non-empty."
-  />
-  <ApiRow
-    name="publish_profile fails with 403"
-    type="auth"
-    desc={
-      <>
-        Token lacks publish permission for this project. Ask the human to verify role in the
-        dashboard, or to re-login as a project owner.
-      </>
-    }
-  />
-  <ApiRow
-    name="publish_profile fails with 429"
-    type="rate limit"
-    desc="Plan-level publish quota exceeded. Wait 60s and retry; if it persists, surface to the human (likely needs a plan upgrade)."
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    "auth_check returns false after login": {
+      type: "env",
+      description: (
+        <>
+          Credentials file unreadable. Ask the human to <code>cat ~/.shipeasy/credentials</code> —
+          if missing, re-run <code>shipeasy login</code>; if present, check file permissions (should
+          be 600).
+        </>
+      ),
+    },
+    "detect_project returns needs_clarification": {
+      type: "layout",
+      description:
+        "Monorepo with multiple apps. Ask the human which subdirectory and pass it as cwd.",
+    },
+    "codemod_preview shows code identifiers as strings": {
+      type: "false positive",
+      description: (
+        <>
+          Pass an explicit narrower set of <code>files</code> to
+          <code>i18n_codemod_preview</code> (and re-preview), or skip those rows with the per-row{" "}
+          {`{include: false}`} override before applying.
+        </>
+      ),
+    },
+    "codemod_apply refused": {
+      type: "missing arg",
+      description: (
+        <>
+          You forgot <code>confirm: true</code>. The refusal is intentional.
+        </>
+      ),
+    },
+    "push_keys reports failed_keys": {
+      type: "naming",
+      description:
+        "Key names with whitespace, leading digits, or reserved characters. Fix in source and re-run.",
+    },
+    "validate_keys shows missing_in_profile": {
+      type: "drift",
+      description:
+        "Re-run push_keys or create the missing keys explicitly. Never publish with this non-empty.",
+    },
+    "publish_profile fails with 403": {
+      type: "auth",
+      description: (
+        <>
+          Token lacks publish permission for this project. Ask the human to verify role in the
+          dashboard, or to re-login as a project owner.
+        </>
+      ),
+    },
+    "publish_profile fails with 429": {
+      type: "rate limit",
+      description:
+        "Plan-level publish quota exceeded. Wait 60s and retry; if it persists, surface to the human (likely needs a plan upgrade).",
+    },
+  }}
+/>
 
 ---
 

@@ -28,32 +28,31 @@ created → (review) → merged → (publish) → published
                   └→ abandoned
 ```
 
-<ApiTable>
-  <ApiRow
-    name="open"
-    required
-    type="state"
-    desc="Draft exists, nothing merged yet. Reviewers can approve, edit, reject rows."
-  />
-  <ApiRow
-    name="merged"
-    required
-    type="state"
-    desc="Approved values were promoted into the profile. Still unpublished — runtime sees nothing yet."
-  />
-  <ApiRow
-    name="published"
-    required
-    type="state"
-    desc="The profile (with these values) was published to KV and the CDN. Visible to users."
-  />
-  <ApiRow
-    name="abandoned"
-    optional
-    type="state"
-    desc="Discarded without merging. Auto-deleted after 30 days. Recoverable until then."
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    open: {
+      type: "state",
+      required: true,
+      description: "Draft exists, nothing merged yet. Reviewers can approve, edit, reject rows.",
+    },
+    merged: {
+      type: "state",
+      required: true,
+      description:
+        "Approved values were promoted into the profile. Still unpublished — runtime sees nothing yet.",
+    },
+    published: {
+      type: "state",
+      required: true,
+      description:
+        "The profile (with these values) was published to KV and the CDN. Visible to users.",
+    },
+    abandoned: {
+      type: "state",
+      description: "Discarded without merging. Auto-deleted after 30 days. Recoverable until then.",
+    },
+  }}
+/>
 
 A profile can have one open draft per source at a time. Multiple sources in parallel are fine — you can have an AI draft and a manual draft running concurrently and pick keys from each. On merge, the dashboard reconciles overlaps row-by-row.
 

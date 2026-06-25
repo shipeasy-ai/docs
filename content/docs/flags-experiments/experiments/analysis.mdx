@@ -194,70 +194,82 @@ Pipe it into your warehouse if you want; we won't make you live in our dashboard
 
 ## API · result row
 
-<ApiTable>
-  <ApiRow name="experiment" required type="string" desc="Experiment name." />
-  <ApiRow name="metric" required type="string" desc="Metric name." />
-  <ApiRow
-    name="group"
-    required
-    type="string"
-    desc={
-      <>
-        <code>control</code>, a variant name, or <code>holdout</code>.
-      </>
-    }
-  />
-  <ApiRow
-    name="segment"
-    optional
-    type="string"
-    desc={
-      <>
-        Segment expression, e.g. <code>country=US</code>. <code>null</code> for the all-users row.
-      </>
-    }
-  />
-  <ApiRow name="day" required type="string" desc="ISO date for the analysis window's end day." />
-  <ApiRow name="n" required type="number" desc="Exposed users in the group during the window." />
-  <ApiRow name="mean" required type="number" desc="Per-user metric mean." />
-  <ApiRow name="variance" required type="number" desc="Sample variance." />
-  <ApiRow
-    name="lift_rel"
-    optional
-    type="number"
-    desc="Relative lift vs control. Null on the control row."
-  />
-  <ApiRow
-    name="lift_abs"
-    optional
-    type="number"
-    desc="Absolute lift vs control. Null on the control row."
-  />
-  <ApiRow
-    name="p_value"
-    optional
-    type="number"
-    desc="Two-sided p-value from Welch's t-test. Null on the control row."
-  />
-  <ApiRow
-    name="ci_low"
-    optional
-    type="number"
-    desc="Lower bound of the 95% CI for absolute lift."
-  />
-  <ApiRow
-    name="ci_high"
-    optional
-    type="number"
-    desc="Upper bound of the 95% CI for absolute lift."
-  />
-  <ApiRow
-    name="status"
-    required
-    type='"ok" | "insufficient_data" | "insufficient_power" | "srm_warning"'
-    desc="Hint to the dashboard about whether to surface the row as a decision."
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    experiment: {
+      type: "string",
+      required: true,
+      description: "Experiment name.",
+    },
+    metric: {
+      type: "string",
+      required: true,
+      description: "Metric name.",
+    },
+    group: {
+      type: "string",
+      required: true,
+      description: (
+        <>
+          <code>control</code>, a variant name, or <code>holdout</code>.
+        </>
+      ),
+    },
+    segment: {
+      type: "string",
+      description: (
+        <>
+          Segment expression, e.g. <code>country=US</code>. <code>null</code> for the all-users row.
+        </>
+      ),
+    },
+    day: {
+      type: "string",
+      required: true,
+      description: "ISO date for the analysis window's end day.",
+    },
+    n: {
+      type: "number",
+      required: true,
+      description: "Exposed users in the group during the window.",
+    },
+    mean: {
+      type: "number",
+      required: true,
+      description: "Per-user metric mean.",
+    },
+    variance: {
+      type: "number",
+      required: true,
+      description: "Sample variance.",
+    },
+    lift_rel: {
+      type: "number",
+      description: "Relative lift vs control. Null on the control row.",
+    },
+    lift_abs: {
+      type: "number",
+      description: "Absolute lift vs control. Null on the control row.",
+    },
+    p_value: {
+      type: "number",
+      description: "Two-sided p-value from Welch's t-test. Null on the control row.",
+    },
+    ci_low: {
+      type: "number",
+      description: "Lower bound of the 95% CI for absolute lift.",
+    },
+    ci_high: {
+      type: "number",
+      description: "Upper bound of the 95% CI for absolute lift.",
+    },
+    status: {
+      type: '"ok" | "insufficient_data" | "insufficient_power" | "srm_warning"',
+      required: true,
+      description: "Hint to the dashboard about whether to surface the row as a decision.",
+    },
+  }}
+/>
 
 <Callout type="warn" title="Don't peek and stop early">
   The p-values are valid for **fixed-horizon** tests. If you sneak a look every hour and stop the

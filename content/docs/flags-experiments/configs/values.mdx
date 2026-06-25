@@ -16,46 +16,45 @@ Unlike feature flags, dynamic values are **global per environment**: every user 
 
 ## Types
 
-<ApiTable>
-  <ApiRow
-    name="string"
-    required
-    type="string"
-    desc={
-      <>
-        Copy, theme name, feature variant. Example: <code>&quot;v2&quot;</code>,{" "}
-        <code>&quot;USD&quot;</code>, <code>&quot;claude-haiku-4-5&quot;</code>.
-      </>
-    }
-  />
-  <ApiRow
-    name="number"
-    required
-    type="number"
-    desc={
-      <>
-        Limits, prices, timeouts. Example: <code>9.99</code>, <code>100</code>, <code>30000</code>.
-      </>
-    }
-  />
-  <ApiRow
-    name="boolean"
-    required
-    type="boolean"
-    desc="Site-wide on/off, separate from a feature flag when no targeting is needed."
-  />
-  <ApiRow
-    name="json"
-    required
-    type="object | array"
-    desc={
-      <>
-        Structured config — see <a href="#structured-configs">below</a>. Up to 256 KB per value
-        (Enterprise).
-      </>
-    }
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    string: {
+      type: "string",
+      required: true,
+      description: (
+        <>
+          Copy, theme name, feature variant. Example: <code>&quot;v2&quot;</code>,{" "}
+          <code>&quot;USD&quot;</code>, <code>&quot;claude-haiku-4-5&quot;</code>.
+        </>
+      ),
+    },
+    number: {
+      type: "number",
+      required: true,
+      description: (
+        <>
+          Limits, prices, timeouts. Example: <code>9.99</code>, <code>100</code>, <code>30000</code>
+          .
+        </>
+      ),
+    },
+    boolean: {
+      type: "boolean",
+      required: true,
+      description: "Site-wide on/off, separate from a feature flag when no targeting is needed.",
+    },
+    json: {
+      type: "object | array",
+      required: true,
+      description: (
+        <>
+          Structured config — see <a href="#structured-configs">below</a>. Up to 256 KB per value
+          (Enterprise).
+        </>
+      ),
+    },
+  }}
+/>
 
 ## Reading a value
 

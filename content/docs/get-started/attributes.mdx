@@ -45,30 +45,29 @@ You bind a `Client` to the eval context once, then read with no per-call user ar
 
 Two keys are special:
 
-<ApiTable>
-  <ApiRow
-    name="user_id"
-    required
-    type="string"
-    desc={
-      <>
-        Stable identifier for a logged-in user. Used as the default bucketing key. Pass it as soon
-        as the user authenticates.
-      </>
-    }
-  />
-  <ApiRow
-    name="anonymous_id"
-    optional
-    type="string"
-    desc={
-      <>
-        Stable identifier before login. The browser SDK auto-generates and persists this in a
-        cookie; on the server, you provide it.
-      </>
-    }
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    user_id: {
+      type: "string",
+      required: true,
+      description: (
+        <>
+          Stable identifier for a logged-in user. Used as the default bucketing key. Pass it as soon
+          as the user authenticates.
+        </>
+      ),
+    },
+    anonymous_id: {
+      type: "string",
+      description: (
+        <>
+          Stable identifier before login. The browser SDK auto-generates and persists this in a
+          cookie; on the server, you provide it.
+        </>
+      ),
+    },
+  }}
+/>
 
 Shipeasy bucketing uses `user_id ?? anonymous_id` — so a user gets a stable assignment before _and_ after login. When the user authenticates, call `shipeasy.alias(anonymous_id, user_id)` to stitch their pre-login exposures to their post-login identity. Without this stitch, exposure events from before login show up as a separate user in analysis.
 
@@ -96,35 +95,38 @@ shipeasy.identify({
 
 Supported value types:
 
-<ApiTable>
-  <ApiRow
-    name="string"
-    required
-    type="primitive"
-    desc={<>Equality, regex, contains. Most attributes are strings.</>}
-  />
-  <ApiRow
-    name="number"
-    required
-    type="primitive"
-    desc={
-      <>
-        Numeric comparisons (<code>gt</code>, <code>lte</code>, …) and equality.
-      </>
-    }
-  />
-  <ApiRow name="boolean" required type="primitive" desc={<>Equality only.</>} />
-  <ApiRow
-    name="string[]"
-    required
-    type="array"
-    desc={
-      <>
-        Use with <code>contains</code> for membership, or <code>in</code> for the inverse.
-      </>
-    }
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    string: {
+      type: "primitive",
+      required: true,
+      description: <>Equality, regex, contains. Most attributes are strings.</>,
+    },
+    number: {
+      type: "primitive",
+      required: true,
+      description: (
+        <>
+          Numeric comparisons (<code>gt</code>, <code>lte</code>, …) and equality.
+        </>
+      ),
+    },
+    boolean: {
+      type: "primitive",
+      required: true,
+      description: <>Equality only.</>,
+    },
+    "string[]": {
+      type: "array",
+      required: true,
+      description: (
+        <>
+          Use with <code>contains</code> for membership, or <code>in</code> for the inverse.
+        </>
+      ),
+    },
+  }}
+/>
 
 Nested objects are not supported — flatten them with dot-notation if you need to (`org.tier` becomes a literal key `"org.tier"`).
 
@@ -227,27 +229,39 @@ Unregistered attributes still work — they just won&apos;t appear in pickers.
 
 Targeting rules use these operators against attribute values:
 
-<ApiTable>
-  <ApiRow name="eq / neq" required type="any" desc={<>Strict equality.</>} />
-  <ApiRow
-    name="in / not_in"
-    required
-    type="scalar vs array"
-    desc={
-      <>
-        <em>"is this value in the list"</em>. Use the inverse to negate.
-      </>
-    }
-  />
-  <ApiRow name="gt / gte / lt / lte" required type="number" desc={<>Numeric comparison.</>} />
-  <ApiRow
-    name="contains"
-    required
-    type="string ⊂ string · value ⊂ array"
-    desc={<>Substring or membership.</>}
-  />
-  <ApiRow name="regex" required type="string" desc={<>JS regex match. Anchor your patterns.</>} />
-</ApiTable>
+<TypeTable
+  type={{
+    "eq / neq": {
+      type: "any",
+      required: true,
+      description: <>Strict equality.</>,
+    },
+    "in / not_in": {
+      type: "scalar vs array",
+      required: true,
+      description: (
+        <>
+          <em>"is this value in the list"</em>. Use the inverse to negate.
+        </>
+      ),
+    },
+    "gt / gte / lt / lte": {
+      type: "number",
+      required: true,
+      description: <>Numeric comparison.</>,
+    },
+    contains: {
+      type: "string ⊂ string · value ⊂ array",
+      required: true,
+      description: <>Substring or membership.</>,
+    },
+    regex: {
+      type: "string",
+      required: true,
+      description: <>JS regex match. Anchor your patterns.</>,
+    },
+  }}
+/>
 
 Multiple rules on a feature flag are **AND**ed. Use `in` with a list to express OR. Rule order doesn&apos;t matter — there is no fall-through.
 
@@ -312,31 +326,28 @@ Shipeasy stores attributes you send as part of exposure events for analysis. **D
 
 A handful of fields are auto-treated:
 
-<ApiTable>
-  <ApiRow
-    name="email"
-    optional
-    type="string"
-    desc={
-      <>
-        Auto-hashed before write. Only the hash is stored. Useful only for cohort lookup, never for
-        targeting on substrings.
-      </>
-    }
-  />
-  <ApiRow
-    name="ip"
-    optional
-    type="string"
-    desc={<>Coarsened to country + region. Full IP is dropped before write.</>}
-  />
-  <ApiRow
-    name="user_id"
-    required
-    type="string"
-    desc={<>Stored as-is. Use a UUID, not an email.</>}
-  />
-</ApiTable>
+<TypeTable
+  type={{
+    email: {
+      type: "string",
+      description: (
+        <>
+          Auto-hashed before write. Only the hash is stored. Useful only for cohort lookup, never
+          for targeting on substrings.
+        </>
+      ),
+    },
+    ip: {
+      type: "string",
+      description: <>Coarsened to country + region. Full IP is dropped before write.</>,
+    },
+    user_id: {
+      type: "string",
+      required: true,
+      description: <>Stored as-is. Use a UUID, not an email.</>,
+    },
+  }}
+/>
 
 You can set per-attribute retention in **Project → Privacy** (default 90 days for Pro, 30 days for Free). After retention, exposure rows are aggregated and the per-user attribute payload is dropped.
 
