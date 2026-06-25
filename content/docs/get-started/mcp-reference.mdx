@@ -57,7 +57,7 @@ _No parameters._
 
 ### `list_resources`
 
-Unified listing across feature flags, configs, experiments, events, metrics, alert_rules, universes, attributes, i18n profiles/chunks/keys/drafts, and sdk_keys.
+Unified listing across gates, configs, experiments, events, metrics, alert_rules, universes, attributes, i18n profiles/chunks/keys/drafts, and sdk_keys.
 
 | Parameter |          | Type                                                                                                                                                                                    | Description |
 | --------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
@@ -89,31 +89,58 @@ Return ready-to-paste install / env-vars / init / usage / tracking code for the 
 | `success_event` | optional | `string`                                                                                                      | —           |
 | `success_value` | optional | `boolean`                                                                                                     | —           |
 
+### `file_bug`
+
+File a bug report into the bound project's feedback queue (and, where a GitHub/Slack connector is configured, open a real issue / post a message). The body fields become the GitHub issue body verbatim — so if the report is vague (no clear repro, no expected-vs-actual), ask the user ONE or TWO short clarifying questions FIRST, then fold the answers into the fields below. Create-only.
+
+| Parameter            |          | Type                                                 | Description                                                |
+| -------------------- | -------- | ---------------------------------------------------- | ---------------------------------------------------------- |
+| `title`              | required | `string`                                             | Short, specific one-line summary of the bug.               |
+| `steps_to_reproduce` | optional | `string`                                             | Explicit/numbered steps to reproduce. Markdown allowed.    |
+| `actual_result`      | optional | `string`                                             | What actually happens (the breakage).                      |
+| `expected_result`    | optional | `string`                                             | What was expected instead.                                 |
+| `priority`           | optional | `"nice_to_have" \| "medium" \| "high" \| "critical"` | Optional severity; omit if unsure and let the team triage. |
+| `page_url`           | optional | `string`                                             | Optional URL where the bug occurs.                         |
+
+### `file_feature`
+
+File a feature request into the bound project's feedback queue (and, where a GitHub/Slack connector is configured, open a real issue / post a message). The body fields become the GitHub issue body verbatim — so if it's unclear WHAT exactly to build (scope, surface, acceptance criteria), ask the user ONE or TWO short clarifying questions FIRST, then fold the answers into the fields below. Create-only.
+
+| Parameter     |          | Type                                                 | Description                                                     |
+| ------------- | -------- | ---------------------------------------------------- | --------------------------------------------------------------- |
+| `title`       | required | `string`                                             | Short, specific one-line summary of the request.                |
+| `description` | optional | `string`                                             | What to build and how it should behave — the concrete proposal. |
+| `use_case`    | optional | `string`                                             | Why it's needed / the problem it solves.                        |
+| `priority`    | optional | `"nice_to_have" \| "medium" \| "high" \| "critical"` | Optional importance; omit if unsure and let the team triage.    |
+| `page_url`    | optional | `string`                                             | Optional related URL.                                           |
+
 ## Flags & experiments
 
-Create and manage feature flags, dynamic configs, kill switches, universes, experiments, and alert rules.
+Create and manage gates, dynamic configs, kill switches, universes, experiments, and alert rules.
 
 ### `exp_create_gate`
 
-Create a feature flag with targeting rules and rollout percentage.
+Create a feature gate. A flat gate is `rules` + a single `rollout` %. For tiered rollouts (e.g. 'US @ 50% → bots @ 30% → everyone else @ 10%') pass `stack` — an ordered list of steps evaluated first-match-wins; flat `rules`/`rollout` are then ignored.
 
-| Parameter     |          | Type     | Description               |
-| ------------- | -------- | -------- | ------------------------- |
-| `name`        | required | `string` | Snake_case; auto-slugged. |
-| `description` | optional | `string` | —                         |
-| `rollout`     | optional | `number` | 0–100                     |
-| `rules`       | optional | `string` | JSON rules array          |
+| Parameter     |          | Type     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ------------- | -------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`        | required | `string` | Snake_case; auto-slugged.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `description` | optional | `string` | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `rollout`     | optional | `number` | Flat-gate rollout, 0–100.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `rules`       | optional | `string` | Flat-gate JSON rules array.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `stack`       | optional | `string` | Optional gatekeeper stack — a JSON array of ordered steps, evaluated top-to-bottom, first match wins; takes precedence over flat rules/rollout. Each step is either a condition: \{ "id": "\<stable-id>", "type": "condition", "rules": [\{attr,op,value\}], "rolloutPct": \<0-10000 basis points> \} — rules match then bucket at rolloutPct (omit ⇒ 100%); or a rollout: \{ "id": "\<id>", "type": "rollout", "rolloutPct": \<0-10000 bp> \}. End with a catch-all rollout step (no rules) to decide everyone who fell through. rolloutPct is BASIS POINTS: 5000 = 50%, 1000 = 10%, 100 = 1%. |
 
 ### `exp_update_gate`
 
-Update a feature flag's rollout, rules, or enabled flag.
+Update a feature gate's rollout, rules, gatekeeper stack, or enabled flag. Pass `stack` to replace the tiered rollout wholesale (same shape as exp_create_gate).
 
-| Parameter |          | Type      | Description      |
-| --------- | -------- | --------- | ---------------- |
-| `name`    | required | `string`  | —                |
-| `rollout` | optional | `number`  | 0–100            |
-| `rules`   | optional | `string`  | JSON rules array |
-| `enabled` | optional | `boolean` | —                |
+| Parameter |          | Type      | Description                                                                                                                                                                |
+| --------- | -------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`    | required | `string`  | —                                                                                                                                                                          |
+| `rollout` | optional | `number`  | 0–100                                                                                                                                                                      |
+| `rules`   | optional | `string`  | JSON rules array                                                                                                                                                           |
+| `stack`   | optional | `string`  | JSON array of ordered first-match-wins steps (condition/rollout, rolloutPct in basis points) — replaces the gatekeeper stack wholesale. See exp_create_gate for the shape. |
+| `enabled` | optional | `boolean` | —                                                                                                                                                                          |
 
 ### `exp_create_killswitch`
 
@@ -168,7 +195,7 @@ Remove one switch entry from one env. Falls back to the default value.
 
 ### `exp_delete_gate`
 
-Delete a feature flag by name. Refuses if used by a running experiment.
+Delete a feature gate by name. Refuses if used by a running experiment.
 
 | Parameter |          | Type     | Description |
 | --------- | -------- | -------- | ----------- |
@@ -231,37 +258,46 @@ Delete a universe by name. Refuses if any experiment still references it.
 
 ### `exp_create_experiment`
 
-Create an experiment draft with groups, params, optional targeting feature flag, and a success (goal) metric. Pass success_event (+ success_aggregation) to attach the goal metric inline — required before the experiment can be started. Does NOT start — call exp_start_experiment.
+Create an experiment draft with groups, params, optional targeting gate, a success (goal) metric, optional guardrail metrics, and full statistical config. Pass success_event (+ success_aggregation) to attach the goal metric inline — required before the experiment can be started. Does NOT start — call exp_start_experiment.
 
-| Parameter             |          | Type                                                                                     | Description                                                                                                                           |
-| --------------------- | -------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`                | required | `string`                                                                                 | —                                                                                                                                     |
-| `description`         | optional | `string`                                                                                 | —                                                                                                                                     |
-| `universe`            | required | `string`                                                                                 | —                                                                                                                                     |
-| `allocation`          | optional | `number`                                                                                 | 0–100, default 10                                                                                                                     |
-| `groups`              | optional | `string`                                                                                 | JSON [\{name,weight,params\}]                                                                                                         |
-| `params_schema`       | optional | `object`                                                                                 | —                                                                                                                                     |
-| `targeting_gate`      | optional | `string`                                                                                 | —                                                                                                                                     |
-| `success_event`       | optional | `string`                                                                                 | Event name for the goal metric. Attaching a goal metric is what makes the experiment startable; the event is auto-created if missing. |
-| `success_aggregation` | optional | `"count_users" \| "count_events" \| "sum" \| "avg" \| "retention_7d" \| "retention_30d"` | Goal-metric reducer. Defaults to count_users when success_event is set.                                                               |
-| `success_value`       | optional | `string`                                                                                 | Numeric event property to reduce over. Required only for sum / avg aggregations (e.g. 'amount').                                      |
+| Parameter                |          | Type                                                                                     | Description                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------ | -------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                   | required | `string`                                                                                 | —                                                                                                                                                                                                                                                                                                                                                                                             |
+| `description`            | optional | `string`                                                                                 | —                                                                                                                                                                                                                                                                                                                                                                                             |
+| `universe`               | required | `string`                                                                                 | —                                                                                                                                                                                                                                                                                                                                                                                             |
+| `allocation`             | optional | `number`                                                                                 | 0–100, default 10                                                                                                                                                                                                                                                                                                                                                                             |
+| `groups`                 | optional | `string`                                                                                 | JSON [\{name,weight,params\}]                                                                                                                                                                                                                                                                                                                                                                 |
+| `params_schema`          | optional | `object`                                                                                 | —                                                                                                                                                                                                                                                                                                                                                                                             |
+| `targeting_gate`         | optional | `string`                                                                                 | —                                                                                                                                                                                                                                                                                                                                                                                             |
+| `bucket_by`              | optional | `string`                                                                                 | User-attribute used as the bucketing key. Defaults to user_id. Use e.g. company_id / account_id to keep a whole org on one variant, or session_id / device_id for anonymous traffic.                                                                                                                                                                                                          |
+| `success_event`          | optional | `string`                                                                                 | Event name for the goal metric. Attaching a goal metric is what makes the experiment startable; the event is auto-created if missing.                                                                                                                                                                                                                                                         |
+| `success_aggregation`    | optional | `"count_users" \| "count_events" \| "sum" \| "avg" \| "retention_7d" \| "retention_30d"` | Goal-metric reducer. Defaults to count_users when success_event is set.                                                                                                                                                                                                                                                                                                                       |
+| `success_value`          | optional | `string`                                                                                 | Numeric event property to reduce over. Required only for sum / avg aggregations (e.g. 'amount').                                                                                                                                                                                                                                                                                              |
+| `guardrail_metrics`      | optional | `string`                                                                                 | Optional JSON array of guardrail metrics — safety metrics that must NOT regress (latency, error rate, refunds…). Each entry is a metric-DSL query string, e.g. '["avg(latency_ms)","count_users(error_shown)"]', or an object \{ "query": "...", "name": "..." \}. Up to 10. The analysis pass classifies these separately (advisory vs hold) and alerts on a breach independent of the goal. |
+| `significance_threshold` | optional | `number`                                                                                 | p-value cutoff (alpha). Default 0.05. Non-0.05 needs Pro plan or higher.                                                                                                                                                                                                                                                                                                                      |
+| `min_runtime_days`       | optional | `number`                                                                                 | Minimum days to run before results are conclusive. Default 0.                                                                                                                                                                                                                                                                                                                                 |
+| `min_sample_size`        | optional | `number`                                                                                 | Minimum exposures per group before results are conclusive. Default 100.                                                                                                                                                                                                                                                                                                                       |
+| `sequential_testing`     | optional | `boolean`                                                                                | Enable always-valid (sequential / mSPRT) p-values so you can peek without inflating false positives. Default false. Requires Premium plan or higher.                                                                                                                                                                                                                                          |
 
 ### `exp_update_experiment`
 
-Update a draft (or running) experiment's allocation, groups, targeting feature flag, stats thresholds, or goal metric. Pass success_event (+ success_aggregation) to attach/replace the goal metric — use this to make a draft startable when it's missing one.
+Update a draft (or running) experiment's allocation, groups, targeting gate, bucketing, stats thresholds, guardrail metrics, or goal metric. Pass success_event (+ success_aggregation) to attach/replace the goal metric — use this to make a draft startable when it's missing one.
 
-| Parameter                |          | Type                                                                                     | Description                                                                                                        |
-| ------------------------ | -------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `name`                   | required | `string`                                                                                 | —                                                                                                                  |
-| `allocation`             | optional | `number`                                                                                 | 0–100                                                                                                              |
-| `groups`                 | optional | `string`                                                                                 | JSON [\{name,weight,params\}]                                                                                      |
-| `targeting_gate`         | optional | `string`                                                                                 | Feature flag name; pass empty string or omit to leave unchanged; pass the literal 'none' to clear the feature flag |
-| `significance_threshold` | optional | `number`                                                                                 | 0.0001–0.5                                                                                                         |
-| `min_runtime_days`       | optional | `number`                                                                                 | —                                                                                                                  |
-| `min_sample_size`        | optional | `number`                                                                                 | —                                                                                                                  |
-| `success_event`          | optional | `string`                                                                                 | Event name for the goal metric. Attaches/replaces the role=goal metric.                                            |
-| `success_aggregation`    | optional | `"count_users" \| "count_events" \| "sum" \| "avg" \| "retention_7d" \| "retention_30d"` | Goal-metric reducer. Defaults to count_users when success_event is set.                                            |
-| `success_value`          | optional | `string`                                                                                 | Numeric event property to reduce over. Required only for sum / avg.                                                |
+| Parameter                |          | Type                                                                                     | Description                                                                                                                               |
+| ------------------------ | -------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                   | required | `string`                                                                                 | —                                                                                                                                         |
+| `allocation`             | optional | `number`                                                                                 | 0–100                                                                                                                                     |
+| `groups`                 | optional | `string`                                                                                 | JSON [\{name,weight,params\}]                                                                                                             |
+| `targeting_gate`         | optional | `string`                                                                                 | Gate name; pass empty string or omit to leave unchanged; pass the literal 'none' to clear the gate                                        |
+| `bucket_by`              | optional | `string`                                                                                 | User-attribute used as the bucketing key (user_id default; e.g. company_id). Immutable while running.                                     |
+| `significance_threshold` | optional | `number`                                                                                 | 0.0001–0.5                                                                                                                                |
+| `min_runtime_days`       | optional | `number`                                                                                 | —                                                                                                                                         |
+| `min_sample_size`        | optional | `number`                                                                                 | —                                                                                                                                         |
+| `sequential_testing`     | optional | `boolean`                                                                                | Toggle always-valid sequential p-values. Requires Premium plan or higher.                                                                 |
+| `guardrail_metrics`      | optional | `string`                                                                                 | JSON array of guardrail metrics (DSL query strings or \{ query, name \} objects) — replaces the guardrail set. See exp_create_experiment. |
+| `success_event`          | optional | `string`                                                                                 | Event name for the goal metric. Attaches/replaces the role=goal metric.                                                                   |
+| `success_aggregation`    | optional | `"count_users" \| "count_events" \| "sum" \| "avg" \| "retention_7d" \| "retention_30d"` | Goal-metric reducer. Defaults to count_users when success_event is set.                                                                   |
+| `success_value`          | optional | `string`                                                                                 | Numeric event property to reduce over. Required only for sum / avg.                                                                       |
 
 ### `exp_delete_experiment`
 
@@ -308,29 +344,39 @@ Return experiment stats + ship/hold/wait verdict.
 
 Create a metric-threshold alert rule. The cron aggregates the metric over the trailing window and raises an alert at `severity` when `value <comparator> threshold` holds. The metric (and its aggregation) is fixed for the rule's life.
 
-| Parameter      |          | Type                             | Description                                         |
-| -------------- | -------- | -------------------------------- | --------------------------------------------------- |
-| `name`         | required | `string`                         | Human label shown on the rule and raised alert.     |
-| `metric`       | required | `string`                         | Metric id or name to evaluate.                      |
-| `comparator`   | required | `"gt" \| "gte" \| "lt" \| "lte"` | How the metric value is compared to `threshold`.    |
-| `threshold`    | required | `number`                         | Threshold the metric value is compared against.     |
-| `window_hours` | optional | `number`                         | Lookback window in whole hours (1–720). Default 24. |
-| `severity`     | optional | `"danger" \| "warn" \| "info"`   | Severity of the raised alert. Default 'warn'.       |
-| `enabled`      | optional | `boolean`                        | Whether the cron evaluates it. Default true.        |
+| Parameter                   |          | Type                             | Description                                                                                                                                                                                                                        |
+| --------------------------- | -------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                      | required | `string`                         | Human label shown on the rule and raised alert.                                                                                                                                                                                    |
+| `metric`                    | required | `string`                         | Metric id or name to evaluate.                                                                                                                                                                                                     |
+| `comparator`                | required | `"gt" \| "gte" \| "lt" \| "lte"` | How the metric value is compared to `threshold`.                                                                                                                                                                                   |
+| `threshold`                 | required | `number`                         | Threshold the metric value is compared against.                                                                                                                                                                                    |
+| `window_hours`              | optional | `number`                         | Lookback window in whole hours (1–720). Default 24.                                                                                                                                                                                |
+| `severity`                  | optional | `"danger" \| "warn" \| "info"`   | Severity of the raised alert. Default 'warn'.                                                                                                                                                                                      |
+| `enabled`                   | optional | `boolean`                        | Whether the cron evaluates it. Default true.                                                                                                                                                                                       |
+| `notify`                    | optional | `object`                         | Where to deliver this rule's alert, overriding the project default. Omit to inherit the default. Pick a Slack channel from the project's real channels (use the dashboard channel picker / `list_resources`) — never invent an id. |
+| `notify.slack_channel`      | optional | `object`                         | Slack channel to post to (requires a Slack connector).                                                                                                                                                                             |
+| `notify.slack_channel.id`   | required | `string`                         | Slack channel id, e.g. C0123ABCD.                                                                                                                                                                                                  |
+| `notify.slack_channel.name` | required | `string`                         | Channel name without the leading #.                                                                                                                                                                                                |
+| `notify.email`              | optional | `string`                         | Email address to notify for this rule.                                                                                                                                                                                             |
 
 ### `exp_update_alert_rule`
 
 Update an alert rule's tunable knobs (threshold, comparator, window, severity, name, enabled). The metric is immutable — delete + recreate to repoint a rule at a different metric.
 
-| Parameter      |          | Type                             | Description                               |
-| -------------- | -------- | -------------------------------- | ----------------------------------------- |
-| `id`           | required | `string`                         | Alert rule id, id-prefix, or unique name. |
-| `name`         | optional | `string`                         | —                                         |
-| `comparator`   | optional | `"gt" \| "gte" \| "lt" \| "lte"` | —                                         |
-| `threshold`    | optional | `number`                         | —                                         |
-| `window_hours` | optional | `number`                         | Whole hours, 1–720.                       |
-| `severity`     | optional | `"danger" \| "warn" \| "info"`   | —                                         |
-| `enabled`      | optional | `boolean`                        | —                                         |
+| Parameter                   |          | Type                             | Description                                                                                                                                                                                                        |
+| --------------------------- | -------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `id`                        | required | `string`                         | Alert rule id, id-prefix, or unique name.                                                                                                                                                                          |
+| `name`                      | optional | `string`                         | —                                                                                                                                                                                                                  |
+| `comparator`                | optional | `"gt" \| "gte" \| "lt" \| "lte"` | —                                                                                                                                                                                                                  |
+| `threshold`                 | optional | `number`                         | —                                                                                                                                                                                                                  |
+| `window_hours`              | optional | `number`                         | Whole hours, 1–720.                                                                                                                                                                                                |
+| `severity`                  | optional | `"danger" \| "warn" \| "info"`   | —                                                                                                                                                                                                                  |
+| `enabled`                   | optional | `boolean`                        | —                                                                                                                                                                                                                  |
+| `notify`                    | optional | `object`                         | Replace the rule's delivery target. `slack_channel` requires a Slack connector; pick a real channel, never invent an id. Pass an empty object to keep, or set fields to null to clear back to the project default. |
+| `notify.slack_channel`      | optional | `object`                         | —                                                                                                                                                                                                                  |
+| `notify.slack_channel.id`   | required | `string`                         | —                                                                                                                                                                                                                  |
+| `notify.slack_channel.name` | required | `string`                         | —                                                                                                                                                                                                                  |
+| `notify.email`              | optional | `string`                         | —                                                                                                                                                                                                                  |
 
 ### `exp_delete_alert_rule`
 
