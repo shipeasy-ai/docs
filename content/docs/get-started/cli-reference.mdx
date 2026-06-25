@@ -223,634 +223,132 @@ shipeasy projects upsert --domain acme.com
 shipeasy projects upsert --domain shouks.app --name "Shouks" --no-bind
 ```
 
-## modules
+## mcp
 
-Enable, disable, or inspect per-project feature modules
+Manage the Shipeasy MCP server in AI-assistant configs
 
-### `shipeasy modules list`
+### `shipeasy mcp install`
 
-Show which modules are enabled on the bound project
+Register the Shipeasy MCP server with installed AI assistants
 
 ```bash
-shipeasy modules list [options]
+shipeasy mcp install [options]
 ```
 
-| Option   |          | Description    |
-| -------- | -------- | -------------- |
-| `--json` | optional | Output as JSON |
+| Option            |          | Description                                                                     |
+| ----------------- | -------- | ------------------------------------------------------------------------------- |
+| `--client <name>` | optional | Restrict to one client (claude \| cursor \| windsurf \| all) (default: `"all"`) |
+| `--scope <scope>` | optional | user \| project (default: `"user"`)                                             |
+| `--force`         | optional | Replace an existing 'shipeasy' MCP entry without prompting                      |
+| `--dry-run`       | optional | Print what would change without writing files                                   |
 
 Examples:
 
 ```bash
-shipeasy modules list
+shipeasy mcp install
+
+# only Claude, project config
+shipeasy mcp install --client claude --scope project
+
+# preview a forced replace
+shipeasy mcp install --force --dry-run
 ```
 
-### `shipeasy modules enable`
+### `shipeasy mcp status`
 
-Enable a module (translations | configs | gates | experiments | feedback)
+Show which AI-assistant configs have a Shipeasy MCP entry
 
 ```bash
-shipeasy modules enable [options] <name>
+shipeasy mcp status [options]
 ```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
 
 Examples:
 
 ```bash
-# Turn on the feedback module
-shipeasy modules enable feedback
+shipeasy mcp status
 ```
 
-### `shipeasy modules disable`
+### `shipeasy mcp start`
 
-Disable a module (translations | configs | gates | experiments | feedback)
+Run the Shipeasy MCP stdio server (forwards to @shipeasy/mcp)
 
 ```bash
-shipeasy modules disable [options] <name>
+shipeasy mcp start [options]
 ```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
 
 Examples:
 
 ```bash
-# Turn off experiments
-shipeasy modules disable experiments
+# stdio server an assistant launches
+shipeasy mcp start
+```
+
+### `shipeasy mcp uninstall`
+
+Remove the 'shipeasy' MCP entry from AI-assistant configs
+
+```bash
+shipeasy mcp uninstall [options]
+```
+
+| Option            |          | Description                                 |
+| ----------------- | -------- | ------------------------------------------- |
+| `--client <name>` | optional | Restrict to one client (default: `"all"`)   |
+| `--scope <scope>` | optional | user \| project \| both (default: `"both"`) |
+
+Examples:
+
+```bash
+shipeasy mcp uninstall
+
+shipeasy mcp uninstall --client cursor --scope user
 ```
 
 ## flags
 
-Manage feature flags
+Feature flags, kill switches, experiments & configs
 
-### `shipeasy flags list`
+### `shipeasy flags flags`
 
-List all feature flags
-
-```bash
-shipeasy flags list [options]
-```
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--json`         | optional | Output as JSON      |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
+Manage feature flags (gates)
 
 ```bash
-shipeasy flags list
+shipeasy flags flags [options] [command]
 ```
 
-Returns (with --json):
-
-```json
-[
-  {
-    "id": "gate_7Hq2",
-    "name": "checkout-v2",
-    "enabled": true,
-    "rolloutPct": 2500,
-    "rules": [
-      {
-        "attr": "plan",
-        "op": "eq",
-        "value": "pro"
-      }
-    ],
-    "updatedAt": "2026-06-14T17:00:00.000Z"
-  }
-]
-```
-
-### `shipeasy flags create`
-
-Create a new feature flag
-
-```bash
-shipeasy flags create [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option            |          | Description                                 |
-| ----------------- | -------- | ------------------------------------------- |
-| `--rollout <pct>` | optional | Rollout percentage (0-100) (default: `"0"`) |
-| `--rules <json>`  | optional | Targeting rules as JSON array               |
-| `--salt <s>`      | optional | Override hash salt                          |
-| `--json`          | optional | Output as JSON                              |
-| `--project <id>`  | optional | Project ID override                         |
-
-Examples:
-
-```bash
-# Off by default; flip it on later
-shipeasy flags create checkout-v2
-
-# Roll out to 25% of pro-plan users
-shipeasy flags create new-ui --rollout 25 --rules '[{"attr":"plan","op":"eq","value":"pro"}]'
-```
-
-### `shipeasy flags enable`
-
-Enable a feature flag
-
-```bash
-shipeasy flags enable [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-shipeasy flags enable checkout-v2
-```
-
-### `shipeasy flags disable`
-
-Disable a feature flag
-
-```bash
-shipeasy flags disable [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-shipeasy flags disable checkout-v2
-```
-
-### `shipeasy flags rollout`
-
-Set rollout percentage (0-100) for a feature flag
-
-```bash
-shipeasy flags rollout [options] <name> <pct>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-| `pct`    | required | —           |
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--json`         | optional | Output as JSON      |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-# Ramp to 50%
-shipeasy flags rollout checkout-v2 50
-
-# Instant kill — set to 0
-shipeasy flags rollout checkout-v2 0
-```
-
-### `shipeasy flags delete`
-
-Delete a feature flag
-
-```bash
-shipeasy flags delete [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-shipeasy flags delete checkout-v2
-```
-
-## killswitch
+### `shipeasy flags killswitch`
 
 Manage killswitches
 
-### `shipeasy killswitch list`
-
-List all killswitches
-
 ```bash
-shipeasy killswitch list [options]
+shipeasy flags killswitch [options] [command]
 ```
 
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--json`         | optional | Output as JSON      |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-shipeasy killswitch list
-```
-
-### `shipeasy killswitch create`
-
-Create a killswitch (name must be `folder.name`)
-
-```bash
-shipeasy killswitch create [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option                 |          | Description                                                        |
-| ---------------------- | -------- | ------------------------------------------------------------------ |
-| `--description <desc>` | optional | Description                                                        |
-| `--value <bool>`       | optional | Default value (true\|false) (default: `"false"`)                   |
-| `--switches <json>`    | optional | JSON object of \{ switch_key: bool \}; takes precedence over value |
-| `--json`               | optional | Output as JSON                                                     |
-| `--project <id>`       | optional | Project ID override                                                |
-
-Examples:
-
-```bash
-# Default OFF
-shipeasy killswitch create payments.stripe-gateway
-
-# Pre-seed per-key switches
-shipeasy killswitch create payments.stripe-gateway --switches '{"refunds":true,"payouts":false}'
-```
-
-### `shipeasy killswitch update`
-
-Update a killswitch's default value, switches map, or description
-
-```bash
-shipeasy killswitch update [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option                 |          | Description                                                |
-| ---------------------- | -------- | ---------------------------------------------------------- |
-| `--value <bool>`       | optional | Default value (true\|false)                                |
-| `--switches <json>`    | optional | JSON object of \{ switch_key: bool \} — replaces wholesale |
-| `--description <desc>` | optional | Description (pass empty to clear)                          |
-| `--json`               | optional | Output as JSON                                             |
-| `--project <id>`       | optional | Project ID override                                        |
-
-Examples:
-
-```bash
-# Flip the default ON
-shipeasy killswitch update payments.stripe-gateway --value true
-
-# Replace the whole switches map
-shipeasy killswitch update payments.stripe-gateway --switches '{"refunds":false}'
-```
-
-### `shipeasy killswitch delete`
-
-Delete a killswitch
-
-```bash
-shipeasy killswitch delete [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-shipeasy killswitch delete payments.stripe-gateway
-```
-
-### `shipeasy killswitch set`
-
-Set or update one switch entry on one env (default env=prod)
-
-A kill switch is a named set of boolean **switches** that ship in the flags KV blob alongside feature flags and configs, so the SDK reads them with no extra round-trip. Each switch is keyed by `switch_key` and scoped per environment (`dev` / `staging` / `prod`) — so you can flip one dependency off in `prod` while leaving `staging` running. `set` creates or updates a single switch entry; the value is coerced (`true/1/on` → true, `false/0/off` → false).
-
-See [Kill switches](/flags-experiments/killswitches) for the full model — when to reach for a kill switch vs. a feature flag at 0%, and how switches evaluate at the edge.
-
-```bash
-shipeasy killswitch set [options] <name> <switch_key> <value>
-```
-
-| Argument     |          | Description |
-| ------------ | -------- | ----------- |
-| `name`       | required | —           |
-| `switch_key` | required | —           |
-| `value`      | required | —           |
-
-| Option           |          | Description                                     |
-| ---------------- | -------- | ----------------------------------------------- |
-| `--env <env>`    | optional | Env: dev \| staging \| prod (default: `"prod"`) |
-| `--project <id>` | optional | Project ID override                             |
-
-Examples:
-
-```bash
-# Kill refunds in prod
-shipeasy killswitch set payments.stripe-gateway refunds true
-
-# Target staging instead
-shipeasy killswitch set payments.stripe-gateway refunds true --env staging
-```
-
-### `shipeasy killswitch unset`
-
-Remove one switch entry from one env (default env=prod)
-
-Removes one switch entry from one environment, reverting that key to its default (absent = not overridden). The inverse of `set`. See [Kill switches](/flags-experiments/killswitches).
-
-```bash
-shipeasy killswitch unset [options] <name> <switch_key>
-```
-
-| Argument     |          | Description |
-| ------------ | -------- | ----------- |
-| `name`       | required | —           |
-| `switch_key` | required | —           |
-
-| Option           |          | Description                                     |
-| ---------------- | -------- | ----------------------------------------------- |
-| `--env <env>`    | optional | Env: dev \| staging \| prod (default: `"prod"`) |
-| `--project <id>` | optional | Project ID override                             |
-
-Examples:
-
-```bash
-shipeasy killswitch unset payments.stripe-gateway refunds
-
-# From staging
-shipeasy killswitch unset payments.stripe-gateway refunds --env staging
-```
-
-## experiments
+### `shipeasy flags experiments`
 
 Manage experiments
 
-### `shipeasy experiments list`
-
-List experiments
-
 ```bash
-shipeasy experiments list [options]
+shipeasy flags experiments [options] [command]
 ```
 
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--json`         | optional | Output as JSON      |
-| `--project <id>` | optional | Project ID override |
+### `shipeasy flags configs`
 
-Examples:
+Manage remote-config values
 
 ```bash
-shipeasy experiments list
-```
-
-### `shipeasy experiments create`
-
-Create a new experiment
-
-```bash
-shipeasy experiments create [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option                    |          | Description                                      |
-| ------------------------- | -------- | ------------------------------------------------ |
-| `--universe <name>`       | optional | Universe name (default: `"default"`)             |
-| `--allocation <pct>`      | optional | Allocation percentage (0-100) (default: `"100"`) |
-| `--groups <json>`         | optional | Groups as JSON [\{name,weight,params\}]          |
-| `--params <json>`         | optional | Parameter schema \{name: type\}                  |
-| `--targeting-gate <name>` | optional | Targeting feature flag name                      |
-| `--salt <s>`              | optional | Override hash salt                               |
-| `--json`                  | optional | Output as JSON                                   |
-| `--project <id>`          | optional | Project ID override                              |
-
-Examples:
-
-```bash
-# Default 50/50 control vs test, full traffic
-shipeasy experiments create pricing-page
-
-# Custom groups + weights in a named universe
-shipeasy experiments create checkout-cta --universe web --allocation 100 \
-  --groups '[{"name":"control","weight":5000,"params":{"label":"Pay"}},{"name":"v1","weight":5000,"params":{"label":"Buy now"}}]'
-```
-
-### `shipeasy experiments update`
-
-Update an experiment by name
-
-```bash
-shipeasy experiments update [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option                    |          | Description                                       |
-| ------------------------- | -------- | ------------------------------------------------- |
-| `--allocation <pct>`      | optional | Allocation percentage (0-100)                     |
-| `--groups <json>`         | optional | Groups as JSON [\{name,weight,params\}]           |
-| `--params <json>`         | optional | Parameter schema \{name: type\}                   |
-| `--targeting-gate <name>` | optional | Targeting feature flag name (use 'null' to clear) |
-| `--significance <p>`      | optional | Significance threshold (0.0001-0.5)               |
-| `--min-runtime-days <n>`  | optional | Minimum runtime in days                           |
-| `--min-sample-size <n>`   | optional | Minimum sample size                               |
-| `--json`                  | optional | Output as JSON                                    |
-| `--project <id>`          | optional | Project ID override                               |
-
-Examples:
-
-```bash
-# Dial allocation up to 50%
-shipeasy experiments update pricing-page --allocation 50
-
-# Clear targeting + tighten significance
-shipeasy experiments update checkout-cta --targeting-gate null --significance 0.01
-```
-
-### `shipeasy experiments delete`
-
-Delete an experiment by name
-
-```bash
-shipeasy experiments delete [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-shipeasy experiments delete pricing-page
-```
-
-### `shipeasy experiments start`
-
-Start an experiment
-
-```bash
-shipeasy experiments start [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-shipeasy experiments start pricing-page
-```
-
-### `shipeasy experiments stop`
-
-Stop a running experiment
-
-```bash
-shipeasy experiments stop [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-shipeasy experiments stop pricing-page
-```
-
-### `shipeasy experiments archive`
-
-Archive a stopped experiment
-
-```bash
-shipeasy experiments archive [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-shipeasy experiments archive pricing-page
-```
-
-### `shipeasy experiments reanalyze`
-
-Re-run analysis pass for an experiment
-
-```bash
-shipeasy experiments reanalyze [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-shipeasy experiments reanalyze pricing-page
-```
-
-### `shipeasy experiments status`
-
-Show experiment status and latest results
-
-```bash
-shipeasy experiments status [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--json`         | optional | Output as JSON      |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-shipeasy experiments status pricing-page
+shipeasy flags configs [options] [command]
 ```
 
 ## metrics
 
-Manage event metrics
+Event metrics + event catalog
 
 ### `shipeasy metrics grammar`
 
 Print the metric query DSL grammar
 
-Prints the full metric query DSL grammar — aggregation functions, event selectors, label filters, and group-by. The same reference is published at [Query DSL grammar](/metrics/grammar).
+Prints the full metric query DSL grammar — aggregation functions, event selectors, label filters, and group-by. The same reference is published at [Query DSL grammar](/flags-experiments/metrics/grammar).
 
 ```bash
 shipeasy metrics grammar [options]
@@ -953,402 +451,24 @@ Examples:
 shipeasy metrics delete 3f9a2c1b
 ```
 
-## configs
+### `shipeasy metrics events`
 
-Manage remote-config values
-
-### `shipeasy configs list`
-
-List all configs
+Manage the event catalog (names + properties metrics query against)
 
 ```bash
-shipeasy configs list [options]
-```
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--json`         | optional | Output as JSON      |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-shipeasy configs list
-```
-
-### `shipeasy configs get`
-
-Show a config by name
-
-```bash
-shipeasy configs get [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--json`         | optional | Output as JSON      |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-shipeasy configs get pricing
-```
-
-### `shipeasy configs create`
-
-Create a new config. Configs are JSON objects validated against a JSON Schema.
-
-```bash
-shipeasy configs create [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option                 |          | Description                                                        |
-| ---------------------- | -------- | ------------------------------------------------------------------ |
-| `--schema <json>`      | optional | JSON Schema (object only). Defaults to a permissive object schema. |
-| `--value <json>`       | optional | Initial value as JSON object. Defaults to \{\}.                    |
-| `--description <text>` | optional | Human-readable description                                         |
-| `--json`               | optional | Output as JSON                                                     |
-| `--project <id>`       | optional | Project ID override                                                |
-
-Examples:
-
-```bash
-# Permissive schema, empty value
-shipeasy configs create pricing
-
-# Seed an initial value
-shipeasy configs create pricing --value '{"free_trial_days":14}'
-```
-
-### `shipeasy configs update`
-
-Update a config's value (legacy flat update; use draft/publish for envs)
-
-```bash
-shipeasy configs update [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option           |          | Description              |
-| ---------------- | -------- | ------------------------ |
-| `--value <json>` | required | New value (JSON-encoded) |
-| `--json`         | optional | Output as JSON           |
-| `--project <id>` | optional | Project ID override      |
-
-Examples:
-
-```bash
-# Overwrite the value (all envs)
-shipeasy configs update pricing --value '{"free_trial_days":30}'
-```
-
-### `shipeasy configs draft`
-
-Save a draft value for the given env
-
-```bash
-shipeasy configs draft [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option           |          | Description                          |
-| ---------------- | -------- | ------------------------------------ |
-| `--env <env>`    | required | Target env (e.g. prod, staging, dev) |
-| `--value <json>` | required | Draft value (JSON-encoded)           |
-| `--project <id>` | optional | Project ID override                  |
-
-Examples:
-
-```bash
-# Stage a prod value to publish later
-shipeasy configs draft pricing --env prod --value '{"free_trial_days":30}'
-```
-
-### `shipeasy configs publish`
-
-Publish the saved draft for the given env
-
-```bash
-shipeasy configs publish [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option           |          | Description           |
-| ---------------- | -------- | --------------------- |
-| `--env <env>`    | required | Target env to publish |
-| `--project <id>` | optional | Project ID override   |
-
-Examples:
-
-```bash
-# Promote the staged draft to prod
-shipeasy configs publish pricing --env prod
-```
-
-### `shipeasy configs delete`
-
-Delete a config by name
-
-```bash
-shipeasy configs delete [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-shipeasy configs delete pricing
-```
-
-## universes
-
-Manage experiment universes (containers + holdouts)
-
-### `shipeasy universes list`
-
-List universes
-
-```bash
-shipeasy universes list [options]
-```
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--json`         | optional | Output as JSON      |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-shipeasy universes list
-```
-
-### `shipeasy universes create`
-
-Create a universe
-
-```bash
-shipeasy universes create [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option              |          | Description                                                 |
-| ------------------- | -------- | ----------------------------------------------------------- |
-| `--unit-type <t>`   | optional | Unit type (e.g. user_id, account_id) (default: `"user_id"`) |
-| `--holdout <range>` | optional | Holdout range as 'lo,hi' (0-9999); omit for no holdout      |
-| `--json`            | optional | Output as JSON                                              |
-| `--project <id>`    | optional | Project ID override                                         |
-
-Examples:
-
-```bash
-# Default user_id unit, no holdout
-shipeasy universes create web
-
-# 10% holdout, keyed on account_id
-shipeasy universes create web --unit-type account_id --holdout 0,999
-```
-
-### `shipeasy universes update`
-
-Update a universe's holdout range
-
-```bash
-shipeasy universes update [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option              |          | Description                                           |
-| ------------------- | -------- | ----------------------------------------------------- |
-| `--holdout <range>` | optional | Holdout range as 'lo,hi' (0-9999), or 'null' to clear |
-| `--json`            | optional | Output as JSON                                        |
-| `--project <id>`    | optional | Project ID override                                   |
-
-Examples:
-
-```bash
-# Set a 5% holdout
-shipeasy universes update web --holdout 0,499
-
-# Clear the holdout
-shipeasy universes update web --holdout null
-```
-
-### `shipeasy universes delete`
-
-Delete a universe by name
-
-```bash
-shipeasy universes delete [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-shipeasy universes delete web
-```
-
-## feedback
-
-Manage bug reports and feature requests
-
-### `shipeasy feedback bugs`
-
-Bug reports
-
-```bash
-shipeasy feedback bugs [options] [command]
-```
-
-### `shipeasy feedback features`
-
-Feature requests
-
-```bash
-shipeasy feedback features [options] [command]
-```
-
-## connectors
-
-Manage feedback connectors (Google Sheets, GitHub, Claude triggers)
-
-### `shipeasy connectors create-trigger`
-
-Register a Claude trigger connector for a Claude Code routine. The routine bearer token is encrypted at rest server-side and never logged.
-
-```bash
-shipeasy connectors create-trigger [options]
-```
-
-| Option              |          | Description                                                                           |
-| ------------------- | -------- | ------------------------------------------------------------------------------------- |
-| `--routine-id <id>` | required | Claude Code routine id to fire                                                        |
-| `--token <token>`   | required | Routine bearer token (used to fire the routine)                                       |
-| `--text <prompt>`   | optional | Default prompt sent when the routine is fired without one                             |
-| `--name <name>`     | optional | Connector display name (default: `"Claude trigger"`)                                  |
-| `--events <list>`   | optional | Comma-separated auto-fire events (bug.created, feature_request.created); default none |
-| `--json`            | optional | Output as JSON                                                                        |
-| `--project <id>`    | optional | Project ID override                                                                   |
-
-Examples:
-
-```bash
-# Register a routine, auto-fire on new bugs
-shipeasy connectors create-trigger --routine-id rt_abc123 --token se_rt_xxx \
-  --events bug.created,feature_request.created
-
-# On-demand only, with a default prompt
-shipeasy connectors create-trigger --routine-id rt_abc123 --token se_rt_xxx \
-  --name "Nightly fixer" --text "Fix the top open bug"
-```
-
-### `shipeasy connectors fire`
-
-Fire a Claude trigger connector's routine now
-
-```bash
-shipeasy connectors fire [options] <id>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `id`     | required | —           |
-
-| Option            |          | Description                                                   |
-| ----------------- | -------- | ------------------------------------------------------------- |
-| `--text <prompt>` | optional | Prompt to send for this run (overrides the connector default) |
-| `--project <id>`  | optional | Project ID override                                           |
-
-Examples:
-
-```bash
-# Fire a connector by id prefix
-shipeasy connectors fire a1b2c3d4
-
-# Fire with a one-off prompt
-shipeasy connectors fire a1b2c3d4 --text "Fix bug #42"
-```
-
-### `shipeasy connectors list`
-
-List feedback connectors
-
-```bash
-shipeasy connectors list [options]
-```
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--json`         | optional | Output as JSON      |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-shipeasy connectors list
+shipeasy metrics events [options] [command]
 ```
 
 ## ops
 
-Operational CLIs — reference a sub-CLI explicitly (see `shipeasy ops`)
+Operational queue, tickets & alert rules
 
-### `shipeasy ops`
-
-Operational CLIs — reference a sub-CLI explicitly (see `shipeasy ops`)
-
-```bash
-shipeasy ops [options]
-```
-
-## ops.list
-
-List the unified operational queue (bugs + features + error/alert tickets)
-
-### `shipeasy ops.list`
+### `shipeasy ops list`
 
 List the unified operational queue (bugs + features + error/alert tickets)
 
 ```bash
-shipeasy ops.list [options]
+shipeasy ops list [options]
 ```
 
 | Option                  |          | Description                                                                                             |
@@ -1364,22 +484,18 @@ Examples:
 
 ```bash
 # Open critical items only
-shipeasy ops.list --priority critical
+shipeasy ops list --priority critical
 
 # Just error tickets
-shipeasy ops.list --type error
+shipeasy ops list --type error
 ```
 
-## ops.get
-
-Show one queue item by number (#7 → 7) or id — any type
-
-### `shipeasy ops.get`
+### `shipeasy ops get`
 
 Show one queue item by number (#7 → 7) or id — any type
 
 ```bash
-shipeasy ops.get [options] <handle>
+shipeasy ops get [options] <handle>
 ```
 
 | Argument |          | Description |
@@ -1395,19 +511,15 @@ Examples:
 
 ```bash
 # By queue number
-shipeasy ops.get 7
+shipeasy ops get 7
 ```
 
-## ops.update
-
-Flip a queue item's status (any type) — and optionally its priority
-
-### `shipeasy ops.update`
+### `shipeasy ops update`
 
 Flip a queue item's status (any type) — and optionally its priority
 
 ```bash
-shipeasy ops.update [options] <handle>
+shipeasy ops update [options] <handle>
 ```
 
 | Argument |          | Description |
@@ -1425,22 +537,18 @@ Examples:
 
 ```bash
 # Resolve item #7
-shipeasy ops.update 7 --status resolved
+shipeasy ops update 7 --status resolved
 
 # Bump priority
-shipeasy ops.update 7 --priority high
+shipeasy ops update 7 --priority high
 ```
 
-## ops.link-pr
-
-Link the PR that fixed a queue item (any type). Records connector_data.github.pr; ops-key safe.
-
-### `shipeasy ops.link-pr`
+### `shipeasy ops link-pr`
 
 Link the PR that fixed a queue item (any type). Records connector_data.github.pr; ops-key safe.
 
 ```bash
-shipeasy ops.link-pr [options] <handle> <pr-number>
+shipeasy ops link-pr [options] <handle> <pr-number>
 ```
 
 | Argument    |          | Description |
@@ -1459,19 +567,15 @@ Examples:
 
 ```bash
 # Link the fixing PR (with URL)
-shipeasy ops.link-pr 7 42 --url https://github.com/acme/app/pull/42
+shipeasy ops link-pr 7 42 --url https://github.com/acme/app/pull/42
 ```
 
-## ops.notify
-
-Raise a 'needs your attention' bell notification (agent escalation, create-only)
-
-### `shipeasy ops.notify`
+### `shipeasy ops notify`
 
 Raise a 'needs your attention' bell notification (agent escalation, create-only)
 
 ```bash
-shipeasy ops.notify [options]
+shipeasy ops notify [options]
 ```
 
 | Option             |          | Description                                                         |
@@ -1489,736 +593,19 @@ Examples:
 
 ```bash
 # Escalate a blocked item to the bell
-shipeasy ops.notify --item 7 \
+shipeasy ops notify --item 7 \
   --title "Needs a DB migration" \
   --summary "Fix requires a schema change I can't apply in code" \
   --step "Add the column via wrangler d1 migrations" \
   --step "Re-run the fixer"
 ```
 
-## ops.bugs
+### `shipeasy ops alerts`
 
-Bug reports
-
-### `shipeasy ops.bugs list`
-
-List bugs
+Create & manage metric-threshold alert rules the analysis cron evaluates
 
 ```bash
-shipeasy ops.bugs list [options]
-```
-
-| Option                  |          | Description                                                                    |
-| ----------------------- | -------- | ------------------------------------------------------------------------------ |
-| `--status <status>`     | optional | Filter by status: open\|triaged\|in_progress\|ready_for_qa\|resolved\|wont_fix |
-| `--priority <priority>` | optional | Filter by priority: nice_to_have\|medium\|high\|critical                       |
-| `--json`                | optional | Output as JSON                                                                 |
-| `--project <id>`        | optional | Project ID override                                                            |
-
-Examples:
-
-```bash
-# Only open bugs
-shipeasy ops.bugs list --status open
-```
-
-### `shipeasy ops.bugs get`
-
-Show one bug by id (or id prefix)
-
-```bash
-shipeasy ops.bugs get [options] <id>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `id`     | required | —           |
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--json`         | optional | Output as JSON      |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-# Look up by id prefix
-shipeasy ops.bugs get a1b2c3d4
-```
-
-### `shipeasy ops.bugs update`
-
-Update a bug — supports --status and --priority \<priority>
-
-```bash
-shipeasy ops.bugs update [options] <id>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `id`     | required | —           |
-
-| Option                  |          | Description                                                              |
-| ----------------------- | -------- | ------------------------------------------------------------------------ |
-| `--status <status>`     | optional | New status: open\|triaged\|in_progress\|ready_for_qa\|resolved\|wont_fix |
-| `--priority <priority>` | optional | New priority: nice_to_have\|medium\|high\|critical                       |
-| `--json`                | optional | Output as JSON                                                           |
-| `--project <id>`        | optional | Project ID override                                                      |
-
-Examples:
-
-```bash
-# Mark in progress
-shipeasy ops.bugs update a1b2c3d4 --status in_progress
-
-# Bump priority
-shipeasy ops.bugs update a1b2c3d4 --priority high
-```
-
-### `shipeasy ops.bugs create`
-
-File a bug
-
-```bash
-shipeasy ops.bugs create [options] <title>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `title`  | required | —           |
-
-| Option              |          | Description                    |
-| ------------------- | -------- | ------------------------------ |
-| `--page-url <url>`  | optional | Page URL where it was observed |
-| `--json`            | optional | Output as JSON                 |
-| `--project <id>`    | optional | Project ID override            |
-| `--steps <text>`    | required | Steps to reproduce             |
-| `--actual <text>`   | required | Actual result                  |
-| `--expected <text>` | required | Expected result                |
-
-Examples:
-
-```bash
-# File a bug
-shipeasy ops.bugs create "Short bug title" --steps "…" --actual "…" --expected "…"
-```
-
-### `shipeasy ops.bugs delete`
-
-Delete a bug by id (or id prefix)
-
-```bash
-shipeasy ops.bugs delete [options] <id>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `id`     | required | —           |
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-# Delete by id prefix
-shipeasy ops.bugs delete a1b2c3d4
-```
-
-### `shipeasy ops.bugs attachments`
-
-Download all attachments for a bug to a local directory. Prints one absolute path per line on stdout (suitable for piping into other tools).
-
-```bash
-shipeasy ops.bugs attachments [options] <id>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `id`     | required | —           |
-
-| Option           |          | Description                                                               |
-| ---------------- | -------- | ------------------------------------------------------------------------- |
-| `--out <dir>`    | optional | Output directory. Defaults to a tmpdir under $TMPDIR/shipeasy-bugs/\<id>/ |
-| `--json`         | optional | Output JSON metadata instead of plain paths                               |
-| `--project <id>` | optional | Project ID override                                                       |
-
-Examples:
-
-```bash
-# Download attachments to a directory
-shipeasy ops.bugs attachments a1b2c3d4 --out ./shots
-```
-
-### `shipeasy ops.bugs link-pr`
-
-Link a GitHub pull request to a bug. When a GitHub connector is configured, prints the PR URL.
-
-```bash
-shipeasy ops.bugs link-pr [options] <id> <pr-number>
-```
-
-| Argument    |          | Description |
-| ----------- | -------- | ----------- |
-| `id`        | required | —           |
-| `pr-number` | required | —           |
-
-| Option           |          | Description                          |
-| ---------------- | -------- | ------------------------------------ |
-| `--remove`       | optional | Unlink the PR instead of setting one |
-| `--json`         | optional | Output as JSON                       |
-| `--project <id>` | optional | Project ID override                  |
-
-Examples:
-
-```bash
-# Link the PR that fixed it
-shipeasy ops.bugs link-pr a1b2c3d4 42
-
-# Unlink the PR
-shipeasy ops.bugs link-pr a1b2c3d4 0 --remove
-```
-
-## ops.features
-
-Feature requests
-
-### `shipeasy ops.features list`
-
-List features
-
-```bash
-shipeasy ops.features list [options]
-```
-
-| Option                  |          | Description                                                                    |
-| ----------------------- | -------- | ------------------------------------------------------------------------------ |
-| `--status <status>`     | optional | Filter by status: open\|triaged\|in_progress\|ready_for_qa\|resolved\|wont_fix |
-| `--priority <priority>` | optional | Filter by priority: nice_to_have\|medium\|high\|critical                       |
-| `--json`                | optional | Output as JSON                                                                 |
-| `--project <id>`        | optional | Project ID override                                                            |
-
-Examples:
-
-```bash
-# Only open features
-shipeasy ops.features list --status open
-```
-
-### `shipeasy ops.features get`
-
-Show one feature request by id (or id prefix)
-
-```bash
-shipeasy ops.features get [options] <id>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `id`     | required | —           |
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--json`         | optional | Output as JSON      |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-# Look up by id prefix
-shipeasy ops.features get a1b2c3d4
-```
-
-### `shipeasy ops.features update`
-
-Update a feature request — supports --status and --priority \<priority>
-
-```bash
-shipeasy ops.features update [options] <id>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `id`     | required | —           |
-
-| Option                  |          | Description                                                              |
-| ----------------------- | -------- | ------------------------------------------------------------------------ |
-| `--status <status>`     | optional | New status: open\|triaged\|in_progress\|ready_for_qa\|resolved\|wont_fix |
-| `--priority <priority>` | optional | New priority: nice_to_have\|medium\|high\|critical                       |
-| `--json`                | optional | Output as JSON                                                           |
-| `--project <id>`        | optional | Project ID override                                                      |
-
-Examples:
-
-```bash
-# Mark in progress
-shipeasy ops.features update a1b2c3d4 --status in_progress
-
-# Bump priority
-shipeasy ops.features update a1b2c3d4 --priority high
-```
-
-### `shipeasy ops.features create`
-
-File a feature request
-
-```bash
-shipeasy ops.features create [options] <title>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `title`  | required | —           |
-
-| Option                 |          | Description                    |
-| ---------------------- | -------- | ------------------------------ |
-| `--page-url <url>`     | optional | Page URL where it was observed |
-| `--json`               | optional | Output as JSON                 |
-| `--project <id>`       | optional | Project ID override            |
-| `--description <text>` | required | Description                    |
-| `--use-case <text>`    | required | Use case                       |
-
-Examples:
-
-```bash
-# File a feature request
-shipeasy ops.features create "Short feature request title" --description "…" --use-case "…"
-```
-
-### `shipeasy ops.features delete`
-
-Delete a feature request by id (or id prefix)
-
-```bash
-shipeasy ops.features delete [options] <id>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `id`     | required | —           |
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-# Delete by id prefix
-shipeasy ops.features delete a1b2c3d4
-```
-
-### `shipeasy ops.features attachments`
-
-Download all attachments for a feature request to a local directory. Prints one absolute path per line on stdout (suitable for piping into other tools).
-
-```bash
-shipeasy ops.features attachments [options] <id>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `id`     | required | —           |
-
-| Option           |          | Description                                                                   |
-| ---------------- | -------- | ----------------------------------------------------------------------------- |
-| `--out <dir>`    | optional | Output directory. Defaults to a tmpdir under $TMPDIR/shipeasy-features/\<id>/ |
-| `--json`         | optional | Output JSON metadata instead of plain paths                                   |
-| `--project <id>` | optional | Project ID override                                                           |
-
-Examples:
-
-```bash
-# Download attachments to a directory
-shipeasy ops.features attachments a1b2c3d4 --out ./shots
-```
-
-### `shipeasy ops.features link-pr`
-
-Link a GitHub pull request to a feature request. When a GitHub connector is configured, prints the PR URL.
-
-```bash
-shipeasy ops.features link-pr [options] <id> <pr-number>
-```
-
-| Argument    |          | Description |
-| ----------- | -------- | ----------- |
-| `id`        | required | —           |
-| `pr-number` | required | —           |
-
-| Option           |          | Description                          |
-| ---------------- | -------- | ------------------------------------ |
-| `--remove`       | optional | Unlink the PR instead of setting one |
-| `--json`         | optional | Output as JSON                       |
-| `--project <id>` | optional | Project ID override                  |
-
-Examples:
-
-```bash
-# Link the PR that fixed it
-shipeasy ops.features link-pr a1b2c3d4 42
-
-# Unlink the PR
-shipeasy ops.features link-pr a1b2c3d4 0 --remove
-```
-
-## ops.errors
-
-Tracked production errors (read-only)
-
-### `shipeasy ops.errors list`
-
-List tracked errors (most-recently-seen first)
-
-```bash
-shipeasy ops.errors list [options]
-```
-
-| Option              |          | Description                               |
-| ------------------- | -------- | ----------------------------------------- |
-| `--status <status>` | optional | Filter by status: open\|resolved\|ignored |
-| `--json`            | optional | Output as JSON                            |
-| `--project <id>`    | optional | Project ID override                       |
-
-Examples:
-
-```bash
-# Only unresolved errors
-shipeasy ops.errors list --status open
-```
-
-### `shipeasy ops.errors get`
-
-Show one tracked error by id (or id prefix)
-
-```bash
-shipeasy ops.errors get [options] <id>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `id`     | required | —           |
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--json`         | optional | Output as JSON      |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-# Inspect by id prefix
-shipeasy ops.errors get a1b2c3d4
-```
-
-### `shipeasy ops.errors update`
-
-Set a tracked error's status: open|resolved|ignored
-
-```bash
-shipeasy ops.errors update [options] <id>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `id`     | required | —           |
-
-| Option              |          | Description                         |
-| ------------------- | -------- | ----------------------------------- |
-| `--status <status>` | required | New status: open\|resolved\|ignored |
-| `--json`            | optional | Output as JSON                      |
-| `--project <id>`    | optional | Project ID override                 |
-
-Examples:
-
-```bash
-# Mark resolved after a fix lands
-shipeasy ops.errors update a1b2c3d4 --status resolved
-```
-
-## alerts
-
-Active alerts (read-only)
-
-### `shipeasy alerts list`
-
-List alerts (danger first, then most-recent). Defaults to active.
-
-```bash
-shipeasy alerts list [options]
-```
-
-| Option              |          | Description                                                              |
-| ------------------- | -------- | ------------------------------------------------------------------------ |
-| `--status <status>` | optional | Filter by status: active\|resolved\|dismissed\|all (default: `"active"`) |
-| `--json`            | optional | Output as JSON                                                           |
-| `--project <id>`    | optional | Project ID override                                                      |
-
-Examples:
-
-```bash
-shipeasy alerts list
-
-# Include resolved + dismissed
-shipeasy alerts list --status all
-```
-
-### `shipeasy alerts get`
-
-Show one alert by id (or id prefix)
-
-```bash
-shipeasy alerts get [options] <id>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `id`     | required | —           |
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--json`         | optional | Output as JSON      |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-# id or unique id-prefix
-shipeasy alerts get a1b2c3d4
-```
-
-## alert-rules
-
-Manage metric-threshold alert rules (writable; `shipeasy alerts` is read-only)
-
-### `shipeasy alert-rules list`
-
-List alert rules
-
-```bash
-shipeasy alert-rules list [options]
-```
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--json`         | optional | Output as JSON      |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-shipeasy alert-rules list
-```
-
-### `shipeasy alert-rules create`
-
-Create an alert rule. The metric (and its aggregation) is fixed for the rule's life.
-
-```bash
-shipeasy alert-rules create [options] <name>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `name`   | required | —           |
-
-| Option                 |          | Description                                              |
-| ---------------------- | -------- | -------------------------------------------------------- |
-| `--metric <id\|name>`  | required | Metric to evaluate (id or name)                          |
-| `--comparator <op>`    | required | Comparison: gt \| gte \| lt \| lte                       |
-| `--threshold <number>` | required | Threshold the metric value is compared against           |
-| `--window <hours>`     | optional | Lookback window in whole hours (1–720) (default: `"24"`) |
-| `--severity <level>`   | optional | Severity: danger \| warn \| info (default: `"warn"`)     |
-| `--disabled`           | optional | Create the rule disabled (default: enabled)              |
-| `--json`               | optional | Output as JSON                                           |
-| `--project <id>`       | optional | Project ID override                                      |
-
-Examples:
-
-```bash
-# Alert when error rate exceeds 50 / 24h
-shipeasy alert-rules create high-error-rate --metric api-errors \
-  --comparator gt --threshold 50
-
-# Danger if checkouts drop below 100 in 6h
-shipeasy alert-rules create low-checkouts --metric checkouts \
-  --comparator lt --threshold 100 --window 6 --severity danger
-```
-
-### `shipeasy alert-rules update`
-
-Update an alert rule's tunable knobs (id or id-prefix or unique name). Metric is immutable.
-
-```bash
-shipeasy alert-rules update [options] <id>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `id`     | required | —           |
-
-| Option                 |          | Description                                    |
-| ---------------------- | -------- | ---------------------------------------------- |
-| `--name <name>`        | optional | Human label for the rule                       |
-| `--comparator <op>`    | optional | Comparison: gt \| gte \| lt \| lte             |
-| `--threshold <number>` | optional | Threshold the metric value is compared against |
-| `--window <hours>`     | optional | Lookback window in whole hours (1–720)         |
-| `--severity <level>`   | optional | Severity: danger \| warn \| info               |
-| `--enabled <bool>`     | optional | Enable/disable the rule (true\|false)          |
-| `--json`               | optional | Output as JSON                                 |
-| `--project <id>`       | optional | Project ID override                            |
-
-Examples:
-
-```bash
-# Raise the threshold
-shipeasy alert-rules update high-error-rate --threshold 100
-
-# Disable a rule
-shipeasy alert-rules update high-error-rate --enabled false
-```
-
-### `shipeasy alert-rules delete`
-
-Delete an alert rule (id or id-prefix or unique name)
-
-```bash
-shipeasy alert-rules delete [options] <id>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `id`     | required | —           |
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-shipeasy alert-rules delete high-error-rate
-```
-
-## keys
-
-Manage SDK keys (server, client, admin, ops)
-
-### `shipeasy keys list`
-
-List SDK keys for the current project
-
-```bash
-shipeasy keys list [options]
-```
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--json`         | optional | Output as JSON      |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-shipeasy keys list
-
-# Machine-readable output
-shipeasy keys list --json
-```
-
-### `shipeasy keys create`
-
-Create a new SDK key. The raw token is shown ONCE — store it now.
-
-```bash
-shipeasy keys create [options]
-```
-
-| Option           |               | Description                                                                                                              |
-| ---------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `--type <type>`  | required      | Key type: server \| client \| admin \| ops                                                                               |
-| `--env <env>`    | server/client | Environment the key is bound to: dev \| staging \| prod. **Required** for server and client keys; ignored for admin/ops. |
-| `--json`         | optional      | Output as JSON                                                                                                           |
-| `--project <id>` | optional      | Project ID override                                                                                                      |
-
-Each server/client key is bound to one environment at mint time. The worker
-derives the read environment **from the key** — a client key can only ever read
-its own env (it ships in the browser, so it cannot be trusted to pick), while a
-server key may additionally pass `?env=` per request as an explicit override.
-Mint one key per environment.
-
-Examples:
-
-```bash
-# Server key for production (private, server-only)
-shipeasy keys create --type server --env prod
-
-# Public client key for staging
-shipeasy keys create --type client --env staging
-
-# Restricted ops key for the trigger (env-agnostic)
-shipeasy keys create --type ops
-```
-
-### `shipeasy keys revoke`
-
-Revoke a key by id (or id prefix; first match wins)
-
-```bash
-shipeasy keys revoke [options] <id>
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `id`     | required | —           |
-
-| Option           |          | Description         |
-| ---------------- | -------- | ------------------- |
-| `--json`         | optional | Output as JSON      |
-| `--project <id>` | optional | Project ID override |
-
-Examples:
-
-```bash
-# Revoke by full id
-shipeasy keys revoke 7f3a9c10-2b4d-4e6f-8a1b-0c2d3e4f5a6b
-
-# Revoke by id prefix (first match)
-shipeasy keys revoke 7f3a9c10
-```
-
-## scan
-
-Detect project language, framework, and ShipEasy SDK state
-
-### `shipeasy scan`
-
-Detect project language, framework, and ShipEasy SDK state
-
-```bash
-shipeasy scan [options] [paths...]
-```
-
-| Argument   |          | Description |
-| ---------- | -------- | ----------- |
-| `paths...` | optional | —           |
-
-| Option   |          | Description     |
-| -------- | -------- | --------------- |
-| `--json` | optional | Output raw JSON |
-
-Examples:
-
-```bash
-# Scan the current directory
-shipeasy scan
-
-# Scan a specific app in a monorepo
-shipeasy scan ./apps/web
-
-# Raw JSON for tooling
-shipeasy scan ./src --json
+shipeasy ops alerts [options] [command]
 ```
 
 ## i18n
@@ -2401,120 +788,18 @@ Manage i18n locale profiles
 shipeasy i18n profiles [options] [command]
 ```
 
-## codemod
+### `shipeasy i18n keys`
+
+Manage SDK keys (server, client, admin, ops)
+
+```bash
+shipeasy i18n keys [options] [command]
+```
+
+### `shipeasy i18n codemod`
 
 Source-code codemods (i18n extraction, framework migrations)
 
-### `shipeasy codemod i18n`
-
-Extract translatable strings and wrap them with i18n.t() from @shipeasy/sdk/client. Reads .i18n-codemod.json from the current directory if present.
-
 ```bash
-shipeasy codemod i18n [options] [target]
-```
-
-| Argument |          | Description |
-| -------- | -------- | ----------- |
-| `target` | optional | —           |
-
-| Option             |          | Description                                                                        |
-| ------------------ | -------- | ---------------------------------------------------------------------------------- |
-| `--config <path>`  | optional | Path to a JSON config file                                                         |
-| `--dry-run`        | optional | Preview without writing files                                                      |
-| `--verbose, -v`    | optional | Detailed per-file output                                                           |
-| `--type <name>`    | optional | Run only one extraction type (jsx-text, jsx-attr, template-literal, ...)           |
-| `--migrate <name>` | optional | Run a migration plugin (react-i18next, react-intl, lingui, next-intl, raw-i18next) |
-
-Examples:
-
-```bash
-# Preview extraction over app/
-shipeasy codemod i18n app --dry-run
-
-# Run only JSX text extraction
-shipeasy codemod i18n ./src --type jsx-text
-
-# Migrate from react-i18next
-shipeasy codemod i18n --migrate react-i18next
-```
-
-## mcp
-
-Manage the Shipeasy MCP server in AI-assistant configs
-
-### `shipeasy mcp install`
-
-Register the Shipeasy MCP server with installed AI assistants
-
-```bash
-shipeasy mcp install [options]
-```
-
-| Option            |          | Description                                                                     |
-| ----------------- | -------- | ------------------------------------------------------------------------------- |
-| `--client <name>` | optional | Restrict to one client (claude \| cursor \| windsurf \| all) (default: `"all"`) |
-| `--scope <scope>` | optional | user \| project (default: `"user"`)                                             |
-| `--force`         | optional | Replace an existing 'shipeasy' MCP entry without prompting                      |
-| `--dry-run`       | optional | Print what would change without writing files                                   |
-
-Examples:
-
-```bash
-shipeasy mcp install
-
-# only Claude, project config
-shipeasy mcp install --client claude --scope project
-
-# preview a forced replace
-shipeasy mcp install --force --dry-run
-```
-
-### `shipeasy mcp status`
-
-Show which AI-assistant configs have a Shipeasy MCP entry
-
-```bash
-shipeasy mcp status [options]
-```
-
-Examples:
-
-```bash
-shipeasy mcp status
-```
-
-### `shipeasy mcp start`
-
-Run the Shipeasy MCP stdio server (forwards to @shipeasy/mcp)
-
-```bash
-shipeasy mcp start [options]
-```
-
-Examples:
-
-```bash
-# stdio server an assistant launches
-shipeasy mcp start
-```
-
-### `shipeasy mcp uninstall`
-
-Remove the 'shipeasy' MCP entry from AI-assistant configs
-
-```bash
-shipeasy mcp uninstall [options]
-```
-
-| Option            |          | Description                                 |
-| ----------------- | -------- | ------------------------------------------- |
-| `--client <name>` | optional | Restrict to one client (default: `"all"`)   |
-| `--scope <scope>` | optional | user \| project \| both (default: `"both"`) |
-
-Examples:
-
-```bash
-shipeasy mcp uninstall
-
-shipeasy mcp uninstall --client cursor --scope user
+shipeasy i18n codemod [options] [command]
 ```
