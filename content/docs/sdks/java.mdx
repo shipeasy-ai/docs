@@ -24,35 +24,43 @@ Server-side flags, configs, experiments, and tracking for the JVM. Evaluates loc
 
 ## Configure
 
-Construct the client with the **server** key and `init()`. `Client` is `AutoCloseable`, so a try-with-resources block stops the poll on close.
+Call `Shipeasy.configure()` once at startup with the **server** key, plus an optional `attributes` transform that maps your user object onto the Shipeasy attribute map. A simple `Shipeasy.configure(apiKey)` form is also available when you don't need a transform.
 
 ```java
+import ai.shipeasy.Shipeasy;
 import ai.shipeasy.Client;
 import ai.shipeasy.ExperimentResult;
 import java.util.Map;
 
-try (Client c = new Client(System.getenv("SHIPEASY_SERVER_KEY"))) {
-    c.init();
-    // ...
-}
+Shipeasy.configure(
+    Shipeasy.options(System.getenv("SHIPEASY_SERVER_KEY"))
+        .attributes(u -> Map.of("user_id", u.id(), "plan", u.plan())));
+```
+
+## Bind a client to the user
+
+Construct a lightweight `Client` from your user object — the `attributes` transform turns it into the evaluation context, so the getters take **no** user argument:
+
+```java
+Client flags = new Client(currentUser);
 ```
 
 ## Evaluate a feature flag
 
 ```java
-boolean enabled = c.getFlag("new_checkout", Map.of("user_id", "u_123"));
+boolean enabled = flags.getFlag("new_checkout");
 ```
 
 A default overload returns the fallback **only** when the value can't be resolved (client not ready or gate absent) — a gate that evaluates `false` returns `false`:
 
 ```java
-boolean enabled = c.getFlag("new_checkout", Map.of("user_id", "u_123"), true);
+boolean enabled = flags.getFlag("new_checkout", true);
 ```
 
 For the value plus the reason, use `getFlagDetail` — see [Evaluation reasons](/sdks/reasons):
 
 ```java
-FlagDetail d = c.getFlagDetail("new_checkout", Map.of("user_id", "u_123"));
+FlagDetail d = flags.getFlagDetail("new_checkout");
 d.value();   // boolean
 d.reason();  // one of the FlagDetail.* constants
 ```
@@ -60,16 +68,14 @@ d.reason();  // one of the FlagDetail.* constants
 ## Read a dynamic config
 
 ```java
-Object cfg  = c.getConfig("billing_copy");
-Object copy = c.getConfig("billing_copy", Map.of("title", "Default"));
+Object cfg  = flags.getConfig("billing_copy");
+Object copy = flags.getConfig("billing_copy", Map.of("title", "Default"));
 ```
 
 ## Resolve an experiment
 
 ```java
-ExperimentResult r = c.getExperiment("checkout_button",
-    Map.of("user_id", "u_123"),
-    Map.of("color", "blue"));
+ExperimentResult r = flags.getExperiment("checkout_button", Map.of("color", "blue"));
 if (r.inExperiment) {
     r.group();  // "treatment"
     r.params(); // {color=...}
@@ -79,7 +85,7 @@ if (r.inExperiment) {
 ## Track an event
 
 ```java
-c.track("u_123", "purchase", Map.of("amount", 49));
+flags.track("purchase", Map.of("amount", 49));
 ```
 
 ## Anonymous visitors
@@ -94,20 +100,20 @@ FilterRegistrationBean<AnonIdFilter> shipeasyAnonId() {
     return reg;
 }
 
-c.getFlag("new_checkout", Map.of()); // buckets on the cookie
+new Client(anonUser).getFlag("new_checkout"); // buckets on the cookie
 ```
 
 `jakarta.servlet-api` is a `provided` dependency. Non-servlet stacks (Ktor, Javalin) use the `AnonId` primitives directly.
 
 ## Testing
 
-`Client.forTesting()` does zero network — no key, `init`/`track` are no-ops. Seed with `override*` and reset with `clearOverrides`. See [Testing](/sdks/testing).
+`Engine.forTesting()` does zero network — no key, `init`/`track` are no-ops. Seed with `override*` and reset with `clearOverrides`. `Engine` is `AutoCloseable`, so a try-with-resources block stops the poll on close. See [Testing](/sdks/testing).
 
 ```java
-try (Client c = Client.forTesting()) {
-    c.overrideFlag("new_checkout", true);
-    c.getFlag("new_checkout", Map.of()); // true
-    c.clearOverrides();
+try (Engine engine = Engine.forTesting()) {
+    engine.overrideFlag("new_checkout", true);
+    engine.getFlag("new_checkout", Map.of()); // true
+    engine.clearOverrides();
 }
 ```
 

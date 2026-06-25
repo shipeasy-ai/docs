@@ -69,11 +69,16 @@ npm install @shipeasy/sdk
 
 ```ts
 // Same capability, with types, once you have a bundler:
-import { FlagsClientBrowser } from "@shipeasy/sdk/client";
+import { configure, Client } from "@shipeasy/sdk/client";
 
-const client = new FlagsClientBrowser({ sdkKey: "sdk_client_..." });
-await client.identify({ user_id: "user-123", plan: "pro" });
-client.getFlag("new_checkout");
+configure({
+  clientKey: "sdk_client_...",
+  attributes: (u) => ({ user_id: u.id, plan: u.plan }),
+});
+
+const flags = new Client({ id: "user-123", plan: "pro" });
+await flags.ready();
+flags.getFlag("new_checkout");
 ```
 
 <SeeAlso

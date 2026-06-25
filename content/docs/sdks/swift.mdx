@@ -27,31 +27,41 @@ dependencies: [
 
 ## Configure
 
-Construct with the **server** key and `await initialize()`.
+Call `configure()` once at startup with the **server** key, plus an optional `attributes` transform that maps your user object onto the Shipeasy attribute map.
 
 ```swift
 import Shipeasy
 
-let client = Client(apiKey: ProcessInfo.processInfo.environment["SHIPEASY_SERVER_KEY"]!)
-try await client.initialize()
+try await configure(
+    apiKey: ProcessInfo.processInfo.environment["SHIPEASY_SERVER_KEY"]!,
+    attributes: { u in ["user_id": u.id, "plan": u.plan] }
+)
+```
+
+## Bind a client to the user
+
+Construct a `Client` from your user object — the `attributes` transform turns it into the evaluation context, so the getters take **no** user argument. The methods are `async` because the underlying `Engine` is an actor.
+
+```swift
+let flags = try Client(currentUser)
 ```
 
 ## Evaluate a feature flag
 
 ```swift
-let enabled = await client.getFlag("new_checkout", user: ["user_id": "u_123"])
+let enabled = await flags.getFlag("new_checkout")
 ```
 
 An optional `default` is returned **only** when the gate can't be evaluated (client not ready or gate absent) — a gate that evaluates `false` returns `false`:
 
 ```swift
-let on = await client.getFlag("new_checkout", user: ["user_id": "u_123"], default: true)
+let on = await flags.getFlag("new_checkout", default: true)
 ```
 
 For the value plus the reason, use `getFlagDetail` — see [Evaluation reasons](/sdks/reasons):
 
 ```swift
-let d = await client.getFlagDetail("new_checkout", user: ["user_id": "u_123"])
+let d = await flags.getFlagDetail("new_checkout")
 // d.value  -> Bool
 // d.reason -> one of the FlagReason raw values
 ```
@@ -59,17 +69,13 @@ let d = await client.getFlagDetail("new_checkout", user: ["user_id": "u_123"])
 ## Read a dynamic config
 
 ```swift
-let cfg = await client.getConfig("billing_copy", default: ["headline": "Welcome"])
+let cfg = await flags.getConfig("billing_copy", default: ["headline": "Welcome"])
 ```
 
 ## Resolve an experiment
 
 ```swift
-let r = await client.getExperiment(
-    "checkout_button",
-    user: ["user_id": "u_123"],
-    defaultParams: ["color": "blue"],
-)
+let r = await flags.getExperiment("checkout_button", defaultParams: ["color": "blue"])
 if r.inExperiment {
     r.group   // "treatment"
     r.params  // ["color": ...]
@@ -79,7 +85,7 @@ if r.inExperiment {
 ## Track an event
 
 ```swift
-await client.track(userId: "u_123", eventName: "purchase", properties: ["amount": 49])
+await flags.track(eventName: "purchase", properties: ["amount": 49])
 ```
 
 ## Anonymous visitors
@@ -88,7 +94,7 @@ The SDK is framework-agnostic, so it ships `AnonId` primitives rather than a mid
 
 ```swift
 let resolved = AnonId.resolve(cookieHeader: req.headers["cookie"].first)
-let on = await client.getFlag("new_checkout", user: ["anonymous_id": resolved.id])
+let on = await Engine.shared.getFlag("new_checkout", user: ["anonymous_id": resolved.id])
 if resolved.minted {
     res.headers.add(name: "set-cookie", value: AnonId.setCookieHeader(resolved.id, secure: true))
 }
@@ -96,13 +102,13 @@ if resolved.minted {
 
 ## Testing
 
-`Client.forTesting()` does zero network — no key, `initialize`/`track` are no-ops. Seed with `override*` and reset with `clearOverrides`. See [Testing](/sdks/testing).
+`Engine.forTesting()` does zero network — no key, `initialize`/`track` are no-ops. Seed with `override*` and reset with `clearOverrides`. See [Testing](/sdks/testing).
 
 ```swift
-let client = Client.forTesting()
-await client.overrideFlag("new_checkout", true)
-let enabled = await client.getFlag("new_checkout", user: ["user_id": "u_123"]) // true
-await client.clearOverrides()
+let engine = Engine.forTesting()
+await engine.overrideFlag("new_checkout", true)
+let enabled = await engine.getFlag("new_checkout", user: ["user_id": "u_123"]) // true
+await engine.clearOverrides()
 ```
 
 <SeeAlso

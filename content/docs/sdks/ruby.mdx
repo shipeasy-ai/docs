@@ -21,23 +21,30 @@ gem "shipeasy"
 
 ## Configure
 
-Drop a `config/initializers/shipeasy.rb` with the **server** key. `Shipeasy.flags` is a lazy, fork-safe singleton — it spawns its own client and poll thread on first use, including post-fork Puma workers.
+Drop a `config/initializers/shipeasy.rb` with the **server** key, plus an optional `attributes` transform that maps your user object onto the Shipeasy attribute map. The engine is a fork-safe singleton — it spawns its own poll thread on first use, including post-fork Puma workers.
 
 ```ruby
 Shipeasy.configure do |c|
   c.api_key    = ENV.fetch("SHIPEASY_SERVER_KEY")
   c.public_key = ENV.fetch("SHIPEASY_CLIENT_KEY")  # for i18n view helpers
+  c.attributes = ->(u) { { user_id: u.id, plan: u.plan } }
 end
 ```
 
 Outside Rails (Sinatra, Hanami, scripts) the same `configure` block works — the Rails view helpers are simply skipped.
 
+## Bind a client to the user
+
+Construct a lightweight `Shipeasy::Client` from your user object — the `attributes` transform turns it into the evaluation context, so the getters take **no** user argument:
+
+```ruby
+flags = Shipeasy::Client.new(current_user)
+```
+
 ## Evaluate a feature flag
 
 ```ruby
-user = { user_id: current_user.id, plan: current_user.plan }
-
-if Shipeasy.flags.get_flag("new_checkout", user)
+if flags.get_flag("new_checkout")
   # ship it
 end
 ```
@@ -45,13 +52,13 @@ end
 A `default:` is returned **only** when the value can't be resolved (client not ready or gate absent) — a gate that evaluates `false` returns `false`:
 
 ```ruby
-Shipeasy.flags.get_flag("new_checkout", user, default: true)
+flags.get_flag("new_checkout", default: true)
 ```
 
 For the value plus the reason, use `get_flag_detail` — see [Evaluation reasons](/sdks/reasons):
 
 ```ruby
-detail = Shipeasy.flags.get_flag_detail("new_checkout", user)
+detail = flags.get_flag_detail("new_checkout")
 detail.value   # => true / false
 detail.reason  # => "RULE_MATCH" / "DEFAULT" / ...
 ```
@@ -59,14 +66,13 @@ detail.reason  # => "RULE_MATCH" / "DEFAULT" / ...
 ## Read a dynamic config
 
 ```ruby
-color = Shipeasy.flags.get_config("button_color", default: "blue")
-max   = Shipeasy.flags.get_config("limits", ->(v) { v["max"] }, default: 0)
+color = flags.get_config("button_color", default: "blue")
 ```
 
 ## Resolve an experiment
 
 ```ruby
-result = Shipeasy.flags.get_experiment("checkout_cta", user, { label: "Buy now" })
+result = flags.get_experiment("checkout_cta", { label: "Buy now" })
 if result.in_experiment
   result.group   # => "treatment"
   result.params  # => { label: "Buy now" }
@@ -76,29 +82,30 @@ end
 ## Track an event
 
 ```ruby
-Shipeasy.flags.track(current_user.id.to_s, "checkout_completed", { revenue: 49.99 })
+flags.track("checkout_completed", { revenue: 49.99 })
 ```
 
 ## Serverless & anon visitors
 
-For Lambda / Cloud Run, skip the auto-init facade and call `init_once` for one synchronous fetch:
+For Lambda / Cloud Run, drive the engine directly and call `init_once` for one synchronous fetch (the per-user `Shipeasy::Engine` API also takes the user on every call for back-compat):
 
 ```ruby
-client = Shipeasy::SDK::FlagsClient.new(api_key: ENV.fetch("SHIPEASY_SERVER_KEY"))
-client.init_once
+engine = Shipeasy::Engine.new(api_key: ENV.fetch("SHIPEASY_SERVER_KEY"))
+engine.init_once
+engine.get_flag("new_checkout", { user_id: "u_1" })
 ```
 
-In Rails the railtie mounts `Shipeasy::SDK::RackMiddleware`, which mints the shared `__se_anon_id` cookie so logged-out traffic buckets like the browser. Bare Rack apps mount it with `use Shipeasy::SDK::RackMiddleware`.
+In Rails the railtie mounts `Shipeasy::RackMiddleware`, which mints the shared `__se_anon_id` cookie so logged-out traffic buckets like the browser. Bare Rack apps mount it with `use Shipeasy::RackMiddleware`.
 
 ## Testing
 
-`FlagsClient.for_testing` does zero network — no api*key, `init`/`track` are no-ops. Seed with `override*\*`and reset with`clear_overrides`. See [Testing](/sdks/testing).
+`Shipeasy::Engine.for_testing` does zero network — no api*key, `init`/`track` are no-ops. Seed with `override*\*`and reset with`clear_overrides`. See [Testing](/sdks/testing).
 
 ```ruby
-client = Shipeasy::SDK::FlagsClient.for_testing
-client.override_flag("new_checkout", true)
-client.get_flag("new_checkout", { user_id: "u_1" }) # => true
-client.clear_overrides
+engine = Shipeasy::Engine.for_testing
+engine.override_flag("new_checkout", true)
+engine.get_flag("new_checkout", { user_id: "u_1" }) # => true
+engine.clear_overrides
 ```
 
 <SeeAlso

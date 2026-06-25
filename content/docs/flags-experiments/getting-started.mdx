@@ -22,8 +22,11 @@ description: Install the SDK, configure once, ship a flag — under five minutes
   label="WIRE"
   title="Configure once, use everywhere"
   cmd="// app/layout.tsx
-import { shipeasy } from '@shipeasy/sdk/server';
-await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? '' });"
+import { configure } from '@shipeasy/sdk/server';
+configure({
+  apiKey: process.env.SHIPEASY_SERVER_KEY ?? '',
+  attributes: (u) => ({ user_id: u.id, plan: u.plan }),
+});"
 >
   Feature flags, configs, experiments, and killswitches all share this single `apiKey`.
 </QuickstartStep>
@@ -41,8 +44,9 @@ await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? '' });"
     num={5}
     label="USE"
     title="Put a feature flag around code in your app"
-    cmd="import { gate } from '@shipeasy/sdk/server';
-if (await gate('checkout-v2', { userId })) {
+    cmd="import { Client } from '@shipeasy/sdk/server';
+const flags = new Client(currentUser);
+if (flags.getFlag('checkout-v2')) {
   return renderCheckoutV2();
 }"
   >

@@ -35,10 +35,11 @@ const ctx = {
   signup_at: "2026-01-12T00:00:00Z",
 };
 
-flags.get("new-checkout", ctx);
+const flags = new Client(ctx);
+flags.getFlag("new-checkout");
 ```
 
-Server SDKs take the context on every call. The browser SDK is identify-once: you call `shipeasy.identify(ctx)` once after login and the same context is reused for every subsequent evaluation until you identify again.
+You bind a `Client` to the eval context once, then read with no per-call user argument. The `attributes` transform you pass to `configure()` is what maps your own user object onto this context shape — see [Install](/get-started/install).
 
 ## Reserved attributes
 
@@ -252,18 +253,19 @@ Multiple rules on a feature flag are **AND**ed. Use `in` with a list to express 
 
 ## Server vs browser
 
-On the **server**, you pass the context on every call:
+On the **server**, you bind a `Client` to the context, then read with no user argument:
 
 ```ts
-flags.get("new-ui", { user_id, plan, country });
+const flags = new Client({ user_id, plan, country });
+flags.getFlag("new-ui");
 ```
 
-In the **browser**, you call `identify()` once after the user logs in and the same context is reused for every subsequent `gate` / `config` / `track` / experiment assignment until you identify again.
+In the **browser**, you bind the `Client` once after the user logs in and reuse it for every subsequent flag / config / experiment read:
 
 ```ts
-await shipeasy.identify({ user_id, plan, country });
+const flags = new Client({ user_id, plan, country });
 
-if (shipeasy.gate("new-ui")) {
+if (flags.getFlag("new-ui")) {
   // …
 }
 ```
@@ -287,18 +289,15 @@ This call writes a single row to D1 mapping the two IDs. The next analysis run m
 By default Shipeasy buckets users by `user_id`. To bucket by something else (typical for B2B: bucket by account so teammates align):
 
 ```ts
-flags.get(
-  "new-ui",
-  {
-    user_id: "u_4f2a",
-    account_id: "acct_910",
-    plan: "pro",
-  },
-  { bucketBy: "account_id" },
-);
+const flags = new Client({
+  user_id: "u_4f2a",
+  account_id: "acct_910",
+  plan: "pro",
+});
+flags.getFlag("new-ui");
 ```
 
-Or set the experiment-level `bucket_by` in the dashboard. The same identity is then used for both assignment and exposure stitching.
+Set the gate's (or experiment's) `bucket_by` to `account_id` in the dashboard so every read keys on the account attribute you pass on the bound client. The same identity is then used for both assignment and exposure stitching.
 
 ## Privacy & PII
 

@@ -175,7 +175,7 @@ A practical workflow is to use a feature flag first (so the rollout is safe), th
     num={3}
     label="WIRE"
     title="assign + track"
-    cmd="flags.getExperiment('checkout-cta', user, { label: 'Pay' })"
+    cmd="new Client(user).getExperiment('checkout-cta', { label: 'Pay' })"
   >
     First call logs an exposure. <code>flags.track()</code> on conversion. Daily aggregation does
     the math.
@@ -187,13 +187,16 @@ A practical workflow is to use a feature flag first (so the rollout is safe), th
 <InstallTabs npm="npm install @shipeasy/sdk" />
 
 ```ts
-import { shipeasy, flags } from "@shipeasy/sdk/server";
+import { configure, Client } from "@shipeasy/sdk/server";
 
-await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? "" });
+configure({
+  apiKey: process.env.SHIPEASY_SERVER_KEY ?? "",
+  attributes: (u) => ({ user_id: u.id, plan: u.plan, country: u.country }),
+});
 
+const flags = new Client(currentUser);
 const result = flags.getExperiment<{ label: string }>(
   "checkout-cta",
-  { user_id, plan, country },
   { label: "Pay" }, // defaultParams
 );
 const label = result.params.label; // "Pay" or whatever the variant assigns
@@ -208,7 +211,9 @@ The first call to `flags.getExperiment(...)` for a given user logs an
 **exposure** event automatically. Subsequent calls in the same process
 don't re-log — exposures are deduplicated.
 
-## API · `flags.getExperiment`
+## API · `Client#getExperiment`
+
+The user is bound on the `Client` (`new Client(user)`); `getExperiment` itself takes only the name and default params.
 
 <ApiTable>
   <ApiRow
@@ -218,13 +223,14 @@ don't re-log — exposures are deduplicated.
     desc="The experiment name. Stable identifier, used in URLs and result rows."
   />
   <ApiRow
-    name="user"
+    name="user (on the Client)"
     required
     type="EvalContext"
     desc={
       <>
-        An object with at least <code>user_id</code>. Add attributes used by the targeting feature
-        flag (<code>plan</code>, <code>country</code>, …).
+        Bound when you construct the client: <code>new Client(user)</code>. An object with at least{" "}
+        <code>user_id</code>. Add attributes used by the targeting feature flag (<code>plan</code>,{" "}
+        <code>country</code>, …).
       </>
     }
   />

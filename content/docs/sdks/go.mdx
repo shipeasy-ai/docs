@@ -15,27 +15,36 @@ go get github.com/shipeasy-ai/sdk-go
 
 ## Configure
 
-Initialise once with the **server** key. `Init` does the first fetch and starts the background poll; `Destroy` stops it.
+Initialise once at startup with `Configure`, passing the **server** key plus an optional `Attributes` transform that maps your user object onto a `shipeasy.User`. This does the first fetch and starts the background poll.
 
 ```go
 import (
-    "context"
     "os"
 
     shipeasy "github.com/shipeasy-ai/sdk-go"
 )
 
-c := shipeasy.NewClient(shipeasy.Options{APIKey: os.Getenv("SHIPEASY_SERVER_KEY")})
-if err := c.Init(context.Background()); err != nil {
-    panic(err)
-}
-defer c.Destroy()
+shipeasy.Configure(shipeasy.Options{
+    APIKey: os.Getenv("SHIPEASY_SERVER_KEY"),
+    Attributes: func(u any) shipeasy.User {
+        user := u.(*User)
+        return shipeasy.User{"user_id": user.ID, "plan": user.Plan}
+    },
+})
+```
+
+## Bind a client to the user
+
+`NewClient` now takes the user object — the `Attributes` transform turns it into the evaluation context, so the getters take **no** user argument. It panics if `Configure` was not called first.
+
+```go
+flags := shipeasy.NewClient(currentUser)
 ```
 
 ## Evaluate a feature flag
 
 ```go
-if c.GetFlag("new_checkout", shipeasy.User{"user_id": "u_123"}) {
+if flags.GetFlag("new_checkout") {
     // ship it
 }
 ```
@@ -43,29 +52,27 @@ if c.GetFlag("new_checkout", shipeasy.User{"user_id": "u_123"}) {
 Go has no default arguments, so use the `…Or` variant for a fallback. It's returned **only** when the flag can't be evaluated (client not ready or gate absent) — a gate that evaluates `false` returns `false`:
 
 ```go
-on := c.GetFlagOr("new_checkout", shipeasy.User{"user_id": "u_123"}, true)
+on := flags.GetFlagOr("new_checkout", true)
 ```
 
 For the value plus the reason, use `GetFlagDetail` — see [Evaluation reasons](/sdks/reasons):
 
 ```go
-d := c.GetFlagDetail("new_checkout", shipeasy.User{"user_id": "u_123"})
+d := flags.GetFlagDetail("new_checkout")
 // d.Value bool, d.Reason e.g. shipeasy.ReasonRuleMatch
 ```
 
 ## Read a dynamic config
 
 ```go
-cfg, ok := c.GetConfig("billing_copy")
-copy := c.GetConfigOr("billing_copy", map[string]any{"cta": "Buy"})
+cfg, ok := flags.GetConfig("billing_copy")
+copy := flags.GetConfigOr("billing_copy", map[string]any{"cta": "Buy"})
 ```
 
 ## Resolve an experiment
 
 ```go
-r := c.GetExperiment("checkout_button",
-    shipeasy.User{"user_id": "u_123"},
-    map[string]any{"color": "blue"})
+r := flags.GetExperiment("checkout_button", map[string]any{"color": "blue"})
 
 if r.InExperiment {
     _ = r.Group  // e.g. "treatment"
@@ -76,7 +83,21 @@ if r.InExperiment {
 ## Track an event
 
 ```go
-c.Track("u_123", "purchase", map[string]any{"amount": 49})
+flags.Track("purchase", map[string]any{"amount": 49})
+```
+
+## The low-level Engine
+
+The per-call style still works for back-compat — construct an `Engine` directly with `NewEngine` and pass the user on every call:
+
+```go
+engine := shipeasy.NewEngine(shipeasy.Options{APIKey: os.Getenv("SHIPEASY_SERVER_KEY")})
+if err := engine.Init(context.Background()); err != nil {
+    panic(err)
+}
+defer engine.Destroy()
+
+engine.GetFlag("new_checkout", shipeasy.User{"user_id": "u_123"})
 ```
 
 ## Anonymous visitors
@@ -87,27 +108,27 @@ c.Track("u_123", "purchase", map[string]any{"amount": 49})
 http.ListenAndServe(":8080", shipeasy.Middleware(mux))
 
 func handler(w http.ResponseWriter, r *http.Request) {
-    user := shipeasy.User{"anonymous_id": shipeasy.AnonID(r)}
-    if c.GetFlag("new_checkout", user) { /* ... */ }
+    flags := shipeasy.NewClient(anonUser(shipeasy.AnonID(r)))
+    if flags.GetFlag("new_checkout") { /* ... */ }
 }
 ```
 
 ## Testing
 
-`NewTestClient` does zero network — no key, `Init`/`Track` are no-ops. Seed with `Override*` and reset with `ClearOverrides`. See [Testing](/sdks/testing).
+`NewTestEngine` does zero network — no key, `Init`/`Track` are no-ops. Seed with `Override*` and reset with `ClearOverrides`. See [Testing](/sdks/testing).
 
 ```go
-c := shipeasy.NewTestClient()
-c.OverrideFlag("new_checkout", true)
-c.GetFlag("new_checkout", shipeasy.User{"user_id": "u_123"}) // true
-c.ClearOverrides()
+engine := shipeasy.NewTestEngine()
+engine.OverrideFlag("new_checkout", true)
+engine.GetFlag("new_checkout", shipeasy.User{"user_id": "u_123"}) // true
+engine.ClearOverrides()
 ```
 
 <SeeAlso
   links={[
     { href: "/sdks", title: "Shared evaluation model", note: "How every SDK buckets" },
     { href: "/sdks/reasons", title: "Evaluation reasons", note: "GetFlagDetail" },
-    { href: "/sdks/testing", title: "Testing", note: "NewTestClient" },
+    { href: "/sdks/testing", title: "Testing", note: "NewTestEngine" },
     { href: "/flags-experiments/gates", title: "Feature gates" },
   ]}
 />

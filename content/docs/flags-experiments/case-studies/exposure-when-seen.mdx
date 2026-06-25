@@ -19,20 +19,24 @@ The fix is [manual exposure](/sdks/manual-exposure): resolve the variant without
 ## 1. Resolve without logging
 
 ```ts
-import { flags } from "@shipeasy/sdk/server";
+import { configure, Client } from "@shipeasy/sdk/server";
 
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
+
+const flags = new Client({ user_id: "u_4f2a" });
 const result = flags.getExperiment(
   "checkout_button",
-  { user_id: "u_4f2a" },
   { color: "blue" }, // default params
   { logExposure: false }, // resolve only — no exposure yet
 );
 ```
 
-If a whole client should never auto-log, set it once at construction instead:
+If a whole engine should never auto-log, set it once at construction instead:
 
 ```ts
-const client = new FlagsClient({
+import { Engine } from "@shipeasy/sdk/server";
+
+const engine = new Engine({
   apiKey: process.env.SHIPEASY_SERVER_KEY!,
   disableAutoExposure: true,
 });
@@ -43,11 +47,12 @@ const client = new FlagsClient({
 Fire the exposure from the code path that mounts the variant — not the loader:
 
 ```ts
-// in the component / handler that actually shows the variant
-flags.logExposure("u_4f2a", "checkout_button");
+// in the component / handler that actually shows the variant —
+// the client is already bound to the user, so pass just the experiment name
+flags.logExposure("checkout_button");
 ```
 
-In the browser the visitor is already identified, so you pass just the experiment name: `flags.logExposure("checkout_button")`.
+If you're holding the `Engine` directly rather than a bound `Client`, pass the user too: `engine.logExposure({ user_id: "u_4f2a" }, "checkout_button")`. In the browser the visitor is already identified, so the bound call is the same: `flags.logExposure("checkout_button")`.
 
 <Callout type="warn" title="Exactly once, on render">
   A duplicate exposure for the same user/experiment is deduped by the pipeline, but the clean

@@ -46,11 +46,11 @@ This is the universal path. Every product — gates, configs, experiments, and i
   num={3}
   label="WIRE"
   title="Configure once, use everywhere"
-  cmd={`// app/layout.tsx — runs once per cold start\nimport { shipeasy } from "@shipeasy/sdk/server";\nawait shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? "" });`}
+  cmd={`// app/layout.tsx — runs once per cold start\nimport { configure } from "@shipeasy/sdk/server";\nconfigure({ apiKey: process.env.SHIPEASY_SERVER_KEY ?? "", attributes: (u) => ({ user_id: u.id, plan: u.plan }) });`}
 >
-  The single `shipeasy()` call boots flags, experiments, **and** i18n. The server SDK polls the rule
-  set in the background and evaluates **locally** — there is no per-request network hop. Env (dev /
-  staging / prod) is derived from the key, not from a query param. See [Keys &
+  The single `configure()` call boots flags, experiments, **and** i18n. The server SDK polls the
+  rule set in the background and evaluates **locally** — there is no per-request network hop. Env
+  (dev / staging / prod) is derived from the key, not from a query param. See [Keys &
   environments](/get-started/keys-and-environments).
 </QuickstartStep>
 
@@ -69,10 +69,11 @@ This is the universal path. Every product — gates, configs, experiments, and i
   num={5}
   label="USE"
   title="Wrap code with getFlag"
-  cmd={`import { getFlag } from "@shipeasy/sdk/server";\n\nif (getFlag("checkout-v2", { user_id: userId })) {\n  return renderCheckoutV2();\n}\nreturn renderCheckoutV1();`}
+  cmd={`import { Client } from "@shipeasy/sdk/server";\n\nconst flags = new Client(currentUser);\nif (flags.getFlag("checkout-v2")) {\n  return renderCheckoutV2();\n}\nreturn renderCheckoutV1();`}
 >
-  On the server, pass the user as the second argument so the gate can bucket and target them. In the
-  browser, call `flags.identify()` once and then `getFlag("checkout-v2")` with no user argument.
+  Bind a `Client` to the current user once; the getters take no user argument and bucket against the
+  attributes your `configure()` transform resolved. The browser flow is identical — `new
+  Client(user)`, then `flags.getFlag("checkout-v2")`.
 </QuickstartStep>
 
   <QuickstartStep num={6} label="RAMP" title="Ramp it up" cmd="shipeasy flags update checkout-v2 --rollout 25">
@@ -88,11 +89,12 @@ The runway above is TypeScript. The same two moves — configure once with the *
   <Tab value="TypeScript">
 
 ```ts
-import { shipeasy, flags } from "@shipeasy/sdk/server";
+import { configure, Client } from "@shipeasy/sdk/server";
 
-await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? "" });
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY ?? "" });
 
-if (flags.get("checkout-v2", { user_id: "u_123" })) {
+const flags = new Client(currentUser);
+if (flags.getFlag("checkout-v2")) {
   // ship it
 }
 ```
@@ -101,12 +103,12 @@ if (flags.get("checkout-v2", { user_id: "u_123" })) {
   <Tab value="Python">
 
 ```python
-from shipeasy import Client
+import shipeasy
 
-client = Client(api_key=os.environ["SHIPEASY_SERVER_KEY"])
-client.init()
+shipeasy.configure(api_key=os.environ["SHIPEASY_SERVER_KEY"])
 
-if client.get_flag("checkout-v2", {"user_id": "u_123"}):
+flags = shipeasy.Client(current_user)
+if flags.get_flag("checkout-v2"):
     ...
 ```
 
@@ -115,19 +117,15 @@ if client.get_flag("checkout-v2", {"user_id": "u_123"}):
 
 ```go
 import (
-    "context"
     "os"
 
     shipeasy "github.com/shipeasy-ai/sdk-go"
 )
 
-c := shipeasy.NewClient(shipeasy.Options{APIKey: os.Getenv("SHIPEASY_SERVER_KEY")})
-if err := c.Init(context.Background()); err != nil {
-    panic(err)
-}
-defer c.Destroy()
+shipeasy.Configure(shipeasy.Options{APIKey: os.Getenv("SHIPEASY_SERVER_KEY")})
 
-if c.GetFlag("checkout-v2", shipeasy.User{"user_id": "u_123"}) {
+flags := shipeasy.NewClient(currentUser)
+if flags.GetFlag("checkout-v2") {
     // ship it
 }
 ```
@@ -140,7 +138,8 @@ Shipeasy.configure do |c|
   c.api_key = ENV.fetch("SHIPEASY_SERVER_KEY")
 end
 
-if Shipeasy.flags.get_flag("checkout-v2", { user_id: "u_123" })
+flags = Shipeasy::Client.new(current_user)
+if flags.get_flag("checkout-v2")
   # ship it
 end
 ```
@@ -149,38 +148,39 @@ end
   <Tab value="Java">
 
 ```java
+import ai.shipeasy.Shipeasy;
 import ai.shipeasy.Client;
-import java.util.Map;
 
-try (Client c = new Client(System.getenv("SHIPEASY_SERVER_KEY"))) {
-    c.init();
-    boolean enabled = c.getFlag("checkout-v2", Map.of("user_id", "u_123"));
-}
+Shipeasy.configure(System.getenv("SHIPEASY_SERVER_KEY"));
+
+Client flags = new Client(currentUser);
+boolean enabled = flags.getFlag("checkout-v2");
 ```
 
   </Tab>
   <Tab value="Kotlin">
 
 ```kotlin
+import ai.shipeasy.configure
 import ai.shipeasy.Client
-import kotlinx.coroutines.runBlocking
 
-val c = Client(apiKey = System.getenv("SHIPEASY_SERVER_KEY"))
-runBlocking { c.init() }
+configure(System.getenv("SHIPEASY_SERVER_KEY"))
 
-c.getFlag("checkout-v2", mapOf("user_id" to "u_123"))
+val flags = Client(currentUser)
+flags.getFlag("checkout-v2")
 ```
 
   </Tab>
   <Tab value="PHP">
 
 ```php
+use function Shipeasy\configure;
 use Shipeasy\Client;
 
-$c = new Client(getenv('SHIPEASY_SERVER_KEY'));
-$c->init();
+configure(getenv('SHIPEASY_SERVER_KEY'));
 
-$enabled = $c->getFlag('checkout-v2', ['user_id' => 'u_123']);
+$flags = new Client($currentUser);
+$enabled = $flags->getFlag('checkout-v2');
 ```
 
   </Tab>
@@ -189,10 +189,10 @@ $enabled = $c->getFlag('checkout-v2', ['user_id' => 'u_123']);
 ```swift
 import Shipeasy
 
-let client = Client(apiKey: ProcessInfo.processInfo.environment["SHIPEASY_SERVER_KEY"]!)
-try await client.initialize()
+configure(apiKey: ProcessInfo.processInfo.environment["SHIPEASY_SERVER_KEY"]!)
 
-let enabled = await client.getFlag("checkout-v2", user: ["user_id": "u_123"])
+let flags = try Client(currentUser)
+let enabled = await flags.getFlag("checkout-v2")
 ```
 
   </Tab>
@@ -204,8 +204,9 @@ The browser build is separate — see the client init below. For the full per-la
 
 <Steps>
   <Step title="One key per side">
-    The server uses `serverKey`; the browser uses `clientKey`. They are never interchanged or passed
-    together. The browser key is public and ships in your bundle; the server key is a secret.
+    The server passes its key as `apiKey`; the browser passes the public key as `clientKey`. They
+    are never interchanged or passed together. The browser key is public and ships in your bundle;
+    the server key is a secret.
   </Step>
   <Step title="Local, deterministic evaluation">
     Your SDK holds the rule set in memory and buckets each unit with a cross-language `murmur3`
@@ -219,15 +220,17 @@ The browser build is separate — see the client init below. For the full per-la
 
 <Callout type="info" title="Browser init looks the same">
   ```ts
-  import { shipeasy, flags, getFlag } from "@shipeasy/sdk/client";
+  import { configure, Client } from "@shipeasy/sdk/client";
 
-shipeasy({ clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "" });
-await flags.identify({ user_id: "u_4f2a", plan: "pro" });
+configure({ clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "", attributes: (u) => ({ user_id: u.id, plan: u.plan }) });
 
-if (getFlag("checkout-v2")) {/* ship it */}
+const flags = new Client(currentUser);
+await flags.ready();
+
+if (flags.getFlag("checkout-v2")) {/* ship it */}
 
 ```
-Same single configure call, public client key, no user argument on `getFlag` once you've called `flags.identify()`.
+Same single configure call, public client key, then a user-bound `Client` whose getters take no user argument.
 </Callout>
 
 ## Branch to your product

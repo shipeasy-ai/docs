@@ -17,24 +17,24 @@ Shipeasy has exactly two kinds of SDK key. One per entrypoint, one configure cal
 |            | **Server key**                                        | **Client key**                         |
 | ---------- | ----------------------------------------------------- | -------------------------------------- |
 | Import     | `@shipeasy/sdk/server`                                | `@shipeasy/sdk/client`                 |
-| Field      | `serverKey`                                           | `clientKey`                            |
+| Field      | `apiKey`                                              | `clientKey`                            |
 | Visibility | **Secret** — never ships to a browser                 | **Public** — ships in your bundle      |
 | Reads      | Full rule set (gates, configs, experiments, SSR i18n) | Only client-readable flags and configs |
 | Writes     | Events                                                | Events, rate-limited by domain         |
 | Env        | Bound to one env; may override per request            | **Locked** to its env                  |
 
 ```ts
-// Server (root layout / startup) — server key ONLY
-import { shipeasy } from "@shipeasy/sdk/server";
-await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? "" });
+// Server (root layout / startup) — server key ONLY, passed as apiKey
+import { configure } from "@shipeasy/sdk/server";
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY ?? "" });
 
 // Client (one "use client" component at startup) — public client key ONLY
-import { shipeasy } from "@shipeasy/sdk/client";
-shipeasy({ clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "" });
+import { configure } from "@shipeasy/sdk/client";
+configure({ clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "" });
 ```
 
 <Callout type="danger" title="Never interchange them">
-  Never pass `clientKey` to the server entrypoint or `serverKey` to the client. The server key
+  Never pass `clientKey` to the server entrypoint or the server key to the client. The server key
   authenticates the **full** payload and must never leave your server. A leaked server key in a
   browser bundle exposes every rule you have.
 </Callout>
@@ -130,7 +130,7 @@ Each environment is an isolated slice of your project's rules. A flag at 100% in
   />
 </ApiTable>
 
-Anything passed explicitly to `shipeasy({ ... })` wins over the environment variable.
+Anything passed explicitly to `configure({ ... })` wins over the environment variable.
 
 <SeeAlso
   links={[

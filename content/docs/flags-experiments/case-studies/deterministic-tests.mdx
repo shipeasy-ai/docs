@@ -19,36 +19,36 @@ The SDK gives you two levels: [`forTesting()` + overrides](/sdks/testing) for un
 `forTesting()` builds a no-network client that's already "ready": `init()` / `identify()` / `track()` are no-ops, telemetry is off, and no SDK key is required. You seed each case explicitly:
 
 ```ts
-import { FlagsClient } from "@shipeasy/sdk/server";
+import { Engine } from "@shipeasy/sdk/server";
 
-const client = FlagsClient.forTesting();
+const engine = Engine.forTesting();
 
-client.overrideFlag("new_checkout", true);
-client.overrideConfig("upload_limits", { max_uploads: 50 });
-client.overrideExperiment("hero_cta", "treatment", { primary_label: "Buy now" });
+engine.overrideFlag("new_checkout", true);
+engine.overrideConfig("upload_limits", { max_uploads: 50 });
+engine.overrideExperiment("hero_cta", "treatment", { primary_label: "Buy now" });
 
-client.getFlag("new_checkout", { user_id: "u1" }); // true
-client.getConfig("upload_limits"); // { max_uploads: 50 }
-client.track("u1", "purchase"); // no-op — never hits the network
-client.clearOverrides(); // reset between cases
+engine.getFlag("new_checkout", { user_id: "u1" }); // true
+engine.getConfig("upload_limits"); // { max_uploads: 50 }
+engine.track("u1", "purchase"); // no-op — never hits the network
+engine.clearOverrides(); // reset between cases
 ```
 
-The browser is identical via `FlagsClientBrowser.forTesting()`.
+The browser is identical via `Engine.forTesting()` from `@shipeasy/sdk/client`.
 
 ## Integration / CI — a captured snapshot
 
 When you want the **real** rule set — actual targeting, actual bucketing — without a live dependency, evaluate against a snapshot. A snapshot is just the two SDK wire bodies on disk:
 
 ```ts
-import { FlagsClient } from "@shipeasy/sdk/server";
+import { Engine } from "@shipeasy/sdk/server";
 
 // from a file (Node — reads with node:fs)
-const client = FlagsClient.fromFile("./snapshot.json");
+const engine = Engine.fromFile("./snapshot.json");
 
 // or from an object you already hold (works anywhere)
-const client = FlagsClient.fromSnapshot({ flags, experiments });
+const engine = Engine.fromSnapshot({ flags, experiments });
 
-client.getFlag("new_checkout", { user_id: "u1" }); // real eval, no network
+engine.getFlag("new_checkout", { user_id: "u1" }); // real eval, no network
 ```
 
 <Callout type="info" title="Two tools, they compose">

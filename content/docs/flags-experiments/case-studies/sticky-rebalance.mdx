@@ -16,25 +16,25 @@ The fix is [sticky bucketing](/sdks/sticky-bucketing): lock each user's _first_ 
 
 **Why this is the right primitive.** Deterministic bucketing alone tracks the _current_ allocation — that's what you want for a flag rollout, but it's wrong for an in-flight experiment. A sticky store records "u_4f2a → treatment" the first time it resolves and replays that on every later evaluation, even after you reshuffle the weights.
 
-## 1. Give the server client a sticky store
+## 1. Give the server engine a sticky store
 
-In-memory works for one long-lived process; back it with Redis for a fleet so a user keeps their variant no matter which instance they hit:
+In-memory works for one long-lived process; back it with Redis for a fleet so a user keeps their variant no matter which instance they hit. The sticky store is an engine-level concern, so configure it once on the `Engine`:
 
 ```ts
-import { FlagsClient, type StickyBucketStore } from "@shipeasy/sdk/server";
+import { Engine, type StickyBucketStore } from "@shipeasy/sdk/server";
 
 const store: StickyBucketStore = {
   get: async (key) => redis.get(key),
   set: async (key, value) => void redis.set(key, value),
 };
 
-const client = new FlagsClient({
+const engine = new Engine({
   apiKey: process.env.SHIPEASY_SERVER_KEY!,
   stickyStore: store,
 });
 ```
 
-The browser client is sticky **by default** — it persists the assignment map in a first-party cookie and replays it, so a returning visitor keeps their variant with no extra wiring.
+The browser engine is sticky **by default** — it persists the assignment map in a first-party cookie and replays it, so a returning visitor keeps their variant with no extra wiring.
 
 ## 2. Ramp the allocation
 

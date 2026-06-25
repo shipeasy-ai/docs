@@ -19,22 +19,24 @@ You want to gate a beta on `email endsWith "@acme.com"`, or target by a billing 
 ## Declare the sensitive fields once
 
 ```ts
-import { FlagsClient } from "@shipeasy/sdk/server";
+import { configure, Client } from "@shipeasy/sdk/server";
 
-const client = new FlagsClient({
+configure({
   apiKey: process.env.SHIPEASY_SERVER_KEY!,
   privateAttributes: ["email", "ssn"],
 });
 ```
 
-Now the same call targets on `email` but never serializes it into telemetry:
+Now the same read targets on `email` but never serializes it into telemetry. Bind a `Client` to the user — the attributes you pass it are matched on, but the private ones never travel:
 
 ```ts
-client.getFlag("beta_program", {
+const flags = new Client({
   user_id: "u_4f2a",
   email: "ana@acme.com", // used for targeting…
   plan: "pro", // normal attribute — stays in events
 });
+
+flags.getFlag("beta_program");
 // …email never lands in the exposure event
 ```
 

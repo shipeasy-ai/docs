@@ -20,31 +20,39 @@ composer require shipeasy/sdk
 
 ## Configure
 
-Construct with the **server** key and call `init()`. Under PHP-FPM this fetches once per request; for long-running runtimes (Swoole, RoadRunner, queue workers) call `init()` from a periodic task.
+Call `Shipeasy\configure()` once with the **server** key, plus an optional `attributes` transform that maps your user object onto the Shipeasy attribute map. Under PHP-FPM this fetches once per request; for long-running runtimes (Swoole, RoadRunner, queue workers) refresh it from a periodic task.
 
 ```php
-use Shipeasy\Client;
+Shipeasy\configure(
+    getenv('SHIPEASY_SERVER_KEY'),
+    fn($u) => ['user_id' => $u->id, 'plan' => $u->plan],
+);
+```
 
-$c = new Client(getenv('SHIPEASY_SERVER_KEY'));
-$c->init();
+## Bind a client to the user
+
+Construct a lightweight `Shipeasy\Client` from your user object — the `attributes` transform turns it into the evaluation context, so the getters take **no** user argument:
+
+```php
+$flags = new Shipeasy\Client($currentUser);
 ```
 
 ## Evaluate a feature flag
 
 ```php
-$enabled = $c->getFlag('new_checkout', ['user_id' => 'u_123']);
+$enabled = $flags->getFlag('new_checkout');
 ```
 
 An optional default is returned **only** when the gate can't be evaluated (client not ready or gate absent) — a gate that evaluates falsy returns `false`:
 
 ```php
-$c->getFlag('new_checkout', ['user_id' => 'u1'], true);
+$flags->getFlag('new_checkout', true);
 ```
 
 For the value plus the reason, use `getFlagDetail` — see [Evaluation reasons](/sdks/reasons):
 
 ```php
-$d = $c->getFlagDetail('new_checkout', ['user_id' => 'u1']);
+$d = $flags->getFlagDetail('new_checkout');
 $d->value;   // bool
 $d->reason;  // e.g. FlagDetail::RULE_MATCH
 ```
@@ -52,13 +60,13 @@ $d->reason;  // e.g. FlagDetail::RULE_MATCH
 ## Read a dynamic config
 
 ```php
-$cfg = $c->getConfig('billing_copy', ['headline' => 'Welcome']);
+$cfg = $flags->getConfig('billing_copy', ['headline' => 'Welcome']);
 ```
 
 ## Resolve an experiment
 
 ```php
-$r = $c->getExperiment('checkout_button', ['user_id' => 'u_123'], ['color' => 'blue']);
+$r = $flags->getExperiment('checkout_button', ['color' => 'blue']);
 if ($r->inExperiment) {
     $r->group;   // 'treatment'
     $r->params;  // ['color' => ...]
@@ -68,7 +76,7 @@ if ($r->inExperiment) {
 ## Track an event
 
 ```php
-$c->track('u_123', 'purchase', ['amount' => 49]);
+$flags->track('purchase', ['amount' => 49]);
 ```
 
 ## Anonymous visitors
@@ -79,20 +87,20 @@ Call `Identity::ensure()` once early in your bootstrap (before any output) to re
 use Shipeasy\Identity;
 
 Identity::ensure();
-$c->getFlag('new_checkout', []); // buckets on the cookie
+(new Shipeasy\Client($anonUser))->getFlag('new_checkout'); // buckets on the cookie
 ```
 
 Works in plain PHP, WordPress, Laravel, Symfony, and Slim — anywhere `$_COOKIE` / `setcookie()` exist.
 
 ## Testing
 
-`Client::forTesting()` does zero network — no key, `init`/`track` are no-ops. Seed with `override*` and reset with `clearOverrides`. See [Testing](/sdks/testing).
+`Engine::forTesting()` does zero network — no key, `init`/`track` are no-ops. Seed with `override*` and reset with `clearOverrides`. See [Testing](/sdks/testing).
 
 ```php
-$c = Client::forTesting();
-$c->overrideFlag('new_checkout', true);
-$c->getFlag('new_checkout', ['user_id' => 'u1']); // true
-$c->clearOverrides();
+$engine = Shipeasy\Engine::forTesting();
+$engine->overrideFlag('new_checkout', true);
+$engine->getFlag('new_checkout', ['user_id' => 'u1']); // true
+$engine->clearOverrides();
 ```
 
 <SeeAlso

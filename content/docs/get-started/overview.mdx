@@ -242,7 +242,7 @@ The other direction is much shorter — and on purpose.
 
 <Steps>
   <Step title="Your code asks the SDK">
-    `getFlag("new-checkout", {user_id})`. Synchronous. No Promise.
+    `new Client(user).getFlag("new-checkout")`. Synchronous. No Promise.
   </Step>
   <Step title="The SDK evaluates locally">
     The full rule set for every feature flag in your project lives in process memory. Targeting
@@ -274,8 +274,8 @@ There is no per-evaluation network call, no rate limit on `getFlag()`, and no as
     type="@shipeasy/sdk/server"
     desc={
       <>
-        For Node, Workers, Bun, Deno, RSC. Polls in the background. You pass the user object on
-        every call.
+        For Node, Workers, Bun, Deno, RSC. Polls in the background. Bind a `Client` to the user,
+        then read with no per-call user argument.
       </>
     }
   />
@@ -311,14 +311,20 @@ Bumping a plan propagates through the next KV rebuild — no per-project migrati
 A two-tier identity is enough for almost every use case:
 
 ```ts
-import { shipeasy } from "@shipeasy/sdk/client";
+import { configure, Client } from "@shipeasy/sdk/client";
 
-await identify({
-  user_id: "u_4f2a", // your stable user ID, set after login
-  plan: "pro",
-  country: "US",
-  beta_tester: true,
+configure({
+  clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "",
+  attributes: (u) => ({
+    user_id: u.id, // your stable user ID, set after login
+    plan: u.plan,
+    country: u.country,
+    beta_tester: u.betaTester,
+  }),
 });
+
+// Bind a client to the current user; getters take no user argument.
+const flags = new Client(currentUser);
 ```
 
 Shipeasy buckets by `user_id ?? anonymous_id`, so a user gets a stable assignment before _and_ after login. The `anonymous_id` is auto-managed by the browser SDK (first-party cookie). When `identify(...)` runs after anonymous activity, the SDK emits an internal alias record so the daily analysis stitches the pre-login exposures to the post-login `user_id` — no explicit alias call required.

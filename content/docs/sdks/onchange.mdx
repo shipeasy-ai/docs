@@ -12,17 +12,19 @@ description: onChange fires after a background poll picks up new rules — use i
 
 Reads are synchronous against an in-memory rule set that a background poll keeps fresh. `onChange` lets you react the moment that rule set swaps — for cache busting, re-rendering, or logging a config flip.
 
+Change listeners live on the `Engine` — the heavyweight client. Everyday flag reads use `configure` + `new Client(user)`; here you hold the `Engine` itself so you can subscribe to its poll cycle.
+
 ## Server
 
-The server `FlagsClient` fires registered listeners after a background poll **returns new data** (HTTP 200, not a 304). It returns an unsubscribe function, and never fires in test or offline mode (no polling happens there).
+The server `Engine` fires registered listeners after a background poll **returns new data** (HTTP 200, not a 304). It returns an unsubscribe function, and never fires in test or offline mode (no polling happens there).
 
 ```ts
-import { FlagsClient } from "@shipeasy/sdk/server";
+import { Engine } from "@shipeasy/sdk/server";
 
-const client = new FlagsClient({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
-await client.init();
+const engine = new Engine({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
+await engine.init();
 
-const unsubscribe = client.onChange(() => {
+const unsubscribe = engine.onChange(() => {
   console.log("flag rules changed — re-evaluating");
   rebuildRenderCache();
 });
@@ -38,12 +40,12 @@ unsubscribe();
 
 ## Browser
 
-The browser `FlagsClientBrowser` exposes the equivalent `subscribe()`, which fires after each `identify()` and after any override change — exactly when a re-render is warranted.
+The browser `Engine` exposes the equivalent `subscribe()`, which fires after each `identify()` and after any override change — exactly when a re-render is warranted.
 
 ```ts
-import { FlagsClientBrowser } from "@shipeasy/sdk/client";
+import { Engine } from "@shipeasy/sdk/client";
 
-const unsubscribe = client.subscribe(() => {
+const unsubscribe = engine.subscribe(() => {
   renderFlags();
 });
 ```

@@ -34,14 +34,25 @@ In the dashboard, create a config `entitlements` whose typed value is targeted b
 ## 2. Read it once, branch everywhere
 
 ```ts
-import { flags } from "@shipeasy/sdk/server";
+import { configure, Client } from "@shipeasy/sdk/server";
+
+configure({
+  apiKey: process.env.SHIPEASY_SERVER_KEY!,
+  attributes: (account: Account) => ({
+    account_id: account.id,
+    plan: account.plan,
+  }),
+});
 
 function entitlementsFor(account: Account): Entitlements {
+  const flags = new Client(account);
   return (
-    flags.getConfig<Entitlements>("entitlements", {
-      account_id: account.id,
-      plan: account.plan,
-    }) ?? { seats: 1, apiRatePerMin: 60, advancedExports: false, sso: false }
+    flags.getConfig<Entitlements>("entitlements") ?? {
+      seats: 1,
+      apiRatePerMin: 60,
+      advancedExports: false,
+      sso: false,
+    }
   );
 }
 ```

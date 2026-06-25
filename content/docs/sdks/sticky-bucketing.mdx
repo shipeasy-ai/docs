@@ -12,15 +12,22 @@ description: Keep a user's variant assignment stable across allocation changes �
 
 Bucketing is already deterministic — the same user hashes to the same group every time. But if you **change an experiment's allocation or weights mid-flight**, the hash boundaries move, and some users can flip groups. Sticky bucketing locks a user's first assignment so it survives weight changes.
 
+<Callout type="info" title="Configured on the Engine">
+  Sticky bucketing is an <code>Engine</code> construction option — pass it to{" "}
+  <code>configure(...)</code> (which builds the shared engine for the bound-client flow) or to a
+  directly-constructed <code>Engine</code>. Everyday flag reads still use{" "}
+  <code>new Client(user)</code>.
+</Callout>
+
 ## Browser — on by default
 
-The browser client persists the assignment map and replays it on every evaluation. It's enabled by default; pass `stickyBucketing: false` to opt out:
+The browser engine persists the assignment map and replays it on every evaluation. It's enabled by default; pass `stickyBucketing: false` to opt out:
 
 ```ts
-import { FlagsClientBrowser } from "@shipeasy/sdk/client";
+import { configure } from "@shipeasy/sdk/client";
 
-const client = new FlagsClientBrowser({
-  sdkKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY!,
+configure({
+  clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY!,
   // stickyBucketing: true is the default
 });
 ```
@@ -32,14 +39,14 @@ The sticky map rides in a first-party cookie and is sent with the evaluation req
 On the server you provide a `StickyBucketStore` so assignments persist across requests and processes. In-memory works for a single long-lived process; back it with Redis (or your own store) for a fleet:
 
 ```ts
-import { FlagsClient, type StickyBucketStore } from "@shipeasy/sdk/server";
+import { configure, type StickyBucketStore } from "@shipeasy/sdk/server";
 
 const store: StickyBucketStore = {
   get: async (key) => redis.get(key),
   set: async (key, value) => void redis.set(key, value),
 };
 
-const client = new FlagsClient({
+configure({
   apiKey: process.env.SHIPEASY_SERVER_KEY!,
   stickyStore: store,
 });

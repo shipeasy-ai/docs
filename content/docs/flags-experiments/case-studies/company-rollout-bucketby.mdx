@@ -22,15 +22,21 @@ Set `bucketBy: "company_id"` on the flag in the dashboard, CLI, or Admin API. A 
 
 ## 2. Carry the attribute on the user
 
-Your only job in code is to make sure the bucketing attribute is present on the user object:
+Your only job in code is to make sure the bucketing attribute is present on the user object the `Client` is bound to. Carry it through the `attributes` transform you give `configure`:
 
 ```ts
-import { flags } from "@shipeasy/sdk/server";
+import { configure, Client } from "@shipeasy/sdk/server";
 
-const enabled = flags.get("admin-panel-v2", {
-  user_id: session.userId,
-  company_id: session.companyId, // ← the bucketing unit
+configure({
+  apiKey: process.env.SHIPEASY_SERVER_KEY!,
+  attributes: (u) => ({
+    user_id: u.userId,
+    company_id: u.companyId, // ← the bucketing unit
+  }),
 });
+
+const flags = new Client(session);
+const enabled = flags.getFlag("admin-panel-v2");
 
 return enabled ? <AdminPanelV2 /> : <AdminPanelV1 />;
 ```

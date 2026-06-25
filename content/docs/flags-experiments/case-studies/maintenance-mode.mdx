@@ -26,13 +26,16 @@ Default `false` means "normal operation." The subsystem reads the switch and onl
 
 ## 2. Wrap the subsystem
 
-A killswitch is read exactly like a flag — a synchronous, in-memory lookup. Gate the entry point to the subsystem, not every call site:
+A killswitch is read with `getKillswitch` — a synchronous, in-memory lookup. Gate the entry point to the subsystem, not every call site:
 
 ```ts
-import { flags } from "@shipeasy/sdk/server";
+import { configure, Client } from "@shipeasy/sdk/server";
+
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
 
 export async function POST(req: Request) {
-  if (flags.get("checkout-maintenance", { user_id: userId })) {
+  const flags = new Client({ user_id: userId });
+  if (flags.getKillswitch("checkout-maintenance")) {
     return Response.json(
       { error: "Checkout is briefly paused for maintenance. Your cart is saved." },
       { status: 503, headers: { "Retry-After": "120" } },

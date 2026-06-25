@@ -20,52 +20,55 @@ pip install shipeasy
 
 ## Configure
 
-Initialise once with the **server** key. `init()` starts a background poll; use `init_once()` for serverless (one synchronous fetch, no thread).
+Initialise once with the **server** key, plus an optional `attributes` transform that maps your user object onto the Shipeasy attribute map. `configure()` starts a background poll.
 
 ```python
-from shipeasy import Client
+import shipeasy
 
-client = Client(api_key=os.environ["SHIPEASY_SERVER_KEY"])
-client.init()  # use init_once() in Lambda / Cloud Run
+shipeasy.configure(
+    api_key=os.environ["SHIPEASY_SERVER_KEY"],
+    attributes=lambda u: {"user_id": u.id, "plan": u.plan, "country": u.country},
+)
+```
+
+## Bind a client to the user
+
+Construct a lightweight `Client` from your user object — the `attributes` transform turns it into the evaluation context, so the getters take **no** user argument:
+
+```python
+flags = shipeasy.Client(current_user)
 ```
 
 ## Evaluate a feature flag
 
 ```python
-if client.get_flag("new_checkout", {"user_id": "u_123", "country": "US"}):
+if flags.get_flag("new_checkout"):
     ...
 ```
 
 A `default` is returned **only** when the value can't be evaluated (client not ready or gate absent) — a gate that evaluates `False` returns `False`:
 
 ```python
-client.get_flag("new_checkout", {"user_id": "u_123"}, default=True)
+flags.get_flag("new_checkout", default=True)
 ```
 
 For the value plus the reason, use `get_flag_detail` — see [Evaluation reasons](/sdks/reasons):
 
 ```python
-from shipeasy import RULE_MATCH
-
-d = client.get_flag_detail("new_checkout", {"user_id": "u_123"})
+d = flags.get_flag_detail("new_checkout")
 print(d.value, d.reason)  # e.g. True RULE_MATCH
 ```
 
 ## Read a dynamic config
 
 ```python
-config = client.get_config("billing_copy", default={"title": "Welcome"})
-limit = client.get_config("limits", decode=lambda v: v["max"], default=0)
+config = flags.get_config("billing_copy", default={"title": "Welcome"})
 ```
 
 ## Resolve an experiment
 
 ```python
-result = client.get_experiment(
-    "checkout_button",
-    user={"user_id": "u_123"},
-    default_params={"color": "blue"},
-)
+result = flags.get_experiment("checkout_button", default_params={"color": "blue"})
 if result.in_experiment:
     print(result.group, result.params)
 ```
@@ -73,7 +76,17 @@ if result.in_experiment:
 ## Track an event
 
 ```python
-client.track("u_123", "purchase", {"amount": 49})
+flags.track("purchase", {"amount": 49})
+```
+
+## The low-level Engine
+
+The per-call style still works for back-compat. Construct `shipeasy.Engine` directly and pass the user on every call — use `init_once()` for serverless (one synchronous fetch, no thread):
+
+```python
+engine = shipeasy.Engine(api_key=os.environ["SHIPEASY_SERVER_KEY"])
+engine.init_once()  # one fetch, no background thread
+engine.get_flag("new_checkout", {"user_id": "u_123", "country": "US"})
 ```
 
 ## Anonymous visitors
@@ -89,18 +102,18 @@ app.wsgi_app = AnonIdMiddleware(app.wsgi_app)
 from shipeasy.middleware import AnonIdASGIMiddleware
 app.add_middleware(AnonIdASGIMiddleware)
 
-client.get_flag("new_checkout", {})  # buckets on the cookie
+shipeasy.Client(anon_user).get_flag("new_checkout")  # buckets on the cookie
 ```
 
 ## Testing
 
-`Client.for_testing()` does zero network — no api*key, `init`/`track` are no-ops. Seed with `override*\*`and reset with`clear_overrides`. See [Testing](/sdks/testing).
+`Engine.for_testing()` does zero network — no api*key, `init`/`track` are no-ops. Seed with `override*\*`and reset with`clear_overrides`. See [Testing](/sdks/testing).
 
 ```python
-client = Client.for_testing()
-client.override_flag("new_checkout", True)
-assert client.get_flag("new_checkout", {"user_id": "u_123"}) is True
-client.clear_overrides()
+engine = shipeasy.Engine.for_testing()
+engine.override_flag("new_checkout", True)
+assert engine.get_flag("new_checkout", {"user_id": "u_123"}) is True
+engine.clear_overrides()
 ```
 
 <SeeAlso

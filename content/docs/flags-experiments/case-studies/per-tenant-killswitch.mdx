@@ -23,14 +23,18 @@ That's the killswitch [per-key **switches**](/flags-experiments/killswitches) fe
 shipeasy killswitch toggle exports.pipeline --switch tenant:acme --on --env prod
 ```
 
-In code the killswitch read carries the key so the SDK can apply the right override:
+In code the killswitch read names the switch so the SDK can apply the right per-key override:
 
 ```ts
-import { flags } from "@shipeasy/sdk/server";
+import { configure, Client } from "@shipeasy/sdk/server";
+
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
 
 export async function runExport(tenantId: string) {
-  // resolves the per-key switch for this tenant, falling back to the global state
-  if (flags.get("exports.pipeline", { user_id: tenantId, key: `tenant:${tenantId}` })) {
+  const flags = new Client({ user_id: tenantId });
+  // getKillswitch(name, switch) resolves the named per-key switch for this
+  // tenant, falling back to the global state
+  if (flags.getKillswitch("exports.pipeline", `tenant:${tenantId}`)) {
     return { status: "paused", reason: "Exports are briefly paused for your account." };
   }
   return processExport(tenantId);

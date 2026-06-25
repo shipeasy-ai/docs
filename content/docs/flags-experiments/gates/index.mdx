@@ -142,33 +142,38 @@ That order matters: rules are evaluated **before** the rollout. <em>&quot;100% o
 ### Server SDK
 
 ```ts
-import { shipeasy, flags } from "@shipeasy/sdk/server";
+import { configure, Client } from "@shipeasy/sdk/server";
 
-await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? "" });
-
-const enabled = flags.get("new-checkout-flow", {
-  user_id: "u_4f2a",
-  plan: "pro",
-  country: "US",
+configure({
+  apiKey: process.env.SHIPEASY_SERVER_KEY ?? "",
+  attributes: (u) => ({ user_id: u.id, plan: u.plan, country: u.country }),
 });
+
+const flags = new Client(currentUser);
+const enabled = flags.getFlag("new-checkout-flow");
 ```
 
 ### Browser SDK
 
 ```ts
-import { shipeasy, flags } from "@shipeasy/sdk/client";
+import { configure, Client } from "@shipeasy/sdk/client";
 
-shipeasy({ clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "" });
-await flags.identify({ user_id, plan, country });
+configure({
+  clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "",
+  attributes: (u) => ({ user_id: u.id, plan: u.plan, country: u.country }),
+});
 
-if (flags.get("new-checkout-flow")) {
+const flags = new Client(currentUser);
+await flags.ready();
+
+if (flags.getFlag("new-checkout-flow")) {
   // …
 }
 ```
 
-`flags.get()` is synchronous. If you call it before the first
+`getFlag()` is synchronous. If you call it before the first
 poll resolves, you get `false` (or the bootstrap value when SSR has
-provided one) — never a thrown error. `shipeasy()` is idempotent; call
+provided one) — never a thrown error. `configure()` is idempotent; call
 it once per cold start.
 
 <ApiTable>

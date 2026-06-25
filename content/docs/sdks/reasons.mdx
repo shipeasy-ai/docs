@@ -13,21 +13,24 @@ description: getFlagDetail returns the value plus the reason a flag resolved the
 `getFlag` tells you _what_ a flag resolved to. `getFlagDetail` tells you _why_ — it returns `{ value, reason }`, LaunchDarkly `variationDetail` parity, so you can log, debug, or branch on the cause rather than just the boolean.
 
 ```ts
-import { FlagsClient, type FlagReason } from "@shipeasy/sdk/server";
+import { configure, Client, type FlagReason } from "@shipeasy/sdk/server";
 
-const client = new FlagsClient({ sdkKey: process.env.SHIPEASY_SERVER_KEY! });
-await client.init();
+configure({
+  apiKey: process.env.SHIPEASY_SERVER_KEY!,
+  attributes: (u) => ({ user_id: u.id }),
+});
 
-const d = client.getFlagDetail("new_checkout", { user_id: "u1" });
+const flags = new Client(currentUser);
+const d = flags.getFlagDetail("new_checkout");
 // → { value: true, reason: "RULE_MATCH" }
 ```
 
-The browser entry is identical (no `user` argument — the visitor is already identified):
+The browser entry is identical — the bound `Client` already carries the visitor's context:
 
 ```ts
-import { FlagsClientBrowser } from "@shipeasy/sdk/client";
+import { Client } from "@shipeasy/sdk/client";
 
-const d = client.getFlagDetail("new_checkout");
+const d = flags.getFlagDetail("new_checkout");
 // → { value: false, reason: "DEFAULT" }
 ```
 
@@ -71,9 +74,10 @@ Use plain `getFlag` everywhere else — it's the same evaluation with the reason
     type="User"
     desc={
       <>
-        Server only. Evaluation context — include <code>user_id</code> for deterministic bucketing
-        plus any attributes your rules target. The browser omits this (the visitor is already
-        identified).
+        Only on the low-level <code>Engine</code> form (<code>getFlagDetail(name, user)</code>).
+        Evaluation context — include <code>user_id</code> for deterministic bucketing plus any
+        attributes your rules target. The bound <code>Client</code> omits this (the user is already
+        bound).
       </>
     }
   />

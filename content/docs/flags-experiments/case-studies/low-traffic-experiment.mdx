@@ -31,12 +31,18 @@ Before you start, run the math. The [power calculator](/metrics/power) turns you
 If you genuinely need to monitor the experiment as it runs (e.g. to bail on a regression), use **sequential testing** rather than repeatedly eyeballing a fixed-horizon p-value. Sequential tests are designed to be looked at continuously and keep the false-positive rate controlled across many peeks — they trade a little power for the right to stop early. Enable it on the experiment's stats settings.
 
 ```ts
-import { flags } from "@shipeasy/sdk/server";
+import { configure, Client } from "@shipeasy/sdk/server";
 
-const { group } = flags.getExperiment("settings-redesign", {
-  user_id: session.userId,
-  company_id: session.companyId, // bucket by account if units are accounts
+configure({
+  apiKey: process.env.SHIPEASY_SERVER_KEY!,
+  attributes: (s) => ({
+    user_id: s.userId,
+    company_id: s.companyId, // bucket by account if units are accounts
+  }),
 });
+
+const flags = new Client(session);
+const { group } = flags.getExperiment("settings-redesign", { variant: "control" });
 
 if (group === "treatment") renderRedesign();
 else renderControl();

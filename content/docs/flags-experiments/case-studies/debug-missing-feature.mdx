@@ -15,12 +15,12 @@ A customer says the new dashboard isn't showing up. Through `getFlag` all you se
 [`getFlagDetail`](/sdks/reasons) returns `{ value, reason }` from the **same** single evaluation, so the cause is right there.
 
 ```ts
-import { FlagsClient } from "@shipeasy/sdk/server";
+import { configure, Client } from "@shipeasy/sdk/server";
 
-const client = new FlagsClient({ sdkKey: process.env.SHIPEASY_SERVER_KEY! });
-await client.init();
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
 
-const d = client.getFlagDetail("new_dashboard", { user_id: "u_4f2a" });
+const flags = new Client({ user_id: "u_4f2a" });
+const d = flags.getFlagDetail("new_dashboard");
 // → { value: false, reason: "DEFAULT" }
 ```
 

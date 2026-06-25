@@ -20,13 +20,14 @@ Same package as the server — bundlers pick the browser build automatically, or
 
 ## Configure
 
-Initialise once at startup, with the **public client** key. The browser SDK requires the explicit `clientKey` call — there is no bootstrap-key auto-init.
+Initialise once at startup, with the **public client** key. The browser SDK requires the explicit `clientKey` call — there is no bootstrap-key auto-init. Pass an optional `attributes` transform that maps your user object onto the Shipeasy attribute map.
 
 ```ts
-import { shipeasy, flags } from "@shipeasy/sdk/client";
+import { configure, Client } from "@shipeasy/sdk/client";
 
-shipeasy({
+configure({
   clientKey: import.meta.env.VITE_SHIPEASY_CLIENT_KEY ?? "",
+  attributes: (u) => ({ user_id: u.id, plan: u.plan }),
 });
 ```
 
@@ -35,23 +36,24 @@ shipeasy({
   <a href="/get-started/keys-and-environments">Keys &amp; environments</a>.
 </Callout>
 
-## Identify the user
+## Bind a client to the user
+
+Construct a `Client` from your user object and `await ready()` once — it fetches the evaluation bundle, merges browser context (`locale`, `timezone`, `path`, `referrer`, `screen_*`, `user_agent`) and the persisted `anonymous_id`, so gate rules can target by locale and holdouts can hash anonymous visitors out of the box.
 
 ```ts
-await flags.identify({ user_id: "u_4f2a", plan: "pro" });
+const flags = new Client(user);
+await flags.ready();
 ```
-
-`identify()` merges browser context (`locale`, `timezone`, `path`, `referrer`, `screen_*`, `user_agent`) and the persisted `anonymous_id` into the payload — so gate rules can target by locale and holdouts can hash anonymous visitors out of the box.
 
 ## Read flags, configs, experiments
 
-The browser API drops the `user` argument — the identified context is implicit:
+The bound getters take **no** user argument — the bound context is implicit:
 
 ```ts
-if (flags.get("new_checkout")) {
+if (flags.getFlag("new_checkout")) {
   // ship it
 }
-flags.get("new_checkout", true); // default only when not-ready / not-found
+flags.getFlag("new_checkout", true); // default only when not-ready / not-found
 
 const cfg = flags.getConfig<{ max_uploads: number }>("upload_limits");
 
@@ -80,14 +82,19 @@ The browser SDK dispatches `se:override:change` whenever a re-poll updates the c
 
 ```tsx
 import { useEffect, useState } from "react";
-import { shipeasy, flags } from "@shipeasy/sdk/client";
+import { configure, Client } from "@shipeasy/sdk/client";
 
-shipeasy({ clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "" });
+configure({
+  clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "",
+  attributes: (u) => ({ user_id: u.id, plan: u.plan }),
+});
+
+const flags = new Client(currentUser);
 
 function CheckoutButton() {
-  const [on, setOn] = useState(() => flags.get("new_checkout"));
+  const [on, setOn] = useState(() => flags.getFlag("new_checkout"));
   useEffect(() => {
-    const h = () => setOn(flags.get("new_checkout"));
+    const h = () => setOn(flags.getFlag("new_checkout"));
     window.addEventListener("se:override:change", h);
     return () => window.removeEventListener("se:override:change", h);
   }, []);
@@ -97,7 +104,7 @@ function CheckoutButton() {
 
 ## SSR bootstrap & the anon cookie
 
-For Next.js / Remix / SvelteKit, the **server** `await shipeasy({ serverKey })` call evaluates the bundle and lands the same data on `window.__SE_BOOTSTRAP`. Configure the client with `shipeasy({ clientKey })` and the bootstrap auto-hydrates before your first read — no flicker.
+For Next.js / Remix / SvelteKit, the **server** `configure({ apiKey })` call evaluates the bundle and lands the same data on `window.__SE_BOOTSTRAP`. Configure the client with `configure({ clientKey })` and the bootstrap auto-hydrates before your first read — no flicker.
 
 Logged-out visitors bucket on a shared first-party `__se_anon_id` cookie, minted by middleware on HTML routes. Because the server and browser read the same cookie, a fractional rollout buckets a visitor **identically** on both sides. The cookie is non-`HttpOnly` by design so the browser SDK can read it.
 
@@ -115,13 +122,15 @@ Full guide: [DevTools overlay](/sdks/devtools-overlay).
 
 ## Testing
 
-```ts
-import { FlagsClientBrowser } from "@shipeasy/sdk/client";
+Test against the `Engine` directly — `forTesting()` does zero network:
 
-const client = FlagsClientBrowser.forTesting();
-client.overrideFlag("new_checkout", true);
-client.getFlag("new_checkout"); // true — no network
-client.clearOverrides();
+```ts
+import { Engine } from "@shipeasy/sdk/client";
+
+const engine = Engine.forTesting();
+engine.overrideFlag("new_checkout", true);
+engine.getFlag("new_checkout"); // true — no network
+engine.clearOverrides();
 ```
 
 Browser override precedence: programmatic override &gt; URL/devtools override (`?se_gate_…`) &gt; the server's evaluation. See [Testing](/sdks/testing).

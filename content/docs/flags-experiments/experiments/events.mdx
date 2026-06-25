@@ -39,10 +39,10 @@ The browser SDK batches events and flushes:
 You can tune the batcher:
 
 ```ts
-import { flags } from "@shipeasy/sdk/client";
+import { configure } from "@shipeasy/sdk/client";
 
-flags.configure({
-  apiKey,
+configure({
+  clientKey,
   batch: { size: 50, intervalMs: 10_000, useBeacon: true },
 });
 ```
@@ -92,16 +92,16 @@ Some event names are populated automatically and should not be logged manually. 
 You can opt out of auto-tracking in the SDK options:
 
 ```ts
-import { flags } from "@shipeasy/sdk/client";
+import { configure } from "@shipeasy/sdk/client";
 
-flags.configure({ apiKey, autoTrack: false });
+configure({ clientKey, autoTrack: false });
 ```
 
 Or selectively:
 
 ```ts
-flags.configure({
-  apiKey,
+configure({
+  clientKey,
   autoTrack: { pageView: true, webVitals: true, errors: false, fetch: false },
 });
 ```
@@ -169,10 +169,10 @@ Events are billed per million per month. Rough orders of magnitude:
 The browser SDK includes basic web-vitals auto-tracking by default. For high-traffic sites, disable what you don't use:
 
 ```ts
-import { flags } from "@shipeasy/sdk/client";
+import { configure } from "@shipeasy/sdk/client";
 
-flags.configure({
-  apiKey,
+configure({
+  clientKey,
   autoTrack: { pageView: true, webVitals: true, errors: false, fetch: false },
 });
 ```

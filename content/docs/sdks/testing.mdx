@@ -10,36 +10,42 @@ description: Build a no-network client with forTesting() and seed every entity w
   works="@shipeasy/sdk · server + client"
 />
 
-Code that reads flags shouldn't need a live connection to test. `forTesting()` builds a **no-network** client that's already "ready": `init()` / `initOnce()` / `identify()` are no-ops, `track()` is a no-op, telemetry is off, and no SDK key is required. You seed values with `override*`.
+Code that reads flags shouldn't need a live connection to test. `forTesting()` builds a **no-network** `Engine` that's already "ready": `init()` / `initOnce()` / `identify()` are no-ops, `track()` is a no-op, telemetry is off, and no SDK key is required. You seed values with `override*`.
+
+<Callout type="info" title="Test the Engine directly">
+  The test utilities live on the <code>Engine</code> — the heavyweight client. Everyday flag reads
+  use <code>configure</code> + <code>new Client(user)</code>; here you build an isolated{" "}
+  <code>Engine</code> so a unit test never touches the network.
+</Callout>
 
 ## Server
 
 ```ts
-import { FlagsClient } from "@shipeasy/sdk/server";
+import { Engine } from "@shipeasy/sdk/server";
 
-const client = FlagsClient.forTesting();
+const engine = Engine.forTesting();
 
-client.overrideFlag("new_checkout", true);
-client.overrideConfig("upload_limits", { max_uploads: 50 });
-client.overrideExperiment("hero_cta", "treatment", { primary_label: "Buy now" });
+engine.overrideFlag("new_checkout", true);
+engine.overrideConfig("upload_limits", { max_uploads: 50 });
+engine.overrideExperiment("hero_cta", "treatment", { primary_label: "Buy now" });
 
-client.getFlag("new_checkout", { user_id: "u1" }); // true
-client.getConfig("upload_limits"); // { max_uploads: 50 }
-client.getExperiment("hero_cta", { user_id: "u1" }, { primary_label: "Sign up" });
+engine.getFlag("new_checkout", { user_id: "u1" }); // true
+engine.getConfig("upload_limits"); // { max_uploads: 50 }
+engine.getExperiment("hero_cta", { user_id: "u1" }, { primary_label: "Sign up" });
 // → { inExperiment: true, group: "treatment", params: { primary_label: "Buy now" } }
 
-client.track("u1", "purchase"); // no-op — never hits the network
-client.clearOverrides(); // reset every override back to default
+engine.track("u1", "purchase"); // no-op — never hits the network
+engine.clearOverrides(); // reset every override back to default
 ```
 
 ## Browser (vanilla JS — no React)
 
 ```ts
-import { FlagsClientBrowser } from "@shipeasy/sdk/client";
+import { Engine } from "@shipeasy/sdk/client";
 
-const client = FlagsClientBrowser.forTesting();
-client.overrideFlag("new_checkout", true);
-client.getFlag("new_checkout"); // true
+const engine = Engine.forTesting();
+engine.overrideFlag("new_checkout", true);
+engine.getFlag("new_checkout"); // true
 ```
 
 ## The override API
@@ -53,7 +59,7 @@ clearOverrides(): void;
 
 ## Overrides on a real client
 
-`override*` also works on a **normal** (non-test) client — a programmatic override always wins. In the browser the precedence is:
+`override*` also works on a **normal** (non-test) `Engine` — a programmatic override always wins. In the browser the precedence is:
 
 ```
 programmatic override  >  URL / devtools override (?se_gate_… )  >  the server's evaluation

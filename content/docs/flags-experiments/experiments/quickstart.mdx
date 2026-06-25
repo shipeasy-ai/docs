@@ -72,20 +72,23 @@ This walks through a complete experiment end to end: a button-label test on the 
 
   <Step title="Wire the SDK">
     ```ts
-    import { shipeasy, flags } from "@shipeasy/sdk/server";
+    import { configure, Client } from "@shipeasy/sdk/server";
 
-    await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? "" });
+    configure({
+      apiKey: process.env.SHIPEASY_SERVER_KEY ?? "",
+      attributes: (u) => ({ user_id: u.id, plan: u.plan, country: u.country }),
+    });
     ```
 
-    Then on the request path:
+    Then on the request path, bind a `Client` to the user:
 
     <Tabs items={["TypeScript", "Python", "Go", "Ruby", "Java", "Kotlin", "PHP", "Swift"]}>
       <Tab value="TypeScript">
 
       ```ts
+      const flags = new Client(currentUser);
       const result = flags.getExperiment<{ label: string }>(
         "checkout-cta",
-        { user_id, plan, country },
         { label: "Pay" }, // defaultParams
       );
 
@@ -96,9 +99,9 @@ This walks through a complete experiment end to end: a button-label test on the 
       <Tab value="Python">
 
       ```python
-      result = client.get_experiment(
+      flags = shipeasy.Client(current_user)
+      result = flags.get_experiment(
           "checkout-cta",
-          user={"user_id": user_id},
           default_params={"label": "Pay"},
       )
       label = result.params["label"]
@@ -108,8 +111,8 @@ This walks through a complete experiment end to end: a button-label test on the 
       <Tab value="Go">
 
       ```go
-      r := c.GetExperiment("checkout-cta",
-          shipeasy.User{"user_id": userID},
+      flags := shipeasy.NewClient(currentUser)
+      r := flags.GetExperiment("checkout-cta",
           map[string]any{"label": "Pay"})
 
       label := r.Params["label"]
@@ -119,7 +122,8 @@ This walks through a complete experiment end to end: a button-label test on the 
       <Tab value="Ruby">
 
       ```ruby
-      result = Shipeasy.flags.get_experiment("checkout-cta", user, { label: "Pay" })
+      flags = Shipeasy::Client.new(current_user)
+      result = flags.get_experiment("checkout-cta", { label: "Pay" })
       label  = result.params[:label]
       ```
 
@@ -127,8 +131,8 @@ This walks through a complete experiment end to end: a button-label test on the 
       <Tab value="Java">
 
       ```java
-      ExperimentResult r = c.getExperiment("checkout-cta",
-          Map.of("user_id", userId),
+      Client flags = new Client(currentUser);
+      ExperimentResult r = flags.getExperiment("checkout-cta",
           Map.of("label", "Pay"));
       Object label = r.params().get("label");
       ```
@@ -137,9 +141,9 @@ This walks through a complete experiment end to end: a button-label test on the 
       <Tab value="Kotlin">
 
       ```kotlin
-      val r = c.getExperiment(
+      val flags = Client(currentUser)
+      val r = flags.getExperiment(
           "checkout-cta",
-          mapOf("user_id" to userId),
           mapOf("label" to "Pay"),
       )
       val label = r.params["label"]
@@ -149,7 +153,8 @@ This walks through a complete experiment end to end: a button-label test on the 
       <Tab value="PHP">
 
       ```php
-      $r = $c->getExperiment('checkout-cta', ['user_id' => $userId], ['label' => 'Pay']);
+      $flags = new Shipeasy\Client($currentUser);
+      $r = $flags->getExperiment('checkout-cta', ['label' => 'Pay']);
       $label = $r->params['label'];
       ```
 
@@ -157,9 +162,9 @@ This walks through a complete experiment end to end: a button-label test on the 
       <Tab value="Swift">
 
       ```swift
-      let r = await client.getExperiment(
+      let flags = try Client(currentUser)
+      let r = await flags.getExperiment(
           "checkout-cta",
-          user: ["user_id": userId],
           defaultParams: ["label": "Pay"],
       )
       let label = r.params["label"]

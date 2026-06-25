@@ -10,7 +10,7 @@ description: Plug Shipeasy in as the backing provider for the CNCF OpenFeature A
   works="@openfeature/server-sdk · @openfeature/web-sdk"
 />
 
-If your app is standardized on the vendor-neutral [OpenFeature](https://openfeature.dev) API, Shipeasy ships a provider for both the server and web SDKs. It's a **pure adapter** over `FlagsClient` — same local evaluation, same deterministic bucketing, just behind the OpenFeature interface.
+If your app is standardized on the vendor-neutral [OpenFeature](https://openfeature.dev) API, Shipeasy ships a provider for both the server and web SDKs. It's a **pure adapter** over an `Engine` — same local evaluation, same deterministic bucketing, just behind the OpenFeature interface. (OpenFeature carries its own per-call context via `targetingKey`, so the provider wraps the engine directly rather than a bound `Client`.)
 
 The OpenFeature SDKs are **optional peer dependencies** — install the one your app uses.
 
@@ -18,11 +18,11 @@ The OpenFeature SDKs are **optional peer dependencies** — install the one your
 
 ```ts
 import { OpenFeature } from "@openfeature/server-sdk";
-import { FlagsClient } from "@shipeasy/sdk/server";
+import { Engine } from "@shipeasy/sdk/server";
 import { ShipeasyProvider } from "@shipeasy/sdk/openfeature-server";
 
-const client = new FlagsClient({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
-await OpenFeature.setProviderAndWait(new ShipeasyProvider(client));
+const engine = new Engine({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
+await OpenFeature.setProviderAndWait(new ShipeasyProvider(engine));
 
 const ofClient = OpenFeature.getClient();
 const on = await ofClient.getBooleanValue("new_checkout", false, { targetingKey: "u1" });
@@ -34,12 +34,12 @@ The OpenFeature `targetingKey` maps to the Shipeasy `user_id`; any other context
 
 ```ts
 import { OpenFeature } from "@openfeature/web-sdk";
-import { FlagsClientBrowser } from "@shipeasy/sdk/client";
+import { Engine } from "@shipeasy/sdk/client";
 import { ShipeasyProvider } from "@shipeasy/sdk/openfeature-web";
 
-const client = new FlagsClientBrowser({ sdkKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY! });
+const engine = new Engine({ sdkKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY! });
 await OpenFeature.setContext({ targetingKey: "u1", plan: "pro" });
-await OpenFeature.setProviderAndWait(new ShipeasyProvider(client));
+await OpenFeature.setProviderAndWait(new ShipeasyProvider(engine));
 
 const on = OpenFeature.getClient().getBooleanValue("new_checkout", false);
 ```

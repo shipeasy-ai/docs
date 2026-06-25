@@ -60,10 +60,11 @@ Unlike feature flags, dynamic values are **global per environment**: every user 
 ## Reading a value
 
 ```ts
-import { shipeasy, flags } from "@shipeasy/sdk/server";
+import { configure, Client } from "@shipeasy/sdk/server";
 
-await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? "" });
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY ?? "" });
 
+const flags = new Client(currentUser);
 const limit = flags.getConfig<number>("rate-limit") ?? 100;
 const theme = flags.getConfig<string>("default-theme") ?? "light";
 const cfg = flags.getConfig<{ tier: string; limit: number }>("plan-defaults");
@@ -74,17 +75,18 @@ The optional generic types the return value. **Always provide a fallback** — y
 Browser:
 
 ```ts
-import { shipeasy, flags } from "@shipeasy/sdk/client";
-shipeasy({ clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "" });
+import { configure, Client } from "@shipeasy/sdk/client";
+configure({ clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "" });
+const flags = new Client(currentUser);
 const cfg = flags.getConfig<{ tier: string; limit: number }>("plan-defaults");
 ```
 
-<Callout type="info" title="getConfig() is synchronous, like flags.get()">
+<Callout type="info" title="getConfig() is synchronous, like getFlag()">
   Same plumbing as{" "}
   <a href="/flags-experiments/configs/gates">
-    <code>flags.get()</code>
+    <code>getFlag()</code>
   </a>{" "}
-  — the bundle is in memory after `shipeasy()` resolves, so reads are a hash table lookup. There is
+  — the bundle is in memory after `configure()` resolves, so reads are a hash table lookup. There is
   no async, no Promise, no fetch.
 </Callout>
 
@@ -124,7 +126,7 @@ A single JSON value can encode an entire decision tree. This is great for things
 
 ```ts
 type PlanCfg = Record<string, { max_seats: number | null; history_days: number }>;
-const cfg = flags.value<PlanCfg>("plan-defaults");
+const cfg = flags.getConfig<PlanCfg>("plan-defaults");
 const seats = cfg?.[user.plan]?.max_seats ?? 3;
 ```
 

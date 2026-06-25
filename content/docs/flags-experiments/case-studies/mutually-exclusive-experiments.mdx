@@ -32,10 +32,13 @@ shipeasy experiments create checkout-layout --universe checkout
 Bucketing is deterministic per universe — `hash(universe_salt, user_id)` — so the assignment is stable across processes and deploys. In code you read each experiment as usual; the universe handles the "at most one" guarantee:
 
 ```ts
-import { flags } from "@shipeasy/sdk/server";
+import { configure, Client } from "@shipeasy/sdk/server";
 
-const copy = flags.getExperiment("checkout-copy", { user_id });
-const layout = flags.getExperiment("checkout-layout", { user_id });
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
+
+const flags = new Client({ user_id });
+const copy = flags.getExperiment("checkout-copy", { variant: "control" });
+const layout = flags.getExperiment("checkout-layout", { variant: "control" });
 // a given user is enrolled in at most one of these
 ```
 

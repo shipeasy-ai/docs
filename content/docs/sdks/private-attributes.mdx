@@ -14,13 +14,14 @@ Some attributes you target on are sensitive — an email, a customer tier, a nat
 
 ## Declare them once
 
-List the attribute names at client construction. They're used locally for evaluation and stripped from every event the SDK emits:
+`privateAttributes` is an `Engine` construction option — list the attribute names when you build the engine (or pass them to `configure(...)`, which builds the shared engine for the bound-client flow). They're used locally for evaluation and stripped from every event the SDK emits:
 
 ```ts
-import { FlagsClient } from "@shipeasy/sdk/server";
+import { configure } from "@shipeasy/sdk/server";
 
-const client = new FlagsClient({
+configure({
   apiKey: process.env.SHIPEASY_SERVER_KEY!,
+  attributes: (u) => ({ user_id: u.id, email: u.email, plan: u.plan }),
   privateAttributes: ["email", "ssn"],
 });
 ```
@@ -30,15 +31,23 @@ const client = new FlagsClient({
 privateAttributes?: string[];
 ```
 
-Now a rule can target `email`, but `email` and `ssn` are removed before any exposure or track event is sent to `/collect`.
+The same option is available when you construct an `Engine` directly:
 
 ```ts
-flags.getFlag("beta_program", {
-  user_id: "u_4f2a",
-  email: "ana@acme.com", // used for targeting…
-  plan: "pro",
+import { Engine } from "@shipeasy/sdk/server";
+
+const engine = new Engine({
+  apiKey: process.env.SHIPEASY_SERVER_KEY!,
+  privateAttributes: ["email", "ssn"],
 });
-// …never serialized into the exposure event
+```
+
+Now a rule can target `email`, but `email` and `ssn` are removed before any exposure or track event is sent to `/collect`. With the bound flow, the attributes come from your transform:
+
+```ts
+const flags = new Client(currentUser); // email is in the attribute map…
+flags.getFlag("beta_program");
+// …used for targeting, but never serialized into the exposure event
 ```
 
 <Callout type="info" title="Evaluate locally, transmit nothing">

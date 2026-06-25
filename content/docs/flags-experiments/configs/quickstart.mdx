@@ -53,17 +53,18 @@ shipeasy keys create --kind server
     Initialise once at boot. The server SDK polls flag updates in the background — no per-request cost, no fetch on the hot path.
 
     ```ts title="src/lib/shipeasy.ts"
-    import { shipeasy } from "@shipeasy/sdk/server";
+    import { configure } from "@shipeasy/sdk/server";
 
-    export const ready = shipeasy({
-      serverKey: process.env.SHIPEASY_SERVER_KEY ?? "",
+    configure({
+      apiKey: process.env.SHIPEASY_SERVER_KEY ?? "",
+      attributes: (u) => ({ user_id: u.id, plan: u.plan }),
     });
     ```
 
-    Import this once from your entrypoint and `await ready` before serving the first request. After that, every `flags.get()` call is synchronous and reads from in-process memory.
+    Call this once from your entrypoint at boot. After that, every `new Client(user).getFlag()` call is synchronous and reads from in-process memory.
 
     <Callout type="info" title="One configure call, one key">
-      Flags, dynamic values, experiments, and i18n all share the same `serverKey`. Don&apos;t create per-feature wrappers in your codebase — the SDK owns its own initialisation.
+      Flags, dynamic values, experiments, and i18n all share the same server key (passed as `apiKey`). Don&apos;t create per-feature wrappers in your codebase — the SDK owns its own initialisation.
     </Callout>
 
   </Step>
@@ -90,10 +91,11 @@ shipeasy keys create --kind server
       <Tab value="TypeScript">
 
       ```ts
-      import { flags } from "@shipeasy/sdk/server";
+      import { Client } from "@shipeasy/sdk/server";
 
       export async function getCheckoutComponent(user) {
-        if (flags.get("new-checkout-flow", user)) {
+        const flags = new Client(user);
+        if (flags.getFlag("new-checkout-flow")) {
           return import("./checkout/new");
         }
         return import("./checkout/legacy");
@@ -104,7 +106,8 @@ shipeasy keys create --kind server
       <Tab value="Python">
 
       ```python
-      if client.get_flag("new-checkout-flow", user):
+      flags = shipeasy.Client(user)
+      if flags.get_flag("new-checkout-flow"):
           return load_new_checkout()
       return load_legacy_checkout()
       ```
@@ -113,7 +116,8 @@ shipeasy keys create --kind server
       <Tab value="Go">
 
       ```go
-      if c.GetFlag("new-checkout-flow", user) {
+      flags := shipeasy.NewClient(user)
+      if flags.GetFlag("new-checkout-flow") {
           return loadNewCheckout()
       }
       return loadLegacyCheckout()
@@ -123,7 +127,8 @@ shipeasy keys create --kind server
       <Tab value="Ruby">
 
       ```ruby
-      if Shipeasy.flags.get_flag("new-checkout-flow", user)
+      flags = Shipeasy::Client.new(user)
+      if flags.get_flag("new-checkout-flow")
         load_new_checkout
       else
         load_legacy_checkout
@@ -134,7 +139,8 @@ shipeasy keys create --kind server
       <Tab value="Java">
 
       ```java
-      if (c.getFlag("new-checkout-flow", user)) {
+      Client flags = new Client(user);
+      if (flags.getFlag("new-checkout-flow")) {
           return loadNewCheckout();
       }
       return loadLegacyCheckout();
@@ -144,7 +150,8 @@ shipeasy keys create --kind server
       <Tab value="Kotlin">
 
       ```kotlin
-      if (c.getFlag("new-checkout-flow", user)) {
+      val flags = Client(user)
+      if (flags.getFlag("new-checkout-flow")) {
           loadNewCheckout()
       } else {
           loadLegacyCheckout()
@@ -155,7 +162,8 @@ shipeasy keys create --kind server
       <Tab value="PHP">
 
       ```php
-      if ($c->getFlag('new-checkout-flow', $user)) {
+      $flags = new Shipeasy\Client($user);
+      if ($flags->getFlag('new-checkout-flow')) {
           return loadNewCheckout();
       }
       return loadLegacyCheckout();
@@ -165,7 +173,8 @@ shipeasy keys create --kind server
       <Tab value="Swift">
 
       ```swift
-      if await client.getFlag("new-checkout-flow", user: user) {
+      let flags = try Client(user)
+      if await flags.getFlag("new-checkout-flow") {
           return loadNewCheckout()
       }
       return loadLegacyCheckout()
@@ -174,7 +183,7 @@ shipeasy keys create --kind server
       </Tab>
     </Tabs>
 
-    `flags.get()` is synchronous and reads from the in-process cache (the method is `get_flag` / `GetFlag` in the other SDKs). Pass any user attributes you want available to targeting rules — at minimum `{ user_id }`. The shape of `user` is just a plain object:
+    Bind a `Client` to your user once, then `getFlag()` is synchronous and reads from the in-process cache (the method is `get_flag` / `GetFlag` in the other SDKs). The `attributes` transform you passed to `configure()` resolves the user into the targeting context — at minimum `{ user_id }`. The shape of `user` is just a plain object:
 
     ```ts
     {
@@ -243,8 +252,8 @@ shipeasy keys create --kind server
     - name: List flags + grep stale references
       run: |
         shipeasy flags list --json | jq -r '.data[].name' > /tmp/known-flags.txt
-        # fail if a flags.get("…") call references a name not in the file
-        git grep -hoE 'flags\.get\("[^"]+"' src | sed -E 's/.*"([^"]+)".*/\1/' | sort -u > /tmp/used-flags.txt
+        # fail if a getFlag("…") call references a name not in the file
+        git grep -hoE 'getFlag\("[^"]+"' src | sed -E 's/.*"([^"]+)".*/\1/' | sort -u > /tmp/used-flags.txt
         comm -23 /tmp/used-flags.txt /tmp/known-flags.txt | tee /tmp/stale.txt
         [ -s /tmp/stale.txt ] && { echo "Stale flag references found"; exit 1; } || true
     ```

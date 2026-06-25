@@ -20,33 +20,42 @@ implementation("ai.shipeasy:shipeasy-kotlin:0.3.0")
 
 ## Configure
 
-Construct with the **server** key and `init()` inside a coroutine. `Client` is `AutoCloseable` — wrap it in `use { }` or call `close()`.
+Call `configure()` once at startup with the **server** key, plus an optional `attributes` transform that maps your user object onto the Shipeasy attribute map.
 
 ```kotlin
+import ai.shipeasy.configure
 import ai.shipeasy.Client
-import kotlinx.coroutines.runBlocking
 
-val c = Client(apiKey = System.getenv("SHIPEASY_SERVER_KEY"))
-runBlocking { c.init() }
-// ... c.close() on shutdown
+configure(
+    System.getenv("SHIPEASY_SERVER_KEY"),
+    attributes = { u -> mapOf("user_id" to u.id, "plan" to u.plan) },
+)
+```
+
+## Bind a client to the user
+
+Construct a lightweight `Client` from your user object — the `attributes` transform turns it into the evaluation context, so the getters take **no** user argument:
+
+```kotlin
+val flags = Client(currentUser)
 ```
 
 ## Evaluate a feature flag
 
 ```kotlin
-c.getFlag("new_checkout", mapOf("user_id" to "u_123"))
+flags.getFlag("new_checkout")
 ```
 
 An optional `default` is returned **only** when the gate can't be evaluated (client not ready or gate absent) — a gate that evaluates `false` returns `false`:
 
 ```kotlin
-c.getFlag("new_checkout", mapOf("user_id" to "u_123"), default = true)
+flags.getFlag("new_checkout", default = true)
 ```
 
 For the value plus the reason, use `getFlagDetail` — see [Evaluation reasons](/sdks/reasons):
 
 ```kotlin
-val d: FlagDetail = c.getFlagDetail("new_checkout", mapOf("user_id" to "u_123"))
+val d: FlagDetail = flags.getFlagDetail("new_checkout")
 d.value   // Boolean
 d.reason  // one of the Reason constants
 ```
@@ -54,18 +63,14 @@ d.reason  // one of the Reason constants
 ## Read a dynamic config
 
 ```kotlin
-c.getConfig("billing_copy")
-c.getConfig("billing_copy", default = "Pay now")
+flags.getConfig("billing_copy")
+flags.getConfig("billing_copy", default = "Pay now")
 ```
 
 ## Resolve an experiment
 
 ```kotlin
-val r = c.getExperiment(
-    "checkout_button",
-    mapOf("user_id" to "u_123"),
-    mapOf("color" to "blue"),
-)
+val r = flags.getExperiment("checkout_button", mapOf("color" to "blue"))
 if (r.inExperiment) {
     r.group   // "treatment"
     r.params  // {color=...}
@@ -75,7 +80,7 @@ if (r.inExperiment) {
 ## Track an event
 
 ```kotlin
-c.track("u_123", "purchase", mapOf("amount" to 49))
+flags.track("purchase", mapOf("amount" to 49))
 ```
 
 ## Anonymous visitors
@@ -86,20 +91,20 @@ c.track("u_123", "purchase", mapOf("amount" to 49))
 @Bean
 fun shipeasyAnonId() = FilterRegistrationBean(AnonIdFilter())
 
-c.getFlag("new_checkout", emptyMap()) // buckets on the cookie
+Client(anonUser).getFlag("new_checkout") // buckets on the cookie
 ```
 
 `jakarta.servlet-api` is `compileOnly`. Non-servlet stacks (Ktor, http4k) use the `AnonId` primitives directly.
 
 ## Testing
 
-`Client.forTesting()` does zero network — no key, `init`/`track` are no-ops. Seed with `override*` and reset with `clearOverrides`. See [Testing](/sdks/testing).
+`Engine.forTesting()` does zero network — no key, `init`/`track` are no-ops. Seed with `override*` and reset with `clearOverrides`. `Engine` is `AutoCloseable` — wrap it in `use { }`. See [Testing](/sdks/testing).
 
 ```kotlin
-Client.forTesting().use { c ->
-    c.overrideFlag("new_checkout", true)
-    c.getFlag("new_checkout", emptyMap()) // true
-    c.clearOverrides()
+Engine.forTesting().use { engine ->
+    engine.overrideFlag("new_checkout", true)
+    engine.getFlag("new_checkout", emptyMap()) // true
+    engine.clearOverrides()
 }
 ```
 

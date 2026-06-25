@@ -47,8 +47,15 @@ where you control the payment integration end-to-end — then ramp the percentag
 stay green. Each step is a dashboard click, not a deploy.
 
 ```ts
-import { flags } from "@shipeasy/sdk/server";
-if (flags.get("checkout-v2", { user_id: userId, country })) {
+import { configure, Client } from "@shipeasy/sdk/server";
+
+configure({
+  apiKey: process.env.SHIPEASY_SERVER_KEY!,
+  attributes: (u) => ({ user_id: u.id, country: u.country }),
+});
+
+const flags = new Client(user);
+if (flags.getFlag("checkout-v2")) {
   return renderCheckoutV2();
 }
 return renderCheckoutV1();
@@ -76,9 +83,10 @@ touch the deploy pipeline again.
 **Why not a feature flag?** Feature flags are boolean. The thing you actually want to change is the _string_.
 
 ```ts
-import { flags } from "@shipeasy/sdk/server";
+import { Client } from "@shipeasy/sdk/server";
 
 export default function Home() {
+  const flags = new Client(currentUser);
   const title = flags.getConfig<string>("home.hero.title") ?? "Ship faster.";
   const cta = flags.getConfig<string>("home.hero.cta") ?? "Get started";
   return (
@@ -111,12 +119,13 @@ have one switch — on or off — and they're audited so you have a paper trail 
 when.
 
 ```ts
-import { flags } from "@shipeasy/sdk/server";
+import { Client } from "@shipeasy/sdk/server";
 
 export async function sendOrderEmail(order: Order) {
-  // `flags.ks(name)` returns true when the killswitch is engaged (flipped to pause).
+  const flags = new Client({ user_id: order.userId });
+  // `getKillswitch(name)` returns true when the killswitch is engaged (flipped to pause).
   // Read it as "are we paused?". Unknown killswitches return false (fail-open).
-  if (flags.ks("emails-enabled")) {
+  if (flags.getKillswitch("emails-enabled")) {
     logger.warn("emails paused via killswitch", { orderId: order.id });
     return;
   }
@@ -125,8 +134,8 @@ export async function sendOrderEmail(order: Order) {
 ```
 
 Killswitches are a dedicated primitive — created via `shipeasy killswitches create` in the CLI and
-read with `flags.ks(name)` from the server SDK. Unlike feature flags, they don't take a user context and
-they don't bucket: every caller sees the same answer the instant the flip propagates (within the
+read with `getKillswitch(name)` from the server SDK. Unlike feature flags, they don't bucket:
+every caller sees the same answer the instant the flip propagates (within the
 next SDK poll). The default is fail-open: until you flip the switch, every read returns `false`
 and the protected code path keeps running.
 
@@ -144,14 +153,14 @@ worse you've thrown away real revenue while you waited to notice.
 **Why not a feature flag?** You don't know the answer yet. You need a confidence interval to decide.
 
 ```ts
-import { flags } from "@shipeasy/sdk/server";
+import { configure, Client } from "@shipeasy/sdk/server";
 
-const user = { user_id: userId };
-const { group, params } = flags.getExperiment(
-  "paywall-v2",
-  user,
-  { variant: "control" as "control" | "treatment" },
-);
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
+
+const flags = new Client({ user_id: userId });
+const { group, params } = flags.getExperiment("paywall-v2", {
+  variant: "control" as "control" | "treatment",
+});
 
 flags.track(userId, "paywall_viewed", { group });
 const paywall = params.variant === "treatment" ? <PaywallV2 /> : <PaywallV1 />;
@@ -178,14 +187,14 @@ you can edit.
 **The trick:** targeting rule on an account attribute, rollout fixed at 100% of the matched set.
 
 ```ts
-import { flags } from "@shipeasy/sdk/server";
+import { Client } from "@shipeasy/sdk/server";
 
-const ctx = {
-  userId: session.user.id,
+const flags = new Client({
+  user_id: session.user.id,
   account: { id: session.account.id, plan: session.account.plan, tier: session.account.tier },
-};
+});
 
-if (flags.get("new-analytics-dashboard", ctx)) {
+if (flags.getFlag("new-analytics-dashboard")) {
   return <AnalyticsV2 />;
 }
 return <AnalyticsV1 />;
@@ -208,13 +217,15 @@ boolean ship/no-ship.
 weights — different configs per variant — so you can tune them without redeploying.
 
 ```ts
-import { flags } from "@shipeasy/sdk/server";
+import { configure, Client } from "@shipeasy/sdk/server";
+
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
 
 type Weights = { recency: number; relevance: number; popularity: number };
 const DEFAULTS: Weights = { recency: 0.2, relevance: 0.6, popularity: 0.2 };
 
-const user = { user_id: userId };
-const { group } = flags.getExperiment("search-weights-v3", user, { variant: "control" });
+const flags = new Client({ user_id: userId });
+const { group } = flags.getExperiment("search-weights-v3", { variant: "control" });
 const weights = flags.getConfig<Weights>(`search.weights.${group}`) ?? DEFAULTS;
 
 const results = ranked(query, weights);
@@ -290,9 +301,10 @@ The rollout stays at 100% the whole time — what widens is the eligible
 cohort. The code never changes:
 
 ```ts
-import { flags } from "@shipeasy/sdk/server";
+import { Client } from "@shipeasy/sdk/server";
 
-if (flags.get("intl-shipping", { user_id: userId, country })) {
+const flags = new Client({ user_id: userId, country });
+if (flags.getFlag("intl-shipping")) {
   return renderInternationalShipping();
 }
 return renderDomesticOnly();
@@ -314,12 +326,13 @@ path on the API for clients below v2.4.2.
 **The primitive:** Feature flag with a `semverGte` rule on the client's reported version.
 
 ```ts title="apps/api/checkout/route.ts"
-import { flags } from "@shipeasy/sdk/server";
+import { Client } from "@shipeasy/sdk/server";
 
 export async function POST(req: Request) {
   const appVersion = req.headers.get("x-app-version") ?? "0.0.0";
 
-  if (!flags.get("checkout-v2-eligible", { user_id: userId, appVersion })) {
+  const flags = new Client({ user_id: userId, appVersion });
+  if (!flags.getFlag("checkout-v2-eligible")) {
     return Response.json(
       { error: "upgrade_required", message: "Please update to the latest app." },
       { status: 426 },
@@ -352,11 +365,12 @@ the new price tanks conversion. Engineering does not want to deploy four times t
 **The primitive:** Config (typed number) with audit log.
 
 ```ts title="lib/pricing.ts"
-import { flags } from "@shipeasy/sdk/server";
+import { Client } from "@shipeasy/sdk/server";
 
 const DEFAULTS: Record<string, number> = { US: 1900, GB: 1900, DE: 1900 };
 
 export function priceForCountry(country: string, currency: string) {
+  const flags = new Client({ country });
   const cents = flags.getConfig<number>(`price.pro.${country}`) ?? DEFAULTS[country] ?? DEFAULTS.US;
   return { cents, currency };
 }
@@ -386,7 +400,7 @@ so a typo in the dashboard JSON doesn't crash the page.
 **The primitive:** Config with a Zod schema.
 
 ```ts title="lib/banner.ts"
-import { flags } from "@shipeasy/sdk/server";
+import { Client } from "@shipeasy/sdk/server";
 import { z } from "zod";
 
 const BannerSchema = z
@@ -401,6 +415,7 @@ const BannerSchema = z
   .nullable();
 
 export function getBanner() {
+  const flags = new Client(currentUser);
   // Pass a safe-parse decoder — malformed dashboard JSON is rendered as
   // "no banner" rather than crashing the page.
   const banner = flags.getConfig("site.banner", (raw) => {
@@ -458,10 +473,12 @@ Assign the experiment to the universe in the dashboard (or via the Admin API) �
 universe binding from the bundle, so no per-call config is needed. Then on the request path:
 
 ```ts title="route handlers"
-import { flags } from "@shipeasy/sdk/server";
+import { configure, Client } from "@shipeasy/sdk/server";
 
-const user = { user_id: userId };
-const { group } = flags.getExperiment("paywall-v2", user, {
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
+
+const flags = new Client({ user_id: userId });
+const { group } = flags.getExperiment("paywall-v2", {
   variant: "control" as "control" | "treatment",
 });
 

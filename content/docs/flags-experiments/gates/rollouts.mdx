@@ -68,8 +68,10 @@ Pick **once per feature flag** and stick with it. Switching `bucketBy` mid-rollo
 the salt — every user re-buckets, your "5% who saw v2" is now a completely different 5%.
 
 ```ts
-// B2B cohort consistency — all members of an account see the same variant
-await gate("admin-redesign", { userId, accountId }, { bucketBy: "accountId" });
+// B2B cohort consistency — all members of an account see the same variant.
+// Set the gate's bucket_by to accountId in the dashboard; pass accountId on the bound client.
+const flags = new Client({ userId, accountId });
+flags.getFlag("admin-redesign");
 ```
 
 ## Salt — the re-shuffle lever
@@ -147,7 +149,7 @@ event-stream analysis becomes meaningless.
 
 The dashboard's **Test evaluator** panel takes a JSON user context and prints the same decision the SDK would compute — including which rule matched, the bucket the user fell into, and whether the bucket is below the rollout cutoff. Same answer as your code, no detour through a CLI.
 
-If the dashboard's decision doesn't match what the user reports seeing, something is different about the `ctx` the SDK actually saw — usually a missing or differently-named attribute. Log the `ctx` passed to `flags.get(...)` in production to compare.
+If the dashboard's decision doesn't match what the user reports seeing, something is different about the `ctx` the SDK actually saw — usually a missing or differently-named attribute. Log the user you bind to the `Client` in production to compare.
 
 <DocNav
   prev={{ href: "/flags-experiments/gates/targeting", title: "Targeting rules" }}

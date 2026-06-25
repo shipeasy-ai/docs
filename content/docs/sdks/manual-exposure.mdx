@@ -12,6 +12,13 @@ description: Suppress the automatic exposure on getExperiment and log it yoursel
 
 By default, the first `getExperiment` call for a user queues an **exposure** event — the record the daily analysis uses to know who was in the test. Usually that's exactly right. But sometimes you resolve a variant well before the user sees it (a server prefetch, a component that may never mount). Manual exposure lets you decouple _resolving_ the variant from _counting_ the exposure.
 
+<Callout type="info" title="Configured on the Engine">
+  <code>disableAutoExposure</code> is an <code>Engine</code> construction option. Everyday flag
+  reads use <code>configure</code> + <code>new Client(user)</code>; the per-call{" "}
+  <code>logExposure: false</code> option and <code>logExposure()</code> work on both the bound{" "}
+  <code>Client</code> and the <code>Engine</code> directly.
+</Callout>
+
 ## Suppress the automatic exposure
 
 Pass `logExposure: false` in the options to resolve a variant without logging:
@@ -19,16 +26,17 @@ Pass `logExposure: false` in the options to resolve a variant without logging:
 ```ts
 const result = flags.getExperiment(
   "checkout_button",
-  { user_id: "u_4f2a" },
   { color: "blue" },
   { logExposure: false }, // resolve only — no exposure yet
 );
 ```
 
-To suppress auto-exposure for an entire client, set `disableAutoExposure: true` at construction:
+To suppress auto-exposure for an entire engine, set `disableAutoExposure: true` at construction:
 
 ```ts
-const client = new FlagsClient({
+import { Engine } from "@shipeasy/sdk/server";
+
+const engine = new Engine({
   apiKey: process.env.SHIPEASY_SERVER_KEY!,
   disableAutoExposure: true,
 });
@@ -39,15 +47,18 @@ const client = new FlagsClient({
 Call `logExposure` at the moment the variant is actually rendered:
 
 ```ts
-flags.logExposure("u_4f2a", "checkout_button");
+flags.logExposure("checkout_button");
 ```
 
 ```ts
-// signature
+// bound Client — the user is implicit
+logExposure(name: string): void;
+
+// Engine — pass the user explicitly
 logExposure(user: string | User, name: string): void;
 ```
 
-In the browser the visitor is already identified, so you pass just the experiment name.
+On the bound `Client` (and in the browser, where the visitor is already identified) you pass just the experiment name; on the `Engine` you pass the user too.
 
 <Callout type="warn" title="Don't double-count">
   An exposure that fires twice for the same user in the same experiment is deduped by the pipeline,

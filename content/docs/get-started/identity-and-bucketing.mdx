@@ -20,7 +20,7 @@ When you don't pass an explicit unit, the SDK resolves it in this order:
 unitId = user.user_id ?? user.anonymous_id
 ```
 
-- **`user_id`** — your stable identifier for an authenticated user. Pass it on the server as the second arg to `getFlag(name, { user_id })`; on the browser, set it once with `flags.identify({ user_id })`.
+- **`user_id`** — your stable identifier for an authenticated user. It comes through the bound `Client` — `new Client({ user_id }).getFlag(name)` on the server, or the same `new Client(user)` on the browser.
 - **`anonymous_id`** — a stable id for a logged-out visitor so they still bucket consistently.
 
 The hash is identical across the whole stack, so **bucketing agrees everywhere as long as every surface feeds the same unit string for the same visitor.**
@@ -83,7 +83,8 @@ Sometimes the right unit isn't the individual. Roll a feature out to **20% of co
 ```ts
 // Bucket this gate / experiment on company_id instead of user_id —
 // the whole company moves together.
-getFlag("new-billing-ui", { user_id: userId, company_id: "acme-co" });
+const flags = new Client({ user_id: userId, company_id: "acme-co" });
+flags.getFlag("new-billing-ui");
 ```
 
 With `bucketBy: "company_id"`, the hash keys on the company attribute, so every user at `acme-co` lands in the same bucket. Common units: `company_id` (org-level rollout), `session_id` (per-session experiments), `device_id`. The named attribute just has to be present on the user you pass.

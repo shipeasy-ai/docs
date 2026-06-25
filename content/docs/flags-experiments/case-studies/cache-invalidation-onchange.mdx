@@ -15,12 +15,12 @@ You memoize an expensive render — a navigation tree, a pricing table, a derive
 [`onChange`](/sdks/onchange) closes the gap: it fires the moment a background poll picks up new rules, so you can drop the derived cache exactly when — and only when — something actually changed.
 
 ```ts
-import { FlagsClient } from "@shipeasy/sdk/server";
+import { Engine } from "@shipeasy/sdk/server";
 
-const client = new FlagsClient({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
-await client.init();
+const engine = new Engine({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
+await engine.init();
 
-const unsubscribe = client.onChange(() => {
+const unsubscribe = engine.onChange(() => {
   rebuildRenderCache(); // drop the memoized render / derived config
 });
 
@@ -34,12 +34,14 @@ unsubscribe();
   offline mode, since no polling happens there.
 </Callout>
 
-In the browser the equivalent is `client.subscribe()`, which fires after each `identify()` and after any override change — exactly when a re-render is warranted:
+In the browser the equivalent is `engine.subscribe()`, which fires after each `identify()` and after any override change — exactly when a re-render is warranted:
 
 ```ts
-import { FlagsClientBrowser } from "@shipeasy/sdk/client";
+import { Engine } from "@shipeasy/sdk/client";
 
-const unsubscribe = client.subscribe(() => {
+const engine = new Engine({ clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY! });
+
+const unsubscribe = engine.subscribe(() => {
   renderFlags();
 });
 ```

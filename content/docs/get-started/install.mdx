@@ -168,27 +168,30 @@ That&apos;s the whole runway from zero to working. Everything below is detail.
     For Next.js, put this in your root `layout.tsx` so it runs once per cold start. For an Express or  app, call it during startup. For RSC, the SDK persists state across the async-context boundary so you don&apos;t need a Provider on the server side.
 
     ```ts
-    import { shipeasy } from "@shipeasy/sdk/server";
+    import { configure } from "@shipeasy/sdk/server";
 
-    await shipeasy({
-      serverKey: process.env.SHIPEASY_SERVER_KEY ?? "",
+    configure({
+      apiKey: process.env.SHIPEASY_SERVER_KEY ?? "",
+      attributes: (u) => ({ user_id: u.id, plan: u.plan }),
     });
     ```
 
-    The server SDK polls `/sdk/flags` and `/sdk/experiments` in the background. Evaluation happens **locally** — there is no per-request network call from your code. Env (dev / staging / prod) is **derived from the key**: each key is bound to exactly one environment when you mint it, so you deploy the prod key to prod and the staging key to staging — there is nothing to set in code. (A server key may still override per request with `?env=` for local debugging; client keys cannot — see below.)
+    The single `configure()` call boots flags, experiments, **and** i18n. The optional `attributes` transform maps your user object onto the Shipeasy attribute map, so every bound `Client` you construct evaluates against the right context. The server SDK polls `/sdk/flags` and `/sdk/experiments` in the background. Evaluation happens **locally** — there is no per-request network call from your code. Env (dev / staging / prod) is **derived from the key**: each key is bound to exactly one environment when you mint it, so you deploy the prod key to prod and the staging key to staging — there is nothing to set in code. (A server key may still override per request with `?env=` for local debugging; client keys cannot — see below.)
 
   </Step>
 
   <Step title="Browser initialisation">
     ```ts
-    import { shipeasy, flags } from "@shipeasy/sdk/client";
+    import { configure, Client } from "@shipeasy/sdk/client";
 
-    shipeasy({
+    configure({
       clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "",
+      attributes: (u) => ({ user_id: u.id, plan: u.plan }),
     });
 
-    // Once you know who the user is:
-    await flags.identify({ user_id: "u_4f2a", plan: "pro" });
+    // Once you know who the user is, bind a client and await freshness:
+    const flags = new Client(currentUser);
+    await flags.ready();
     ```
 
     The client SDK auto-manages an `anonymous_id` cookie, batches event uploads with `navigator.sendBeacon` on page hide, and exposes a [devtools overlay](/get-started/sdks#devtools) at `?shipeasy=1`.
@@ -198,7 +201,7 @@ That&apos;s the whole runway from zero to working. Everything below is detail.
   </Step>
 
   <Step title="One key, one configure call">
-    Flags, experiments, and i18n share a single key per side (`serverKey` on the server, `clientKey` in the browser). There is no separate `i18n.init()`, no second `flags.configure()`. The single `shipeasy()` call boots all three.
+    Flags, experiments, and i18n share a single key per side (`apiKey` on the server, `clientKey` in the browser). There is no separate `i18n.init()`, no second configure step. The single `configure()` call boots all three.
 
     Don&apos;t wrap this in a custom helper file. The SDK owns its own initialisation.
 
@@ -257,7 +260,7 @@ The MCP server uses your CLI credentials — no extra env vars, no separate toke
 
 ## Environment variables
 
-The SDK reads the following from `process.env` (and `import.meta.env` in Vite). Anything passed explicitly to `shipeasy({ ... })` wins.
+The SDK reads the following from `process.env` (and `import.meta.env` in Vite). Anything passed explicitly to `configure({ ... })` wins.
 
 <ApiTable>
   <ApiRow
@@ -358,10 +361,10 @@ The SDK reads the following from `process.env` (and `import.meta.env` in Vite). 
 The SDK is shipped as ESM-first with a CJS fallback for older Node. There are no Node built-ins on the hot path, so it runs unchanged on Shipeasy, Vercel Edge, Deno Deploy, and Bun.
 
 <Callout type="info" title="Conditional exports cheat sheet">
-  - `import {shipeasy} from "@shipeasy/sdk/server"` — server build, picked automatically when
-  bundling for Node/Workers. - `import {shipeasy} from "@shipeasy/sdk/client"` — browser build,
-  picked when bundling for the browser. - `import "@shipeasy/sdk"` — re-exports both via conditional
-  resolution. Use this only if your bundler honours `exports`.
+  - `import { configure, Client } from "@shipeasy/sdk/server"` — server build, picked automatically
+  when bundling for Node/Workers. - `import { configure, Client } from "@shipeasy/sdk/client"` —
+  browser build, picked when bundling for the browser. - `import "@shipeasy/sdk"` — re-exports both
+  via conditional resolution. Use this only if your bundler honours `exports`.
 </Callout>
 
 ## Monorepo notes
@@ -373,13 +376,13 @@ If you depend on the SDK from a Cloudflare Worker built with `CLI`, no special c
 ## Troubleshooting
 
 <Callout type="warn" title="Node 18 or older">
-  Shipeasy requires Node 20+. Older Node versions lack stable `fetch` and `AbortSignal.timeout`. Upgrade Node, or polyfill `fetch` and pass it explicitly via `shipeasy({ fetch: customFetch })`.
+  Shipeasy requires Node 20+. Older Node versions lack stable `fetch` and `AbortSignal.timeout`. Upgrade Node, or polyfill `fetch` and pass it explicitly via `configure({ fetch: customFetch })`.
 </Callout>
 
 <Callout type="warn" title="Edge runtime build picks the wrong file">
   Some bundlers misclassify edge targets as Node. Force the right build with the explicit subpath:
-  `import {shipeasy} from "@shipeasy/sdk/server"` — this works in every edge runtime we&apos;ve
-  tested.
+  `import { configure, Client } from "@shipeasy/sdk/server"` — this works in every edge runtime
+  we&apos;ve tested.
 </Callout>
 
 <Callout type="warn" title='Vite says "process is not defined"'>

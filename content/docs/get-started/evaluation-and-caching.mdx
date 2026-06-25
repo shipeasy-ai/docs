@@ -14,13 +14,14 @@ Evaluation is **local, deterministic, and sub-second to update**. Your code neve
 
 ## The rule set lives in memory
 
-When you call `shipeasy()` on the server, the SDK fetches your rule set once and holds it in memory. Every `getFlag` / `getConfig` / `getExperiment` call evaluates against that in-memory snapshot — no I/O on the hot path.
+When you call `configure()` on the server, the SDK fetches your rule set once and holds it in memory. Every `getFlag` / `getConfig` / `getExperiment` call evaluates against that in-memory snapshot — no I/O on the hot path.
 
 ```ts
-import { getFlag } from "@shipeasy/sdk/server";
+import { Client } from "@shipeasy/sdk/server";
 
 // No await, no network — pure local evaluation against the cached rule set:
-if (getFlag("checkout-v2", { user_id: userId })) {
+const flags = new Client({ user_id: userId });
+if (flags.getFlag("checkout-v2")) {
   /* ... */
 }
 ```

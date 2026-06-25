@@ -17,19 +17,24 @@ By default Shipeasy buckets on `user_id ?? anonymous_id`: a 20% rollout means 20
 Set `bucketBy` to an attribute name on the gate or experiment. The SDK resolves the bucketing identifier from that attribute on the user object instead of `user_id`:
 
 ```ts
-// the user object carries the attribute you bucket on
-flags.getExperiment("pricing_test", {
-  user_id: "u_4f2a",
-  company_id: "acme_corp", // ← experiment is configured with bucketBy: "company_id"
+// make sure your attributes transform carries the bucketing attribute
+configure({
+  apiKey: process.env.SHIPEASY_SERVER_KEY!,
+  attributes: (u) => ({ user_id: u.id, company_id: u.companyId }),
 });
+
+// the experiment is configured with bucketBy: "company_id"
+const flags = new Client(currentUser);
+flags.getExperiment("pricing_test", { price: 9.99 });
 ```
 
 Every teammate in `acme_corp` now hashes to the **same** group — the rollout splits at the account boundary, not the user boundary. The hash is still deterministic and sticky: same company, same answer, every time.
 
-<Callout type="info" title="Configured on the resource, carried on the user">
+<Callout type="info" title="Configured on the resource, carried in the attribute map">
   <code>bucketBy</code> is set on the gate/experiment (in the dashboard, CLI, or API). Your job in
-  code is to make sure the named attribute (e.g. <code>company_id</code>) is present on the user
-  object you pass — if it's missing, that user falls back to individual bucketing.
+  code is to make sure the named attribute (e.g. <code>company_id</code>) is present in the
+  attribute map your transform produces (or on the user object you pass to the low-level{" "}
+  <code>Engine</code>) — if it's missing, that user falls back to individual bucketing.
 </Callout>
 
 ## Common units
