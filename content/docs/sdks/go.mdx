@@ -124,6 +124,21 @@ engine.GetFlag("new_checkout", shipeasy.User{"user_id": "u_123"}) // true
 engine.ClearOverrides()
 ```
 
+## Errors & feedback
+
+Report a handled exception with `See()` so it folds into the [errors primitive](/feedback/errors) with a one-sentence **consequence** — what feature broke and how it degraded. `See()` rides the same `Configure()` boot (server key); there is no separate error SDK or second key.
+
+```go
+if err := chargeCard(order, prices); err != nil {
+    shipeasy.See(err).CausesThe("checkout").To("use cached prices").
+        Extras(map[string]any{"order_id": order.ID})
+}
+```
+
+Use `shipeasy.SeeViolation("large query")` for a non-exception problem. Full grammar — consequence phrasing, control-flow exceptions, anti-patterns — is in [Error reporting with see()](/feedback/error-reporting).
+
+The in-app **bug & feature report overlay** is a standalone `<script>` tag you drop into your frontend — platform-agnostic, no server SDK required. See [The devtools overlay](/feedback/devtools).
+
 <SeeAlso
   links={[
     { href: "/sdks", title: "Shared evaluation model", note: "How every SDK buckets" },

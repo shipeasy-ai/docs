@@ -111,6 +111,22 @@ let enabled = await engine.getFlag("new_checkout", user: ["user_id": "u_123"]) /
 await engine.clearOverrides()
 ```
 
+## Errors & feedback
+
+Report a handled exception with `see()` so it folds into the [errors primitive](/feedback/errors) with a one-sentence **consequence** — what feature broke and how it degraded. `see()` rides the same `configure()` boot (server key); there is no separate error SDK or second key.
+
+```swift
+do {
+    try await chargeCard(order, prices)
+} catch {
+    see(error).causesThe("checkout").to("use cached prices").extras(["order_id": order.id])
+}
+```
+
+Use `seeViolation("large query")` for a non-exception problem. Full grammar — consequence phrasing, control-flow exceptions, anti-patterns — is in [Error reporting with see()](/feedback/error-reporting).
+
+The in-app **bug & feature report overlay** is a standalone `<script>` tag you drop into your frontend — platform-agnostic, no server SDK required. See [The devtools overlay](/feedback/devtools).
+
 <SeeAlso
   links={[
     { href: "/sdks", title: "Shared evaluation model", note: "How every SDK buckets" },

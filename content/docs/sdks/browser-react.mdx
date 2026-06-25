@@ -135,6 +135,30 @@ engine.clearOverrides();
 
 Browser override precedence: programmatic override &gt; URL/devtools override (`?se_gate_…`) &gt; the server's evaluation. See [Testing](/sdks/testing).
 
+## Errors & feedback
+
+Two layers, both part of this SDK — no separate error package, no second key.
+
+**Auto-collected client errors.** The `autoCollect` errors group wraps `fetch` (5xx + network failures, each named to a specific endpoint) and ships `type:"error"` events to the [errors primitive](/feedback/errors). It's **on by default** the moment you `configure({ clientKey })` — nothing to enable. It does **not** blanket-capture `window.onerror` / `unhandledrejection`. Opt out without losing vitals/engagement:
+
+```ts
+configure({ clientKey, autoCollect: { errors: false } });
+```
+
+**Handled exceptions with `see()`.** Report a caught exception with a one-sentence **consequence** so it folds into the same errors primitive:
+
+```ts
+import { see } from "@shipeasy/sdk/client";
+
+try {
+  await submitOrder(order);
+} catch (e) {
+  see(e).causes_the("checkout").to("use cached prices").extras({ order_id: order.id });
+}
+```
+
+Use `see.Violation("name")` for a non-exception problem and `see.ControlFlowException(e).because("…")` for expected control flow. Full grammar: [Error reporting with see()](/feedback/error-reporting). The in-app bug/feature **report overlay** is the [devtools overlay](/feedback/devtools) shown above.
+
 <SeeAlso
   links={[
     { href: "/sdks", title: "Shared evaluation model", note: "How every SDK buckets" },

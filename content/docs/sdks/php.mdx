@@ -103,6 +103,22 @@ $engine->getFlag('new_checkout', ['user_id' => 'u1']); // true
 $engine->clearOverrides();
 ```
 
+## Errors & feedback
+
+Report a handled exception with `see()` so it folds into the [errors primitive](/feedback/errors) with a one-sentence **consequence** — what feature broke and how it degraded. `see()` rides the same `Shipeasy\configure()` boot (server key); there is no separate error SDK or second key.
+
+```php
+try {
+    chargeCard($order, $prices);
+} catch (\Throwable $e) {
+    Shipeasy\see($e)->causesThe('checkout')->to('use cached prices')->extras(['order_id' => $order->id]);
+}
+```
+
+Use `Shipeasy\seeViolation('large query')` for a non-exception problem. Full grammar — consequence phrasing, control-flow exceptions, anti-patterns — is in [Error reporting with see()](/feedback/error-reporting).
+
+The in-app **bug & feature report overlay** is a standalone `<script>` tag you drop into your frontend — platform-agnostic, no server SDK required. See [The devtools overlay](/feedback/devtools).
+
 <SeeAlso
   links={[
     { href: "/sdks", title: "Shared evaluation model", note: "How every SDK buckets" },
