@@ -1,0 +1,68 @@
+---
+title: "Kill switches (`getKillswitch`)"
+description: 'A kill switch is an operational on/off control that ships in the same KV blob as gates and configs. It is not user-bound — it answers a global "is this…'
+---
+
+<Callout type="info">
+  Generated from the SDK's own `/docs/` — also served raw at
+  [`https://shipeasy-ai.github.io/sdk/pages/killswitches.md`](https://shipeasy-ai.github.io/sdk/pages/killswitches.md).
+</Callout>
+
+A kill switch is an operational on/off control that ships in the same KV blob as
+gates and configs. It is **not user-bound** — it answers a global "is this
+killed?" question.
+
+## Read a kill switch
+
+```ts
+import { configure, Client } from "@shipeasy/sdk/server"; // or /client
+
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
+const flags = new Client(req.user);
+
+if (flags.getKillswitch("payments")) {
+  // the "payments" kill switch is KILLED — short-circuit the feature
+  return showMaintenanceNotice();
+}
+```
+
+`getKillswitch(name)` returns `true` when the kill switch is killed as a whole,
+`false` otherwise (including for an unknown kill switch).
+
+## Named switches
+
+A kill switch can carry per-key override **switches**. Pass a `switchKey` to
+read one specific switch:
+
+```ts
+flags.getKillswitch("checkout", "apple_pay"); // true when that switch is on
+```
+
+With a `switchKey`, the result is `true` only when that specific named switch is
+on; unknown kill switches or unknown switch keys return `false`.
+
+## Engine form
+
+`getKillswitch` lives on the `Engine` too (same signature — it is not
+user-scoped):
+
+```ts
+import { Engine } from "@shipeasy/sdk/server";
+const engine = new Engine({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
+await engine.initOnce();
+engine.getKillswitch("payments"); // whole-switch
+engine.getKillswitch("checkout", "apple_pay"); // one named switch
+```
+
+## Browser facade
+
+In the browser, the top-level facade also exposes the short alias `ks(...)`,
+which is SSR-bootstrap aware (reads the hydrated bootstrap value synchronously
+on first render):
+
+```ts
+import { ks } from "@shipeasy/sdk/client";
+if (ks("payments")) {
+  /* killed */
+}
+```

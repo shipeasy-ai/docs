@@ -1,0 +1,20 @@
+{
+  "title": "Go",
+  "pages": [
+    "index",
+    "installation",
+    "configuration",
+    "flags",
+    "configs",
+    "killswitches",
+    "experiments",
+    "i18n",
+    "error-reporting",
+    "testing",
+    "openfeature",
+    "advanced",
+    "---More---",
+    "snippets",
+    "skill"
+  ]
+}

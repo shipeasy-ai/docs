@@ -1,0 +1,139 @@
+---
+title: "Snippets"
+description: "Minimal copy-paste blocks for flags, configs, kill switches, experiments and i18n."
+---
+
+Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same leaves the `docs get` op returns.
+
+## release
+
+### release / flags
+
+Read a feature flag per user with a bound `Client`. Assumes `configure()` ran at startup — see Installation.
+
+```ts
+import { Client } from "@shipeasy/sdk/server"; // or "@shipeasy/sdk/client"
+
+// construct once per callsite (cheap; binds the user + runs the attributes transform)
+const flags = new Client(currentUser);
+
+// getFlag(name, defaultValue?)
+//   name         — the flag/gate name
+//   defaultValue — returned ONLY when the flag can't be evaluated
+//                  (client not ready / flag not found); defaults to false
+if (flags.getFlag("{{RESOURCE_NAME}}", false)) {
+  // ship it
+}
+```
+
+### release / configs
+
+Read a typed dynamic config (with a default when the key is absent). Assumes `configure()` ran at startup — see Installation.
+
+```ts
+import { Client } from "@shipeasy/sdk/server"; // or "@shipeasy/sdk/client"
+
+// construct once per callsite (cheap; binds the user)
+const flags = new Client(currentUser);
+
+// getConfig<T>(name, opts?)
+//   name             — the config name
+//   opts.defaultValue — returned when the config key is absent
+//   opts.decode       — optional (raw) => T to validate/shape the stored value
+const cfg = flags.getConfig<{ max: number }>("{{RESOURCE_NAME}}", {
+  defaultValue: { max: 50 }, // used when the key isn't published
+  decode: (raw) => raw as { max: number }, // optional — typed decode / zod parse
+});
+```
+
+### release / killswitches
+
+Read a kill switch (not user-bound — global on/off, optionally per-switch). Assumes `configure()` ran at startup — see Installation.
+
+```ts
+import { Client } from "@shipeasy/sdk/server"; // or "@shipeasy/sdk/client"
+
+// construct once per callsite (cheap; binds the user)
+const flags = new Client(currentUser);
+
+// getKillswitch(name, switchKey?)
+//   name      — the kill switch name
+//   switchKey — optional; reads a single named override switch instead of
+//               the whole-killswitch "killed" flag
+if (flags.getKillswitch("{{RESOURCE_NAME}}")) {
+  // killed — short-circuit the feature
+}
+```
+
+### release / experiments
+
+Read an experiment's params, then record the conversion event on the same bound `Client`. Assumes `configure()` ran at startup — see Installation.
+
+```ts
+import { Client } from "@shipeasy/sdk/server"; // or "@shipeasy/sdk/client"
+
+// construct once per callsite (cheap; binds the user + runs the attributes transform)
+const flags = new Client(currentUser);
+
+// getExperiment<P>(name, defaultParams, decode?)
+//   name          — the experiment name
+//   defaultParams — params returned when NOT enrolled (control / holdout); also
+//                   defines the param shape P
+//   decode        — optional (raw) => P to validate/shape the group's params
+const { inExperiment, group, params } = flags.getExperiment(
+  "{{RESOURCE_NAME}}",
+  { primary_label: "Sign up" }, // defaultParams (used when not enrolled)
+);
+
+render(params.primary_label);
+
+// On conversion — Client-only track (NOT the Engine); the unit is inferred
+// from the bound user (user_id, else anonymous_id):
+//   track(eventName, props?)
+//     eventName — the success event name
+//     props     — optional metric properties (private attrs are stripped)
+flags.track("{{SUCCESS_EVENT}}", { group }); // props optional
+```
+
+## i18n
+
+### i18n / setup
+
+Wire the i18n loader via the SSR bootstrap (it rides the server `shipeasy()` handle — no separate i18n init). The loader serves the `{{PROFILE}}` profile and hydrates `window.i18n`. Full root-layout wiring is on the Installation page.
+
+```tsx
+// app/layout.tsx — Next.js root layout (React Server Component)
+import { shipeasy } from "@shipeasy/sdk/server";
+
+// construct once per request (the SSR bootstrap handle; binds this request)
+const se = await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? "" });
+
+// getBootstrapData(emit?)
+//   emit.clientKey — public client key embedded in the i18n loader tag (NOT
+//                    the flags bootstrap tag); selects the {{PROFILE}} profile
+const boot = se.getBootstrapData({
+  clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY, // profile: {{PROFILE}}
+});
+
+// Render REAL <script> elements (dangerouslySetInnerHTML scripts do NOT run):
+<script src={boot.bootstrap.src} {...boot.bootstrap.attrs} />;
+{
+  boot.i18nLoader && <script src={boot.i18nLoader.src} {...boot.i18nLoader.attrs} />;
+}
+```
+
+### i18n / render
+
+Render a translated label with the `i18n` facade. The fallback is the source string; it shows until the loader resolves. Assumes the i18n loader is wired at startup — see Installation.
+
+```ts
+import { i18n } from "@shipeasy/sdk/client";
+
+// t(key, fallback, variables?)
+//   key       — the translation key
+//   fallback  — source string shown until the loader resolves (and the
+//               extractable default)
+//   variables — optional {{var}} interpolation values
+i18n.t("checkout.cta", "Place order");
+i18n.t("cart.count", "{{count}} items", { count: cart.length }); // variables
+```

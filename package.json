@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "type-check": "fumadocs-mdx && tsc --noEmit",
     "gen-api-reference": "tsx scripts/generate-api-reference.ts",
+    "gen-sdk-reference": "tsx scripts/generate-sdk-reference.ts",
     "deploy": "next build && wrangler deploy",
     "preview": "next build && wrangler dev"
   },

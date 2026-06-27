@@ -1,0 +1,121 @@
+---
+title: "Snippets"
+description: "Minimal copy-paste blocks for flags, configs, kill switches, experiments and i18n."
+---
+
+Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same leaves the `docs get` op returns.
+
+## release
+
+### release / flags
+
+Read a flag with a user-bound `Client`. Assumes `configure()` ran at startup —
+see Installation.
+
+```php
+use Shipeasy\Client;
+
+// construct once per callsite (cheap; binds the user)
+$client = new Client($currentUser);
+
+$enabled = $client->getFlag(
+    '{{RESOURCE_NAME}}',   // gate name
+    false,                 // optional $default — returned ONLY when unevaluable
+);                         //   (client not ready / flag not in blob), NOT when the gate is off
+```
+
+### release / configs
+
+Read a dynamic config value (with a fallback for the absent case). Assumes
+`configure()` ran at startup — see Installation.
+
+```php
+use Shipeasy\Client;
+
+// construct once per callsite (cheap; binds the user)
+$client = new Client($currentUser);
+
+$value = $client->getConfig(
+    '{{RESOURCE_NAME}}',              // config name
+    ['headline' => 'Welcome'],       // optional $default — returned when the config key is absent
+);
+```
+
+### release / killswitches
+
+Read a kill switch (global panic boolean). Assumes `configure()` ran at startup
+— see Installation.
+
+```php
+use Shipeasy\Client;
+
+// construct once per callsite (cheap; binds the user)
+$client = new Client($currentUser);
+
+$panic = $client->getKillswitch(
+    '{{RESOURCE_NAME}}',   // kill switch name
+    null,                  // optional $switchKey — read a named per-key override (null = top-level value)
+);
+```
+
+### release / experiments
+
+Read an experiment assignment, then track the conversion on the same bound
+`Client`. Assumes `configure()` ran at startup — see Installation.
+
+```php
+use Shipeasy\Client;
+
+// construct once per callsite (cheap; binds the user)
+$client = new Client($currentUser);
+
+$r = $client->getExperiment(
+    '{{RESOURCE_NAME}}',     // experiment name
+    ['color' => 'blue'],     // $defaultParams — params returned when the user isn't enrolled
+);
+$color = $r->inExperiment ? $r->params['color'] : 'blue';
+
+// track() is on the bound Client (NOT the Engine): the unit comes from the
+// bound user — no userId argument.
+$client->track(
+    '{{SUCCESS_EVENT}}',     // event name
+    ['amount' => 49],        // optional $props — event properties (default [])
+);
+```
+
+## i18n
+
+### i18n / setup
+
+i18n is rendered in the browser. From PHP, emit the loader `<script>` tag with
+the **public client key** and the `{{PROFILE}}` profile into your `<head>`.
+Assumes `configure()` ran at startup — see Installation.
+
+```php
+use Shipeasy\Engine;
+
+// the configured engine (the default registered at startup).
+// Resolve once per request, not per tag.
+$engine = Engine::getDefault();
+
+// $clientKey is the PUBLIC client key (NOT the server key).
+$head = $engine->bootstrapScriptTag(
+            ['user_id' => 'u_123'],       // the request's evaluated user/attribute map
+            ['anonId' => $anonId],        // optional opts: anonId, i18nProfile, baseUrl
+        )
+      . $engine->i18nScriptTag(
+            $clientKey,                    // PUBLIC client key — embedded in the page
+            '{{PROFILE}}',                 // locale profile to load (e.g. en:prod)
+        );
+```
+
+### i18n / render
+
+The PHP server SDK has no `t()` — labels render in the browser via the client
+SDK. After the loader tag (see setup) is in the `<head>`, render in the browser:
+
+```js
+// browser, @shipeasy/sdk/client
+import { t } from "@shipeasy/sdk/client";
+element.textContent = t("checkout.cta"); // resolves from the {{PROFILE}} profile
+```

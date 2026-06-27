@@ -1,0 +1,103 @@
+---
+title: "Snippets"
+description: "Minimal copy-paste blocks for flags, configs, kill switches, experiments and i18n."
+---
+
+Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same leaves the `docs get` op returns.
+
+## release
+
+### release / flags
+
+Read a flag on a user-bound `Client`. Assumes `configure()` ran at startup — see Installation.
+
+```swift
+// construct once per callsite (cheap; binds the user)
+let client = try Client(["user_id": "u_123"])
+
+// name; getFlag returns false when the engine isn't ready or the flag is absent
+let enabled = await client.getFlag("{{RESOURCE_NAME}}")
+
+// optional `default:` — returned ONLY when the flag can't be evaluated
+// (engine not ready / flag not found), never when it evaluates to false
+let safe = await client.getFlag("{{RESOURCE_NAME}}", default: false)
+```
+
+### release / configs
+
+Read a dynamic config (returns `Any?`). Assumes `configure()` ran at startup — see Installation.
+
+```swift
+// construct once per callsite (cheap; binds the user)
+let client = try Client(["user_id": "u_123"])
+
+// name; optional `default:` — returned when the config key is absent
+let value = await client.getConfig("{{RESOURCE_NAME}}", default: ["headline": "Welcome"])
+```
+
+### release / killswitches
+
+Check whether a kill switch is engaged (`true` = killed). Assumes `configure()` ran at startup — see Installation.
+
+```swift
+// construct once per callsite (cheap; binds the user)
+let client = try Client(["user_id": "u_123"])
+
+// name; optional `switchKey:` reads one named per-key override (nil = the kill switch itself)
+let killed = await client.getKillswitch("{{RESOURCE_NAME}}", switchKey: nil)
+```
+
+### release / experiments
+
+Enrol a user, branch on the group, and track the conversion event. Assumes `configure()` ran at startup — see Installation.
+
+```swift
+// construct once per callsite (cheap; binds the user)
+let client = try Client(["user_id": "u_123"])
+
+// name; defaultParams: params returned when the user isn't enrolled (nil for none)
+let r = await client.getExperiment("{{RESOURCE_NAME}}", defaultParams: ["color": "blue"])
+
+if r.inExperiment, r.group == "treatment" {
+    // render the treatment variant
+}
+
+// Client-only conversion event — event name; optional `properties:` bag (default [:])
+await client.track("{{SUCCESS_EVENT}}", properties: ["amount": 49])
+```
+
+## i18n
+
+### i18n / setup
+
+The Swift SDK is server-side: it emits the SSR loader tag for the browser SDK
+(the public **client** key goes on the i18n tag, never the server key). The
+script-tag helpers live on the `Engine` (not the bound `Client`). Assumes
+`configure()` ran at startup — see Installation.
+
+```swift
+// grab the configured Engine once per callsite (built by configure())
+let engine = globalEngine()!
+
+// bootstrapScriptTag: user attribute map; anonId: stable __se_anon_id unit (no key);
+// optional i18nProfile: locale profile ("en:prod"); optional baseURL: CDN host
+let bootstrap = await engine.bootstrapScriptTag(["user_id": "u_123"], anonId: anonId)
+
+// i18nScriptTag: PUBLIC clientKey (positional); profile: locale profile ("en:prod" default);
+// optional baseURL: CDN host (defaults to https://cdn.shipeasy.ai)
+let i18n = await engine.i18nScriptTag(clientKey, profile: "{{PROFILE}}")
+
+let head = bootstrap + i18n // inject into the document <head>
+```
+
+### i18n / render
+
+Rendering a translated label is **client-side** — the Swift server SDK has no
+`t()`. After the loader from `i18nScriptTag(...)` hydrates the `{{PROFILE}}`
+profile, render in the browser with the client SDK:
+
+```ts
+// browser (@shipeasy/sdk client) — NOT Swift
+import { t } from "@shipeasy/sdk/client";
+t("checkout.cta"); // -> the translated string
+```

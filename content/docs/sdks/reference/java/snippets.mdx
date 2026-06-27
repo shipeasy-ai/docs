@@ -1,0 +1,129 @@
+---
+title: "Snippets"
+description: "Minimal copy-paste blocks for flags, configs, kill switches, experiments and i18n."
+---
+
+Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same leaves the `docs get` op returns.
+
+## release
+
+### release / flags
+
+Read `{{RESOURCE_NAME}}` off a user-bound `Client`. Assumes `configure()` ran at
+startup — see Installation.
+
+```java
+import ai.shipeasy.Client;
+import java.util.Map;
+
+// construct once per callsite (cheap; binds the user)
+Client client = new Client(Map.of("user_id", "u_123"));
+
+boolean enabled = client.getFlag("{{RESOURCE_NAME}}"); // gate name
+// optional default overload — returned ONLY when unresolvable (engine not
+// ready / flag absent), never when the flag legitimately evaluates to false:
+// boolean enabled = client.getFlag("{{RESOURCE_NAME}}", true /* default */);
+```
+
+### release / configs
+
+Read the dynamic config `{{RESOURCE_NAME}}` (with a fallback when absent).
+Assumes `configure()` ran at startup — see Installation.
+
+```java
+import ai.shipeasy.Client;
+import java.util.Map;
+
+// construct once per callsite (cheap; binds the user)
+Client client = new Client(Map.of("user_id", "u_123"));
+
+Object cfg = client.getConfig(
+    "{{RESOURCE_NAME}}",          // config name
+    Map.of("title", "Default")); // fallback returned when the config is absent
+// one-arg overload returns null when absent: client.getConfig("{{RESOURCE_NAME}}")
+```
+
+### release / killswitches
+
+Check whether the kill switch `{{RESOURCE_NAME}}` is killed. Assumes
+`configure()` ran at startup — see Installation.
+
+```java
+import ai.shipeasy.Client;
+import java.util.Map;
+
+// construct once per callsite (cheap; binds the user)
+Client client = new Client(Map.of("user_id", "u_123"));
+
+boolean killed = client.getKillswitch("{{RESOURCE_NAME}}"); // killswitch name
+// optional second arg reads one named per-key switch (null = whole killswitch):
+// boolean off = client.getKillswitch("{{RESOURCE_NAME}}", "eu_region" /* switchKey */);
+
+if (killed) {
+    // disable the protected path
+}
+```
+
+### release / experiments
+
+Bucket a user into `{{RESOURCE_NAME}}`, then track the `{{SUCCESS_EVENT}}`
+conversion. Assumes `configure()` ran at startup — see Installation.
+
+```java
+import ai.shipeasy.Client;
+import ai.shipeasy.ExperimentResult;
+import java.util.Map;
+
+// construct once per callsite (cheap; binds the user)
+Client client = new Client(Map.of("user_id", "u_123"));
+
+ExperimentResult r = client.getExperiment(
+    "{{RESOURCE_NAME}}",        // experiment name
+    Map.of("color", "blue"));   // defaultParams — filled in when not enrolled
+
+if (r.inExperiment && "treatment".equals(r.group)) {
+    // render the treatment variant; r.params carries the assigned parameters
+}
+
+// later, on conversion — track() lives on the bound Client (NOT the Engine);
+// the unit id is derived from the bound user (user_id, else anonymous_id):
+client.track(
+    "{{SUCCESS_EVENT}}",        // event name
+    Map.of("amount", 49));      // optional properties bag (track(name) omits it)
+```
+
+## i18n
+
+### i18n / setup
+
+The Java server SDK has no `t()` — emit the i18n loader `<script>` tag (with the
+**public client key**) so the browser SDK loads the `{{PROFILE}}` profile.
+Assumes `configure()` ran at startup — see Installation.
+
+```java
+import ai.shipeasy.Engine;
+import ai.shipeasy.Shipeasy;
+
+// grab the already-configured global Engine (the SSR/script-tag helpers live on
+// the Engine, not the bound Client)
+Engine engine = Shipeasy.engine();
+
+String clientKey = System.getenv("SHIPEASY_CLIENT_KEY"); // PUBLIC key (never the server key)
+String head = engine.i18nScriptTag(
+    clientKey,      // public client key embedded in the loader tag
+    "{{PROFILE}}"); // locale profile, e.g. en:prod
+// → render `head` inside the document <head>
+// 3-arg overload also takes a CDN baseUrl (defaults to https://cdn.shipeasy.ai).
+```
+
+### i18n / render
+
+Rendering a translated label is **client-side only** — the Java server SDK does
+not expose `t()`. Once the loader tag (see setup) has hydrated the browser, the
+client SDK renders keys:
+
+```js
+// browser, @shipeasy/sdk client
+import { t } from "@shipeasy/sdk/client";
+t("checkout.cta"); // → translated string for the active {{PROFILE}} profile
+```

@@ -1,0 +1,125 @@
+---
+title: "Snippets"
+description: "Minimal copy-paste blocks for flags, configs, kill switches, experiments and i18n."
+---
+
+Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same leaves the `docs get` op returns.
+
+## release
+
+### release / flags
+
+Read a feature flag on a user-bound client. Assumes `configure()` ran at
+startup — see Installation.
+
+```python
+import shipeasy
+
+# construct once per callsite (cheap; binds the user)
+client = shipeasy.Client(current_user)
+
+# name                          flag name (required)
+# default=False                 returned ONLY when the flag can't be evaluated
+#                               (client not ready / flag absent) — never when it
+#                               simply resolves off
+if client.get_flag("{{RESOURCE_NAME}}", default=False):
+    ...
+```
+
+### release / configs
+
+Read a dynamic config on a user-bound client. Assumes `configure()` ran at
+startup — see Installation.
+
+```python
+import shipeasy
+
+# construct once per callsite (cheap; binds the user)
+client = shipeasy.Client(current_user)
+
+# name                          config name (required)
+# decode=lambda v: ...          optional: transform the raw JSON value (typed)
+# default={}                    returned when the key is absent or decode raises
+config = client.get_config("{{RESOURCE_NAME}}", default={})
+
+# typed example:
+# max_items = client.get_config("{{RESOURCE_NAME}}", decode=lambda v: v["max"], default=0)
+```
+
+### release / killswitches
+
+Check a kill switch on a user-bound client. Assumes `configure()` ran at
+startup — see Installation.
+
+```python
+import shipeasy
+
+# construct once per callsite (cheap; binds the user)
+client = shipeasy.Client(current_user)
+
+# name                          kill switch name (required)
+# switch_key="..."              optional: read a named per-key override
+#                               (the dashboard "switches" feature); falls back
+#                               to the top-level value when absent
+if client.get_killswitch("{{RESOURCE_NAME}}"):  # True == engaged (feature killed)
+    return fallback()
+```
+
+### release / experiments
+
+Read an experiment, log exposure where you present the treatment, then track its
+success event. Assumes `configure()` ran at startup — see Installation.
+
+```python
+import shipeasy
+
+# construct once per callsite (cheap; binds the user)
+client = shipeasy.Client(current_user)
+
+# name                          experiment name (required)
+# default_params={...}          params returned when the user isn't enrolled
+# decode=lambda p: ...          optional: transform the params bag (typed)
+result = client.get_experiment("{{RESOURCE_NAME}}", default_params={"color": "blue"})
+
+# call where you actually render the treatment (server is stateless — no auto-log)
+client.log_exposure("{{RESOURCE_NAME}}")  # experiment name (required)
+
+if result.params["color"] == "green":
+    ...
+
+# track the conversion — Client.track (NOT the Engine); unit is the bound user
+# event_name                    success event (required)
+# properties={...}              optional event properties bag
+client.track("{{SUCCESS_EVENT}}", {"amount": 49})
+```
+
+## i18n
+
+### i18n / setup
+
+This is a server SDK: it has no `t()`. During SSR, emit the i18n loader tag
+(public CLIENT key) so the browser SDK boots against the `{{PROFILE}}` profile.
+Assumes `configure()` ran at startup — see Installation.
+
+```python
+import shipeasy
+
+# the shared Engine built at startup (configure() returns it; or get_global_engine())
+engine = shipeasy.get_global_engine()
+
+# client_key                    PUBLIC client key (sdk_client_...) — NOT the server key
+# profile="en:prod"             locale profile to boot the browser SDK against
+# base_url=...                  optional: override the CDN origin (default cdn.shipeasy.ai)
+head = engine.i18n_script_tag(client_key, "{{PROFILE}}")  # goes in <head>
+```
+
+### i18n / render
+
+Labels render in the **browser**, via the Shipeasy client SDK's `t()` — the
+Python server SDK has no render helper. Once the loader tag (see setup) is in
+`<head>`, the client renders translated text:
+
+```js
+// browser (Shipeasy client SDK), profile {{PROFILE}}
+t("checkout.cta");
+```

@@ -1,0 +1,108 @@
+---
+title: "Snippets"
+description: "Minimal copy-paste blocks for flags, configs, kill switches, experiments and i18n."
+---
+
+Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same leaves the `docs get` op returns.
+
+## release
+
+### release / flags
+
+Read the `{{RESOURCE_NAME}}` gate for the bound user. Assumes `Configure()` ran at startup — see Installation.
+
+```go
+// construct once per callsite (cheap; binds the user)
+c := shipeasy.NewClient(shipeasy.User{"user_id": "u_123"})
+
+if c.GetFlag("{{RESOURCE_NAME}}") { // gate name; returns false if absent/disabled
+    // new behaviour
+}
+
+// Or with an explicit fallback when the gate can't be evaluated
+// (engine not ready, or the gate is absent — NOT when it evaluates false):
+on := c.GetFlagOr("{{RESOURCE_NAME}}", true) // name; def returned only on can't-evaluate
+_ = on
+```
+
+### release / configs
+
+Read the `{{RESOURCE_NAME}}` dynamic config (typed JSON value). Assumes `Configure()` ran at startup — see Installation.
+
+```go
+// construct once per callsite (cheap; binds the user)
+c := shipeasy.NewClient(shipeasy.User{"user_id": "u_123"})
+
+// name; returns (value any, ok bool) — ok is false when the key is absent.
+if cfg, ok := c.GetConfig("{{RESOURCE_NAME}}"); ok {
+    m := cfg.(map[string]any)
+    _ = m["cta"]
+}
+
+// Or with an explicit fallback returned when the key is absent:
+v := c.GetConfigOr("{{RESOURCE_NAME}}", map[string]any{"cta": "Buy"}) // name; def
+_ = v
+```
+
+### release / killswitches
+
+Check whether the `{{RESOURCE_NAME}}` kill switch is engaged. Assumes `Configure()` ran at startup — see Installation.
+
+```go
+// construct once per callsite (cheap; binds the user)
+c := shipeasy.NewClient(shipeasy.User{"user_id": "u_123"})
+
+// name; optional switchKey selects a named per-key override switch
+// (the dashboard "switches" feature). Omit it for the whole kill switch.
+if c.GetKillswitch("{{RESOURCE_NAME}}") {
+    // feature is killed — short-circuit
+}
+```
+
+### release / experiments
+
+Evaluate the `{{RESOURCE_NAME}}` experiment and track the `{{SUCCESS_EVENT}}` conversion. Assumes `Configure()` ran at startup — see Installation.
+
+```go
+// construct once per callsite (cheap; binds the user)
+c := shipeasy.NewClient(shipeasy.User{"user_id": "u_123"})
+
+// name; defaultParams returned as r.Params when the user isn't enrolled.
+r := c.GetExperiment("{{RESOURCE_NAME}}", map[string]any{"color": "blue"})
+if r.InExperiment {
+    p := r.Params.(map[string]any)
+    render(p["color"])
+}
+
+// On conversion — Track is Client-only (derives the user id from the bound
+// attributes). event name; props are optional metric properties.
+c.Track("{{SUCCESS_EVENT}}", map[string]any{"amount": 49}) // event; props
+```
+
+## i18n
+
+### i18n / setup
+
+The Go SDK is server-side: it emits the browser i18n loader tag (public client key) for the `{{PROFILE}}` profile. Translation rendering itself happens in the browser via the client SDK's `t()`. Assumes `Configure()` ran at startup — see Installation.
+
+```go
+// fetch the process-wide engine once per callsite (built by Configure)
+eng := shipeasy.ConfiguredEngine()
+
+// clientKey is the PUBLIC client key (NOT the server key). Emit this tag in
+// your document <head>.
+//   clientKey  string                  the public client key
+//   "{{PROFILE}}"  string              the locale profile to load (e.g. "en:prod")
+//   BootstrapTagOptions{}              optional: AnonID, I18nProfile, BaseURL
+tag := eng.I18nScriptTag(clientKey, "{{PROFILE}}", shipeasy.BootstrapTagOptions{})
+_ = tag
+```
+
+### i18n / render
+
+There is no server-side `t()` in Go — translated labels are rendered in the **browser** by the client SDK once `I18nScriptTag` has loaded the `{{PROFILE}}` profile.
+
+```js
+// Browser (client SDK), after the loader installs the {{PROFILE}} labels:
+const label = shipeasy.t("checkout.cta");
+```

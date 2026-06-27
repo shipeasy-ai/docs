@@ -1,0 +1,121 @@
+---
+title: "Snippets"
+description: "Minimal copy-paste blocks for flags, configs, kill switches, experiments and i18n."
+---
+
+Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same leaves the `docs get` op returns.
+
+## release
+
+### release / flags
+
+Read a feature gate with a bound `Client`. Assumes `configure()` ran at startup
+— see [Installation](../../pages/installation.md).
+
+```kotlin
+import ai.shipeasy.Client
+
+// construct once per callsite (cheap; binds the user, no own connection/poll)
+val flags = Client(currentUser)
+
+// getFlag(name, default = false): default is returned ONLY when the gate can't
+// be evaluated (client not ready / flag unknown) — never for a real `false`.
+if (flags.getFlag("{{RESOURCE_NAME}}", default = false)) {
+    // gate is on for this user
+}
+```
+
+### release / configs
+
+Read a dynamic config value, with a default when the key is absent. Assumes
+`configure()` ran at startup — see [Installation](../../pages/installation.md).
+
+```kotlin
+import ai.shipeasy.Client
+
+// construct once per callsite (cheap; binds the user)
+val flags = Client(currentUser)
+
+// getConfig(name, default = null): default is returned when the key is absent.
+val value = flags.getConfig("{{RESOURCE_NAME}}", default = "Pay now")
+```
+
+### release / killswitches
+
+Check a kill switch — `true` means the feature is killed. Assumes `configure()`
+ran at startup — see [Installation](../../pages/installation.md).
+
+```kotlin
+import ai.shipeasy.Client
+
+// construct once per callsite (cheap; binds the user)
+val flags = Client(currentUser)
+
+// getKillswitch(name, switchKey = null): without switchKey → true when the whole
+// kill switch is killed; with switchKey → true when that per-key override is on.
+if (flags.getKillswitch("{{RESOURCE_NAME}}", switchKey = null)) {
+    return serviceUnavailable()   // killed — short-circuit
+}
+```
+
+### release / experiments
+
+Assign a variant and track the conversion event — both on the same bound
+`Client`. Assumes `configure()` ran at startup — see
+[Installation](../../pages/installation.md).
+
+```kotlin
+import ai.shipeasy.Client
+
+// construct once per callsite (cheap; binds the user)
+val client = Client(currentUser)
+
+// getExperiment(name, defaultParams): defaultParams is returned as `params` when
+// the user isn't in the experiment (or the experiment has no params).
+val r = client.getExperiment("{{RESOURCE_NAME}}", mapOf("color" to "blue"))
+if (r.inExperiment) {
+    @Suppress("UNCHECKED_CAST")
+    val color = (r.params as? Map<String, Any?>)?.get("color")
+    // …present the treatment…
+}
+
+// on conversion — same bound Client, no user arg (unit comes from the bound bag)
+// track(event, props = emptyMap()): event = the metric; props = optional event
+// properties (private attributes are stripped).
+client.track("{{SUCCESS_EVENT}}", mapOf("amount" to 49))
+```
+
+## i18n
+
+### i18n / setup
+
+Server-side: render the i18n loader tag into your document `<head>` with the
+**public client key** and the profile. (The Kotlin SDK has no server `t()` —
+rendering happens in the browser via the client SDK.) Assumes `configure()` ran
+at startup — see [Installation](../../pages/installation.md).
+
+```kotlin
+import ai.shipeasy.currentEngine
+
+// grab the process-global engine built by configure(); construct/resolve once
+// per callsite (the script tag is rendered per response)
+val engine = currentEngine() ?: error("configure() must run before SSR")
+
+// i18nScriptTag(clientKey, profile = "en:prod", baseUrl = null):
+//   clientKey — the PUBLIC client key (never the server key)
+//   profile   — the locale profile to hydrate, e.g. "{{PROFILE}}"
+//   baseUrl   — CDN origin override; default https://cdn.shipeasy.ai
+val head = engine.i18nScriptTag(clientKey, "{{PROFILE}}")
+```
+
+### i18n / render
+
+Label rendering is **client-side only** — the Kotlin server SDK has no `t()`.
+Once the loader (from setup) has hydrated translations for `{{PROFILE}}`, the
+browser SDK renders labels:
+
+```js
+// browser, @shipeasy/sdk client
+import { t } from "@shipeasy/sdk/client";
+t("checkout.pay_now");
+```

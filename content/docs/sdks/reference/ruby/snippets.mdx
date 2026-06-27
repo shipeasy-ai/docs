@@ -1,0 +1,131 @@
+---
+title: "Snippets"
+description: "Minimal copy-paste blocks for flags, configs, kill switches, experiments and i18n."
+---
+
+Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same leaves the `docs get` op returns.
+
+## release
+
+### release / flags
+
+Evaluate the feature gate `{{RESOURCE_NAME}}` on a user-bound Client.
+
+> Assumes `Shipeasy.configure` ran at startup — see Installation.
+
+```ruby
+# construct once per callsite (cheap; binds the user + runs the attributes transform)
+flags = Shipeasy::Client.new(current_user)
+
+# get_flag(name, default: false)
+#   name    — the gate key
+#   default — returned ONLY when the value can't be resolved (client not ready /
+#             gate absent); a gate that evaluates to false returns false
+if flags.get_flag("{{RESOURCE_NAME}}", default: false)
+  # ship it
+end
+```
+
+### release / configs
+
+Read the dynamic config `{{RESOURCE_NAME}}` with a fallback default.
+
+> Assumes `Shipeasy.configure` ran at startup — see Installation.
+
+```ruby
+# construct once per callsite (cheap; binds the user)
+flags = Shipeasy::Client.new(current_user)
+
+# get_config(name, decode = nil, default: nil)
+#   name    — the config key
+#   decode  — optional proc run on a present value, e.g. ->(v) { v["max"] }
+#   default — returned only when the config key is absent
+value = flags.get_config("{{RESOURCE_NAME}}", default: "blue")
+```
+
+### release / killswitches
+
+Check the kill switch `{{RESOURCE_NAME}}` (true = killed).
+
+> Assumes `Shipeasy.configure` ran at startup — see Installation.
+
+```ruby
+# construct once per callsite (cheap; binds the user)
+flags = Shipeasy::Client.new(current_user)
+
+# get_killswitch(name, switch_key = nil)
+#   name       — the kill switch key
+#   switch_key — optional named per-key override switch to read
+if flags.get_killswitch("{{RESOURCE_NAME}}")
+  # killed → take the safe path
+end
+```
+
+### release / experiments
+
+Get the assignment for `{{RESOURCE_NAME}}` and track the `{{SUCCESS_EVENT}}` conversion.
+
+> Assumes `Shipeasy.configure` ran at startup — see Installation.
+
+```ruby
+# construct once per callsite (cheap; binds the user)
+flags = Shipeasy::Client.new(current_user)
+
+# get_experiment(name, default_params, decode = nil)
+#   name           — the experiment key
+#   default_params — params returned when NOT enrolled (the control shape)
+#   decode         — optional proc run on the resolved params
+result = flags.get_experiment("{{RESOURCE_NAME}}", { label: "Buy now" })
+
+if result.in_experiment && result.group == "treatment"
+  render_cta(result.params[:label])
+end
+
+# track the conversion on the bound Client (id derived from the bound user)
+#   track(event_name, props = {})
+flags.track("{{SUCCESS_EVENT}}", { revenue: 49.99 })
+```
+
+## i18n
+
+### i18n / setup
+
+Emit the i18n loader + head tags for profile `{{PROFILE}}` so the browser
+hydrates translations on first paint (Rails view helpers auto-mount).
+
+> Assumes `Shipeasy.configure` ran at startup with `c.public_key` + `c.profile`
+> set — see Installation.
+
+```erb
+<%# i18n_head_tags(profile: nil, chunk: nil) — emits the inline data + loader tag.
+    profile/chunk default to the configured values; pass them to override. %>
+<%= i18n_head_tags(profile: "{{PROFILE}}") %>
+```
+
+Outside Rails, build the loader tag from the engine with the **public** client
+key (never the server key):
+
+```ruby
+# i18n_script_tag(client_key, profile: "en:prod", base_url: nil)
+#   client_key — the PUBLIC client key
+#   profile    — locale profile to load
+#   base_url   — CDN override (defaults to https://cdn.shipeasy.ai)
+tag = Shipeasy.engine.i18n_script_tag(ENV.fetch("SHIPEASY_CLIENT_KEY"), profile: "{{PROFILE}}")
+```
+
+### i18n / render
+
+Render a translated label in a Rails view with the `i18n_t` helper.
+
+> Assumes `Shipeasy.configure` ran at startup — see Installation.
+
+```erb
+<%= i18n_head_tags %>
+
+<%# i18n_t(key, variables = {}, profile: nil, chunk: nil)
+      key       — the translation key
+      variables — interpolation values for the string
+      profile   — locale profile override (defaults to the configured profile)
+      chunk     — optional key namespace/chunk override %>
+<h1><%= i18n_t("hero.title", name: current_user.name) %></h1>
+```
