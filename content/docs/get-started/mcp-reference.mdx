@@ -15,7 +15,7 @@ tool-by-tool reference.
 
 ## Shared
 
-Project detection, binding, auth, and read-only resource lookups. Use these before any write tool — every write refuses to run until the cwd is bound to a project.
+Project detection, binding, auth, the current project, and targeting attributes. Use these before any write tool — every write refuses to run until the cwd is bound to a project.
 
 ### `detect_project`
 
@@ -55,114 +55,21 @@ Delete ~/.config/shipeasy/config.json. No network call.
 
 _No parameters._
 
-### `list_resources`
+### `projects_current`
 
-Unified listing across gates, configs, experiments, events, metrics, alert_rules, universes, attributes, i18n profiles/chunks/keys/drafts, and sdk_keys.
+Return the project the session resolves to (plan, status, enabled modules, billing). The server reads the project from the auth header — no id needed. Powers `whoami`.
 
-| Parameter |          | Type                                                                                                                                                                                    | Description |
-| --------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| `kind`    | required | `"gates" \| "configs" \| "experiments" \| "events" \| "metrics" \| "alert_rules" \| "universes" \| "attributes" \| "profiles" \| "chunks" \| "keys" \| "drafts" \| "sdk_keys" \| "all"` | —           |
-| `limit`   | optional | `number`                                                                                                                                                                                | —           |
-| `search`  | optional | `string`                                                                                                                                                                                | —           |
+_No parameters._
 
-### `get_resource`
+### `attributes_list`
 
-Fetch a single resource by kind + name_or_id. Same routing as list_resources.
+List the auto-inferred user-attribute schema available for gate/experiment targeting.
 
-| Parameter    |          | Type     | Description |
-| ------------ | -------- | -------- | ----------- |
-| `kind`       | required | `string` | —           |
-| `name_or_id` | required | `string` | —           |
-
-### `get_sdk_snippet`
-
-Return ready-to-paste install / env-vars / init / usage / tracking code for the detected language + framework, for either subsystem.
-
-| Parameter       |          | Type                                                                                                          | Description |
-| --------------- | -------- | ------------------------------------------------------------------------------------------------------------- | ----------- |
-| `domain`        | required | `"experiment" \| "i18n"`                                                                                      | —           |
-| `language`      | required | `"typescript" \| "javascript" \| "python" \| "ruby" \| "go" \| "java" \| "php" \| "swift" \| "kotlin"`        | —           |
-| `framework`     | optional | `string`                                                                                                      | —           |
-| `type`          | required | `"gate" \| "experiment" \| "config" \| "label_load" \| "label_render" \| "loader_script" \| "provider_setup"` | —           |
-| `name`          | required | `string`                                                                                                      | —           |
-| `params`        | optional | `object`                                                                                                      | —           |
-| `success_event` | optional | `string`                                                                                                      | —           |
-| `success_value` | optional | `boolean`                                                                                                     | —           |
-
-### `file_bug`
-
-File a bug report into the bound project's feedback queue (and, where a GitHub/Slack connector is configured, open a real issue / post a message). The body fields become the GitHub issue body verbatim — so if the report is vague (no clear repro, no expected-vs-actual), ask the user ONE or TWO short clarifying questions FIRST, then fold the answers into the fields below. Create-only.
-
-| Parameter            |          | Type                                                 | Description                                                |
-| -------------------- | -------- | ---------------------------------------------------- | ---------------------------------------------------------- |
-| `title`              | required | `string`                                             | Short, specific one-line summary of the bug.               |
-| `steps_to_reproduce` | optional | `string`                                             | Explicit/numbered steps to reproduce. Markdown allowed.    |
-| `actual_result`      | optional | `string`                                             | What actually happens (the breakage).                      |
-| `expected_result`    | optional | `string`                                             | What was expected instead.                                 |
-| `priority`           | optional | `"nice_to_have" \| "medium" \| "high" \| "critical"` | Optional severity; omit if unsure and let the team triage. |
-| `page_url`           | optional | `string`                                             | Optional URL where the bug occurs.                         |
-
-### `file_feature`
-
-File a feature request into the bound project's feedback queue (and, where a GitHub/Slack connector is configured, open a real issue / post a message). The body fields become the GitHub issue body verbatim — so if it's unclear WHAT exactly to build (scope, surface, acceptance criteria), ask the user ONE or TWO short clarifying questions FIRST, then fold the answers into the fields below. Create-only.
-
-| Parameter     |          | Type                                                 | Description                                                     |
-| ------------- | -------- | ---------------------------------------------------- | --------------------------------------------------------------- |
-| `title`       | required | `string`                                             | Short, specific one-line summary of the request.                |
-| `description` | optional | `string`                                             | What to build and how it should behave — the concrete proposal. |
-| `use_case`    | optional | `string`                                             | Why it's needed / the problem it solves.                        |
-| `priority`    | optional | `"nice_to_have" \| "medium" \| "high" \| "critical"` | Optional importance; omit if unsure and let the team triage.    |
-| `page_url`    | optional | `string`                                             | Optional related URL.                                           |
+_No parameters._
 
 ## Flags & experiments
 
-Create and manage gates, dynamic configs, kill switches, universes, experiments, and alert rules. The gate/kill-switch/config/universe tools are generated from the shared operation registry (@shipeasy/openapi); experiment and alert-rule tools are hand-written.
-
-### `exp_create_alert_rule`
-
-Create a metric-threshold alert rule. The cron aggregates the metric over the trailing window and raises an alert at `severity` when `value <comparator> threshold` holds. The metric (and its aggregation) is fixed for the rule's life.
-
-| Parameter                   |          | Type                             | Description                                                                                                                                                                                                                        |
-| --------------------------- | -------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`                      | required | `string`                         | Human label shown on the rule and raised alert.                                                                                                                                                                                    |
-| `metric`                    | required | `string`                         | Metric id or name to evaluate.                                                                                                                                                                                                     |
-| `comparator`                | required | `"gt" \| "gte" \| "lt" \| "lte"` | How the metric value is compared to `threshold`.                                                                                                                                                                                   |
-| `threshold`                 | required | `number`                         | Threshold the metric value is compared against.                                                                                                                                                                                    |
-| `window_hours`              | optional | `number`                         | Lookback window in whole hours (1–720). Default 24.                                                                                                                                                                                |
-| `severity`                  | optional | `"danger" \| "warn" \| "info"`   | Severity of the raised alert. Default 'warn'.                                                                                                                                                                                      |
-| `enabled`                   | optional | `boolean`                        | Whether the cron evaluates it. Default true.                                                                                                                                                                                       |
-| `notify`                    | optional | `object`                         | Where to deliver this rule's alert, overriding the project default. Omit to inherit the default. Pick a Slack channel from the project's real channels (use the dashboard channel picker / `list_resources`) — never invent an id. |
-| `notify.slack_channel`      | optional | `object`                         | Slack channel to post to (requires a Slack connector).                                                                                                                                                                             |
-| `notify.slack_channel.id`   | required | `string`                         | Slack channel id, e.g. C0123ABCD.                                                                                                                                                                                                  |
-| `notify.slack_channel.name` | required | `string`                         | Channel name without the leading #.                                                                                                                                                                                                |
-| `notify.email`              | optional | `string`                         | Email address to notify for this rule.                                                                                                                                                                                             |
-
-### `exp_update_alert_rule`
-
-Update an alert rule's tunable knobs (threshold, comparator, window, severity, name, enabled). The metric is immutable — delete + recreate to repoint a rule at a different metric.
-
-| Parameter                   |          | Type                             | Description                                                                                                                                                                                                        |
-| --------------------------- | -------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `id`                        | required | `string`                         | Alert rule id, id-prefix, or unique name.                                                                                                                                                                          |
-| `name`                      | optional | `string`                         | —                                                                                                                                                                                                                  |
-| `comparator`                | optional | `"gt" \| "gte" \| "lt" \| "lte"` | —                                                                                                                                                                                                                  |
-| `threshold`                 | optional | `number`                         | —                                                                                                                                                                                                                  |
-| `window_hours`              | optional | `number`                         | Whole hours, 1–720.                                                                                                                                                                                                |
-| `severity`                  | optional | `"danger" \| "warn" \| "info"`   | —                                                                                                                                                                                                                  |
-| `enabled`                   | optional | `boolean`                        | —                                                                                                                                                                                                                  |
-| `notify`                    | optional | `object`                         | Replace the rule's delivery target. `slack_channel` requires a Slack connector; pick a real channel, never invent an id. Pass an empty object to keep, or set fields to null to clear back to the project default. |
-| `notify.slack_channel`      | optional | `object`                         | —                                                                                                                                                                                                                  |
-| `notify.slack_channel.id`   | required | `string`                         | —                                                                                                                                                                                                                  |
-| `notify.slack_channel.name` | required | `string`                         | —                                                                                                                                                                                                                  |
-| `notify.email`              | optional | `string`                         | —                                                                                                                                                                                                                  |
-
-### `exp_delete_alert_rule`
-
-Delete an alert rule by id, id-prefix, or unique name.
-
-| Parameter |          | Type     | Description |
-| --------- | -------- | -------- | ----------- |
-| `id`      | required | `string` | —           |
+Create and manage gates, dynamic configs, kill switches, universes, and experiments — all generated from the shared operation registry (@shipeasy/openapi).
 
 ### `release_flags_list`
 
@@ -345,39 +252,6 @@ Archive (soft-delete) a config by name.
 | --------- | -------- | -------- | ------------ |
 | `name`    | required | `string` | Config name. |
 
-### `release_experiments_universes_list`
-
-Return every experiment universe (allocation %, holdout %).
-
-_No parameters._
-
-### `release_experiments_universes_create`
-
-Create an experiment universe (container + optional holdout).
-
-| Parameter  |          | Type     | Description                                                |
-| ---------- | -------- | -------- | ---------------------------------------------------------- |
-| `name`     | required | `string` | Universe name.                                             |
-| `unitType` | optional | `string` | Unit type (e.g. user_id, account_id). Defaults to user_id. |
-| `holdout`  | optional | `string` | Holdout range as 'lo,hi' (0–9999); omit for no holdout.    |
-
-### `release_experiments_universes_update`
-
-Update the holdout range. Pass 'null' to clear the holdout.
-
-| Parameter |          | Type     | Description                                            |
-| --------- | -------- | -------- | ------------------------------------------------------ |
-| `name`    | required | `string` | Universe name.                                         |
-| `holdout` | optional | `string` | Holdout range as 'lo,hi' (0–9999), or 'null' to clear. |
-
-### `release_experiments_universes_archive`
-
-Archive (soft-delete) a universe by name.
-
-| Parameter |          | Type     | Description    |
-| --------- | -------- | -------- | -------------- |
-| `name`    | required | `string` | Universe name. |
-
 ### `release_experiments_list`
 
 Return every experiment (status, universe, allocation).
@@ -477,6 +351,142 @@ Return the experiment, its latest per-metric results (enrolment, deltas, p-value
 | Parameter |          | Type     | Description      |
 | --------- | -------- | -------- | ---------------- |
 | `name`    | required | `string` | Experiment name. |
+
+### `release_experiments_universes_list`
+
+Return every experiment universe (allocation %, holdout %).
+
+_No parameters._
+
+### `release_experiments_universes_create`
+
+Create an experiment universe (container + optional holdout).
+
+| Parameter  |          | Type     | Description                                                |
+| ---------- | -------- | -------- | ---------------------------------------------------------- |
+| `name`     | required | `string` | Universe name.                                             |
+| `unitType` | optional | `string` | Unit type (e.g. user_id, account_id). Defaults to user_id. |
+| `holdout`  | optional | `string` | Holdout range as 'lo,hi' (0–9999); omit for no holdout.    |
+
+### `release_experiments_universes_update`
+
+Update the holdout range. Pass 'null' to clear the holdout.
+
+| Parameter |          | Type     | Description                                            |
+| --------- | -------- | -------- | ------------------------------------------------------ |
+| `name`    | required | `string` | Universe name.                                         |
+| `holdout` | optional | `string` | Holdout range as 'lo,hi' (0–9999), or 'null' to clear. |
+
+### `release_experiments_universes_archive`
+
+Archive (soft-delete) a universe by name.
+
+| Parameter |          | Type     | Description    |
+| --------- | -------- | -------- | -------------- |
+| `name`    | required | `string` | Universe name. |
+
+## Metrics & events
+
+Define event-backed metrics (incl. the query-DSL grammar) and manage the event catalog. Registry-driven.
+
+### `metrics_grammar`
+
+Return the full metric query DSL grammar — aggregation functions, event selectors, label filters, and group-by. A pure op: it ignores the client and never hits the API.
+
+_No parameters._
+
+### `metrics_list`
+
+Return every metric in the project (name, folder, source event, aggregation).
+
+_No parameters._
+
+### `metrics_show`
+
+Resolve a metric by id, id-prefix, or name and return its full detail.
+
+| Parameter |          | Type     | Description        |
+| --------- | -------- | -------- | ------------------ |
+| `metric`  | required | `string` | Metric id or name. |
+
+### `metrics_create`
+
+Create an event-backed metric. Pass the query as the DSL string (`query`) or the typed IR form (`queryIr`). `event` must match the event the query references. Run `metrics grammar` for the DSL syntax.
+
+| Parameter   |          | Type     | Description                                       |
+| ----------- | -------- | -------- | ------------------------------------------------- |
+| `name`      | required | `string` | Metric name.                                      |
+| `event`     | required | `string` | Source event name (must equal the query's event). |
+| `query`     | optional | `string` | Query DSL string, e.g. 'sum(purchase, amount)'.   |
+| `queryIr`   | optional | `string` | Typed IR JSON (alternative to query).             |
+| `folder`    | optional | `string` | Folder to file the metric under.                  |
+| `winsorize` | optional | `number` | Winsorize percentile (1–99). Defaults to 99.      |
+| `mde`       | optional | `number` | Min detectable effect (0–1).                      |
+
+### `metrics_archive`
+
+Archive (soft-delete) a metric by id or name.
+
+| Parameter |          | Type     | Description        |
+| --------- | -------- | -------- | ------------------ |
+| `metric`  | required | `string` | Metric id or name. |
+
+### `events_list`
+
+List every catalogued event (including pending auto-discovered names). Pass `pending` to show only the unapproved queue.
+
+| Parameter |          | Type      | Description                            |
+| --------- | -------- | --------- | -------------------------------------- |
+| `pending` | optional | `boolean` | Show only pending (unapproved) events. |
+
+### `events_get`
+
+Resolve an event by id, id-prefix, or name and return its full detail.
+
+| Parameter |          | Type     | Description       |
+| --------- | -------- | -------- | ----------------- |
+| `event`   | required | `string` | Event id or name. |
+
+### `events_create`
+
+Register a new event name and (optionally) its typed properties.
+
+| Parameter     |          | Type     | Description                                                                                                                                                                      |
+| ------------- | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`        | required | `string` | Event name.                                                                                                                                                                      |
+| `folder`      | optional | `string` | Folder to file it under.                                                                                                                                                         |
+| `description` | optional | `string` | Human-readable description.                                                                                                                                                      |
+| `props`       | optional | `string` | Event properties as a JSON array, e.g. '[\{"name":"amount","type":"number","required":true\}]'. type is one of string\|number\|boolean. Replaces the full set on update/approve. |
+
+### `events_update`
+
+Update an event's folder, description, or properties (props replace the full set).
+
+| Parameter     |          | Type     | Description                                                                                                                                                                      |
+| ------------- | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `event`       | required | `string` | Event id.                                                                                                                                                                        |
+| `folder`      | optional | `string` | New folder.                                                                                                                                                                      |
+| `description` | optional | `string` | New description.                                                                                                                                                                 |
+| `props`       | optional | `string` | Event properties as a JSON array, e.g. '[\{"name":"amount","type":"number","required":true\}]'. type is one of string\|number\|boolean. Replaces the full set on update/approve. |
+
+### `events_approve`
+
+Promote a pending (auto-discovered) event so metrics can query it. Optionally declare its folder/props on approval.
+
+| Parameter     |          | Type     | Description                                                                                                                                                                      |
+| ------------- | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `event`       | required | `string` | Event id.                                                                                                                                                                        |
+| `folder`      | optional | `string` | Folder to file it under.                                                                                                                                                         |
+| `description` | optional | `string` | Description.                                                                                                                                                                     |
+| `props`       | optional | `string` | Event properties as a JSON array, e.g. '[\{"name":"amount","type":"number","required":true\}]'. type is one of string\|number\|boolean. Replaces the full set on update/approve. |
+
+### `events_archive`
+
+Archive (remove) an event from the catalog by id.
+
+| Parameter |          | Type     | Description |
+| --------- | -------- | -------- | ----------- |
+| `event`   | required | `string` | Event id.   |
 
 ## Translations
 
@@ -595,19 +605,169 @@ Emit the correct \<script src='…/sdk/i18n/loader.js' data-key=… data-profile
 | `framework` | optional | `string` | —                                        |
 | `path`      | optional | `string` | Project root directory (defaults to cwd) |
 
+### `i18n_profiles_list`
+
+List the project's i18n locale profiles (name, default locale, locales).
+
+_No parameters._
+
+### `i18n_drafts_list`
+
+List staged translation drafts. Replaces the `drafts` kind of the deleted MCP generic read.
+
+_No parameters._
+
 ## Ops
 
-Operational notifications.
+The unified operational queue (bugs, feature requests, error/alert tickets), alert rules, escalation notifications, and PR links. Registry-driven.
+
+### `ops_list`
+
+List the unified queue — bugs, feature requests, and auto-filed error/alert tickets. Filter by `type`, `status`, or `priority`.
+
+| Parameter  |          | Type                                                                                          | Description             |
+| ---------- | -------- | --------------------------------------------------------------------------------------------- | ----------------------- |
+| `type`     | optional | `"bug" \| "feature_request" \| "error" \| "alert" \| "all"`                                   | Filter by type.         |
+| `status`   | optional | `"open" \| "triaged" \| "in_progress" \| "ready_for_qa" \| "resolved" \| "wont_fix" \| "all"` | Filter by status.       |
+| `priority` | optional | `"nice_to_have" \| "medium" \| "high" \| "critical"`                                          | Filter by priority.     |
+| `limit`    | optional | `number`                                                                                      | Max rows (default 200). |
+
+### `ops_get`
+
+Show one queue item by number (#7 → 7) or id — any type.
+
+| Parameter |          | Type     | Description        |
+| --------- | -------- | -------- | ------------------ |
+| `handle`  | required | `string` | Item number or id. |
+
+### `ops_create`
+
+File an operational item — a bug report or feature request — against the bound project. Fires the project's connectors (GitHub issue, Slack). error/alert tickets are auto-filed and cannot be created here.
+
+| Parameter          |          | Type                                                 | Description                   |
+| ------------------ | -------- | ---------------------------------------------------- | ----------------------------- |
+| `type`             | required | `"bug" \| "feature_request"`                         | Item type.                    |
+| `title`            | required | `string`                                             | One-line title.               |
+| `body`             | optional | `string`                                             | Detailed description.         |
+| `priority`         | optional | `"nice_to_have" \| "medium" \| "high" \| "critical"` | Priority.                     |
+| `stepsToReproduce` | optional | `string`                                             | Repro steps (bugs).           |
+| `pageUrl`          | optional | `string`                                             | Page URL the item relates to. |
+
+### `ops_update`
+
+Flip a queue item's status (any type) and optionally its priority.
+
+| Parameter  |          | Type                                                                                 | Description        |
+| ---------- | -------- | ------------------------------------------------------------------------------------ | ------------------ |
+| `handle`   | required | `string`                                                                             | Item number or id. |
+| `status`   | optional | `"open" \| "triaged" \| "in_progress" \| "ready_for_qa" \| "resolved" \| "wont_fix"` | New status.        |
+| `priority` | optional | `"nice_to_have" \| "medium" \| "high" \| "critical"`                                 | New priority.      |
+
+### `ops_link-pr`
+
+Link the PR that fixed a queue item (any type). Records connector_data.github.pr. Pass `remove` to unlink.
+
+| Parameter  |          | Type      | Description                                         |
+| ---------- | -------- | --------- | --------------------------------------------------- |
+| `handle`   | required | `string`  | Item number or id.                                  |
+| `prNumber` | optional | `number`  | PR number.                                          |
+| `url`      | optional | `string`  | Explicit PR URL (required for error/alert tickets). |
+| `remove`   | optional | `boolean` | Unlink the PR instead of setting one.               |
 
 ### `ops_notify`
 
-Raise a 'needs your attention' bell notification in the dashboard — the escalation channel when an ops item can't be fixed in code (missing credential/device/prod env, a product decision, an env or alert-rule knob only a human can change). Create-only and idempotent on the dedupe key. Provide a clear title, a one-line summary, and an ordered, self-contained list of steps the human should take.
+Raise an attention bell notification (agent escalation, create-only). Idempotent on the dedupe key — pass `item` to derive `feedback:<n>`, or an explicit `key`.
 
-| Parameter   |          | Type       | Description                                                                            |
-| ----------- | -------- | ---------- | -------------------------------------------------------------------------------------- |
-| `title`     | required | `string`   | One-line headline of what's blocked.                                                   |
-| `summary`   | required | `string`   | One sentence: why it can't be fixed in code.                                           |
-| `steps`     | optional | `string[]` | Ordered, actionable steps the human should take (3–6; name exact files/commands).      |
-| `href`      | optional | `string`   | Dashboard-relative deep link to the related item (e.g. /dashboard/\<project>/bugs/42). |
-| `item`      | optional | `string`   | Queue item number this is about — sets a stable dedupe key (feedback:\<n>).            |
-| `dedupeKey` | optional | `string`   | Explicit dedupe key (overrides item); re-runs collapse to one feed row.                |
+| Parameter |          | Type     | Description                                                      |
+| --------- | -------- | -------- | ---------------------------------------------------------------- |
+| `title`   | required | `string` | One-line headline of what's blocked.                             |
+| `summary` | required | `string` | One sentence: why it can't be fixed in code.                     |
+| `steps`   | optional | `string` | Steps the human should take, as a JSON array of strings.         |
+| `href`    | optional | `string` | Dashboard-relative deep link.                                    |
+| `item`    | optional | `string` | Queue item number this is about (sets dedupe key feedback:\<n>). |
+| `key`     | optional | `string` | Explicit dedupe key (overrides item).                            |
+
+### `ops_alerts_list`
+
+List the project's metric-threshold alert rules the analysis cron evaluates.
+
+_No parameters._
+
+### `ops_alerts_channels`
+
+List the project's Slack channels (for the `slackChannel` alert target).
+
+_No parameters._
+
+### `ops_alerts_create`
+
+Create a metric-threshold alert rule. The metric (and its aggregation) is fixed for the rule's life — delete + recreate to repoint it. Optionally target a Slack channel/email.
+
+| Parameter      |          | Type                             | Description                                             |
+| -------------- | -------- | -------------------------------- | ------------------------------------------------------- |
+| `name`         | required | `string`                         | Rule name.                                              |
+| `metric`       | required | `string`                         | Metric to evaluate (id or name).                        |
+| `comparator`   | required | `"gt" \| "gte" \| "lt" \| "lte"` | Comparison operator.                                    |
+| `threshold`    | required | `number`                         | Threshold the metric value is compared against.         |
+| `window`       | optional | `number`                         | Lookback window in whole hours (1–720). Defaults to 24. |
+| `severity`     | optional | `"danger" \| "warn" \| "info"`   | Severity. Defaults to warn.                             |
+| `disabled`     | optional | `boolean`                        | Create the rule disabled.                               |
+| `slackChannel` | optional | `string`                         | Slack channel to post to (id or name).                  |
+| `email`        | optional | `string`                         | Email address to notify.                                |
+
+### `ops_alerts_update`
+
+Update an alert rule's tunable knobs (by id, id-prefix, or unique name). The metric is immutable. Pass `clearTarget` to revert the rule's target to the project default.
+
+| Parameter      |          | Type                             | Description                                   |
+| -------------- | -------- | -------------------------------- | --------------------------------------------- |
+| `rule`         | required | `string`                         | Rule id, id-prefix, or name.                  |
+| `name`         | optional | `string`                         | New human label.                              |
+| `comparator`   | optional | `"gt" \| "gte" \| "lt" \| "lte"` | Comparison operator.                          |
+| `threshold`    | optional | `number`                         | New threshold.                                |
+| `window`       | optional | `number`                         | New lookback window in whole hours (1–720).   |
+| `severity`     | optional | `"danger" \| "warn" \| "info"`   | New severity.                                 |
+| `enabled`      | optional | `boolean`                        | Enable/disable the rule.                      |
+| `slackChannel` | optional | `string`                         | Set the Slack channel target (id or name).    |
+| `email`        | optional | `string`                         | Set the email target.                         |
+| `clearTarget`  | optional | `boolean`                        | Clear the target back to the project default. |
+
+### `ops_alerts_archive`
+
+Archive (delete) an alert rule by id, id-prefix, or unique name.
+
+| Parameter |          | Type     | Description                  |
+| --------- | -------- | -------- | ---------------------------- |
+| `rule`    | required | `string` | Rule id, id-prefix, or name. |
+
+## SDK docs
+
+Fetch SDK documentation — feature pages, nested snippets, and installable skills — from each SDK's published GitHub Pages docs.
+
+### `docs_list`
+
+Fetch an SDK's `/docs/manifest.json` and return the doc tree — the feature-reference pages, the nested snippet groups, and whether an installable skill exists. The runtime 'explore' step before fetching a specific page or snippet.
+
+| Parameter |          | Type                                                                                                                     | Description   |
+| --------- | -------- | ------------------------------------------------------------------------------------------------------------------------ | ------------- |
+| `sdk`     | required | `"typescript" \| "javascript" \| "node" \| "ts" \| "python" \| "go" \| "java" \| "kotlin" \| "php" \| "swift" \| "ruby"` | SDK language. |
+
+### `docs_get`
+
+Fetch one feature-reference page (`flags`, `experiments`, …) or nested snippet (`release/experiments`, `i18n/setup`, …) from the SDK's published docs, substituting declared \{\{placeholders\}\} from caller args. Replaces the old `get_sdk_snippet`.
+
+| Parameter   |          | Type                                                                                                                     | Description                                        |
+| ----------- | -------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------- |
+| `sdk`       | required | `"typescript" \| "javascript" \| "node" \| "ts" \| "python" \| "go" \| "java" \| "kotlin" \| "php" \| "swift" \| "ruby"` | SDK language.                                      |
+| `path`      | required | `string`                                                                                                                 | Page key or snippet 'group/resource'.              |
+| `framework` | optional | `string`                                                                                                                 | Framework hint (substitutes \{\{FRAMEWORK\}\}).    |
+| `name`      | optional | `string`                                                                                                                 | Resource name (substitutes \{\{RESOURCE_NAME\}\}). |
+
+### `docs_skill`
+
+Fetch the SDK's `skill/SKILL.md` (YAML frontmatter intact) so an agent can install it verbatim into its skills directory. The CLI's `--install` writes it locally (a consumer fs side-effect layered on the fetch); the op itself just returns the bytes.
+
+| Parameter |          | Type                                                                                                                     | Description                                              |
+| --------- | -------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------- |
+| `sdk`     | required | `"typescript" \| "javascript" \| "node" \| "ts" \| "python" \| "go" \| "java" \| "kotlin" \| "php" \| "swift" \| "ruby"` | SDK language.                                            |
+| `install` | optional | `boolean`                                                                                                                | CLI only: write the skill to the local agent skills dir. |
