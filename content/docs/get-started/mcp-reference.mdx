@@ -118,90 +118,6 @@ File a feature request into the bound project's feedback queue (and, where a Git
 
 Create and manage gates, dynamic configs, kill switches, universes, experiments, and alert rules. The gate/kill-switch/config/universe tools are generated from the shared operation registry (@shipeasy/openapi); experiment and alert-rule tools are hand-written.
 
-### `release_experiments_create`
-
-Create an experiment draft with groups, params, optional targeting gate, a success (goal) metric, optional guardrail metrics, and full statistical config. Pass success_event (+ success_aggregation) to attach the goal metric inline — required before the experiment can be started. Does NOT start — call exp_start_experiment.
-
-| Parameter                |          | Type                                                                                     | Description                                                                                                                                                                                                                                                                                                                                                                                   |
-| ------------------------ | -------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`                   | required | `string`                                                                                 | —                                                                                                                                                                                                                                                                                                                                                                                             |
-| `description`            | optional | `string`                                                                                 | —                                                                                                                                                                                                                                                                                                                                                                                             |
-| `universe`               | required | `string`                                                                                 | —                                                                                                                                                                                                                                                                                                                                                                                             |
-| `allocation`             | optional | `number`                                                                                 | 0–100, default 10                                                                                                                                                                                                                                                                                                                                                                             |
-| `groups`                 | optional | `string`                                                                                 | JSON [\{name,weight,params\}]                                                                                                                                                                                                                                                                                                                                                                 |
-| `params_schema`          | optional | `object`                                                                                 | —                                                                                                                                                                                                                                                                                                                                                                                             |
-| `targeting_gate`         | optional | `string`                                                                                 | —                                                                                                                                                                                                                                                                                                                                                                                             |
-| `bucket_by`              | optional | `string`                                                                                 | User-attribute used as the bucketing key. Defaults to user_id. Use e.g. company_id / account_id to keep a whole org on one variant, or session_id / device_id for anonymous traffic.                                                                                                                                                                                                          |
-| `success_event`          | optional | `string`                                                                                 | Event name for the goal metric. Attaching a goal metric is what makes the experiment startable; the event is auto-created if missing.                                                                                                                                                                                                                                                         |
-| `success_aggregation`    | optional | `"count_users" \| "count_events" \| "sum" \| "avg" \| "retention_7d" \| "retention_30d"` | Goal-metric reducer. Defaults to count_users when success_event is set.                                                                                                                                                                                                                                                                                                                       |
-| `success_value`          | optional | `string`                                                                                 | Numeric event property to reduce over. Required only for sum / avg aggregations (e.g. 'amount').                                                                                                                                                                                                                                                                                              |
-| `guardrail_metrics`      | optional | `string`                                                                                 | Optional JSON array of guardrail metrics — safety metrics that must NOT regress (latency, error rate, refunds…). Each entry is a metric-DSL query string, e.g. '["avg(latency_ms)","count_users(error_shown)"]', or an object \{ "query": "...", "name": "..." \}. Up to 10. The analysis pass classifies these separately (advisory vs hold) and alerts on a breach independent of the goal. |
-| `significance_threshold` | optional | `number`                                                                                 | p-value cutoff (alpha). Default 0.05. Non-0.05 needs Pro plan or higher.                                                                                                                                                                                                                                                                                                                      |
-| `min_runtime_days`       | optional | `number`                                                                                 | Minimum days to run before results are conclusive. Default 0.                                                                                                                                                                                                                                                                                                                                 |
-| `min_sample_size`        | optional | `number`                                                                                 | Minimum exposures per group before results are conclusive. Default 100.                                                                                                                                                                                                                                                                                                                       |
-| `sequential_testing`     | optional | `boolean`                                                                                | Enable always-valid (sequential / mSPRT) p-values so you can peek without inflating false positives. Default false. Requires Premium plan or higher.                                                                                                                                                                                                                                          |
-
-### `release_experiments_update`
-
-Update a draft (or running) experiment's allocation, groups, targeting gate, bucketing, stats thresholds, guardrail metrics, or goal metric. Pass success_event (+ success_aggregation) to attach/replace the goal metric — use this to make a draft startable when it's missing one.
-
-| Parameter                |          | Type                                                                                     | Description                                                                                                                               |
-| ------------------------ | -------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`                   | required | `string`                                                                                 | —                                                                                                                                         |
-| `allocation`             | optional | `number`                                                                                 | 0–100                                                                                                                                     |
-| `groups`                 | optional | `string`                                                                                 | JSON [\{name,weight,params\}]                                                                                                             |
-| `targeting_gate`         | optional | `string`                                                                                 | Gate name; pass empty string or omit to leave unchanged; pass the literal 'none' to clear the gate                                        |
-| `bucket_by`              | optional | `string`                                                                                 | User-attribute used as the bucketing key (user_id default; e.g. company_id). Immutable while running.                                     |
-| `significance_threshold` | optional | `number`                                                                                 | 0.0001–0.5                                                                                                                                |
-| `min_runtime_days`       | optional | `number`                                                                                 | —                                                                                                                                         |
-| `min_sample_size`        | optional | `number`                                                                                 | —                                                                                                                                         |
-| `sequential_testing`     | optional | `boolean`                                                                                | Toggle always-valid sequential p-values. Requires Premium plan or higher.                                                                 |
-| `guardrail_metrics`      | optional | `string`                                                                                 | JSON array of guardrail metrics (DSL query strings or \{ query, name \} objects) — replaces the guardrail set. See exp_create_experiment. |
-| `success_event`          | optional | `string`                                                                                 | Event name for the goal metric. Attaches/replaces the role=goal metric.                                                                   |
-| `success_aggregation`    | optional | `"count_users" \| "count_events" \| "sum" \| "avg" \| "retention_7d" \| "retention_30d"` | Goal-metric reducer. Defaults to count_users when success_event is set.                                                                   |
-| `success_value`          | optional | `string`                                                                                 | Numeric event property to reduce over. Required only for sum / avg.                                                                       |
-
-### `release_experiments_archive`
-
-Soft-delete (archive) an experiment by name. The name stays reserved; restore it with exp_restore_experiment.
-
-| Parameter |          | Type     | Description |
-| --------- | -------- | -------- | ----------- |
-| `name`    | required | `string` | —           |
-
-### `release_experiments_restore`
-
-Restore a soft-deleted (archived) experiment back to draft so it can be re-completed and started. Only works if it never started; preserves the attached goal metric.
-
-| Parameter |          | Type     | Description |
-| --------- | -------- | -------- | ----------- |
-| `name`    | required | `string` | —           |
-
-### `release_experiments_start`
-
-Transition a draft experiment to running.
-
-| Parameter |          | Type     | Description |
-| --------- | -------- | -------- | ----------- |
-| `name`    | required | `string` | —           |
-
-### `release_experiments_stop`
-
-Stop a running experiment; optionally promote a winning group.
-
-| Parameter       |          | Type     | Description |
-| --------------- | -------- | -------- | ----------- |
-| `name`          | required | `string` | —           |
-| `promote_group` | optional | `string` | —           |
-
-### `release_experiments_status`
-
-Return experiment stats + ship/hold/wait verdict.
-
-| Parameter |          | Type     | Description |
-| --------- | -------- | -------- | ----------- |
-| `name`    | required | `string` | —           |
-
 ### `exp_create_alert_rule`
 
 Create a metric-threshold alert rule. The cron aggregates the metric over the trailing window and raises an alert at `severity` when `value <comparator> threshold` holds. The metric (and its aggregation) is fixed for the rule's life.
@@ -461,6 +377,106 @@ Archive (soft-delete) a universe by name.
 | Parameter |          | Type     | Description    |
 | --------- | -------- | -------- | -------------- |
 | `name`    | required | `string` | Universe name. |
+
+### `release_experiments_list`
+
+Return every experiment (status, universe, allocation).
+
+_No parameters._
+
+### `release_experiments_create`
+
+Create an experiment draft with groups, params, optional targeting gate, a success (goal) metric, optional guardrail metrics, and full statistical config. Pass `successEvent` (+ `successAggregation`) to attach the goal metric inline — required before the experiment can be started. Defaults to a 50/50 control-vs-test split at 100% allocation in the `default` universe. Does NOT start — call `start`.
+
+| Parameter            |          | Type                                                                                     | Description                                                                     |
+| -------------------- | -------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `name`               | required | `string`                                                                                 | Experiment name.                                                                |
+| `universe`           | optional | `string`                                                                                 | Universe name. Defaults to 'default'.                                           |
+| `allocation`         | optional | `number`                                                                                 | Allocation percentage, 0–100. Defaults to 100.                                  |
+| `groups`             | optional | `string`                                                                                 | Groups as JSON [\{name,weight,params\}]. weight is basis points.                |
+| `params`             | optional | `string`                                                                                 | Parameter schema \{name: type\}.                                                |
+| `targetingGate`      | optional | `string`                                                                                 | Targeting gate name.                                                            |
+| `bucketBy`           | optional | `string`                                                                                 | Attribute to bucket by (defaults to the universe unit).                         |
+| `salt`               | optional | `string`                                                                                 | Override hash salt.                                                             |
+| `successEvent`       | optional | `string`                                                                                 | Event name for the inline goal metric. Attaching one makes the draft startable. |
+| `successAggregation` | optional | `"count_users" \| "count_events" \| "retention_7d" \| "retention_30d" \| "sum" \| "avg"` | Goal-metric reducer. Defaults to count_users.                                   |
+| `successValue`       | optional | `string`                                                                                 | Numeric event property for sum/avg goal metrics.                                |
+| `guardrailMetrics`   | optional | `string`                                                                                 | Up to 10 guardrail metrics: JSON array of DSL query strings or \{query,name\}.  |
+| `significance`       | optional | `number`                                                                                 | Significance threshold (0.0001–0.5). Defaults to 0.05.                          |
+| `minRuntimeDays`     | optional | `number`                                                                                 | Minimum runtime in days.                                                        |
+| `minSampleSize`      | optional | `number`                                                                                 | Minimum sample size.                                                            |
+| `sequentialTesting`  | optional | `boolean`                                                                                | Enable sequential testing (always-valid p-values; Premium+).                    |
+| `description`        | optional | `string`                                                                                 | Human-readable description.                                                     |
+
+### `release_experiments_update`
+
+Patch allocation, groups, params, targeting gate, or stats thresholds. Pass `targetingGate` = 'null' to clear it.
+
+| Parameter            |          | Type                                                                                     | Description                                                             |
+| -------------------- | -------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `name`               | required | `string`                                                                                 | Experiment name.                                                        |
+| `allocation`         | optional | `number`                                                                                 | Allocation percentage, 0–100.                                           |
+| `groups`             | optional | `string`                                                                                 | Groups as JSON [\{name,weight,params\}].                                |
+| `params`             | optional | `string`                                                                                 | Parameter schema \{name: type\}.                                        |
+| `targetingGate`      | optional | `string`                                                                                 | Targeting gate name ('null' to clear).                                  |
+| `bucketBy`           | optional | `string`                                                                                 | Attribute to bucket by (empty string clears).                           |
+| `successEvent`       | optional | `string`                                                                                 | Attach/replace the goal metric from this event.                         |
+| `successAggregation` | optional | `"count_users" \| "count_events" \| "retention_7d" \| "retention_30d" \| "sum" \| "avg"` | Goal-metric reducer (with successEvent).                                |
+| `successValue`       | optional | `string`                                                                                 | Numeric event property for sum/avg goal metrics.                        |
+| `guardrailMetrics`   | optional | `string`                                                                                 | Replace the guardrail set: JSON array of DSL queries or \{query,name\}. |
+| `significance`       | optional | `number`                                                                                 | Significance threshold (0.0001–0.5).                                    |
+| `minRuntimeDays`     | optional | `number`                                                                                 | Minimum runtime in days.                                                |
+| `minSampleSize`      | optional | `number`                                                                                 | Minimum sample size.                                                    |
+| `sequentialTesting`  | optional | `boolean`                                                                                | Enable sequential testing (always-valid p-values).                      |
+
+### `release_experiments_start`
+
+Move an experiment from draft to running.
+
+| Parameter |          | Type     | Description      |
+| --------- | -------- | -------- | ---------------- |
+| `name`    | required | `string` | Experiment name. |
+
+### `release_experiments_stop`
+
+Stop a running experiment. Optionally name a `promoteGroup` to record an intent note (actual promotion happens in the dashboard).
+
+| Parameter      |          | Type     | Description                             |
+| -------------- | -------- | -------- | --------------------------------------- |
+| `name`         | required | `string` | Experiment name.                        |
+| `promoteGroup` | optional | `string` | Group to note as the winner to promote. |
+
+### `release_experiments_archive`
+
+Archive (soft-delete) a stopped experiment, hiding it from the default list while preserving results.
+
+| Parameter |          | Type     | Description      |
+| --------- | -------- | -------- | ---------------- |
+| `name`    | required | `string` | Experiment name. |
+
+### `release_experiments_restore`
+
+Restore a soft-deleted (archived) experiment back to `draft`. Allowed only if it never started; one that already ran must be cloned instead. Preserves the goal metric.
+
+| Parameter |          | Type     | Description      |
+| --------- | -------- | -------- | ---------------- |
+| `name`    | required | `string` | Experiment name. |
+
+### `release_experiments_reanalyze`
+
+Trigger a fresh analysis pass for an experiment.
+
+| Parameter |          | Type     | Description      |
+| --------- | -------- | -------- | ---------------- |
+| `name`    | required | `string` | Experiment name. |
+
+### `release_experiments_status`
+
+Return the experiment, its latest per-metric results (enrolment, deltas, p-values), and a ship/hold/wait/not_running/invalid_srm verdict computed from the goal metric vs the significance threshold and minimum runtime.
+
+| Parameter |          | Type     | Description      |
+| --------- | -------- | -------- | ---------------- |
+| `name`    | required | `string` | Experiment name. |
 
 ## Translations
 
