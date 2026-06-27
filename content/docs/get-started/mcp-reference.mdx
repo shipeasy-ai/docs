@@ -116,147 +116,9 @@ File a feature request into the bound project's feedback queue (and, where a Git
 
 ## Flags & experiments
 
-Create and manage gates, dynamic configs, kill switches, universes, experiments, and alert rules.
+Create and manage gates, dynamic configs, kill switches, universes, experiments, and alert rules. The gate/kill-switch/config/universe tools are generated from the shared operation registry (@shipeasy/openapi); experiment and alert-rule tools are hand-written.
 
-### `exp_create_gate`
-
-Create a feature gate. A flat gate is `rules` + a single `rollout` %. For tiered rollouts (e.g. 'US @ 50% → bots @ 30% → everyone else @ 10%') pass `stack` — an ordered list of steps evaluated first-match-wins; flat `rules`/`rollout` are then ignored.
-
-| Parameter     |          | Type     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| ------------- | -------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`        | required | `string` | Snake_case; auto-slugged.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `description` | optional | `string` | —                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `rollout`     | optional | `number` | Flat-gate rollout, 0–100.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `rules`       | optional | `string` | Flat-gate JSON rules array.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `stack`       | optional | `string` | Optional gatekeeper stack — a JSON array of ordered steps, evaluated top-to-bottom, first match wins; takes precedence over flat rules/rollout. Each step is either a condition: \{ "id": "\<stable-id>", "type": "condition", "rules": [\{attr,op,value\}], "rolloutPct": \<0-10000 basis points> \} — rules match then bucket at rolloutPct (omit ⇒ 100%); or a rollout: \{ "id": "\<id>", "type": "rollout", "rolloutPct": \<0-10000 bp> \}. End with a catch-all rollout step (no rules) to decide everyone who fell through. rolloutPct is BASIS POINTS: 5000 = 50%, 1000 = 10%, 100 = 1%. |
-
-### `exp_update_gate`
-
-Update a feature gate's rollout, rules, gatekeeper stack, or enabled flag. Pass `stack` to replace the tiered rollout wholesale (same shape as exp_create_gate).
-
-| Parameter |          | Type      | Description                                                                                                                                                                |
-| --------- | -------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`    | required | `string`  | —                                                                                                                                                                          |
-| `rollout` | optional | `number`  | 0–100                                                                                                                                                                      |
-| `rules`   | optional | `string`  | JSON rules array                                                                                                                                                           |
-| `stack`   | optional | `string`  | JSON array of ordered first-match-wins steps (condition/rollout, rolloutPct in basis points) — replaces the gatekeeper stack wholesale. See exp_create_gate for the shape. |
-| `enabled` | optional | `boolean` | —                                                                                                                                                                          |
-
-### `exp_create_killswitch`
-
-Create a killswitch — a static `{ value, switches }` config delivered as-is to the client. Name must be `folder.name`. Switches take precedence over `value` for that switch_key.
-
-| Parameter     |          | Type      | Description                                                                   |
-| ------------- | -------- | --------- | ----------------------------------------------------------------------------- |
-| `name`        | required | `string`  | `folder.name` — exactly two lowercase segments separated by a dot.            |
-| `description` | optional | `string`  | —                                                                             |
-| `value`       | optional | `boolean` | Default value (default false).                                                |
-| `switches`    | optional | `string`  | JSON object of \{ switch_key: bool \} overrides; takes precedence over value. |
-
-### `exp_update_killswitch`
-
-Update a killswitch's default value, switches map, or description.
-
-| Parameter     |          | Type      | Description                                       |
-| ------------- | -------- | --------- | ------------------------------------------------- |
-| `name`        | required | `string`  | —                                                 |
-| `value`       | optional | `boolean` | —                                                 |
-| `switches`    | optional | `string`  | JSON \{ switch_key: bool \} — replaces wholesale. |
-| `description` | optional | `string`  | —                                                 |
-
-### `exp_delete_killswitch`
-
-Delete a killswitch by name.
-
-| Parameter |          | Type     | Description |
-| --------- | -------- | -------- | ----------- |
-| `name`    | required | `string` | —           |
-
-### `exp_set_killswitch_switch`
-
-Set or update one switch entry on one env. Lets you flip individual lanes (e.g. `eu_only`) without touching the rest of the killswitch.
-
-| Parameter    |          | Type                           | Description |
-| ------------ | -------- | ------------------------------ | ----------- |
-| `name`       | required | `string`                       | —           |
-| `env`        | required | `"dev" \| "staging" \| "prod"` | —           |
-| `switch_key` | required | `string`                       | —           |
-| `value`      | required | `boolean`                      | —           |
-
-### `exp_unset_killswitch_switch`
-
-Remove one switch entry from one env. Falls back to the default value.
-
-| Parameter    |          | Type                           | Description |
-| ------------ | -------- | ------------------------------ | ----------- |
-| `name`       | required | `string`                       | —           |
-| `env`        | required | `"dev" \| "staging" \| "prod"` | —           |
-| `switch_key` | required | `string`                       | —           |
-
-### `exp_delete_gate`
-
-Delete a feature gate by name. Refuses if used by a running experiment.
-
-| Parameter |          | Type     | Description |
-| --------- | -------- | -------- | ----------- |
-| `name`    | required | `string` | —           |
-
-### `exp_create_config`
-
-Create a remote-config object validated against a JSON Schema. Configs are object-only.
-
-| Parameter     |          | Type     | Description                                                                            |
-| ------------- | -------- | -------- | -------------------------------------------------------------------------------------- |
-| `name`        | required | `string` | —                                                                                      |
-| `schema`      | optional | `string` | JSON Schema (must have top-level type=object). Defaults to a permissive object schema. |
-| `value`       | optional | `string` | Initial value as JSON object. Defaults to \{\}.                                        |
-| `description` | optional | `string` | —                                                                                      |
-
-### `exp_update_config`
-
-Update a config's value (legacy flat update — applies to all envs). Use the dashboard for per-env draft/publish.
-
-| Parameter |          | Type     | Description        |
-| --------- | -------- | -------- | ------------------ |
-| `name`    | required | `string` | —                  |
-| `value`   | required | `string` | JSON-encoded value |
-
-### `exp_delete_config`
-
-Delete a config by name.
-
-| Parameter |          | Type     | Description |
-| --------- | -------- | -------- | ----------- |
-| `name`    | required | `string` | —           |
-
-### `exp_create_universe`
-
-Create an experiment universe (container with optional holdout range).
-
-| Parameter       |          | Type     | Description                                                  |
-| --------------- | -------- | -------- | ------------------------------------------------------------ |
-| `name`          | required | `string` | —                                                            |
-| `unit_type`     | optional | `string` | Default: user_id                                             |
-| `holdout_range` | optional | `string` | Holdout range as 'lo,hi' integers in [0,9999]; omit for none |
-
-### `exp_update_universe`
-
-Update a universe's holdout range.
-
-| Parameter       |          | Type     | Description                                                       |
-| --------------- | -------- | -------- | ----------------------------------------------------------------- |
-| `name`          | required | `string` | —                                                                 |
-| `holdout_range` | optional | `string` | Holdout range as 'lo,hi' integers in [0,9999], or 'null' to clear |
-
-### `exp_delete_universe`
-
-Delete a universe by name. Refuses if any experiment still references it.
-
-| Parameter |          | Type     | Description |
-| --------- | -------- | -------- | ----------- |
-| `name`    | required | `string` | —           |
-
-### `exp_create_experiment`
+### `release_experiments_create`
 
 Create an experiment draft with groups, params, optional targeting gate, a success (goal) metric, optional guardrail metrics, and full statistical config. Pass success_event (+ success_aggregation) to attach the goal metric inline — required before the experiment can be started. Does NOT start — call exp_start_experiment.
 
@@ -279,7 +141,7 @@ Create an experiment draft with groups, params, optional targeting gate, a succe
 | `min_sample_size`        | optional | `number`                                                                                 | Minimum exposures per group before results are conclusive. Default 100.                                                                                                                                                                                                                                                                                                                       |
 | `sequential_testing`     | optional | `boolean`                                                                                | Enable always-valid (sequential / mSPRT) p-values so you can peek without inflating false positives. Default false. Requires Premium plan or higher.                                                                                                                                                                                                                                          |
 
-### `exp_update_experiment`
+### `release_experiments_update`
 
 Update a draft (or running) experiment's allocation, groups, targeting gate, bucketing, stats thresholds, guardrail metrics, or goal metric. Pass success_event (+ success_aggregation) to attach/replace the goal metric — use this to make a draft startable when it's missing one.
 
@@ -299,7 +161,7 @@ Update a draft (or running) experiment's allocation, groups, targeting gate, buc
 | `success_aggregation`    | optional | `"count_users" \| "count_events" \| "sum" \| "avg" \| "retention_7d" \| "retention_30d"` | Goal-metric reducer. Defaults to count_users when success_event is set.                                                                   |
 | `success_value`          | optional | `string`                                                                                 | Numeric event property to reduce over. Required only for sum / avg.                                                                       |
 
-### `exp_delete_experiment`
+### `release_experiments_archive`
 
 Soft-delete (archive) an experiment by name. The name stays reserved; restore it with exp_restore_experiment.
 
@@ -307,7 +169,7 @@ Soft-delete (archive) an experiment by name. The name stays reserved; restore it
 | --------- | -------- | -------- | ----------- |
 | `name`    | required | `string` | —           |
 
-### `exp_restore_experiment`
+### `release_experiments_restore`
 
 Restore a soft-deleted (archived) experiment back to draft so it can be re-completed and started. Only works if it never started; preserves the attached goal metric.
 
@@ -315,7 +177,7 @@ Restore a soft-deleted (archived) experiment back to draft so it can be re-compl
 | --------- | -------- | -------- | ----------- |
 | `name`    | required | `string` | —           |
 
-### `exp_start_experiment`
+### `release_experiments_start`
 
 Transition a draft experiment to running.
 
@@ -323,7 +185,7 @@ Transition a draft experiment to running.
 | --------- | -------- | -------- | ----------- |
 | `name`    | required | `string` | —           |
 
-### `exp_stop_experiment`
+### `release_experiments_stop`
 
 Stop a running experiment; optionally promote a winning group.
 
@@ -332,7 +194,7 @@ Stop a running experiment; optionally promote a winning group.
 | `name`          | required | `string` | —           |
 | `promote_group` | optional | `string` | —           |
 
-### `exp_experiment_status`
+### `release_experiments_status`
 
 Return experiment stats + ship/hold/wait verdict.
 
@@ -385,6 +247,220 @@ Delete an alert rule by id, id-prefix, or unique name.
 | Parameter |          | Type     | Description |
 | --------- | -------- | -------- | ----------- |
 | `id`      | required | `string` | —           |
+
+### `release_flags_list`
+
+Return every feature gate in the project (name, enabled, rollout %), ordered by most recently updated.
+
+_No parameters._
+
+### `release_flags_create`
+
+Create a feature gate. A flat gate is `rules` + a single `rollout` %. For tiered rollouts (e.g. 'US @ 50% → bots @ 30% → everyone else @ 10%') pass `stack` — an ordered list of steps evaluated first-match-wins; flat `rules`/`rollout` are then ignored.
+
+| Parameter |          | Type     | Description                                                                                                                                                                                                               |
+| --------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`    | required | `string` | Gate key (lowercase, digits, \_/-).                                                                                                                                                                                       |
+| `rollout` | optional | `number` | Rollout percentage, 0–100 (converted to basis points internally).                                                                                                                                                         |
+| `rules`   | optional | `string` | Targeting rules as a JSON array, e.g. '[\{"attr":"plan","op":"eq","value":"pro"\}]'. AND-combined.                                                                                                                        |
+| `salt`    | optional | `string` | Override hash salt (immutable after create).                                                                                                                                                                              |
+| `stack`   | optional | `string` | Gatekeeper stack as a JSON array of ordered first-match-wins tiers (condition/rollout steps, rolloutPct in basis points). Takes precedence over flat rules/rollout. Pass to express internal ∪ beta ∪ public in one gate. |
+
+### `release_flags_update`
+
+Update a feature gate's rollout, rules, gatekeeper stack, or enabled flag. Pass `stack` to replace the tiered rollout wholesale; array fields replace, they do not merge.
+
+| Parameter |          | Type      | Description                                                                                                                                                                                                                                                       |
+| --------- | -------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`    | required | `string`  | Gate name to update.                                                                                                                                                                                                                                              |
+| `rollout` | optional | `number`  | Rollout percentage, 0–100 (converted to basis points internally).                                                                                                                                                                                                 |
+| `rules`   | optional | `string`  | Targeting rules as a JSON array, e.g. '[\{"attr":"plan","op":"eq","value":"pro"\}]'. AND-combined. Replaces the existing rules wholesale.                                                                                                                         |
+| `stack`   | optional | `string`  | Gatekeeper stack as a JSON array of ordered first-match-wins tiers (condition/rollout steps, rolloutPct in basis points). Takes precedence over flat rules/rollout. Pass to express internal ∪ beta ∪ public in one gate. Pass null to revert to flat evaluation. |
+| `enabled` | optional | `boolean` | Master switch — false forces the gate off for every caller.                                                                                                                                                                                                       |
+
+### `release_flags_enable`
+
+Set `enabled: true`, preserving the current rollout %.
+
+| Parameter |          | Type     | Description |
+| --------- | -------- | -------- | ----------- |
+| `name`    | required | `string` | Gate name.  |
+
+### `release_flags_disable`
+
+Set `enabled: false` so the gate evaluates to `false` for every caller regardless of rules/rollout.
+
+| Parameter |          | Type     | Description |
+| --------- | -------- | -------- | ----------- |
+| `name`    | required | `string` | Gate name.  |
+
+### `release_flags_rollout`
+
+Resolve the gate by name and set its rollout percentage (0–100).
+
+| Parameter |          | Type     | Description                |
+| --------- | -------- | -------- | -------------------------- |
+| `name`    | required | `string` | Gate name.                 |
+| `pct`     | required | `number` | Rollout percentage, 0–100. |
+
+### `release_flags_archive`
+
+Archive (soft-delete) a feature gate by name. Refuses if a running experiment references it as a targeting gate.
+
+| Parameter |          | Type     | Description |
+| --------- | -------- | -------- | ----------- |
+| `name`    | required | `string` | Gate name.  |
+
+### `release_killswitch_list`
+
+Return every kill switch with its per-env default value and switch count.
+
+_No parameters._
+
+### `release_killswitch_create`
+
+Create a kill switch (a static `{ value, switches }` config shipped in the flags KV blob). Name must be `folder.name`. Switches take precedence over `value` for that switch_key.
+
+| Parameter     |          | Type      | Description                                                         |
+| ------------- | -------- | --------- | ------------------------------------------------------------------- |
+| `name`        | required | `string`  | `folder.name` — two lowercase segments.                             |
+| `description` | optional | `string`  | Optional description.                                               |
+| `value`       | optional | `boolean` | Default value (true\|false). Defaults to false.                     |
+| `switches`    | optional | `string`  | JSON object of \{ switch_key: bool \}; takes precedence over value. |
+
+### `release_killswitch_update`
+
+Patch a kill switch. `switches` replaces the map wholesale; pass an empty description to clear it.
+
+| Parameter     |          | Type      | Description                                       |
+| ------------- | -------- | --------- | ------------------------------------------------- |
+| `name`        | required | `string`  | Kill switch name.                                 |
+| `value`       | optional | `boolean` | Default value (true\|false).                      |
+| `switches`    | optional | `string`  | JSON \{ switch_key: bool \} — replaces wholesale. |
+| `description` | optional | `string`  | Description (empty string clears it).             |
+
+### `release_killswitch_set`
+
+Set or update a single named switch on one environment (default `prod`), leaving the rest untouched.
+
+| Parameter   |          | Type                           | Description                                 |
+| ----------- | -------- | ------------------------------ | ------------------------------------------- |
+| `name`      | required | `string`                       | Kill switch name.                           |
+| `switchKey` | required | `string`                       | Switch key to set.                          |
+| `value`     | required | `boolean`                      | true\|false.                                |
+| `env`       | optional | `"dev" \| "staging" \| "prod"` | Env: dev \| staging \| prod (default prod). |
+
+### `release_killswitch_unset`
+
+Remove a single named switch from one environment (default `prod`), reverting it to the default.
+
+| Parameter   |          | Type                           | Description                                 |
+| ----------- | -------- | ------------------------------ | ------------------------------------------- |
+| `name`      | required | `string`                       | Kill switch name.                           |
+| `switchKey` | required | `string`                       | Switch key to remove.                       |
+| `env`       | optional | `"dev" \| "staging" \| "prod"` | Env: dev \| staging \| prod (default prod). |
+
+### `release_killswitch_archive`
+
+Archive (soft-delete) a kill switch by name.
+
+| Parameter |          | Type     | Description       |
+| --------- | -------- | -------- | ----------------- |
+| `name`    | required | `string` | Kill switch name. |
+
+### `release_configs_list`
+
+Return every dynamic config (name, schema, last updated).
+
+_No parameters._
+
+### `release_configs_get`
+
+Resolve a config by name and return its full detail (schema + per-env values + drafts).
+
+| Parameter |          | Type     | Description  |
+| --------- | -------- | -------- | ------------ |
+| `name`    | required | `string` | Config name. |
+
+### `release_configs_create`
+
+Create a dynamic config. Configs are JSON objects validated against a JSON Schema (object-only).
+
+| Parameter     |          | Type     | Description                                                                  |
+| ------------- | -------- | -------- | ---------------------------------------------------------------------------- |
+| `name`        | required | `string` | Config name.                                                                 |
+| `schema`      | optional | `string` | JSON Schema (top-level type=object). Defaults to a permissive object schema. |
+| `value`       | optional | `string` | Initial value as a JSON object. Defaults to \{\}.                            |
+| `description` | optional | `string` | Human-readable description.                                                  |
+
+### `release_configs_update`
+
+Legacy flat value update across all envs. Use draft + publish for per-env staging.
+
+| Parameter |          | Type     | Description              |
+| --------- | -------- | -------- | ------------------------ |
+| `name`    | required | `string` | Config name.             |
+| `value`   | required | `string` | New value (JSON object). |
+
+### `release_configs_draft`
+
+Stage a draft value for the given env, to publish later.
+
+| Parameter |          | Type     | Description                           |
+| --------- | -------- | -------- | ------------------------------------- |
+| `name`    | required | `string` | Config name.                          |
+| `env`     | required | `string` | Target env (e.g. prod, staging, dev). |
+| `value`   | required | `string` | Draft value (JSON object).            |
+
+### `release_configs_publish`
+
+Promote the staged draft for the given env to live.
+
+| Parameter |          | Type     | Description            |
+| --------- | -------- | -------- | ---------------------- |
+| `name`    | required | `string` | Config name.           |
+| `env`     | required | `string` | Target env to publish. |
+
+### `release_configs_archive`
+
+Archive (soft-delete) a config by name.
+
+| Parameter |          | Type     | Description  |
+| --------- | -------- | -------- | ------------ |
+| `name`    | required | `string` | Config name. |
+
+### `release_experiments_universes_list`
+
+Return every experiment universe (allocation %, holdout %).
+
+_No parameters._
+
+### `release_experiments_universes_create`
+
+Create an experiment universe (container + optional holdout).
+
+| Parameter  |          | Type     | Description                                                |
+| ---------- | -------- | -------- | ---------------------------------------------------------- |
+| `name`     | required | `string` | Universe name.                                             |
+| `unitType` | optional | `string` | Unit type (e.g. user_id, account_id). Defaults to user_id. |
+| `holdout`  | optional | `string` | Holdout range as 'lo,hi' (0–9999); omit for no holdout.    |
+
+### `release_experiments_universes_update`
+
+Update the holdout range. Pass 'null' to clear the holdout.
+
+| Parameter |          | Type     | Description                                            |
+| --------- | -------- | -------- | ------------------------------------------------------ |
+| `name`    | required | `string` | Universe name.                                         |
+| `holdout` | optional | `string` | Holdout range as 'lo,hi' (0–9999), or 'null' to clear. |
+
+### `release_experiments_universes_archive`
+
+Archive (soft-delete) a universe by name.
+
+| Parameter |          | Type     | Description    |
+| --------- | -------- | -------- | -------------- |
+| `name`    | required | `string` | Universe name. |
 
 ## Translations
 
