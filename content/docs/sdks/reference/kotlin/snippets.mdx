@@ -19,8 +19,8 @@ import ai.shipeasy.Client
 val flags = Client(currentUser)
 
 // getFlag(name, default = false): default is returned ONLY when the gate can't
-// be evaluated (client not ready / flag unknown) — never for a real `false`.
-if (flags.getFlag("{{RESOURCE_NAME}}", default = false)) {
+// be evaluated (SDK not ready / flag unknown) — never for a real `false`.
+if (flags.getFlag("{{FLAG_KEY}}", default = false)) {
     // gate is on for this user
 }
 ```
@@ -37,7 +37,7 @@ import ai.shipeasy.Client
 val flags = Client(currentUser)
 
 // getConfig(name, default = null): default is returned when the key is absent.
-val value = flags.getConfig("{{RESOURCE_NAME}}", default = "Pay now")
+val value = flags.getConfig("{{CONFIG_KEY}}", default = "Pay now")
 ```
 
 ### release / killswitches
@@ -52,8 +52,9 @@ import ai.shipeasy.Client
 val flags = Client(currentUser)
 
 // getKillswitch(name, switchKey = null): without switchKey → true when the whole
-// kill switch is killed; with switchKey → true when that per-key override is on.
-if (flags.getKillswitch("{{RESOURCE_NAME}}", switchKey = null)) {
+// kill switch is killed; with switchKey → true when that named per-key override
+// is on (an unconfigured key falls back to the top-level value).
+if (flags.getKillswitch("{{KILLSWITCH_KEY}}", switchKey = null)) {
     return serviceUnavailable()   // killed — short-circuit
 }
 ```
@@ -68,11 +69,11 @@ Assign a variant and track the conversion event — both on the same bound
 import ai.shipeasy.Client
 
 // construct once per callsite (cheap; binds the user)
-val client = Client(currentUser)
+val flags = Client(currentUser)
 
 // getExperiment(name, defaultParams): defaultParams is returned as `params` when
 // the user isn't in the experiment (or the experiment has no params).
-val r = client.getExperiment("{{RESOURCE_NAME}}", mapOf("color" to "blue"))
+val r = flags.getExperiment("{{EXPERIMENT_KEY}}", mapOf("color" to "blue"))
 if (r.inExperiment) {
     @Suppress("UNCHECKED_CAST")
     val color = (r.params as? Map<String, Any?>)?.get("color")
@@ -82,7 +83,45 @@ if (r.inExperiment) {
 // on conversion — same bound Client, no user arg (unit comes from the bound bag)
 // track(event, props = emptyMap()): event = the metric; props = optional event
 // properties (private attributes are stripped).
-client.track("{{SUCCESS_EVENT}}", mapOf("amount" to 49))
+flags.track("{{SUCCESS_EVENT}}", mapOf("amount" to 49))
+```
+
+## metrics
+
+### metrics / track
+
+Track a metric/conversion event from the bound `Client`. Metrics in the
+dashboard are computed from these events. Assumes `configure()` ran at startup —
+see [Installation](../../pages/installation.md).
+
+### Track an event
+
+```kotlin
+import ai.shipeasy.Client
+
+// construct once per callsite (cheap; binds the user)
+val flags = Client(currentUser)
+
+// track(event, props = emptyMap())
+//   event — the event your metric is built on (required)
+//   props — optional payload; numeric/string fields you can sum/filter on in a
+//           metric (private attributes are stripped before egress)
+flags.track("{{EVENT_NAME}}", mapOf("amount" to 49, "currency" to "usd"))
+```
+
+Fire-and-forget (never blocks your response) and a no-op under
+`configureForTesting` / `configureForOffline`. The unit is the bound user
+(`user_id`, else `anonymous_id`); with no unit the call is a no-op.
+
+### Track without properties
+
+```kotlin
+import ai.shipeasy.Client
+
+// construct once per callsite (cheap; binds the user)
+val flags = Client(currentUser)
+
+flags.track("{{EVENT_NAME}}")   // props are optional (default emptyMap())
 ```
 
 ## i18n
@@ -95,17 +134,14 @@ rendering happens in the browser via the client SDK.) Assumes `configure()` ran
 at startup — see [Installation](../../pages/installation.md).
 
 ```kotlin
-import ai.shipeasy.currentEngine
-
-// grab the process-global engine built by configure(); construct/resolve once
-// per callsite (the script tag is rendered per response)
-val engine = currentEngine() ?: error("configure() must run before SSR")
+import ai.shipeasy.i18nScriptTag
 
 // i18nScriptTag(clientKey, profile = "en:prod", baseUrl = null):
 //   clientKey — the PUBLIC client key (never the server key)
 //   profile   — the locale profile to hydrate, e.g. "{{PROFILE}}"
 //   baseUrl   — CDN origin override; default https://cdn.shipeasy.ai
-val head = engine.i18nScriptTag(clientKey, "{{PROFILE}}")
+// top-level function, backed by the global configure() state — no object to hold
+val head = i18nScriptTag(clientKey, "{{PROFILE}}")
 ```
 
 ### i18n / render
@@ -118,4 +154,65 @@ browser SDK renders labels:
 // browser, @shipeasy/sdk client
 import { t } from "@shipeasy/sdk/client";
 t("checkout.pay_now");
+```
+
+## ops
+
+### ops / see
+
+Report a caught, handled error (or a non-exception "violation") to Shipeasy with
+`see()` — fire-and-forget, never re-throws. Package-level, so it reports against
+the SDK configured by `configure()`. Assumes `configure()` ran at startup — see
+[Installation](../../pages/installation.md).
+
+### Report a handled exception
+
+```kotlin
+import ai.shipeasy.see
+
+try {
+    charge(order)
+} catch (e: Exception) {
+    // .causesThe(subject)   what the error affects (e.g. "checkout")
+    // .to(outcome)          the terminal — what you do about it; builds + fires once
+    see(e).causesThe("checkout").to("use the backup processor")
+    fallbackCharge(order)
+}
+```
+
+### Attach context with `.extras(...)`
+
+```kotlin
+import ai.shipeasy.see
+
+try {
+    charge(order)
+} catch (e: Exception) {
+    // .extras(map)          structured fields attached to the report (String /
+    //                       finite Number / Boolean only; capped at 20 keys)
+    see(e).causesThe("checkout").extras(mapOf("order_id" to oid)).to("use cached prices")
+}
+```
+
+### Report a non-exception violation
+
+```kotlin
+import ai.shipeasy.seeViolation
+
+// a bad state that isn't an exception — the name is a STABLE fingerprint; put
+// variable data in .extras, never the name. .to() is the terminal.
+seeViolation("missing_invoice").causesThe("billing").to("skip the dunning email")
+```
+
+### Mark an expected exception — report NOTHING
+
+```kotlin
+import ai.shipeasy.controlFlowException
+
+try {
+    parse(token)
+} catch (e: NoSuchElementException) {
+    // transmits nothing; .because(...) / .extras() are local-debug only
+    controlFlowException(e).because("end of stream is expected")
+}
 ```

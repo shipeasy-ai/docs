@@ -12,6 +12,8 @@ Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same 
 Read a feature flag on a user-bound client. Assumes `configure()` ran at
 startup — see Installation.
 
+### Basic check
+
 ```python
 import shipeasy
 
@@ -22,14 +24,39 @@ client = shipeasy.Client(current_user)
 # default=False                 returned ONLY when the flag can't be evaluated
 #                               (client not ready / flag absent) — never when it
 #                               simply resolves off
-if client.get_flag("{{RESOURCE_NAME}}", default=False):
+if client.get_flag("{{FLAG_KEY}}", default=False):
     ...
+```
+
+### Why it resolved that way — `get_flag_detail`
+
+```python
+import shipeasy
+
+client = shipeasy.Client(current_user)
+
+# returns FlagDetail(value, reason); reason ∈ RULE_MATCH / DEFAULT / OFF /
+# OVERRIDE / FLAG_NOT_FOUND / CLIENT_NOT_READY
+detail = client.get_flag_detail("{{FLAG_KEY}}")
+log.info("flag=%s value=%s reason=%s", "{{FLAG_KEY}}", detail.value, detail.reason)
+```
+
+### React to flag changes (long-running server)
+
+```python
+import shipeasy
+
+# requires configure(poll=True); fires after a poll fetches NEW data (200, not 304)
+unsubscribe = shipeasy.on_change(lambda: rebuild_local_cache())
+# ... later: unsubscribe()
 ```
 
 ### release / configs
 
 Read a dynamic config on a user-bound client. Assumes `configure()` ran at
 startup — see Installation.
+
+### Raw value
 
 ```python
 import shipeasy
@@ -38,18 +65,28 @@ import shipeasy
 client = shipeasy.Client(current_user)
 
 # name                          config name (required)
-# decode=lambda v: ...          optional: transform the raw JSON value (typed)
-# default={}                    returned when the key is absent or decode raises
-config = client.get_config("{{RESOURCE_NAME}}", default={})
+# default={}                    returned when the key is absent (or decode raises)
+config = client.get_config("{{CONFIG_KEY}}", default={})
+```
 
-# typed example:
-# max_items = client.get_config("{{RESOURCE_NAME}}", decode=lambda v: v["max"], default=0)
+### Typed decode
+
+```python
+import shipeasy
+
+client = shipeasy.Client(current_user)
+
+# decode=lambda v: ...          transform the raw JSON value into the shape you want;
+#                               applied on top of overrides — if it raises, default is returned
+max_items = client.get_config("{{CONFIG_KEY}}", decode=lambda v: v["max"], default=0)
 ```
 
 ### release / killswitches
 
 Check a kill switch on a user-bound client. Assumes `configure()` ran at
 startup — see Installation.
+
+### Top-level guard
 
 ```python
 import shipeasy
@@ -58,11 +95,24 @@ import shipeasy
 client = shipeasy.Client(current_user)
 
 # name                          kill switch name (required)
-# switch_key="..."              optional: read a named per-key override
-#                               (the dashboard "switches" feature); falls back
-#                               to the top-level value when absent
-if client.get_killswitch("{{RESOURCE_NAME}}"):  # True == engaged (feature killed)
+if client.get_killswitch("{{KILLSWITCH_KEY}}"):  # True == engaged (feature killed)
     return fallback()
+```
+
+### Named switch — check one configured per-key switch
+
+```python
+import shipeasy
+
+client = shipeasy.Client(current_user)
+
+# switch_key                    the variable you check against the switches
+#                               CONFIGURED on the kill switch (dashboard "switches");
+#                               if that key isn't configured, falls back to the
+#                               top-level value above
+provider = "stripe"
+if client.get_killswitch("{{KILLSWITCH_KEY}}", provider):
+    return use_backup_processor()   # the "stripe" switch is engaged
 ```
 
 ### release / experiments
@@ -79,18 +129,55 @@ client = shipeasy.Client(current_user)
 # name                          experiment name (required)
 # default_params={...}          params returned when the user isn't enrolled
 # decode=lambda p: ...          optional: transform the params bag (typed)
-result = client.get_experiment("{{RESOURCE_NAME}}", default_params={"color": "blue"})
+result = client.get_experiment("{{EXPERIMENT_KEY}}", default_params={"color": "blue"})
 
 # call where you actually render the treatment (server is stateless — no auto-log)
-client.log_exposure("{{RESOURCE_NAME}}")  # experiment name (required)
+client.log_exposure("{{EXPERIMENT_KEY}}")  # experiment name (required)
 
 if result.params["color"] == "green":
     ...
 
-# track the conversion — Client.track (NOT the Engine); unit is the bound user
+# track the conversion on the same bound client; unit is the bound user
 # event_name                    success event (required)
 # properties={...}              optional event properties bag
 client.track("{{SUCCESS_EVENT}}", {"amount": 49})
+```
+
+## metrics
+
+### metrics / track
+
+Track a metric/conversion event from the bound client. Metrics in the dashboard
+are computed from these events. Assumes `configure()` ran at startup — see
+Installation.
+
+### Track an event
+
+```python
+import shipeasy
+
+# construct once per callsite (cheap; binds the user)
+client = shipeasy.Client(current_user)
+
+# event_name                    the event your metric is built on (required)
+# properties={...}              optional payload; numeric/string fields you can
+#                               sum/filter on in a metric (private attributes are
+#                               stripped before the event leaves the process)
+client.track("{{EVENT_NAME}}", {"amount": 49, "currency": "usd"})
+```
+
+Fire-and-forget (never blocks your response) and a no-op under
+`configure_for_testing` / `configure_for_offline`. The unit is the bound user
+(`user_id`, else `anonymous_id`); with no unit the call is a no-op.
+
+### Track without properties
+
+```python
+import shipeasy
+
+client = shipeasy.Client(current_user)
+
+client.track("{{EVENT_NAME}}")   # properties are optional
 ```
 
 ## i18n
@@ -101,16 +188,31 @@ This is a server SDK: it has no `t()`. During SSR, emit the i18n loader tag
 (public CLIENT key) so the browser SDK boots against the `{{PROFILE}}` profile.
 Assumes `configure()` ran at startup — see Installation.
 
+### i18n loader tag only
+
 ```python
 import shipeasy
 
-# the shared Engine built at startup (configure() returns it; or get_global_engine())
-engine = shipeasy.get_global_engine()
-
+# Package-level helper — delegates to the engine configured at startup.
 # client_key                    PUBLIC client key (sdk_client_...) — NOT the server key
 # profile="en:prod"             locale profile to boot the browser SDK against
 # base_url=...                  optional: override the CDN origin (default cdn.shipeasy.ai)
-head = engine.i18n_script_tag(client_key, "{{PROFILE}}")  # goes in <head>
+head = shipeasy.i18n_script_tag(client_key, "{{PROFILE}}")  # goes in <head>
+```
+
+### Flags bootstrap + i18n together
+
+```python
+import shipeasy
+
+user = {"user_id": "u_123"}
+
+# bootstrap_script_tag carries the evaluated flags (NO key); i18n_script_tag adds
+# the loader (public client key). Both go in <head>.
+# anon_id=...                   the request's __se_anon_id, so the browser buckets identically
+# i18n_profile=...              fold the i18n profile into the bootstrap tag instead
+head = shipeasy.bootstrap_script_tag(user, anon_id=anon_id) \
+     + shipeasy.i18n_script_tag(client_key, "{{PROFILE}}")
 ```
 
 ### i18n / render
@@ -122,4 +224,60 @@ Python server SDK has no render helper. Once the loader tag (see setup) is in
 ```js
 // browser (Shipeasy client SDK), profile {{PROFILE}}
 t("checkout.cta");
+```
+
+## ops
+
+### ops / see
+
+Report a caught, handled error (or a non-exception "violation") to Shipeasy with
+`see()` — fire-and-forget, never re-raises. Package-level, so it reports against
+the engine from `configure()`. Assumes `configure()` ran at startup — see
+Installation.
+
+### Report a handled exception
+
+```python
+from shipeasy import see
+
+try:
+    charge(order)
+except PaymentError as e:
+    # .causes_the(subject)        what the error affects (e.g. "checkout")
+    # .to(outcome)                the terminal — what you do about it; builds + fires
+    see(e).causes_the("checkout").to("use the backup processor")
+    fallback_charge(order)
+```
+
+### Attach context with `.extras(...)`
+
+```python
+from shipeasy import see
+
+try:
+    charge(order)
+except PaymentError as e:
+    # .extras(mapping)            structured fields attached to the report
+    see(e).causes_the("checkout").extras({"order_id": oid}).to("use cached prices")
+```
+
+### Report a non-exception violation
+
+```python
+from shipeasy import see_violation
+
+# a bad state that isn't an exception — same chain, .to() is the terminal
+see_violation("missing_invoice").causes_the("billing").to("skip the dunning email")
+```
+
+### Mark an expected exception — report NOTHING
+
+```python
+from shipeasy import control_flow_exception
+
+try:
+    parse(token)
+except StopIteration as e:
+    # transmits nothing; .because(...) / .extras() are local-debug only
+    control_flow_exception(e).because("end of stream is expected")
 ```

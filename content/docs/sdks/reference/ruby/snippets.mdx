@@ -9,26 +9,46 @@ Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same 
 
 ### release / flags
 
-Evaluate the feature gate `{{RESOURCE_NAME}}` on a user-bound Client.
+Evaluate the feature gate `{{FLAG_KEY}}` on a user-bound Client. Assumes
+`Shipeasy.configure` ran at startup — see Installation.
 
-> Assumes `Shipeasy.configure` ran at startup — see Installation.
+### Basic check
 
 ```ruby
 # construct once per callsite (cheap; binds the user + runs the attributes transform)
 flags = Shipeasy::Client.new(current_user)
 
 # get_flag(name, default: false)
-#   name    — the gate key
+#   name    — the gate key (required)
 #   default — returned ONLY when the value can't be resolved (client not ready /
 #             gate absent); a gate that evaluates to false returns false
-if flags.get_flag("{{RESOURCE_NAME}}", default: false)
+if flags.get_flag("{{FLAG_KEY}}", default: false)
   # ship it
 end
 ```
 
+### Why it resolved that way — `get_flag_detail`
+
+```ruby
+flags = Shipeasy::Client.new(current_user)
+
+# returns a FlagDetail (.value, .reason); reason ∈ RULE_MATCH / DEFAULT / OFF /
+# OVERRIDE / FLAG_NOT_FOUND / CLIENT_NOT_READY
+detail = flags.get_flag_detail("{{FLAG_KEY}}")
+logger.info("flag={{FLAG_KEY}} value=#{detail.value} reason=#{detail.reason}")
+```
+
+### React to flag changes (long-running server)
+
+```ruby
+# requires configure(poll: true); fires after a poll fetches NEW data (200, not 304)
+unsubscribe = Shipeasy.on_change { reload_local_cache! }
+# ... later: unsubscribe.call
+```
+
 ### release / configs
 
-Read the dynamic config `{{RESOURCE_NAME}}` with a fallback default.
+Read the dynamic config `{{CONFIG_KEY}}` with a fallback default.
 
 > Assumes `Shipeasy.configure` ran at startup — see Installation.
 
@@ -40,50 +60,109 @@ flags = Shipeasy::Client.new(current_user)
 #   name    — the config key
 #   decode  — optional proc run on a present value, e.g. ->(v) { v["max"] }
 #   default — returned only when the config key is absent
-value = flags.get_config("{{RESOURCE_NAME}}", default: "blue")
+value = flags.get_config("{{CONFIG_KEY}}", default: "blue")
 ```
 
 ### release / killswitches
 
-Check the kill switch `{{RESOURCE_NAME}}` (true = killed).
+Read the kill switch `{{KILLSWITCH_KEY}}` (true = killed). Assumes
+`Shipeasy.configure` ran at startup — see Installation.
 
-> Assumes `Shipeasy.configure` ran at startup — see Installation.
+### Whole switch
 
 ```ruby
 # construct once per callsite (cheap; binds the user)
 flags = Shipeasy::Client.new(current_user)
 
 # get_killswitch(name, switch_key = nil)
-#   name       — the kill switch key
-#   switch_key — optional named per-key override switch to read
-if flags.get_killswitch("{{RESOURCE_NAME}}")
+#   name       — the kill switch key (required)
+#   switch_key — optional named per-key switch to read
+if flags.get_killswitch("{{KILLSWITCH_KEY}}")
   # killed → take the safe path
+end
+```
+
+### A named per-key switch
+
+```ruby
+flags = Shipeasy::Client.new(current_user)
+
+provider = "stripe"   # pass the thing you're about to do as the switch key
+
+# A configured switch returns its own boolean; an unconfigured key falls back to
+# the kill switch's top-level value.
+if flags.get_killswitch("{{KILLSWITCH_KEY}}", provider)
+  use_backup_processor
 end
 ```
 
 ### release / experiments
 
-Get the assignment for `{{RESOURCE_NAME}}` and track the `{{SUCCESS_EVENT}}` conversion.
+Get the assignment for `{{EXPERIMENT_KEY}}`, log exposure, and track the
+`{{SUCCESS_EVENT}}` conversion — all on the bound Client. Assumes
+`Shipeasy.configure` ran at startup — see Installation.
 
-> Assumes `Shipeasy.configure` ran at startup — see Installation.
+### Read the assignment
 
 ```ruby
 # construct once per callsite (cheap; binds the user)
 flags = Shipeasy::Client.new(current_user)
 
 # get_experiment(name, default_params, decode = nil)
-#   name           — the experiment key
+#   name           — the experiment key (required)
 #   default_params — params returned when NOT enrolled (the control shape)
 #   decode         — optional proc run on the resolved params
-result = flags.get_experiment("{{RESOURCE_NAME}}", { label: "Buy now" })
+result = flags.get_experiment("{{EXPERIMENT_KEY}}", { label: "Buy now" })
 
 if result.in_experiment && result.group == "treatment"
   render_cta(result.params[:label])
 end
+```
 
-# track the conversion on the bound Client (id derived from the bound user)
+### Log exposure + track the conversion
+
+```ruby
+flags = Shipeasy::Client.new(current_user)
+
+# call when you actually present the treatment (no user arg — bound)
+flags.log_exposure("{{EXPERIMENT_KEY}}")
+
+# track the conversion on the same bound Client (unit derived from the bound user)
 #   track(event_name, props = {})
 flags.track("{{SUCCESS_EVENT}}", { revenue: 49.99 })
+```
+
+## metrics
+
+### metrics / track
+
+Track a metric/conversion event from the bound Client. Metrics in the dashboard
+are computed from these events. Assumes `Shipeasy.configure` ran at startup —
+see Installation.
+
+### Track an event
+
+```ruby
+# construct once per callsite (cheap; binds the user)
+flags = Shipeasy::Client.new(current_user)
+
+# track(event_name, props = {})
+#   event_name — the event your metric is built on (required)
+#   props      — optional payload; numeric/string fields you can sum/filter on
+#                in a metric (private attributes are stripped before egress)
+flags.track("{{EVENT_NAME}}", { amount: 49, currency: "usd" })
+```
+
+Fire-and-forget (never blocks your response) and a no-op under
+`configure_for_testing` / `configure_for_offline`. The unit is the bound user
+(`user_id`, else `anonymous_id`); with no unit the call is a no-op.
+
+### Track without properties
+
+```ruby
+flags = Shipeasy::Client.new(current_user)
+
+flags.track("{{EVENT_NAME}}")   # props are optional
 ```
 
 ## i18n
@@ -110,7 +189,7 @@ key (never the server key):
 #   client_key — the PUBLIC client key
 #   profile    — locale profile to load
 #   base_url   — CDN override (defaults to https://cdn.shipeasy.ai)
-tag = Shipeasy.engine.i18n_script_tag(ENV.fetch("SHIPEASY_CLIENT_KEY"), profile: "{{PROFILE}}")
+tag = Shipeasy.i18n_script_tag(ENV.fetch("SHIPEASY_CLIENT_KEY"), profile: "{{PROFILE}}")
 ```
 
 ### i18n / render
@@ -128,4 +207,56 @@ Render a translated label in a Rails view with the `i18n_t` helper.
       profile   — locale profile override (defaults to the configured profile)
       chunk     — optional key namespace/chunk override %>
 <h1><%= i18n_t("hero.title", name: current_user.name) %></h1>
+```
+
+## ops
+
+### ops / see
+
+Report a caught, handled error (or a non-exception "violation") to Shipeasy with
+`see()` — fire-and-forget, never re-raises. Package-level, so it reports against
+the engine from `Shipeasy.configure`. Assumes `Shipeasy.configure` ran at
+startup — see Installation.
+
+### Report a handled exception
+
+```ruby
+begin
+  charge(order)
+rescue => e
+  # .causes_the(subject)   what the error affects (e.g. "checkout")
+  # .to(outcome)           the terminal — what you do about it; builds + fires once
+  Shipeasy.see(e).causes_the("checkout").to("use the backup processor")
+  fallback_charge(order)
+end
+```
+
+### Attach context with `.extras(...)`
+
+```ruby
+begin
+  charge(order)
+rescue => e
+  # .extras(hash)          structured fields attached to the report
+  Shipeasy.see(e).causes_the("checkout").extras({ order_id: oid }).to("use cached prices")
+end
+```
+
+### Report a non-exception violation
+
+```ruby
+# a bad state that isn't an exception — the name is a STABLE fingerprint; put
+# variable data in .extras, never the name. .to() is the terminal.
+Shipeasy.see_violation("missing_invoice").causes_the("billing").to("skip the dunning email")
+```
+
+### Mark an expected exception — report NOTHING
+
+```ruby
+begin
+  parse(token)
+rescue StopIteration => e
+  # transmits nothing; .because(...) / .extras() are local-debug only
+  Shipeasy.control_flow_exception(e).because("end of stream is expected")
+end
 ```

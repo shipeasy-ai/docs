@@ -16,6 +16,11 @@ description: Use Shipeasy (feature flags, configs, kill switches, A/B experiment
 Server-side Go SDK for Shipeasy. Evaluation is local against a cached blob — no
 network on the hot path. Min Go 1.21.
 
+> The documented surface is exactly **`Configure()`** (setup) and the bound
+> **`NewClient(user)`** (use), plus the package-level helpers below. For deeper
+> docs, fetch any page/snippet from the manifest at
+> <https://shipeasy-ai.github.io/sdk-go/manifest.json> (raw URLs below).
+
 ## Install
 
 ```bash
@@ -38,62 +43,59 @@ shipeasy.Configure(shipeasy.Options{
         acct := u.(*Account)
         return shipeasy.User{"user_id": acct.ID, "plan": acct.Plan}
     },
+    // Poll: true,  // long-running server: keep flags fresh with a background poll
 })
 
 // Per request: bind the user once, call with NO user argument.
 c := shipeasy.NewClient(acct)            // or NewClient(shipeasy.User{"user_id": "u_123"})
 ```
 
-`NewClient` panics if `Configure` was not called first. Long-running servers that
-want live updates call `shipeasy.ConfiguredEngine().Init(ctx)` to start polling.
+`Configure` is first-config-wins and owns the fetch lifecycle (one-shot by
+default; `Poll: true` for a background refresh — you never call `Init` yourself).
+`NewClient` panics if called before `Configure`. Reference:
+<https://shipeasy-ai.github.io/sdk-go/pages/configuration.md>
 
 ## Evaluate
 
 ```go
+c := shipeasy.NewClient(acct)                        // construct once per callsite
 on := c.GetFlag("new_checkout")                      // bool
 on = c.GetFlagOr("new_checkout", true)               // fallback only when UNEVALUATABLE
 d := c.GetFlagDetail("new_checkout")                 // d.Value, d.Reason
 
 cfg, ok := c.GetConfig("billing_copy")               // (any, bool)
-copy := c.GetConfigOr("billing_copy", map[string]any{"cta": "Buy"})
+fallback := c.GetConfigOr("billing_copy", map[string]any{"cta": "Buy"})
 
 paused := c.GetKillswitch("payments_paused")         // true = killed
+// Named switch: GetKillswitch(name, switchKey) — an unconfigured key falls back
+// to the kill switch's top-level value.
 ```
 
-`GetFlagOr` returns the fallback only on reason `CLIENT_NOT_READY` or
-`FLAG_NOT_FOUND` — a gate that evaluates to `false` returns `false`.
+`GetFlagOr` returns the fallback only on reason `CLIENT_NOT_READY` /
+`FLAG_NOT_FOUND` — a gate that evaluates to `false` returns `false`. Reference:
+<https://shipeasy-ai.github.io/sdk-go/pages/flags.md> ·
+<https://shipeasy-ai.github.io/sdk-go/pages/killswitches.md>
 
-## Experiments + track
+## Experiments + track (Client-only, end to end)
 
 ```go
+c := shipeasy.NewClient(acct)                        // construct once per callsite
 r := c.GetExperiment("checkout_button", map[string]any{"color": "blue"})
 // r.InExperiment bool, r.Group string, r.Params any (defaultParams when not enrolled)
 
-// Conversion event (engine-level; bare user id):
-shipeasy.ConfiguredEngine().Track("u_123", "purchase", map[string]any{"amount": 49})
-
-// Manual exposure when you present the treatment:
-shipeasy.ConfiguredEngine().LogExposure("u_123", "checkout_button")
+c.LogExposure("checkout_button")                     // record where you present the treatment
+c.Track("purchase", map[string]any{"amount": 49})    // conversion for the bound user
 ```
 
-## Engine form (advanced)
-
-The engine methods take an explicit `user`. Use `NewEngine` for multiple engines
-or explicit control:
-
-```go
-eng := shipeasy.NewEngine(shipeasy.Options{APIKey: key})
-_ = eng.Init(ctx); defer eng.Destroy()
-eng.GetFlag("new_checkout", shipeasy.User{"user_id": "u_123"})
-cancel := eng.OnChange(func(){ /* reloaded */ }); defer cancel()
-```
+Reference: <https://shipeasy-ai.github.io/sdk-go/pages/experiments.md> · track
+snippet <https://shipeasy-ai.github.io/sdk-go/snippets/metrics/track.md>
 
 ## Anonymous traffic
 
 ```go
 http.ListenAndServe(":8080", shipeasy.Middleware(mux)) // mints __se_anon_id cookie
 // in a handler:
-user := shipeasy.User{"anonymous_id": shipeasy.AnonID(r)}
+c := shipeasy.NewClient(shipeasy.User{"anonymous_id": shipeasy.AnonID(r)})
 ```
 
 ## Error reporting — See()
@@ -108,18 +110,30 @@ if err := chargeCard(o); err != nil {
 shipeasy.ControlFlowException(err).Because("because empty-state path")
 ```
 
+Reference: <https://shipeasy-ai.github.io/sdk-go/pages/error-reporting.md> · snippet
+<https://shipeasy-ai.github.io/sdk-go/snippets/ops/see.md>
+
 ## Testing (zero network)
 
 ```go
-c := shipeasy.NewTestClient()            // no key, no network
-c.OverrideFlag("new_checkout", true)
-c.OverrideConfig("billing_copy", map[string]any{"cta": "Buy now"})
-c.OverrideExperiment("checkout_button", "treatment", map[string]any{"color": "green"})
-c.ClearOverrides()
+// Seed values up front; reads go through the ordinary NewClient(user). Replaces
+// prior config, so each test can reconfigure freely.
+shipeasy.ConfigureForTesting(shipeasy.TestOptions{
+    Flags:       map[string]bool{"new_checkout": true},
+    Configs:     map[string]any{"billing_copy": map[string]any{"cta": "Buy now"}},
+    Experiments: map[string]shipeasy.ExperimentOverride{"checkout_button": {Group: "treatment", Params: map[string]any{"color": "green"}}},
+})
+c := shipeasy.NewClient(shipeasy.User{"user_id": "u_1"})
+c.GetFlag("new_checkout") // true
 
-// Or against a captured snapshot:
-oc, _ := shipeasy.NewOfflineClient("shipeasy-snapshot.json")
+shipeasy.OverrideFlag("new_checkout", false) // flip on the spot
+shipeasy.ClearOverrides()                    // drop every override (incl. the seed)
+
+// Offline: evaluate the REAL rules from a snapshot or JSON file, no network.
+_, _ = shipeasy.ConfigureForOffline(shipeasy.OfflineOptions{Path: "shipeasy-snapshot.json"})
 ```
+
+Reference: <https://shipeasy-ai.github.io/sdk-go/pages/testing.md>
 
 ## OpenFeature (separate nested module)
 
@@ -130,16 +144,25 @@ go get github.com/shipeasy-ai/sdk-go/openfeature
 ```go
 import shipeasyof "github.com/shipeasy-ai/sdk-go/openfeature"
 
-eng := shipeasy.NewEngine(shipeasy.Options{APIKey: key}); _ = eng.Init(ctx)
-_ = openfeature.SetProviderAndWait(shipeasyof.NewProvider(eng))
+// Assumes shipeasy.Configure(...) ran — the global provider resolves it.
+_ = openfeature.SetProviderAndWait(shipeasyof.NewGlobalProvider())
 // boolean flags → gates; string/float/int/object → dynamic configs.
 ```
 
+Reference: <https://shipeasy-ai.github.io/sdk-go/pages/openfeature.md>
+
 ## i18n
 
-Server-side only: emit `eng.I18nScriptTag(clientKey, "en:prod", opts)` in the
+Server-side only: emit `shipeasy.I18nScriptTag(clientKey, "en:prod", opts)` in the
 page `<head>` (public client key). The browser client SDK's `t()` renders the
-labels. There is no server-side `t()` in Go.
+labels. There is no server-side `t()` in Go. Reference:
+<https://shipeasy-ai.github.io/sdk-go/pages/i18n.md>
+
+## Change listeners
+
+`shipeasy.OnChange(func(){ /* reloaded */ })` fires after a background poll
+fetches new data — requires `Configure(shipeasy.Options{Poll: true})`. Reference:
+<https://shipeasy-ai.github.io/sdk-go/pages/advanced.md>
 
 ```
 

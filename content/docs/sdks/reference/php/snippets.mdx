@@ -9,8 +9,8 @@ Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same 
 
 ### release / flags
 
-Read a flag with a user-bound `Client`. Assumes `configure()` ran at startup —
-see Installation.
+Read a flag with a user-bound `Client`. Assumes `Shipeasy\configure()` ran at
+startup — see Installation.
 
 ```php
 use Shipeasy\Client;
@@ -19,15 +19,15 @@ use Shipeasy\Client;
 $client = new Client($currentUser);
 
 $enabled = $client->getFlag(
-    '{{RESOURCE_NAME}}',   // gate name
-    false,                 // optional $default — returned ONLY when unevaluable
-);                         //   (client not ready / flag not in blob), NOT when the gate is off
+    '{{FLAG_KEY}}',   // gate name
+    false,            // optional $default — returned ONLY when unevaluable
+);                    //   (SDK not ready / flag not in blob), NOT when the gate is off
 ```
 
 ### release / configs
 
 Read a dynamic config value (with a fallback for the absent case). Assumes
-`configure()` ran at startup — see Installation.
+`Shipeasy\configure()` ran at startup — see Installation.
 
 ```php
 use Shipeasy\Client;
@@ -36,15 +36,15 @@ use Shipeasy\Client;
 $client = new Client($currentUser);
 
 $value = $client->getConfig(
-    '{{RESOURCE_NAME}}',              // config name
+    '{{CONFIG_KEY}}',                // config name
     ['headline' => 'Welcome'],       // optional $default — returned when the config key is absent
 );
 ```
 
 ### release / killswitches
 
-Read a kill switch (global panic boolean). Assumes `configure()` ran at startup
-— see Installation.
+Read a kill switch (global panic boolean). Assumes `Shipeasy\configure()` ran at
+startup — see Installation.
 
 ```php
 use Shipeasy\Client;
@@ -53,15 +53,15 @@ use Shipeasy\Client;
 $client = new Client($currentUser);
 
 $panic = $client->getKillswitch(
-    '{{RESOURCE_NAME}}',   // kill switch name
-    null,                  // optional $switchKey — read a named per-key override (null = top-level value)
-);
+    '{{KILLSWITCH_KEY}}',   // kill switch name
+    null,                   // optional $switchKey — read a named per-key override
+);                          //   (null = top-level value; unconfigured key falls back to it too)
 ```
 
 ### release / experiments
 
 Read an experiment assignment, then track the conversion on the same bound
-`Client`. Assumes `configure()` ran at startup — see Installation.
+`Client`. Assumes `Shipeasy\configure()` ran at startup — see Installation.
 
 ```php
 use Shipeasy\Client;
@@ -70,17 +70,55 @@ use Shipeasy\Client;
 $client = new Client($currentUser);
 
 $r = $client->getExperiment(
-    '{{RESOURCE_NAME}}',     // experiment name
+    '{{EXPERIMENT_KEY}}',    // experiment name
     ['color' => 'blue'],     // $defaultParams — params returned when the user isn't enrolled
 );
 $color = $r->inExperiment ? $r->params['color'] : 'blue';
 
-// track() is on the bound Client (NOT the Engine): the unit comes from the
-// bound user — no userId argument.
+// track() is on the same bound Client — the unit comes from the bound user, so
+// there is no userId argument.
 $client->track(
-    '{{SUCCESS_EVENT}}',     // event name
+    '{{SUCCESS_EVENT}}',     // event name (the experiment's success metric)
     ['amount' => 49],        // optional $props — event properties (default [])
 );
+```
+
+## metrics
+
+### metrics / track
+
+Track a metric/conversion event from the bound `Client`. Metrics in the dashboard
+are computed from these events. Assumes `Shipeasy\configure()` ran at startup —
+see Installation.
+
+### Track an event
+
+```php
+use Shipeasy\Client;
+
+// construct once per callsite (cheap; binds the user)
+$client = new Client($currentUser);
+
+// track($event, $props = [])
+//   $event — the event your metric is built on (required)
+//   $props — optional payload; numeric/string fields you can sum/filter on
+//            in a metric (private attributes are stripped before egress)
+$client->track('{{EVENT_NAME}}', ['amount' => 49, 'currency' => 'usd']);
+```
+
+Fire-and-forget (never blocks your response) and a no-op under
+`Shipeasy\configureForTesting()` / `Shipeasy\configureForOffline()`. The unit is
+the bound user (`user_id`, else `anonymous_id`); with no unit the call is a no-op.
+
+### Track without properties
+
+```php
+use Shipeasy\Client;
+
+// construct once per callsite
+$client = new Client($currentUser);
+
+$client->track('{{EVENT_NAME}}');   // $props are optional
 ```
 
 ## i18n
@@ -89,21 +127,19 @@ $client->track(
 
 i18n is rendered in the browser. From PHP, emit the loader `<script>` tag with
 the **public client key** and the `{{PROFILE}}` profile into your `<head>`.
-Assumes `configure()` ran at startup — see Installation.
+Assumes `Shipeasy\configure()` ran at startup — see Installation.
 
 ```php
-use Shipeasy\Engine;
+use function Shipeasy\bootstrapScriptTag;
+use function Shipeasy\i18nScriptTag;
 
-// the configured engine (the default registered at startup).
-// Resolve once per request, not per tag.
-$engine = Engine::getDefault();
-
+// Package-level helpers — backed by the SDK that configure() set up.
 // $clientKey is the PUBLIC client key (NOT the server key).
-$head = $engine->bootstrapScriptTag(
+$head = bootstrapScriptTag(
             ['user_id' => 'u_123'],       // the request's evaluated user/attribute map
             ['anonId' => $anonId],        // optional opts: anonId, i18nProfile, baseUrl
         )
-      . $engine->i18nScriptTag(
+      . i18nScriptTag(
             $clientKey,                    // PUBLIC client key — embedded in the page
             '{{PROFILE}}',                 // locale profile to load (e.g. en:prod)
         );
@@ -118,4 +154,64 @@ SDK. After the loader tag (see setup) is in the `<head>`, render in the browser:
 // browser, @shipeasy/sdk/client
 import { t } from "@shipeasy/sdk/client";
 element.textContent = t("checkout.cta"); // resolves from the {{PROFILE}} profile
+```
+
+## ops
+
+### ops / see
+
+Report a caught, handled error (or a non-exception "violation") to Shipeasy with
+`see()` — fire-and-forget, never re-throws. Package-level, so it reports against
+the SDK from `Shipeasy\configure()`. Assumes `Shipeasy\configure()` ran at startup
+— see Installation.
+
+### Report a handled exception
+
+```php
+use function Shipeasy\see;
+
+try {
+    charge($order);
+} catch (\Throwable $e) {
+    // ->causesThe($subject)   what the error affects (e.g. "checkout"; default "app")
+    // ->to($outcome)          the terminal — what you do about it; builds + fires once
+    see($e)->causesThe('checkout')->to('use the backup processor');
+    fallbackCharge($order);
+}
+```
+
+### Attach context with `->extras(...)`
+
+```php
+use function Shipeasy\see;
+
+try {
+    charge($order);
+} catch (\Throwable $e) {
+    // ->extras($array)        structured fields attached to the report (local-only debug)
+    see($e)->causesThe('checkout')->extras(['order_id' => $oid])->to('use cached prices');
+}
+```
+
+### Report a non-exception violation
+
+```php
+use function Shipeasy\seeViolation;
+
+// a bad state that isn't an exception — the name is a STABLE fingerprint; put
+// variable data in ->extras(), never the name. ->to() is the terminal.
+seeViolation('missing_invoice')->causesThe('billing')->to('skip the dunning email');
+```
+
+### Mark an expected exception — report NOTHING
+
+```php
+use function Shipeasy\controlFlowException;
+
+try {
+    parse($token);
+} catch (\Throwable $e) {
+    // transmits nothing; ->because(...) / ->extras() are local-debug only
+    controlFlowException($e)->because('end of stream is expected');
+}
 ```

@@ -9,7 +9,7 @@ Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same 
 
 ### release / flags
 
-Read `{{RESOURCE_NAME}}` off a user-bound `Client`. Assumes `configure()` ran at
+Read `{{FLAG_KEY}}` off a user-bound `Client`. Assumes `configure()` ran at
 startup — see Installation.
 
 ```java
@@ -19,15 +19,15 @@ import java.util.Map;
 // construct once per callsite (cheap; binds the user)
 Client client = new Client(Map.of("user_id", "u_123"));
 
-boolean enabled = client.getFlag("{{RESOURCE_NAME}}"); // gate name
+boolean enabled = client.getFlag("{{FLAG_KEY}}"); // gate name
 // optional default overload — returned ONLY when unresolvable (engine not
 // ready / flag absent), never when the flag legitimately evaluates to false:
-// boolean enabled = client.getFlag("{{RESOURCE_NAME}}", true /* default */);
+// boolean enabled = client.getFlag("{{FLAG_KEY}}", true /* default */);
 ```
 
 ### release / configs
 
-Read the dynamic config `{{RESOURCE_NAME}}` (with a fallback when absent).
+Read the dynamic config `{{CONFIG_KEY}}` (with a fallback when absent).
 Assumes `configure()` ran at startup — see Installation.
 
 ```java
@@ -38,14 +38,14 @@ import java.util.Map;
 Client client = new Client(Map.of("user_id", "u_123"));
 
 Object cfg = client.getConfig(
-    "{{RESOURCE_NAME}}",          // config name
+    "{{CONFIG_KEY}}",          // config name
     Map.of("title", "Default")); // fallback returned when the config is absent
-// one-arg overload returns null when absent: client.getConfig("{{RESOURCE_NAME}}")
+// one-arg overload returns null when absent: client.getConfig("{{CONFIG_KEY}}")
 ```
 
 ### release / killswitches
 
-Check whether the kill switch `{{RESOURCE_NAME}}` is killed. Assumes
+Check whether the kill switch `{{KILLSWITCH_KEY}}` is killed. Assumes
 `configure()` ran at startup — see Installation.
 
 ```java
@@ -55,9 +55,9 @@ import java.util.Map;
 // construct once per callsite (cheap; binds the user)
 Client client = new Client(Map.of("user_id", "u_123"));
 
-boolean killed = client.getKillswitch("{{RESOURCE_NAME}}"); // killswitch name
+boolean killed = client.getKillswitch("{{KILLSWITCH_KEY}}"); // killswitch name
 // optional second arg reads one named per-key switch (null = whole killswitch):
-// boolean off = client.getKillswitch("{{RESOURCE_NAME}}", "eu_region" /* switchKey */);
+// boolean off = client.getKillswitch("{{KILLSWITCH_KEY}}", "eu_region" /* switchKey */);
 
 if (killed) {
     // disable the protected path
@@ -66,7 +66,7 @@ if (killed) {
 
 ### release / experiments
 
-Bucket a user into `{{RESOURCE_NAME}}`, then track the `{{SUCCESS_EVENT}}`
+Bucket a user into `{{EXPERIMENT_KEY}}`, then track the `{{SUCCESS_EVENT}}`
 conversion. Assumes `configure()` ran at startup — see Installation.
 
 ```java
@@ -78,7 +78,7 @@ import java.util.Map;
 Client client = new Client(Map.of("user_id", "u_123"));
 
 ExperimentResult r = client.getExperiment(
-    "{{RESOURCE_NAME}}",        // experiment name
+    "{{EXPERIMENT_KEY}}",        // experiment name
     Map.of("color", "blue"));   // defaultParams — filled in when not enrolled
 
 if (r.inExperiment && "treatment".equals(r.group)) {
@@ -90,6 +90,41 @@ if (r.inExperiment && "treatment".equals(r.group)) {
 client.track(
     "{{SUCCESS_EVENT}}",        // event name
     Map.of("amount", 49));      // optional properties bag (track(name) omits it)
+```
+
+## metrics
+
+### metrics / track
+
+Track a metric/conversion event from the bound `Client`. Metrics in the dashboard
+are computed from these events. Assumes `Shipeasy.configure(...)` ran at startup —
+see Installation.
+
+### Track an event
+
+```java
+import ai.shipeasy.Client;
+import java.util.Map;
+
+Client client = new Client(Map.of("user_id", "u_123")); // construct once per callsite
+
+// track(eventName, props)
+//   eventName — the event your metric is built on (required)
+//   props     — optional payload; numeric/string fields you can sum/filter on in
+//               a metric (private attributes are stripped before egress)
+client.track("{{EVENT_NAME}}", Map.of("amount", 49, "currency", "usd"));
+```
+
+Fire-and-forget (never blocks your response) and a no-op under
+`Shipeasy.configureForTesting` / `configureForOffline`. The unit is the bound user
+(`user_id`, else `anonymous_id`); with no unit the call is a no-op.
+
+### Track without properties
+
+```java
+Client client = new Client(Map.of("user_id", "u_123")); // construct once per callsite
+
+client.track("{{EVENT_NAME}}", Map.of()); // props are optional (pass an empty map)
 ```
 
 ## i18n
@@ -126,4 +161,65 @@ client SDK renders keys:
 // browser, @shipeasy/sdk client
 import { t } from "@shipeasy/sdk/client";
 t("checkout.cta"); // → translated string for the active {{PROFILE}} profile
+```
+
+## ops
+
+### ops / see
+
+Report a caught, handled error (or a non-exception "violation") to Shipeasy with
+`see()` — fire-and-forget, never re-throws. The static form reports against the
+engine from `Shipeasy.configure(...)`. Assumes `Shipeasy.configure(...)` ran at
+startup — see Installation.
+
+### Report a handled exception
+
+```java
+import static ai.shipeasy.See.see;
+import java.util.Map;
+
+try {
+    charge(order);
+} catch (Exception e) {
+    // .causesThe(subject)  what the error affects (e.g. "checkout")
+    // .to(outcome)         the terminal — what you do about it; builds + fires once
+    see(e).causesThe("checkout").to("use the backup processor");
+    fallbackCharge(order);
+}
+```
+
+### Attach context with `.extras(...)`
+
+```java
+import static ai.shipeasy.See.see;
+
+try {
+    charge(order);
+} catch (Exception e) {
+    // .extras(map)         structured fields attached to the report
+    see(e).causesThe("checkout").extras(Map.of("order_id", oid)).to("use cached prices");
+}
+```
+
+### Report a non-exception violation
+
+```java
+import static ai.shipeasy.See.violation;
+
+// a bad state that isn't an exception — the name is a STABLE fingerprint; put
+// variable data in .extras, never the name. .to() is the terminal.
+violation("missing_invoice").causesThe("billing").to("skip the dunning email");
+```
+
+### Mark an expected exception — report NOTHING
+
+```java
+import static ai.shipeasy.See.controlFlowException;
+
+try {
+    parse(token);
+} catch (NoSuchElementException e) {
+    // transmits nothing; .because(...) is local-debug only
+    controlFlowException(e).because("end of stream is expected");
+}
 ```

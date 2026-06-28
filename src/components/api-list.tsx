@@ -121,7 +121,7 @@ function resolveParam(p: RawParam): OpParameter | null {
 }
 
 const SCHEMAS: Record<string, JsonSchema> = ((
-  spec as { components?: { schemas?: Record<string, JsonSchema> } }
+  spec as unknown as { components?: { schemas?: Record<string, JsonSchema> } }
 ).components?.schemas ?? {}) as Record<string, JsonSchema>;
 
 function resolveSchema(s: JsonSchema | undefined): JsonSchema | null {
