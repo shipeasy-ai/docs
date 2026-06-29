@@ -197,8 +197,14 @@ function emitSkill(outDir: string, m: Manifest, docsDir: string, name: string) {
   if (!m.skill) return;
   const raw = read(docsDir, m.skill);
   // Render the skill verbatim inside a fenced block so its YAML frontmatter is
-  // visible and copy-pasteable (it installs frontmatter-included).
-  const fenced = "```markdown\n" + raw.replace(/\n$/, "") + "\n```\n";
+  // visible and copy-pasteable (it installs frontmatter-included). The skill
+  // body itself contains ```fenced``` examples, so the wrapper fence must be
+  // longer than the longest backtick run inside it — otherwise it closes early
+  // and the tail leaks out as raw MDX (e.g. `<https://…>` autolinks parsed as
+  // JSX), breaking the build.
+  const longestRun = Math.max(0, ...(raw.match(/`+/g) ?? []).map((s) => s.length));
+  const fence = "`".repeat(Math.max(3, longestRun + 1));
+  const fenced = fence + "markdown\n" + raw.replace(/\n$/, "") + "\n" + fence + "\n";
   const body =
     `An installable agent skill for the ${name} SDK. Fetch it with \`shipeasy docs skill --sdk ${m.sdk}\` ` +
     `(\`--install\` writes it to your agent skills dir), or copy it below — the YAML frontmatter installs with it.\n\n` +

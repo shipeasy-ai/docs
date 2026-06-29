@@ -26,7 +26,6 @@ network on the hot path. Min Go 1.21.
 ```bash
 go get github.com/shipeasy-ai/sdk-go
 ```
-````
 
 ```go
 import shipeasy "github.com/shipeasy-ai/sdk-go"
@@ -163,7 +162,4 @@ labels. There is no server-side `t()` in Go. Reference:
 `shipeasy.OnChange(func(){ /* reloaded */ })` fires after a background poll
 fetches new data — requires `Configure(shipeasy.Options{Poll: true})`. Reference:
 <https://shipeasy-ai.github.io/sdk-go/pages/advanced.md>
-
-```
-
-```
+````

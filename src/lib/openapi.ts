@@ -15,7 +15,7 @@ import { rehypeUseCases } from "./rehype-use-cases";
  * `<APIPage>` component must read the spec from the same path so the
  * generated MDX references resolve correctly.
  */
-export const OPENAPI_SPEC_PATH = "../../packages/openapi/openapi.json";
+export const OPENAPI_SPEC_PATH = "./node_modules/@shipeasy/openapi/openapi.json";
 
 export const openapi = createOpenAPI({
   input: [OPENAPI_SPEC_PATH],

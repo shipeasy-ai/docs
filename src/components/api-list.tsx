@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import spec from "../../../../packages/openapi/openapi.json";
+import spec from "@shipeasy/openapi/openapi.json";
 
 type Method = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 type Lang = "curl" | "js" | "python";

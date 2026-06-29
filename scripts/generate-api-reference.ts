@@ -8,7 +8,7 @@
  * may also re-run and assert no diff to catch drift.
  *
  * Source of truth:
- *   packages/openapi/openapi.json  ←  built from RESOURCE_REGISTRY by
+ *   marketplace/openapi/openapi.json  ←  built from RESOURCE_REGISTRY by
  *   `pnpm --filter @shipeasy/openapi emit-openapi`. Always re-emit before
  *   running this script when resource descriptors change.
  */
@@ -25,7 +25,7 @@ const __dirname = dirname(__filename);
 // to the same registered OpenAPI server. fumadocs-openapi resolves relative
 // paths from `process.cwd()`, which is `apps/docs` both during `pnpm dev`/build
 // and Cloudflare Build — so the absolute machine path must not be baked in.
-const SPEC = "../../packages/openapi/openapi.json";
+const SPEC = "./node_modules/@shipeasy/openapi/openapi.json";
 // Per-project output: each tag in the OpenAPI spec is currently mapped onto
 // the flags-experiments product. As more tags appear (e.g. Translations,
 // Feedback), split this into multiple `generateFiles` calls keyed by tag.
