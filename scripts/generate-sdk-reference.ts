@@ -4,7 +4,7 @@
  * `content/docs/sdks/reference/<lang>/` from each SDK repo's `/docs/` folder.
  *
  * Source of truth: the `/docs/` standard tree committed in each SDK submodule
- * (`packages/ts-sdk/docs`, `packages/server-sdks/sdk-<name>/docs`) — the SAME raw
+ * (`packages/server-sdks/sdk-ts/docs`, `packages/server-sdks/sdk-<name>/docs`) — the SAME raw
  * Markdown the `docs` registry op serves over GitHub Pages
  * (`<owner>.github.io/<repo>/…`, see experiment-platform/21 §A4.4). This script
  * just renders that exact content into the central Fumadocs portal so humans
@@ -28,7 +28,7 @@ const SDKS: { slug: string; name: string; docs: string; pages: string }[] = [
   {
     slug: "typescript",
     name: "TypeScript / JavaScript",
-    docs: "packages/ts-sdk/docs",
+    docs: "packages/server-sdks/sdk-ts/docs",
     pages: "https://shipeasy-ai.github.io/sdk",
   },
   {
