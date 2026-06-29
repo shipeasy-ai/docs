@@ -90,6 +90,7 @@ const PAGE_TITLES: Record<string, string> = {
   testing: "Testing",
   openfeature: "OpenFeature",
   advanced: "Advanced",
+  "admin-api": "Admin API client",
 };
 const PAGE_ORDER = Object.keys(PAGE_TITLES);
 
