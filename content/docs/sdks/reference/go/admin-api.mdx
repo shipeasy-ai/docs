@@ -26,7 +26,7 @@ go get github.com/shipeasy-ai/sdk-go/admin
 ```
 
 The client is **generated from the Shipeasy OpenAPI spec**, so it is a raw, 1:1
-projection of the REST API: id-based, basis-points, snake_case. It does _not_ add
+projection of the REST API: id-based, basis-points, snake*case. It does \_not* add
 the name→id resolution or percent→basis-point conveniences of the Shipeasy
 CLI/MCP — reach for those tools when you want the ergonomic surface, and for this
 module when you want a typed, programmatic mirror of the API.
@@ -52,8 +52,8 @@ func main() {
 		// admin.WithBaseURL("http://localhost:3000"),    // defaults to https://shipeasy.ai
 	)
 
-	gates, _, err := client.GatesAPI.ListGates(context.Background()).Execute()
-	_ = gates
+	flags, _, err := client.FlagsAPI.ListGates(context.Background()).Execute()
+	_ = flags
 	_ = err
 }
 ```
@@ -64,15 +64,15 @@ Each resource group is a field on the embedded client whose methods map 1:1 to
 the OpenAPI operations:
 
 ```go
-client.GatesAPI.CreateGate(ctx).Execute()
+client.FlagsAPI.CreateGate(ctx).Execute()
 client.ExperimentsAPI.CreateExperiment(ctx).Execute()
 ```
 
-Available groups: `GatesAPI`, `ConfigsAPI`, `KillswitchesAPI`, `ExperimentsAPI`,
-`UniversesAPI`, `MetricsAPI`, `EventsAPI`, `AlertRulesAPI`, `AttributesAPI`,
-`ProjectsAPI`, `OpsAPI`, `I18nAPI`. The exact method names, request models, and
-response shapes come straight from the spec — explore them with your editor's
-autocomplete.
+Available groups: `FlagsAPI`, `ConfigsAPI`, `KillswitchAPI`, `ExperimentsAPI`,
+`UniversesAPI`, `AttributesAPI`, `MetricsAPI`, `EventsAPI`, `OpsAPI`, `AlertsAPI`,
+`ProjectsAPI`, `ProfilesAPI`, `KeysAPI`, `DraftsAPI`, `ErrorsAPI`, `ConnectorsAPI`,
+`APIKeysAPI`. The exact method names, request models, and response shapes come
+straight from the spec — explore them with your editor's autocomplete.
 
 ## Regenerating
 
@@ -81,7 +81,7 @@ committed. When the API contract changes, refresh the vendored spec and
 regenerate — only the generated files are rewritten, never the `NewClient` shim:
 
 ```bash
-cp <monorepo>/packages/openapi/openapi.json admin/openapi.json
+cp <monorepo>/marketplace/openapi/openapi.json admin/openapi.json
 bash scripts/gen_admin.sh
 ```
 
