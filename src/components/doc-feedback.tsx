@@ -111,7 +111,7 @@ export function DocFeedback({ page, editHref }: { page: string; editHref?: strin
       {state === "down" ? (
         <div className="se-feedback-followup">
           {commentSent ? (
-            <span className="done">Got it — we'll use this to improve the page.</span>
+            <span className="done">Got it — we&rsquo;ll use this to improve the page.</span>
           ) : (
             <>
               <input
