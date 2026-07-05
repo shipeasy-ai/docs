@@ -379,6 +379,55 @@ You don&apos;t configure this endpoint by hand. Add the Shipeasy app to your Sla
   ~30-tool surface against your CLI login.
 </Callout>
 
+## Remote server for coding assistants (OAuth)
+
+For Claude Code, Cursor, and claude.ai connectors we also run a **remote MCP server with OAuth 2.1** — no `npx`, no local subprocess, no credentials file. It exposes the full ~30-tool admin surface (not just the Slack `exp_*` subset) over Streamable HTTP at:
+
+```
+https://mcp.shipeasy.ai/mcp
+```
+
+Add it as an HTTP MCP server in your assistant's `mcp.json`:
+
+```json title=".mcp.json"
+{
+  "mcpServers": {
+    "shipeasy": {
+      "type": "http",
+      "url": "https://mcp.shipeasy.ai/mcp"
+    }
+  }
+}
+```
+
+### How auth works
+
+When the assistant first calls a tool, the server answers with a `401` + `WWW-Authenticate` challenge and the client opens your browser. You sign in, pick the project to authorize, and approve with one click. From then on:
+
+1. **You stay signed in.** The access token lasts 24 hours and is refreshed silently in the background via a 30-day refresh token — an actively-used machine effectively never re-logs in. You're only sent back through the browser after ~30 days of not using it, or if you revoke the grant.
+2. **Re-auth is automatic.** When a token expires (or you revoke access), the very next tool call gets a fresh `401` challenge, so the client refreshes or re-runs the flow on its own — you don't run any command by hand.
+3. **Membership is re-checked on every call.** The grant records _who_ you are; the admin API re-verifies your access to the target project on each request, so losing project access cuts you off immediately, regardless of token lifetime.
+
+### Targeting a specific project
+
+The project you pick at consent time is the connection's default. To point a connection at a **specific project by UUID** — e.g. one `mcp.json` per repo, each bound to its own project — add an `X-Project-Id` header. No re-authorization is needed; the same login works across every project you're a member of:
+
+```json title=".mcp.json"
+{
+  "mcpServers": {
+    "shipeasy": {
+      "type": "http",
+      "url": "https://mcp.shipeasy.ai/mcp",
+      "headers": {
+        "X-Project-Id": "8f3c1e20-…-your-project-uuid"
+      }
+    }
+  }
+}
+```
+
+The header only selects _which_ project each call acts on — it is **not** a credential. The admin API still re-checks that your authenticated identity is a member of that project, so a header pointing at a project you can't reach is rejected.
+
 ## Troubleshooting
 
 <Callout type="warn" title="Tool calls return `not authenticated`">
