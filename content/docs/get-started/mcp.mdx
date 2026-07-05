@@ -428,6 +428,28 @@ The project you pick at consent time is the connection's default. To point a con
 
 The header only selects _which_ project each call acts on — it is **not** a credential. The admin API still re-checks that your authenticated identity is a member of that project, so a header pointing at a project you can't reach is rejected.
 
+### List-before-create guard (optional)
+
+A common agent failure is creating a duplicate flag/metric/experiment because it didn't check whether one already exists. The **list-before-create guard** forces the check: with it on, a `*_create` is refused unless it carries a fresh `listToken` that its sibling `*_list` just handed out (valid ~10 min). It's **off by default** on the hosted server; `shipeasy setup` writes it disabled and annotated so you can flip it on per connection:
+
+```json title=".mcp.json"
+{
+  "mcpServers": {
+    "shipeasy": {
+      "type": "http",
+      "url": "https://mcp.shipeasy.ai/mcp",
+      "//list-guard": "Set X-Shipeasy-List-Guard to \"on\" to require a *_list before each *_create.",
+      "headers": {
+        "X-Project-Id": "8f3c1e20-…-your-project-uuid",
+        "X-Shipeasy-List-Guard": "on"
+      }
+    }
+  }
+}
+```
+
+(`//list-guard` is a JSON-safe note key — strict JSON has no `//` comments — placed beside `headers`, never inside it, so it's never sent as an HTTP header.) The local `@shipeasy/mcp` stdio server has the same guard **on by default**, toggled instead via env (`SHIPEASY_MCP_LIST_GUARD=off`, window `SHIPEASY_MCP_LIST_GUARD_WINDOW_MINUTES`).
+
 ## Troubleshooting
 
 <Callout type="warn" title="Tool calls return `not authenticated`">
