@@ -29,7 +29,7 @@ const SDKS: { slug: string; name: string; docs: string; pages: string }[] = [
     slug: "typescript",
     name: "TypeScript / JavaScript",
     docs: "packages/server-sdks/sdk-ts/docs",
-    pages: "https://shipeasy-ai.github.io/sdk",
+    pages: "https://shipeasy-ai.github.io/sdk-ts",
   },
   {
     slug: "python",
