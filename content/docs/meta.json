@@ -1,5 +1,13 @@
 {
   "title": "Shipeasy Docs",
-  "pages": ["get-started", "sdks", "flags-experiments", "metrics", "feedback", "assistant"],
+  "pages": [
+    "get-started",
+    "sdks",
+    "flags-experiments",
+    "metrics",
+    "feedback",
+    "assistant",
+    "use-cases"
+  ],
   "root": true
 }
