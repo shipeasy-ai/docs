@@ -3,7 +3,12 @@ title: Billing
 description: How Shipeasy bills — plans, the monthly/annual interval, usage overage, downgrades, and the prepaid credits that power the Jarvis assistant.
 ---
 
-<DocMeta status="Production ready" read="4 min read" updated="June 20, 2026" works="Free · Team" />
+<DocMeta
+  status="Production ready"
+  read="4 min read"
+  updated="July 4, 2026"
+  works="Free · Pro · Business"
+/>
 
 Everything billing lives in one place: **Project → Settings → Billing**. Your subscription, payment method, plan limits, live usage, and the Jarvis assistant's credit balance are all managed from that tab — there is no separate billing flow.
 
@@ -15,17 +20,18 @@ Everything billing lives in one place: **Project → Settings → Billing**. You
 
 ## Plans
 
-| Plan           | Price                                  | For                                                             |
-| -------------- | -------------------------------------- | --------------------------------------------------------------- |
-| **Free**       | $0 / forever                           | Trying things out and small projects — generous caps, no card.  |
-| **Team**       | $49 / mo (or $39 / mo billed annually) | Production use — uncapped resources, the full statistics suite. |
-| **Enterprise** | Contact sales                          | Custom limits, retention, and support.                          |
+| Plan           | Price                                    | For                                                                       |
+| -------------- | ---------------------------------------- | ------------------------------------------------------------------------- |
+| **Free**       | $0 / forever                             | Side projects and small teams — generous caps, no card.                   |
+| **Pro**        | $49 / mo (or $39 / mo billed annually)   | Teams shipping experiments weekly — full stats, no seat tax.              |
+| **Business**   | $199 / mo (or $159 / mo billed annually) | Governance and scale — SAML/SSO, RBAC, audit, holdouts, warehouse export. |
+| **Enterprise** | Contact sales                            | Committed volume, SCIM, data residency, dedicated support + SLA.          |
 
-Team comes with a **14-day free trial** and is **usage-based** on top of the flat fee (see [overage](#usage--overage)). What each tier includes — resource caps, retention, and tier-gated features — is detailed in [Plan limits & quotas](/get-started/plan-limits).
+Flags, configs, issues, team members, and **Autopilot runs are unlimited on every tier**, and **flag evaluations are never metered** — you're only billed for analytics events past your monthly credit (see [overage](#usage--overage)). Pro and Business include a **14-day free trial**. The full picture — resource caps, retention, governance, and tier-gated features — is on the [pricing page](https://shipeasy.ai/pricing) and in [Plan limits & quotas](/get-started/plan-limits).
 
 ## Upgrading
 
-Pick **Team** in the plan picker and check out — payment runs through Stripe, and the upgrade takes effect **immediately**. There's nothing to redeploy: changing plans re-paces your fleet through the next KV rebuild. Once subscribed, **Manage billing** opens the Stripe customer portal, where you can update your card, download invoices, or cancel.
+Pick **Pro** or **Business** in the plan picker and check out — payment runs through Stripe, and the upgrade takes effect **immediately**. Moving between Pro and Business is prorated instantly. There's nothing to redeploy: changing plans re-paces your fleet through the next KV rebuild. Once subscribed, **Manage billing** opens the Stripe customer portal, where you can update your card, download invoices, or cancel.
 
 ## Monthly vs annual
 
@@ -33,17 +39,17 @@ Toggle the billing interval in the plan picker. Annual is cheaper per month but 
 
 ## Usage & overage
 
-Team is metered on top of the flat fee. Each plan includes a monthly allowance of events and evaluations; past the included amount you're billed for the overage.
+Paid plans include a large monthly **event** allowance; past it you're billed for the overage at a COGS-anchored, per-million rate. **Flag evaluations are never metered** on any plan — they're free, forever.
 
-| Metered usage       | Included (Team) | Overage rate              |
-| ------------------- | --------------- | ------------------------- |
-| Events / month      | ~20M            | $1 per additional 100k    |
-| Evaluations / month | ~50M            | $0.10 per additional 100k |
+| Metered usage    | Free           | Pro                  | Business                 |
+| ---------------- | -------------- | -------------------- | ------------------------ |
+| Events / month   | 1M (daily cap) | 20M, then **$1 / M** | 100M, then **$0.75 / M** |
+| Flag evaluations | Anti-abuse cap | Never metered        | Never metered            |
 
 <Callout type="info" title="Nothing is ever dropped">
-  Usage is **notify-only** — events and evaluations always flow, even past your included credit.
-  You're notified at 80% and 100%, and any overage is billed at the rates above. The
-  [Usage](/get-started/usage) page shows your activity over the last 30 days.
+  Event usage is **notify-only** on paid plans — events always flow, even past your included credit.
+  You're notified at 80% and 100%, and any overage is billed at the rates above via Stripe metered
+  usage. The [Usage](/get-started/usage) page shows your activity over the last 30 days.
 </Callout>
 
 ## Downgrading

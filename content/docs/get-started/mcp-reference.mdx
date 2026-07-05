@@ -28,23 +28,36 @@ Every such tool can return these: `UNAUTHORIZED`, `FORBIDDEN`. Each tool's own *
 
 All error codes:
 
-| Code                   | Meaning                                                                                                          |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `BAD_REQUEST`          | Malformed request (bad JSON, missing project scope).                                                             |
-| `UNAUTHORIZED`         | Missing or invalid admin SDK key.                                                                                |
-| `FORBIDDEN`            | Key is valid but not allowed to act on this project.                                                             |
-| `PLAN_REQUIRED`        | The requested feature requires a higher plan tier (e.g. sequential testing, custom alpha, holdout, group count). |
-| `NOT_FOUND`            | The resource does not exist or is not visible to the caller.                                                     |
-| `ALREADY_EXISTS`       | A resource with this name already exists in the project.                                                         |
-| `INVALID_TRANSITION`   | The requested lifecycle transition is not allowed from the current state.                                        |
-| `IMMUTABLE_FIELD`      | A field that is immutable in the current state was modified (e.g. editing allocation while running).             |
-| `READ_ONLY`            | The resource is a read-only built-in (e.g. a built-in gate-rule template) and cannot be modified or deleted.     |
-| `REFERENCED_IN_USE`    | The resource cannot be archived/deleted while another resource still references it.                              |
-| `VALIDATION`           | The request body failed structural (schema) validation.                                                          |
-| `REFERENCED_NOT_FOUND` | A referenced entity (universe, metric, gate, event) does not exist.                                              |
-| `GROUPS_WEIGHT_SUM`    | Experiment group weights must sum to 10000 (basis points).                                                       |
-| `EVENT_PENDING`        | The referenced event is still pending review and cannot back a metric yet.                                       |
-| `INTERNAL`             | Unexpected server error.                                                                                         |
+| Code                          | Meaning                                                                                                          |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `BAD_REQUEST`                 | Malformed request (bad JSON, missing project scope).                                                             |
+| `UNAUTHORIZED`                | Missing or invalid admin SDK key.                                                                                |
+| `FORBIDDEN`                   | Key is valid but not allowed to act on this project.                                                             |
+| `PLAN_REQUIRED`               | The requested feature requires a higher plan tier (e.g. sequential testing, custom alpha, holdout, group count). |
+| `NOT_FOUND`                   | The resource does not exist or is not visible to the caller.                                                     |
+| `ALREADY_EXISTS`              | A resource with this name already exists in the project.                                                         |
+| `INVALID_TRANSITION`          | The requested lifecycle transition is not allowed from the current state.                                        |
+| `IMMUTABLE_FIELD`             | A field that is immutable in the current state was modified (e.g. editing allocation while running).             |
+| `READ_ONLY`                   | The resource is a read-only built-in (e.g. a built-in gate-rule template) and cannot be modified or deleted.     |
+| `REFERENCED_IN_USE`           | The resource cannot be archived/deleted while another resource still references it.                              |
+| `VALIDATION`                  | The request body failed structural (schema) validation.                                                          |
+| `REFERENCED_NOT_FOUND`        | A referenced entity (universe, metric, gate, event) does not exist.                                              |
+| `GROUPS_WEIGHT_SUM`           | Experiment group weights must sum to 10000 (basis points).                                                       |
+| `EVENT_PENDING`               | The referenced event is still pending review and cannot back a metric yet.                                       |
+| `INTERNAL`                    | Unexpected server error.                                                                                         |
+| `CONFLICT`                    | The write conflicts with the current state of the resource (concurrent update or duplicate).                     |
+| `PLAN_LIMIT`                  | The action would exceed a plan quota (e.g. the tier's maximum flags or experiments).                             |
+| `FEATURE_REQUIRES_UPGRADE`    | The requested capability is not available on the current plan tier.                                              |
+| `INVALID_JSON`                | The request body was not valid JSON.                                                                             |
+| `EXPERIMENT_NOT_FOUND`        | The referenced experiment does not exist or is not visible to the caller.                                        |
+| `EXPERIMENT_NO_GOAL_METRIC`   | The experiment has no goal metric set, which the requested action requires.                                      |
+| `EXPERIMENT_ARCHIVED_RESTART` | An archived experiment cannot be restarted.                                                                      |
+| `EXPERIMENT_RESTORE_INVALID`  | The experiment cannot be restored from its current state.                                                        |
+| `EXPERIMENT_NOT_RUNNING`      | The action requires the experiment to be running.                                                                |
+| `EXPERIMENT_RUNNING_ARCHIVE`  | A running experiment cannot be archived — stop it first.                                                         |
+| `EXPERIMENT_IMMUTABLE_FIELD`  | A field that is immutable while the experiment is running was modified.                                          |
+| `METRIC_NOT_FOUND`            | The referenced metric does not exist or is not visible to the caller.                                            |
+| `METRIC_UNKNOWN_ID`           | The supplied metric id is malformed or not recognised.                                                           |
 
 Hand-written tools (`projects_upsert` and auth) layer the `.shipeasy` bind or the device-auth flow on top of the admin API rather than being plain spec calls, so they don't use this envelope. All filesystem / AST tooling (project detection, i18n source scanners / codemods / loader install) now lives in the `shipeasy` CLI, not this MCP server.
 
@@ -79,9 +92,9 @@ Soft-deletes the gate. Returns 409 if the gate is still referenced by a running 
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                           |
-| --------- | -------- | -------- | ----------------------------------------------------- |
-| `id`      | required | `string` | Stable opaque gate id (`gat_…`) or the gate's `name`. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -123,6 +136,7 @@ _Parameters_
 | `folder`          | optional | `any`      | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`).                                                                                                                                                                                 |
 | `group`           | optional | `string`   | Group label for dashboard organisation (e.g. team or product area). _(length 0–64)_                                                                                                                                                                                                                                      |
 | `owner_email`     | optional | `string`   | Owner contact. Displayed verbatim; not used for auth. _(length 0–190)_                                                                                                                                                                                                                                                   |
+| `listToken`       | optional | `string`   | REQUIRED. The `listToken` returned by the most recent `release_flags_list` call. It proves you listed existing release flags and confirmed this one doesn't already exist before creating it. Call `release_flags_list` first if you don't have a fresh token.                                                           |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -140,9 +154,9 @@ Sets `enabled: false` so the gate evaluates to `false` for every caller, regardl
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                           |
-| --------- | -------- | -------- | ----------------------------------------------------- |
-| `id`      | required | `string` | Stable opaque gate id (`gat_…`) or the gate's `name`. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -160,9 +174,9 @@ Sets `enabled: true`. The current `rollout_pct` is preserved.
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                           |
-| --------- | -------- | -------- | ----------------------------------------------------- |
-| `id`      | required | `string` | Stable opaque gate id (`gat_…`) or the gate's `name`. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -209,19 +223,19 @@ Partial update — only supplied fields change. Array fields (`rules`, `stack`) 
 
 _Parameters_
 
-| Parameter         |          | Type       | Description                                                                                                                                                                              |
-| ----------------- | -------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`              | required | `string`   | Stable opaque gate id (`gat_…`) or the gate's `name`.                                                                                                                                    |
-| `rollout_pct`     | optional | `integer`  | New rollout in **basis points** (0–10000 = 0%–100%) — `100` here means **1%**. Use `rollout_percent` (0–100) below for percent. Omit both to leave unchanged. _(0–10000)_                |
-| `rollout_percent` | optional | `number`   | New rollout as a **percentage** (0–100). Friendlier alias for `rollout_pct`; converted internally. Wins over `rollout_pct` if both are supplied. Omit both to leave unchanged. _(0–100)_ |
-| `rules`           | optional | `object[]` | Replaces the rule list wholesale. To add a value to an `in` rule, send the full new `rules` array with the augmented `value` (e.g. previous `['US','CA']` → `['US','CA','GB']`).         |
-| `enabled`         | optional | `boolean`  | Master switch. `false` makes the gate evaluate to `false` for every caller regardless of `rollout_pct`, `rules`, or `stack` — use as kill switch.                                        |
-| `stack`           | optional | `any`      | Replaces the gatekeeper stack wholesale. Send `null` to revert to flat `rules` + `rollout_pct` evaluation.                                                                               |
-| `title`           | optional | `string`   | Human-readable title shown in the dashboard. Free-form, no key format constraint. _(length 0–140)_                                                                                       |
-| `description`     | optional | `string`   | Long-form description / runbook. Markdown is rendered in the dashboard. _(length 0–2000)_                                                                                                |
-| `folder`          | optional | `any`      | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`).                                                 |
-| `group`           | optional | `string`   | Group label for dashboard organisation (e.g. team or product area). _(length 0–64)_                                                                                                      |
-| `owner_email`     | optional | `string`   | Owner contact. Displayed verbatim; not used for auth. _(length 0–190)_                                                                                                                   |
+| Parameter         |          | Type       | Description                                                                                                                                                                                                                                               |
+| ----------------- | -------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`              | required | `string`   | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `rollout_pct`     | optional | `integer`  | New rollout in **basis points** (0–10000 = 0%–100%) — `100` here means **1%**. Use `rollout_percent` (0–100) below for percent. Omit both to leave unchanged. _(0–10000)_                                                                                 |
+| `rollout_percent` | optional | `number`   | New rollout as a **percentage** (0–100). Friendlier alias for `rollout_pct`; converted internally. Wins over `rollout_pct` if both are supplied. Omit both to leave unchanged. _(0–100)_                                                                  |
+| `rules`           | optional | `object[]` | Replaces the rule list wholesale. To add a value to an `in` rule, send the full new `rules` array with the augmented `value` (e.g. previous `['US','CA']` → `['US','CA','GB']`).                                                                          |
+| `enabled`         | optional | `boolean`  | Master switch. `false` makes the gate evaluate to `false` for every caller regardless of `rollout_pct`, `rules`, or `stack` — use as kill switch.                                                                                                         |
+| `stack`           | optional | `any`      | Replaces the gatekeeper stack wholesale. Send `null` to revert to flat `rules` + `rollout_pct` evaluation.                                                                                                                                                |
+| `title`           | optional | `string`   | Human-readable title shown in the dashboard. Free-form, no key format constraint. _(length 0–140)_                                                                                                                                                        |
+| `description`     | optional | `string`   | Long-form description / runbook. Markdown is rendered in the dashboard. _(length 0–2000)_                                                                                                                                                                 |
+| `folder`          | optional | `any`      | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`).                                                                                                                  |
+| `group`           | optional | `string`   | Group label for dashboard organisation (e.g. team or product area). _(length 0–64)_                                                                                                                                                                       |
+| `owner_email`     | optional | `string`   | Owner contact. Displayed verbatim; not used for auth. _(length 0–190)_                                                                                                                                                                                    |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -245,9 +259,9 @@ Soft-deletes (archives) a **customer** template. Returns `409` if `id` names a r
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                    |
-| --------- | -------- | -------- | ---------------------------------------------- |
-| `id`      | required | `string` | Customer template id (`gtpl_…`) or its `name`. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -263,14 +277,15 @@ Creates a per-project (customer) targeting-rule template. Built-ins are read-onl
 
 _Parameters_
 
-| Parameter     |          | Type                       | Description                                                                                        |
-| ------------- | -------- | -------------------------- | -------------------------------------------------------------------------------------------------- |
-| `name`        | required | `string`                   | Human label. Unique per project. _(length 1–140)_                                                  |
-| `description` | optional | `string`                   | One-liner shown in pickers and matched by the list `query` filter. _(default `""`; length 0–2000)_ |
-| `category`    | optional | `"condition" \| "rollout"` | — _(default `"condition"`)_                                                                        |
-| `icon_key`    | optional | `string`                   | Display-only icon hint. _(length 0–64)_                                                            |
-| `auto`        | optional | `boolean`                  | Mark the attribute as request-derived (resolved at the SDK edge). _(default `false`)_              |
-| `rules`       | required | `object[]`                 | The rule definition captured by the template.                                                      |
+| Parameter     |          | Type                       | Description                                                                                                                                                                                                                                                                                  |
+| ------------- | -------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`        | required | `string`                   | Human label. Unique per project. _(length 1–140)_                                                                                                                                                                                                                                            |
+| `description` | optional | `string`                   | One-liner shown in pickers and matched by the list `query` filter. _(default `""`; length 0–2000)_                                                                                                                                                                                           |
+| `category`    | optional | `"condition" \| "rollout"` | — _(default `"condition"`)_                                                                                                                                                                                                                                                                  |
+| `icon_key`    | optional | `string`                   | Display-only icon hint. _(length 0–64)_                                                                                                                                                                                                                                                      |
+| `auto`        | optional | `boolean`                  | Mark the attribute as request-derived (resolved at the SDK edge). _(default `false`)_                                                                                                                                                                                                        |
+| `rules`       | required | `object[]`                 | The rule definition captured by the template.                                                                                                                                                                                                                                                |
+| `listToken`   | optional | `string`                   | REQUIRED. The `listToken` returned by the most recent `release_flags_templates_list` call. It proves you listed existing release flags templates and confirmed this one doesn't already exist before creating it. Call `release_flags_templates_list` first if you don't have a fresh token. |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -286,9 +301,9 @@ Returns a single template by its `id` — a built-in slug (`country`) or a custo
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                                   |
-| --------- | -------- | -------- | ------------------------------------------------------------- |
-| `id`      | required | `string` | Built-in slug (`country`) or customer template id (`gtpl_…`). |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -324,15 +339,15 @@ Partial update of a **customer** template. `rules` replaces the list wholesale. 
 
 _Parameters_
 
-| Parameter     |          | Type                       | Description                                    |
-| ------------- | -------- | -------------------------- | ---------------------------------------------- |
-| `id`          | required | `string`                   | Customer template id (`gtpl_…`) or its `name`. |
-| `name`        | optional | `string`                   | — _(length 1–140)_                             |
-| `description` | optional | `string`                   | — _(length 0–2000)_                            |
-| `category`    | optional | `"condition" \| "rollout"` | —                                              |
-| `icon_key`    | optional | `any`                      | —                                              |
-| `auto`        | optional | `boolean`                  | —                                              |
-| `rules`       | optional | `object[]`                 | —                                              |
+| Parameter     |          | Type                       | Description                                                                                                                                                                                                                                               |
+| ------------- | -------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | required | `string`                   | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `name`        | optional | `string`                   | — _(length 1–140)_                                                                                                                                                                                                                                        |
+| `description` | optional | `string`                   | — _(length 0–2000)_                                                                                                                                                                                                                                       |
+| `category`    | optional | `"condition" \| "rollout"` | —                                                                                                                                                                                                                                                         |
+| `icon_key`    | optional | `any`                      | —                                                                                                                                                                                                                                                         |
+| `auto`        | optional | `boolean`                  | —                                                                                                                                                                                                                                                         |
+| `rules`       | optional | `object[]`                 | —                                                                                                                                                                                                                                                         |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -358,9 +373,9 @@ Soft-deletes (archives) a targeting attribute.
 
 _Parameters_
 
-| Parameter |          | Type     | Description       |
-| --------- | -------- | -------- | ----------------- |
-| `id`      | required | `string` | The attribute id. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -377,14 +392,15 @@ Declare a targeting attribute the SDK reports and gates/experiments can target. 
 
 _Parameters_
 
-| Parameter     |          | Type                                                    | Description                                                                                                                                               |
-| ------------- | -------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`        | required | `string`                                                | Attribute key (lowercase alphanumeric start, then letters/digits/`_`/`-`; max 64 chars). Immutable after create. _(pattern `^[a-z0-9]a-z0-9_-]{0,63}$`)\_ |
-| `type`        | required | `"string" \| "number" \| "boolean" \| "enum" \| "date"` | Declared value type of a targeting attribute.                                                                                                             |
-| `enum_values` | optional | `any`                                                   | Allowed values when `type` is `enum` (required in that case — 422 otherwise); `null` for non-enum types. _(default `null`)_                               |
-| `required`    | optional | `boolean`                                               | Whether the attribute must be present on the evaluation context. _(default `false`)_                                                                      |
-| `description` | optional | `string`                                                | Optional human note shown in the dashboard.                                                                                                               |
-| `sdk_path`    | optional | `string`                                                | Optional dotted path the SDK reads the value from.                                                                                                        |
+| Parameter     |          | Type                                                    | Description                                                                                                                                                                                                                                                                                     |
+| ------------- | -------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`        | required | `string`                                                | Attribute key (lowercase alphanumeric start, then letters/digits/`_`/`-`; max 64 chars). Immutable after create. _(pattern `^[a-z0-9]a-z0-9_-]{0,63}$`)\_                                                                                                                                       |
+| `type`        | required | `"string" \| "number" \| "boolean" \| "enum" \| "date"` | Declared value type of a targeting attribute.                                                                                                                                                                                                                                                   |
+| `enum_values` | optional | `any`                                                   | Allowed values when `type` is `enum` (required in that case — 422 otherwise); `null` for non-enum types. _(default `null`)_                                                                                                                                                                     |
+| `required`    | optional | `boolean`                                               | Whether the attribute must be present on the evaluation context. _(default `false`)_                                                                                                                                                                                                            |
+| `description` | optional | `string`                                                | Optional human note shown in the dashboard.                                                                                                                                                                                                                                                     |
+| `sdk_path`    | optional | `string`                                                | Optional dotted path the SDK reads the value from.                                                                                                                                                                                                                                              |
+| `listToken`   | optional | `string`                                                | REQUIRED. The `listToken` returned by the most recent `release_flags_attributes_list` call. It proves you listed existing release flags attributes and confirmed this one doesn't already exist before creating it. Call `release_flags_attributes_list` first if you don't have a fresh token. |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -402,9 +418,9 @@ Fetch one targeting attribute by id.
 
 _Parameters_
 
-| Parameter |          | Type     | Description       |
-| --------- | -------- | -------- | ----------------- |
-| `id`      | required | `string` | The attribute id. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -439,14 +455,14 @@ Update a targeting attribute's type, allowed values, required flag, description,
 
 _Parameters_
 
-| Parameter     |          | Type                                                    | Description                                                      |
-| ------------- | -------- | ------------------------------------------------------- | ---------------------------------------------------------------- |
-| `id`          | required | `string`                                                | The attribute id.                                                |
-| `type`        | optional | `"string" \| "number" \| "boolean" \| "enum" \| "date"` | Declared value type of a targeting attribute.                    |
-| `enum_values` | optional | `any`                                                   | Replacement allowed values (for `enum`), or `null` to clear.     |
-| `required`    | optional | `boolean`                                               | Whether the attribute must be present on the evaluation context. |
-| `description` | optional | `string`                                                | Optional human note shown in the dashboard.                      |
-| `sdk_path`    | optional | `string`                                                | Optional dotted path the SDK reads the value from.               |
+| Parameter     |          | Type                                                    | Description                                                                                                                                                                                                                                               |
+| ------------- | -------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | required | `string`                                                | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `type`        | optional | `"string" \| "number" \| "boolean" \| "enum" \| "date"` | Declared value type of a targeting attribute.                                                                                                                                                                                                             |
+| `enum_values` | optional | `any`                                                   | Replacement allowed values (for `enum`), or `null` to clear.                                                                                                                                                                                              |
+| `required`    | optional | `boolean`                                               | Whether the attribute must be present on the evaluation context.                                                                                                                                                                                          |
+| `description` | optional | `string`                                                | Optional human note shown in the dashboard.                                                                                                                                                                                                               |
+| `sdk_path`    | optional | `string`                                                | Optional dotted path the SDK reads the value from.                                                                                                                                                                                                        |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -476,9 +492,9 @@ Soft-deletes the killswitch and rebuilds the project's flags KV blob so SDKs sto
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                                       |
-| --------- | -------- | -------- | ----------------------------------------------------------------- |
-| `id`      | required | `string` | Stable opaque killswitch id (`ksw_…`) or the killswitch's `name`. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -501,13 +517,14 @@ Returns `409` if `name` already exists in the project.
 
 _Parameters_
 
-| Parameter     |          | Type      | Description                                                                                                                                                                                                                                                     |
-| ------------- | -------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`        | required | `string`  | Stable config/killswitch key in `folder.name` form (two lowercase segments separated by a dot, e.g. `pricing.tiers`). Immutable after create. _(length 0–128; pattern `^(?:\_default\|[a-z0-9](?:[a-z0-9_-]_[a-z0-9])?)\.[a-z0-9](?:[a-z0-9_-]\_[a-z0-9])?$`)\_ |
-| `description` | optional | `string`  | Optional free-form description shown in the dashboard. Max 512 chars. _(length 0–512)_                                                                                                                                                                          |
-| `folder`      | optional | `any`     | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`).                                                                                                                        |
-| `value`       | optional | `boolean` | Default value applied to every env at creation. Defaults to `false`. Use `true` to ship the killswitch pre-tripped.                                                                                                                                             |
-| `switches`    | optional | `object`  | Initial per-switch overrides applied to every env. Empty/omitted leaves the killswitch with only the flat `value`.                                                                                                                                              |
+| Parameter     |          | Type      | Description                                                                                                                                                                                                                                                                   |
+| ------------- | -------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`        | required | `string`  | Stable config/killswitch key in `folder.name` form (two lowercase segments separated by a dot, e.g. `pricing.tiers`). Immutable after create. _(length 0–128; pattern `^(?:\_default\|[a-z0-9](?:[a-z0-9_-]_[a-z0-9])?)\.[a-z0-9](?:[a-z0-9_-]\_[a-z0-9])?$`)\_               |
+| `description` | optional | `string`  | Optional free-form description shown in the dashboard. Max 512 chars. _(length 0–512)_                                                                                                                                                                                        |
+| `folder`      | optional | `any`     | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`).                                                                                                                                      |
+| `value`       | optional | `boolean` | Default value applied to every env at creation. Defaults to `false`. Use `true` to ship the killswitch pre-tripped.                                                                                                                                                           |
+| `switches`    | optional | `object`  | Initial per-switch overrides applied to every env. Empty/omitted leaves the killswitch with only the flat `value`.                                                                                                                                                            |
+| `listToken`   | optional | `string`  | REQUIRED. The `listToken` returned by the most recent `release_killswitch_list` call. It proves you listed existing release killswitch and confirmed this one doesn't already exist before creating it. Call `release_killswitch_list` first if you don't have a fresh token. |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -525,9 +542,9 @@ Returns the killswitch metadata plus the latest published `value`/`switches`/`ve
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                                       |
-| --------- | -------- | -------- | ----------------------------------------------------------------- |
-| `id`      | required | `string` | Stable opaque killswitch id (`ksw_…`) or the killswitch's `name`. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -569,12 +586,12 @@ Use this for surgical per-env, per-key flips during incident response (e.g. trip
 
 _Parameters_
 
-| Parameter   |          | Type                           | Description                                                                          |
-| ----------- | -------- | ------------------------------ | ------------------------------------------------------------------------------------ |
-| `id`        | required | `string`                       | Stable opaque killswitch id (`ksw_…`) or the killswitch's `name`.                    |
-| `env`       | required | `"dev" \| "staging" \| "prod"` | Target environment. One of the project's configured envs (`dev`, `staging`, `prod`). |
-| `switchKey` | required | `string`                       | Switch key to set. _(length 0–64; pattern `^[a-z0-9](?:[a-z0-9_-]\*[a-z0-9])?$`)\_   |
-| `value`     | required | `boolean`                      | New boolean value for this `switchKey` on this `env`.                                |
+| Parameter   |          | Type                           | Description                                                                                                                                                                                                                                               |
+| ----------- | -------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`        | required | `string`                       | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `env`       | required | `"dev" \| "staging" \| "prod"` | Target environment. One of the project's configured envs (`dev`, `staging`, `prod`).                                                                                                                                                                      |
+| `switchKey` | required | `string`                       | Switch key to set. _(length 0–64; pattern `^[a-z0-9](?:[a-z0-9_-]\*[a-z0-9])?$`)\_                                                                                                                                                                        |
+| `value`     | required | `boolean`                      | New boolean value for this `switchKey` on this `env`.                                                                                                                                                                                                     |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -597,11 +614,11 @@ Use this to trip (or untrip) a killswitch on one environment without replacing i
 
 _Parameters_
 
-| Parameter |          | Type                           | Description                                                                          |
-| --------- | -------- | ------------------------------ | ------------------------------------------------------------------------------------ |
-| `id`      | required | `string`                       | Stable opaque killswitch id (`ksw_…`) or the killswitch's `name`.                    |
-| `env`     | required | `"dev" \| "staging" \| "prod"` | Target environment. One of the project's configured envs (`dev`, `staging`, `prod`). |
-| `value`   | required | `boolean`                      | Flat boolean to publish on `env`. Publishes a new version on that env only.          |
+| Parameter |          | Type                           | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string`                       | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `env`     | required | `"dev" \| "staging" \| "prod"` | Target environment. One of the project's configured envs (`dev`, `staging`, `prod`).                                                                                                                                                                      |
+| `value`   | required | `boolean`                      | Flat boolean to publish on `env`. Publishes a new version on that env only.                                                                                                                                                                               |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -621,11 +638,11 @@ Returns `{ removed: false }` if the entry didn't exist (idempotent no-op).
 
 _Parameters_
 
-| Parameter   |          | Type                           | Description                                                                           |
-| ----------- | -------- | ------------------------------ | ------------------------------------------------------------------------------------- |
-| `id`        | required | `string`                       | Stable opaque killswitch id (`ksw_…`) or the killswitch's `name`.                     |
-| `env`       | required | `"dev" \| "staging" \| "prod"` | Target environment. One of the project's configured envs (`dev`, `staging`, `prod`).  |
-| `switchKey` | required | `string`                       | Switch key to remove. _(length 0–64; pattern `^[a-z0-9](?:[a-z0-9_-]\*[a-z0-9])?$`)\_ |
+| Parameter   |          | Type                           | Description                                                                                                                                                                                                                                               |
+| ----------- | -------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`        | required | `string`                       | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `env`       | required | `"dev" \| "staging" \| "prod"` | Target environment. One of the project's configured envs (`dev`, `staging`, `prod`).                                                                                                                                                                      |
+| `switchKey` | required | `string`                       | Switch key to remove. _(length 0–64; pattern `^[a-z0-9](?:[a-z0-9_-]\*[a-z0-9])?$`)\_                                                                                                                                                                     |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -649,13 +666,13 @@ To change a single switch on a single env, use `PUT /{id}/switch` instead.
 
 _Parameters_
 
-| Parameter     |          | Type      | Description                                                                                                                              |
-| ------------- | -------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`          | required | `string`  | Stable opaque killswitch id (`ksw_…`) or the killswitch's `name`.                                                                        |
-| `description` | optional | `any`     | New description, or `null` to clear it. Max 512 chars.                                                                                   |
-| `folder`      | optional | `any`     | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
-| `value`       | optional | `boolean` | Flat value applied to every env. Publishes a new version per env when set. Omit to leave values unchanged.                               |
-| `switches`    | optional | `object`  | Replace the switches map wholesale on every env. To edit a single entry on a single env use `PUT /{id}/switch` instead.                  |
+| Parameter     |          | Type      | Description                                                                                                                                                                                                                                               |
+| ------------- | -------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | required | `string`  | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `description` | optional | `any`     | New description, or `null` to clear it. Max 512 chars.                                                                                                                                                                                                    |
+| `folder`      | optional | `any`     | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`).                                                                                                                  |
+| `value`       | optional | `boolean` | Flat value applied to every env. Publishes a new version per env when set. Omit to leave values unchanged.                                                                                                                                                |
+| `switches`    | optional | `object`  | Replace the switches map wholesale on every env. To edit a single entry on a single env use `PUT /{id}/switch` instead.                                                                                                                                   |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -685,10 +702,10 @@ Returns recent audit rows for one config (create, update, draft.save, publish, d
 
 _Parameters_
 
-| Parameter |          | Type      | Description                                                         |
-| --------- | -------- | --------- | ------------------------------------------------------------------- |
-| `id`      | required | `string`  | Stable opaque config id (`cfg_…`) or the config's `name`.           |
-| `limit`   | optional | `integer` | Max rows to return (1–100). Defaults to 20. _(default `20`; 1–100)_ |
+| Parameter |          | Type      | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string`  | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `limit`   | optional | `integer` | Max rows to return (1–100). Defaults to 20. _(default `20`; 1–100)_                                                                                                                                                                                       |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -705,9 +722,9 @@ Soft-deletes the config and rebuilds the project's flags KV blob.
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                               |
-| --------- | -------- | -------- | --------------------------------------------------------- |
-| `id`      | required | `string` | Stable opaque config id (`cfg_…`) or the config's `name`. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -730,13 +747,14 @@ Returns `409` if `name` already exists in the project, `400` if `value` doesn't 
 
 _Parameters_
 
-| Parameter     |          | Type     | Description                                                                                                                                                                                                                                                     |
-| ------------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`        | required | `string` | Stable config/killswitch key in `folder.name` form (two lowercase segments separated by a dot, e.g. `pricing.tiers`). Immutable after create. _(length 0–128; pattern `^(?:\_default\|[a-z0-9](?:[a-z0-9_-]_[a-z0-9])?)\.[a-z0-9](?:[a-z0-9_-]\_[a-z0-9])?$`)\_ |
-| `description` | optional | `string` | Optional free-form description shown in the dashboard. Max 512 chars. _(length 0–512)_                                                                                                                                                                          |
-| `folder`      | optional | `any`    | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`).                                                                                                                        |
-| `schema`      | required | `object` | JSON Schema (draft 2020-12) describing the shape of the config value. Top-level `type` must be `'object'`; every published value is validated against this schema.                                                                                              |
-| `value`       | optional | `any`    | Initial config value. Either a single JSON object applied to every env, or a `{ env: value }` map seeding per-env values. Must match `schema`. Defaults to `{}` on every env when omitted.                                                                      |
+| Parameter     |          | Type     | Description                                                                                                                                                                                                                                                          |
+| ------------- | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`        | required | `string` | Stable config/killswitch key in `folder.name` form (two lowercase segments separated by a dot, e.g. `pricing.tiers`). Immutable after create. _(length 0–128; pattern `^(?:\_default\|[a-z0-9](?:[a-z0-9_-]_[a-z0-9])?)\.[a-z0-9](?:[a-z0-9_-]\_[a-z0-9])?$`)\_      |
+| `description` | optional | `string` | Optional free-form description shown in the dashboard. Max 512 chars. _(length 0–512)_                                                                                                                                                                               |
+| `folder`      | optional | `any`    | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`).                                                                                                                             |
+| `schema`      | required | `object` | JSON Schema (draft 2020-12) describing the shape of the config value. Top-level `type` must be `'object'`; every published value is validated against this schema.                                                                                                   |
+| `value`       | optional | `any`    | Initial config value. Either a single JSON object applied to every env, or a `{ env: value }` map seeding per-env values. Must match `schema`. Defaults to `{}` on every env when omitted.                                                                           |
+| `listToken`   | optional | `string` | REQUIRED. The `listToken` returned by the most recent `release_configs_list` call. It proves you listed existing release configs and confirmed this one doesn't already exist before creating it. Call `release_configs_list` first if you don't have a fresh token. |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -754,10 +772,10 @@ Drops the in-flight draft on one env. Published values are unaffected.
 
 _Parameters_
 
-| Parameter |          | Type                           | Description                                                                          |
-| --------- | -------- | ------------------------------ | ------------------------------------------------------------------------------------ |
-| `id`      | required | `string`                       | Stable opaque config id (`cfg_…`) or the config's `name`.                            |
-| `env`     | required | `"dev" \| "staging" \| "prod"` | Target environment. One of the project's configured envs (`dev`, `staging`, `prod`). |
+| Parameter |          | Type                           | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string`                       | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `env`     | required | `"dev" \| "staging" \| "prod"` | Target environment. One of the project's configured envs (`dev`, `staging`, `prod`).                                                                                                                                                                      |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -776,11 +794,11 @@ Saving over an existing draft overwrites it. Use `POST /{id}/publish` to promote
 
 _Parameters_
 
-| Parameter |          | Type                           | Description                                                                          |
-| --------- | -------- | ------------------------------ | ------------------------------------------------------------------------------------ |
-| `id`      | required | `string`                       | Stable opaque config id (`cfg_…`) or the config's `name`.                            |
-| `env`     | required | `"dev" \| "staging" \| "prod"` | Target environment. One of the project's configured envs (`dev`, `staging`, `prod`). |
-| `value`   | required | `any`                          | Draft value to stage on `env`. Validated against the config's current schema.        |
+| Parameter |          | Type                           | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string`                       | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `env`     | required | `"dev" \| "staging" \| "prod"` | Target environment. One of the project's configured envs (`dev`, `staging`, `prod`).                                                                                                                                                                      |
+| `value`   | required | `any`                          | Draft value to stage on `env`. Validated against the config's current schema.                                                                                                                                                                             |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -798,9 +816,9 @@ Returns config metadata plus the latest published values per env and any active 
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                               |
-| --------- | -------- | -------- | --------------------------------------------------------- |
-| `id`      | required | `string` | Stable opaque config id (`cfg_…`) or the config's `name`. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -839,10 +857,10 @@ Returns `404` if there is no draft for the given env.
 
 _Parameters_
 
-| Parameter |          | Type                           | Description                                                                          |
-| --------- | -------- | ------------------------------ | ------------------------------------------------------------------------------------ |
-| `id`      | required | `string`                       | Stable opaque config id (`cfg_…`) or the config's `name`.                            |
-| `env`     | required | `"dev" \| "staging" \| "prod"` | Target environment. One of the project's configured envs (`dev`, `staging`, `prod`). |
+| Parameter |          | Type                           | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string`                       | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `env`     | required | `"dev" \| "staging" \| "prod"` | Target environment. One of the project's configured envs (`dev`, `staging`, `prod`).                                                                                                                                                                      |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -867,12 +885,12 @@ For env-scoped edits, use the draft/publish flow (`PUT /{id}/drafts` then `POST 
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                                                                                                                |
-| --------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `id`      | required | `string` | Stable opaque config id (`cfg_…`) or the config's `name`.                                                                                  |
-| `schema`  | optional | `object` | Replacement schema. When supplied, the new schema is validated against every published value before it lands.                              |
-| `value`   | optional | `any`    | Flat value applied to **every** env. Publishes a new version per env. To target one env, use `PUT /{id}/drafts` then `POST /{id}/publish`. |
-| `folder`  | optional | `any`    | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`).   |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `schema`  | optional | `object` | Replacement schema. When supplied, the new schema is validated against every published value before it lands.                                                                                                                                             |
+| `value`   | optional | `any`    | Flat value applied to **every** env. Publishes a new version per env. To target one env, use `PUT /{id}/drafts` then `POST /{id}/publish`.                                                                                                                |
+| `folder`  | optional | `any`    | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`).                                                                                                                  |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -890,10 +908,10 @@ Replaces a config's JSON Schema in place. Every existing published value is re-v
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                                                                       |
-| --------- | -------- | -------- | ------------------------------------------------------------------------------------------------- |
-| `id`      | required | `string` | Stable opaque config id (`cfg_…`) or the config's `name`.                                         |
-| `schema`  | required | `object` | Replacement JSON Schema (draft 2020-12). Validated against every published value before it lands. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `schema`  | required | `object` | Replacement JSON Schema (draft 2020-12). Validated against every published value before it lands.                                                                                                                                                         |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -927,9 +945,9 @@ Archives the experiment (soft-delete via status transition). Returns `409` if th
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                                       |
-| --------- | -------- | -------- | ----------------------------------------------------------------- |
-| `id`      | required | `string` | Stable opaque experiment id (`exp_…`) or the experiment's `name`. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -982,6 +1000,7 @@ _Parameters_
 | `goal_metric.aggregation` | optional | `"count_users" \| "count_events" \| "retention_7d" \| "retention_30d" \| "sum" \| "avg"` | Reducer for the `event` form. Defaults to `count_users`.                                                                                                                                                                                                                             |
 | `goal_metric.value`       | optional | `string`                                                                                 | Numeric event property for `sum`/`avg` (with `event`). _(length 1–256)_                                                                                                                                                                                                              |
 | `guardrail_metrics`       | optional | `object[]`                                                                               | Up to 10 guardrail metrics defined inline. Each is upserted (event + metric) and attached with role=guardrail. _(default `[]`)_                                                                                                                                                      |
+| `listToken`               | optional | `string`                                                                                 | REQUIRED. The `listToken` returned by the most recent `release_experiments_list` call. It proves you listed existing release experiments and confirmed this one doesn't already exist before creating it. Call `release_experiments_list` first if you don't have a fresh token.     |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1002,9 +1021,9 @@ Returns the full experiment row including groups, params, allocation, and lifecy
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                                       |
-| --------- | -------- | -------- | ----------------------------------------------------------------- |
-| `id`      | required | `string` | Stable opaque experiment id (`exp_…`) or the experiment's `name`. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1042,9 +1061,9 @@ Requeues the daily analysis pass for this experiment outside the normal cron cad
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                                       |
-| --------- | -------- | -------- | ----------------------------------------------------------------- |
-| `id`      | required | `string` | Stable opaque experiment id (`exp_…`) or the experiment's `name`. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1074,9 +1093,9 @@ Restarting an `archived` experiment directly is not allowed — restore it to `d
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                                       |
-| --------- | -------- | -------- | ----------------------------------------------------------------- |
-| `id`      | required | `string` | Stable opaque experiment id (`exp_…`) or the experiment's `name`. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1095,9 +1114,9 @@ Returns the latest analysis output for the experiment — one row per metric/gro
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                                       |
-| --------- | -------- | -------- | ----------------------------------------------------------------- |
-| `id`      | required | `string` | Stable opaque experiment id (`exp_…`) or the experiment's `name`. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1119,10 +1138,10 @@ Returns `422` if any `metric_id` doesn't exist in the project. Pass `{ metrics: 
 
 _Parameters_
 
-| Parameter |          | Type       | Description                                                            |
-| --------- | -------- | ---------- | ---------------------------------------------------------------------- |
-| `id`      | required | `string`   | Stable opaque experiment id (`exp_…`) or the experiment's `name`.      |
-| `metrics` | required | `object[]` | Replacement metrics list — replaces the current attachments wholesale. |
+| Parameter |          | Type       | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string`   | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `metrics` | required | `object[]` | Replacement metrics list — replaces the current attachments wholesale.                                                                                                                                                                                    |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1154,9 +1173,9 @@ Restarting an `archived` experiment directly is not allowed — restore it to `d
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                                       |
-| --------- | -------- | -------- | ----------------------------------------------------------------- |
-| `id`      | required | `string` | Stable opaque experiment id (`exp_…`) or the experiment's `name`. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1187,9 +1206,9 @@ Restarting an `archived` experiment directly is not allowed — restore it to `d
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                                       |
-| --------- | -------- | -------- | ----------------------------------------------------------------- |
-| `id`      | required | `string` | Stable opaque experiment id (`exp_…`) or the experiment's `name`. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1208,10 +1227,10 @@ Same row shape as `/results`, but returns every daily slice rather than the late
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                                       |
-| --------- | -------- | -------- | ----------------------------------------------------------------- |
-| `id`      | required | `string` | Stable opaque experiment id (`exp_…`) or the experiment's `name`. |
-| `metric`  | optional | `string` | Optional metric name to filter the series.                        |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `metric`  | optional | `string` | Optional metric name to filter the series.                                                                                                                                                                                                                |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1237,7 +1256,7 @@ _Parameters_
 
 | Parameter                 |          | Type                                                                                     | Description                                                                                                                                                                                                                                                                          |
 | ------------------------- | -------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `id`                      | required | `string`                                                                                 | Stable opaque experiment id (`exp_…`) or the experiment's `name`.                                                                                                                                                                                                                    |
+| `id`                      | required | `string`                                                                                 | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_                            |
 | `name`                    | optional | `string`                                                                                 | Stable experiment key. Single segment or `folder.name` (a-z, 0-9, `_`/`-`; max 128 chars). Used by SDKs as `Shipeasy.getExperiment(user, '<name>')`. Immutable after create. _(length 0–128; pattern `^[a-z0-9](?:[a-z0-9_-]_[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9_-]\_[a-z0-9])?)?$`)\_ |
 | `description`             | optional | `any`                                                                                    | —                                                                                                                                                                                                                                                                                    |
 | `hypothesis`              | optional | `any`                                                                                    | —                                                                                                                                                                                                                                                                                    |
@@ -1298,9 +1317,9 @@ Soft-deletes the universe. Returns `409` if any non-archived experiment still re
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                                   |
-| --------- | -------- | -------- | ------------------------------------------------------------- |
-| `id`      | required | `string` | Stable opaque universe id (`uni_…`) or the universe's `name`. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1324,12 +1343,13 @@ Returns `409` if `name` already exists in the project. Returns `403` if you supp
 
 _Parameters_
 
-| Parameter       |          | Type     | Description                                                                                                                                                                                                                                 |
-| --------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`          | required | `string` | Stable universe key. Single segment or `folder.name`. Lowercase letters, digits, `_` or `-`; max 128 chars. Immutable after create. _(length 0–128; pattern `^[a-z0-9](?:[a-z0-9_-]_[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9_-]\_[a-z0-9])?)?$`)\_ |
-| `folder`        | optional | `any`    | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`).                                                                                                    |
-| `unit_type`     | optional | `string` | Unit of randomisation. Typically `user_id`. Use `account_id` to keep whole accounts in the same group across an experiment. _(default `"user_id"`)_                                                                                         |
-| `holdout_range` | optional | `any`    | Inclusive `[lo, hi]` bucket range (0–9999) reserved as the **holdout** — callers hashed into this slice are excluded from every experiment in the universe. `null` disables the holdout. Pro plan or higher required. _(default `null`)_    |
+| Parameter       |          | Type     | Description                                                                                                                                                                                                                                                                                                    |
+| --------------- | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`          | required | `string` | Stable universe key. Single segment or `folder.name`. Lowercase letters, digits, `_` or `-`; max 128 chars. Immutable after create. _(length 0–128; pattern `^[a-z0-9](?:[a-z0-9_-]_[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9_-]\_[a-z0-9])?)?$`)\_                                                                    |
+| `folder`        | optional | `any`    | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`).                                                                                                                                                                       |
+| `unit_type`     | optional | `string` | Unit of randomisation. Typically `user_id`. Use `account_id` to keep whole accounts in the same group across an experiment. _(default `"user_id"`)_                                                                                                                                                            |
+| `holdout_range` | optional | `any`    | Inclusive `[lo, hi]` bucket range (0–9999) reserved as the **holdout** — callers hashed into this slice are excluded from every experiment in the universe. `null` disables the holdout. Pro plan or higher required. _(default `null`)_                                                                       |
+| `listToken`     | optional | `string` | REQUIRED. The `listToken` returned by the most recent `release_experiments_universes_list` call. It proves you listed existing release experiments universes and confirmed this one doesn't already exist before creating it. Call `release_experiments_universes_list` first if you don't have a fresh token. |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1373,11 +1393,11 @@ Pass `"holdout_range": null` to remove an existing holdout.
 
 _Parameters_
 
-| Parameter       |          | Type     | Description                                                                                                                                                                                                           |
-| --------------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`            | required | `string` | Stable opaque universe id (`uni_…`) or the universe's `name`.                                                                                                                                                         |
-| `folder`        | optional | `any`    | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`).                                                                              |
-| `holdout_range` | optional | `any`    | Inclusive `[lo, hi]` bucket range (0–9999) reserved as the **holdout** — callers hashed into this slice are excluded from every experiment in the universe. `null` disables the holdout. Pro plan or higher required. |
+| Parameter       |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`            | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `folder`        | optional | `any`    | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`).                                                                                                                  |
+| `holdout_range` | optional | `any`    | Inclusive `[lo, hi]` bucket range (0–9999) reserved as the **holdout** — callers hashed into this slice are excluded from every experiment in the universe. `null` disables the holdout. Pro plan or higher required.                                     |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1412,9 +1432,9 @@ Soft-deletes (archives) the metric. Returns `409` if it is attached to a running
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                               |
-| --------- | -------- | -------- | --------------------------------------------------------- |
-| `id`      | required | `string` | Stable opaque metric id (`met_…`) or the metric's `name`. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1458,6 +1478,7 @@ _Parameters_
 | `query_ir.groupBy`        | optional | `object`                                         | Optional group-by clause (ignored for experiment analysis).                                                                                                                                                                                                                                                                                             |
 | `query_ir.groupBy.op`     | required | `"by" \| "without"`                              | `by` keeps the listed labels; `without` drops them.                                                                                                                                                                                                                                                                                                     |
 | `query_ir.groupBy.labels` | required | `string[]`                                       | Labels to group by (max 5).                                                                                                                                                                                                                                                                                                                             |
+| `listToken`               | optional | `string`                                         | REQUIRED. The `listToken` returned by the most recent `metrics_list` call. It proves you listed existing metrics and confirmed this one doesn't already exist before creating it. Call `metrics_list` first if you don't have a fresh token.                                                                                                            |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1505,9 +1526,9 @@ Fetch one metric by its id or name, including the rendered DSL query and the typ
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                               |
-| --------- | -------- | -------- | --------------------------------------------------------- |
-| `id`      | required | `string` | Stable opaque metric id (`met_…`) or the metric's `name`. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1526,7 +1547,7 @@ _Parameters_
 
 | Parameter                 |          | Type                                             | Description                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------- | -------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`                      | required | `string`                                         | Stable opaque metric id (`met_…`) or the metric's `name`.                                                                                                                                                                                                                                                                                               |
+| `id`                      | required | `string`                                         | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_                                                                                               |
 | `folder`                  | optional | `any`                                            | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`).                                                                                                                                                                                                                |
 | `event_name`              | optional | `string`                                         | Source event the query reads from. _(length 1–∞)_                                                                                                                                                                                                                                                                                                       |
 | `query`                   | optional | `string`                                         | Metric query DSL string, e.g. `sum(purchase, amount)`. The alternative to `query_ir`. Every label the query references — in filters, the value position, `by (…)`, or `without (…)` — must exist as a property on the tracked event's payload; a query over a label the event never carries validates fine but returns empty results. _(length 1–4096)_ |
@@ -1572,12 +1593,12 @@ You may optionally declare the event's folder, description, or properties in the
 
 _Parameters_
 
-| Parameter     |          | Type       | Description                                                                                                                              |
-| ------------- | -------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`          | required | `string`   | Stable opaque event id (`evt_…`) or the event's `name`.                                                                                  |
-| `folder`      | optional | `any`      | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
-| `description` | optional | `string`   | New description for the event.                                                                                                           |
-| `properties`  | optional | `object[]` | Replaces the full property set (no merge). Omit to leave properties unchanged.                                                           |
+| Parameter     |          | Type       | Description                                                                                                                                                                                                                                               |
+| ------------- | -------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | required | `string`   | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `folder`      | optional | `any`      | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`).                                                                                                                  |
+| `description` | optional | `string`   | New description for the event.                                                                                                                                                                                                                            |
+| `properties`  | optional | `object[]` | Replaces the full property set (no merge). Omit to leave properties unchanged.                                                                                                                                                                            |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1595,9 +1616,9 @@ Soft-deletes (archives) the event. Returns `409` if any metric still references 
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                             |
-| --------- | -------- | -------- | ------------------------------------------------------- |
-| `id`      | required | `string` | Stable opaque event id (`evt_…`) or the event's `name`. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1620,12 +1641,13 @@ If the name matches an existing **pending** (auto-discovered) row, this approves
 
 _Parameters_
 
-| Parameter     |          | Type       | Description                                                                                                                                                                                                               |
-| ------------- | -------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`        | required | `string`   | Event name. Starts with a letter, digit, or `_`; letters, digits, `_`, `-`, `.`; max 128 chars. Immutable after create — this is the handle metric queries reference. _(pattern `^[a-zA-Z0-9_][a-zA-Z0-9_\-.]{0,127}$`)\_ |
-| `folder`      | optional | `any`      | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`).                                                                                  |
-| `description` | optional | `string`   | Optional human-readable description of the event.                                                                                                                                                                         |
-| `properties`  | optional | `object[]` | Typed properties declared on the event. Defaults to an empty list. _(default `[]`)_                                                                                                                                       |
+| Parameter     |          | Type       | Description                                                                                                                                                                                                                                                       |
+| ------------- | -------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`        | required | `string`   | Event name. Starts with a letter, digit, or `_`; letters, digits, `_`, `-`, `.`; max 128 chars. Immutable after create — this is the handle metric queries reference. _(pattern `^[a-zA-Z0-9_][a-zA-Z0-9_\-.]{0,127}$`)\_                                         |
+| `folder`      | optional | `any`      | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`).                                                                                                                          |
+| `description` | optional | `string`   | Optional human-readable description of the event.                                                                                                                                                                                                                 |
+| `properties`  | optional | `object[]` | Typed properties declared on the event. Defaults to an empty list. _(default `[]`)_                                                                                                                                                                               |
+| `listToken`   | optional | `string`   | REQUIRED. The `listToken` returned by the most recent `metrics_events_list` call. It proves you listed existing metrics events and confirmed this one doesn't already exist before creating it. Call `metrics_events_list` first if you don't have a fresh token. |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1643,9 +1665,9 @@ Returns one event's full detail. Resolves by exact id, unique id-prefix, or exac
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                             |
-| --------- | -------- | -------- | ------------------------------------------------------- |
-| `id`      | required | `string` | Stable opaque event id (`evt_…`) or the event's `name`. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1682,12 +1704,12 @@ Partial update of an event's folder, description, or properties. `name` is immut
 
 _Parameters_
 
-| Parameter     |          | Type       | Description                                                                                                                              |
-| ------------- | -------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`          | required | `string`   | Stable opaque event id (`evt_…`) or the event's `name`.                                                                                  |
-| `folder`      | optional | `any`      | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
-| `description` | optional | `string`   | New description for the event.                                                                                                           |
-| `properties`  | optional | `object[]` | Replaces the full property set (no merge). Omit to leave properties unchanged.                                                           |
+| Parameter     |          | Type       | Description                                                                                                                                                                                                                                               |
+| ------------- | -------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | required | `string`   | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `folder`      | optional | `any`      | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`).                                                                                                                  |
+| `description` | optional | `string`   | New description for the event.                                                                                                                                                                                                                            |
+| `properties`  | optional | `object[]` | Replaces the full property set (no merge). Omit to leave properties unchanged.                                                                                                                                                                            |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1753,22 +1775,23 @@ Files one queue item — a bug report or a feature request — and fires the pro
 
 _Parameters_
 
-| Parameter          |          | Type     | Description                                                                                  |
-| ------------------ | -------- | -------- | -------------------------------------------------------------------------------------------- |
-| `type`             | required | `"bug"`  | Discriminator — files a bug.                                                                 |
-| `title`            | required | `string` | One-line bug title (no leading/trailing whitespace). _(length 1–200; pattern `^\S(.*\S)?$`)_ |
-| `stepsToReproduce` | optional | `string` | How to reproduce the bug. _(default `""`; length 0–8000)_                                    |
-| `actualResult`     | optional | `string` | What actually happened. _(default `""`; length 0–8000)_                                      |
-| `expectedResult`   | optional | `string` | What was expected instead. _(default `""`; length 0–8000)_                                   |
-| `priority`         | optional | `any`    | Initial triage priority, or `null`.                                                          |
-| `reporterEmail`    | optional | `any`    | Email of the reporter, or `null`.                                                            |
-| `pageUrl`          | optional | `any`    | URL of the page the bug relates to, or `null`.                                               |
-| `userAgent`        | optional | `any`    | Reporter's user-agent string, or `null`.                                                     |
-| `viewport`         | optional | `any`    | Reporter's viewport (e.g. `1280x720`), or `null`.                                            |
-| `context`          | optional | `any`    | Arbitrary capture context, or `null`.                                                        |
-| `notify`           | optional | `any`    | Where this bug's completion notification lands.                                              |
-| `description`      | optional | `string` | What the feature is. _(default `""`; length 0–8000)_                                         |
-| `useCase`          | optional | `string` | Why it's needed / the use case. _(default `""`; length 0–8000)_                              |
+| Parameter          |          | Type     | Description                                                                                                                                                                                                                      |
+| ------------------ | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `type`             | required | `"bug"`  | Discriminator — files a bug.                                                                                                                                                                                                     |
+| `title`            | required | `string` | One-line bug title (no leading/trailing whitespace). _(length 1–200; pattern `^\S(.*\S)?$`)_                                                                                                                                     |
+| `stepsToReproduce` | optional | `string` | How to reproduce the bug. _(default `""`; length 0–8000)_                                                                                                                                                                        |
+| `actualResult`     | optional | `string` | What actually happened. _(default `""`; length 0–8000)_                                                                                                                                                                          |
+| `expectedResult`   | optional | `string` | What was expected instead. _(default `""`; length 0–8000)_                                                                                                                                                                       |
+| `priority`         | optional | `any`    | Initial triage priority, or `null`.                                                                                                                                                                                              |
+| `reporterEmail`    | optional | `any`    | Email of the reporter, or `null`.                                                                                                                                                                                                |
+| `pageUrl`          | optional | `any`    | URL of the page the bug relates to, or `null`.                                                                                                                                                                                   |
+| `userAgent`        | optional | `any`    | Reporter's user-agent string, or `null`.                                                                                                                                                                                         |
+| `viewport`         | optional | `any`    | Reporter's viewport (e.g. `1280x720`), or `null`.                                                                                                                                                                                |
+| `context`          | optional | `any`    | Arbitrary capture context, or `null`.                                                                                                                                                                                            |
+| `notify`           | optional | `any`    | Where this bug's completion notification lands.                                                                                                                                                                                  |
+| `description`      | optional | `string` | What the feature is. _(default `""`; length 0–8000)_                                                                                                                                                                             |
+| `useCase`          | optional | `string` | Why it's needed / the use case. _(default `""`; length 0–8000)_                                                                                                                                                                  |
+| `listToken`        | optional | `string` | REQUIRED. The `listToken` returned by the most recent `ops_list` call. It proves you listed existing ops and confirmed this one doesn't already exist before creating it. Call `ops_list` first if you don't have a fresh token. |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1817,9 +1840,9 @@ Fetch a single queue item by its per-project `number` or full id.
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                                 |
-| --------- | -------- | -------- | ----------------------------------------------------------- |
-| `handle`  | required | `string` | Per-project item number (e.g. `7`) or the full ops item id. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `handle`  | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1836,11 +1859,11 @@ Record the pull request that fixes a queue item (and clears the link with `prNum
 
 _Parameters_
 
-| Parameter  |          | Type     | Description                                                                                                 |
-| ---------- | -------- | -------- | ----------------------------------------------------------------------------------------------------------- |
-| `handle`   | required | `string` | Per-project item number (e.g. `7`) or the full ops item id.                                                 |
-| `prNumber` | required | `any`    | PR number to record on the item. `null` unlinks the PR.                                                     |
-| `prUrl`    | optional | `string` | Explicit PR URL. Required for error/alert tickets (no GitHub issue to derive the URL from). _(format: uri)_ |
+| Parameter  |          | Type     | Description                                                                                                                                                                                                                                               |
+| ---------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `handle`   | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `prNumber` | required | `any`    | PR number to record on the item. `null` unlinks the PR.                                                                                                                                                                                                   |
+| `prUrl`    | optional | `string` | Explicit PR URL. Required for error/alert tickets (no GitHub issue to derive the URL from). _(format: uri)_                                                                                                                                               |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1909,7 +1932,7 @@ _Parameters_
 
 | Parameter          |          | Type                                                                                                                   | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | ------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `handle`           | required | `string`                                                                                                               | Per-project item number (e.g. `7`) or the full ops item id.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `handle`           | required | `string`                                                                                                               | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `title`            | optional | `string`                                                                                                               | New bug title (no leading/trailing whitespace). _(length 1–200; pattern `^\S(.*\S)?$`)_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `stepsToReproduce` | optional | `string`                                                                                                               | Updated reproduction steps. _(length 0–8000)_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `actualResult`     | optional | `string`                                                                                                               | Updated actual result. _(length 0–8000)_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
@@ -1947,9 +1970,9 @@ Deletes the alert rule. The cron stops evaluating it immediately. Use this (then
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                                |
-| --------- | -------- | -------- | ---------------------------------------------------------- |
-| `id`      | required | `string` | Stable opaque alert-rule id (`ar_…`) or the rule's `name`. |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1987,21 +2010,23 @@ Returns `404` if `metricId` does not resolve, and `400` for a metric with no sca
 
 _Parameters_
 
-| Parameter     |          | Type                             | Description                                                                           |
-| ------------- | -------- | -------------------------------- | ------------------------------------------------------------------------------------- |
-| `name`        | required | `string`                         | Human label for the rule, shown on the alert and the rules list. _(length 1–120)_     |
-| `metricId`    | required | `string`                         | Id of the metric to evaluate. _(length 1–∞)_                                          |
-| `comparator`  | required | `"gt" \| "gte" \| "lt" \| "lte"` | How the metric value is compared to the threshold (gt/gte/lt/lte).                    |
-| `threshold`   | required | `number`                         | Threshold the metric value is compared against.                                       |
-| `windowHours` | optional | `integer`                        | Lookback window (hours) the metric is aggregated over. 1–720. _(default `24`; 1–720)_ |
-| `severity`    | optional | `"danger" \| "warn" \| "info"`   | Severity of the raised alert. _(default `"warn"`)_                                    |
-| `enabled`     | optional | `boolean`                        | Whether the rule is evaluated by the cron. _(default `true`)_                         |
-| `notify`      | optional | `any`                            | Delivery target for a notification; `null` = use the project default.                 |
+| Parameter     |          | Type                             | Description                                                                                                                                                                                                                                           |
+| ------------- | -------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`        | required | `string`                         | Human label for the rule, shown on the alert and the rules list. _(length 1–120)_                                                                                                                                                                     |
+| `metricId`    | required | `string`                         | Id of the metric to evaluate. _(length 1–∞)_                                                                                                                                                                                                          |
+| `comparator`  | required | `"gt" \| "gte" \| "lt" \| "lte"` | How the metric value is compared to the threshold (gt/gte/lt/lte).                                                                                                                                                                                    |
+| `threshold`   | required | `number`                         | Threshold the metric value is compared against.                                                                                                                                                                                                       |
+| `windowHours` | optional | `integer`                        | Lookback window (hours) the metric is aggregated over. 1–720. _(default `24`; 1–720)_                                                                                                                                                                 |
+| `severity`    | optional | `"danger" \| "warn" \| "info"`   | Severity of the raised alert. _(default `"warn"`)_                                                                                                                                                                                                    |
+| `enabled`     | optional | `boolean`                        | Whether the rule is evaluated by the cron. _(default `true`)_                                                                                                                                                                                         |
+| `notify`      | optional | `any`                            | Delivery target for a notification; `null` = use the project default.                                                                                                                                                                                 |
+| `listToken`   | optional | `string`                         | REQUIRED. The `listToken` returned by the most recent `ops_alerts_list` call. It proves you listed existing ops alerts and confirmed this one doesn't already exist before creating it. Call `ops_alerts_list` first if you don't have a fresh token. |
 
 _Errors_ — beyond the [common errors](#errors):
 
 - `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
 - `ALREADY_EXISTS` — A resource with this name already exists in the project.
+- `METRIC_NOT_FOUND` — The referenced metric does not exist or is not visible to the caller.
 - `REFERENCED_NOT_FOUND` — A referenced entity (universe, metric, gate, event) does not exist.
 - `VALIDATION` — The request body failed structural (schema) validation.
 
@@ -2038,16 +2063,16 @@ Pass `"notify": null` to revert the rule's delivery target back to the project d
 
 _Parameters_
 
-| Parameter     |          | Type                             | Description                                                           |
-| ------------- | -------- | -------------------------------- | --------------------------------------------------------------------- |
-| `id`          | required | `string`                         | Stable opaque alert-rule id (`ar_…`) or the rule's `name`.            |
-| `name`        | optional | `string`                         | — _(length 1–120)_                                                    |
-| `comparator`  | optional | `"gt" \| "gte" \| "lt" \| "lte"` | —                                                                     |
-| `threshold`   | optional | `number`                         | —                                                                     |
-| `windowHours` | optional | `integer`                        | — _(1–720)_                                                           |
-| `severity`    | optional | `"danger" \| "warn" \| "info"`   | —                                                                     |
-| `enabled`     | optional | `boolean`                        | —                                                                     |
-| `notify`      | optional | `any`                            | Delivery target for a notification; `null` = use the project default. |
+| Parameter     |          | Type                             | Description                                                                                                                                                                                                                                               |
+| ------------- | -------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | required | `string`                         | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `name`        | optional | `string`                         | — _(length 1–120)_                                                                                                                                                                                                                                        |
+| `comparator`  | optional | `"gt" \| "gte" \| "lt" \| "lte"` | —                                                                                                                                                                                                                                                         |
+| `threshold`   | optional | `number`                         | —                                                                                                                                                                                                                                                         |
+| `windowHours` | optional | `integer`                        | — _(1–720)_                                                                                                                                                                                                                                               |
+| `severity`    | optional | `"danger" \| "warn" \| "info"`   | —                                                                                                                                                                                                                                                         |
+| `enabled`     | optional | `boolean`                        | —                                                                                                                                                                                                                                                         |
+| `notify`      | optional | `any`                            | Delivery target for a notification; `null` = use the project default.                                                                                                                                                                                     |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -2176,7 +2201,7 @@ _Parameters_
 
 | Parameter            |          | Type                                    | Description                                                                                                                                                                                                                                                                                                                                                                                 |
 | -------------------- | -------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`                 | required | `string`                                | Stable opaque project id. Must match the caller's own project.                                                                                                                                                                                                                                                                                                                              |
+| `id`                 | required | `string`                                | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_                                                                                                                                   |
 | `name`               | optional | `string`                                | New project name. _(length 1–120)_                                                                                                                                                                                                                                                                                                                                                          |
 | `domain`             | optional | `string`                                | Lowercase bare hostname (e.g. `acme.com`, `app.acme.com`, `*.acme.com`), or `*` to allow any origin. Full URLs with `https://` are not accepted. The project is keyed by `(owner_email, domain)`, so a second call with the same domain returns the existing project. _(length 1–2048; pattern `^(\*\|(\*\.)?[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+)$`)_ |
 | `slug`               | optional | `string`                                | URL-safe identifier used in app URLs and SDK config. Lowercase letters, numbers, and hyphens; 2–48 chars; cannot start or end with a hyphen. The caller lowercases the raw slug before sending. _(length 2–48; pattern `^[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?$`)_                                                                                                                           |
@@ -2248,9 +2273,10 @@ Create an i18n profile. Create a locale profile. `name` is the stable handle (e.
 
 _Parameters_
 
-| Parameter |          | Type     | Description                                                                                                                                                                                                                                                                 |
-| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`    | required | `string` | Profile handle to create, e.g. `en:prod` or `fr:prod`. Lowercase alphanumeric start, then letters/digits/`_`/`:`/`.`/`-`; max 64 chars. The locale is encoded in the handle, so no separate locale fields are accepted. _(length 1–64; pattern `^[a-z0-9]a-z0-9_:.-]\*$`)\_ |
+| Parameter   |          | Type     | Description                                                                                                                                                                                                                                                                 |
+| ----------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`      | required | `string` | Profile handle to create, e.g. `en:prod` or `fr:prod`. Lowercase alphanumeric start, then letters/digits/`_`/`:`/`.`/`-`; max 64 chars. The locale is encoded in the handle, so no separate locale fields are accepted. _(length 1–64; pattern `^[a-z0-9]a-z0-9_:.-]\*$`)\_ |
+| `listToken` | optional | `string` | REQUIRED. The `listToken` returned by the most recent `i18n_profiles_list` call. It proves you listed existing i18n profiles and confirmed this one doesn't already exist before creating it. Call `i18n_profiles_list` first if you don't have a fresh token.              |
 
 #### `i18n_profiles_list`
 
@@ -2266,10 +2292,10 @@ Publish a profile live. Publish a profile to the CDN — rebuild its KV snapshot
 
 _Parameters_
 
-| Parameter   |          | Type     | Description                                                                                                                                |
-| ----------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `profileId` | required | `string` | The profile id to publish.                                                                                                                 |
-| `chunk`     | optional | `string` | Optional chunk label to stamp on the audit log. Publishing is profile-wide regardless — the whole profile is snapshotted into one KV blob. |
+| Parameter   |          | Type     | Description                                                                                                                                                                                                                                               |
+| ----------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `profileId` | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `chunk`     | optional | `string` | Optional chunk label to stamp on the audit log. Publishing is profile-wide regardless — the whole profile is snapshotted into one KV blob.                                                                                                                |
 
 ### Keys
 
@@ -2320,12 +2346,12 @@ Update one i18n key. Overwrite a single existing key's value — the only overwr
 
 _Parameters_
 
-| Parameter     |          | Type       | Description                                                                                 |
-| ------------- | -------- | ---------- | ------------------------------------------------------------------------------------------- |
-| `id`          | required | `string`   | The key's id.                                                                               |
-| `value`       | required | `string`   | New value for the key (the only overwrite path).                                            |
-| `description` | optional | `string`   | Optional human note to store with the key.                                                  |
-| `variables`   | optional | `string[]` | Explicit `{{var}}` placeholder names in the value. Omit to auto-derive them from the value. |
+| Parameter     |          | Type       | Description                                                                                                                                                                                                                                               |
+| ------------- | -------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | required | `string`   | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `value`       | required | `string`   | New value for the key (the only overwrite path).                                                                                                                                                                                                          |
+| `description` | optional | `string`   | Optional human note to store with the key.                                                                                                                                                                                                                |
+| `variables`   | optional | `string[]` | Explicit `{{var}}` placeholder names in the value. Omit to auto-derive them from the value.                                                                                                                                                               |
 
 ### Drafts
 
@@ -2337,11 +2363,12 @@ Create a translation draft. Stage a new translation draft against a target profi
 
 _Parameters_
 
-| Parameter           |          | Type     | Description                                                      |
-| ------------------- | -------- | -------- | ---------------------------------------------------------------- |
-| `name`              | required | `string` | Draft name, e.g. the target locale being staged. _(length 1–64)_ |
-| `profile_id`        | required | `string` | Profile the draft targets. _(format: uuid)_                      |
-| `source_profile_id` | optional | `string` | Optional profile to seed the draft's keys from. _(format: uuid)_ |
+| Parameter           |          | Type     | Description                                                                                                                                                                                                                                              |
+| ------------------- | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`              | required | `string` | Draft name, e.g. the target locale being staged. _(length 1–64)_                                                                                                                                                                                         |
+| `profile_id`        | required | `string` | Profile the draft targets. _(format: uuid)_                                                                                                                                                                                                              |
+| `source_profile_id` | optional | `string` | Optional profile to seed the draft's keys from. _(format: uuid)_                                                                                                                                                                                         |
+| `listToken`         | optional | `string` | REQUIRED. The `listToken` returned by the most recent `i18n_drafts_list` call. It proves you listed existing i18n drafts and confirmed this one doesn't already exist before creating it. Call `i18n_drafts_list` first if you don't have a fresh token. |
 
 #### `i18n_drafts_list`
 
@@ -2357,10 +2384,10 @@ Update a translation draft. Transition a draft's lifecycle state (`open` / `merg
 
 _Parameters_
 
-| Parameter |          | Type                                | Description                        |
-| --------- | -------- | ----------------------------------- | ---------------------------------- |
-| `draftId` | required | `string`                            | The draft id to update.            |
-| `status`  | optional | `"open" \| "merged" \| "abandoned"` | New lifecycle state for the draft. |
+| Parameter |          | Type                                | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `draftId` | required | `string`                            | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `status`  | optional | `"open" \| "merged" \| "abandoned"` | New lifecycle state for the draft.                                                                                                                                                                                                                        |
 
 ## Errors
 
@@ -2379,9 +2406,9 @@ Returns a single tracked error by its id, including the latest occurrence's stac
 
 _Parameters_
 
-| Parameter |          | Type     | Description                       |
-| --------- | -------- | -------- | --------------------------------- |
-| `id`      | required | `string` | Stable opaque error id (`err_…`). |
+| Parameter |          | Type     | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -2419,12 +2446,12 @@ Returns a bucketed occurrence timeseries for one tracked error (by its fingerpri
 
 _Parameters_
 
-| Parameter |          | Type      | Description                                                                                                                                            |
-| --------- | -------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `id`      | required | `string`  | Stable opaque error id (`err_…`).                                                                                                                      |
-| `from`    | required | `integer` | Window start, epoch seconds (inclusive). _(≥ 0)_                                                                                                       |
-| `to`      | required | `integer` | Window end, epoch seconds (exclusive). Must be greater than `from`. _(≥ 0)_                                                                            |
-| `bucket`  | optional | `integer` | Bucket width in seconds (60s–86400s/1d). Defaults to `3600` (hourly). Each returned point is floor-aligned to this width. _(default `3600`; 60–86400)_ |
+| Parameter |          | Type      | Description                                                                                                                                                                                                                                               |
+| --------- | -------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`      | required | `string`  | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `from`    | required | `integer` | Window start, epoch seconds (inclusive). _(≥ 0)_                                                                                                                                                                                                          |
+| `to`      | required | `integer` | Window end, epoch seconds (exclusive). Must be greater than `from`. _(≥ 0)_                                                                                                                                                                               |
+| `bucket`  | optional | `integer` | Bucket width in seconds (60s–86400s/1d). Defaults to `3600` (hourly). Each returned point is floor-aligned to this width. _(default `3600`; 60–86400)_                                                                                                    |
 
 _Errors_ — beyond the [common errors](#errors):
 

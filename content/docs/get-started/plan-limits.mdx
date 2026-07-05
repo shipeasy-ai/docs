@@ -3,7 +3,12 @@ title: Plan limits & quotas
 description: Per-plan knobs — poll interval, resource caps, retention, and which statistical features are available on each tier.
 ---
 
-<DocMeta status="Production ready" read="4 min read" updated="June 18, 2026" works="Free · Team" />
+<DocMeta
+  status="Production ready"
+  read="4 min read"
+  updated="July 4, 2026"
+  works="Free · Pro · Business"
+/>
 
 Plan levers are platform knobs we control centrally — they live in the plan config, not per project. Changing a plan value re-paces every project on that plan through the next KV rebuild, with no per-project migration.
 
@@ -17,67 +22,75 @@ Plan levers are platform knobs we control centrally — they live in the plan co
 
 The biggest functional difference between tiers is how often the SDK refreshes its rules.
 
-| Knob               | Free                          | Team                          |
-| ------------------ | ----------------------------- | ----------------------------- |
-| Poll interval      | ~300s                         | ~60s                          |
-| Analysis frequency | Daily                         | Daily                         |
-| Propagation model  | Infinite-TTL + explicit purge | Infinite-TTL + explicit purge |
+| Knob               | Free                          | Pro                           | Business                      | Enterprise                    |
+| ------------------ | ----------------------------- | ----------------------------- | ----------------------------- | ----------------------------- |
+| Poll interval      | ~300s                         | ~60s                          | ~30s                          | ~10s                          |
+| Analysis frequency | Daily                         | Daily                         | Daily                         | Daily                         |
+| Propagation model  | Infinite-TTL + explicit purge | Infinite-TTL + explicit purge | Infinite-TTL + explicit purge | Infinite-TTL + explicit purge |
 
 The poll interval is the worst-case lag between an edit going live at the edge and a given SDK instance noticing it on its next background poll. Evaluation itself is always local and instant — see [Evaluation & caching](/get-started/evaluation-and-caching). The Worker advertises the interval via `X-Poll-Interval` and the SDK auto-adjusts, so a plan change re-paces your fleet without a redeploy.
 
 ## Resource caps
 
-`Unlimited` means there's no plan-level cap (platform fair-use ceilings still apply for abuse protection).
+Flags, configs, and team members are **unlimited on every tier** — we cap usage (events), not capability. `Unlimited` means no plan-level cap (platform fair-use ceilings still apply for abuse protection).
 
-| Resource              | Free | Team      |
-| --------------------- | ---- | --------- |
-| Feature flags (gates) | 50   | Unlimited |
-| Dynamic configs       | 20   | Unlimited |
-| Running experiments   | 1    | Unlimited |
-| Universes             | 3    | Unlimited |
-| Groups per experiment | 2    | Unlimited |
-| Metrics               | 15   | Unlimited |
-| Event catalog entries | 20   | Unlimited |
-| SDK keys              | 5    | Unlimited |
-| Team members          | 1    | Unlimited |
-| i18n keys             | 250  | Unlimited |
-| i18n locale profiles  | 1    | Unlimited |
+| Resource              | Free      | Pro       | Business  | Enterprise |
+| --------------------- | --------- | --------- | --------- | ---------- |
+| Feature flags (gates) | Unlimited | Unlimited | Unlimited | Unlimited  |
+| Dynamic configs       | Unlimited | Unlimited | Unlimited | Unlimited  |
+| Team members          | Unlimited | Unlimited | Unlimited | Unlimited  |
+| Ops issues            | Unlimited | Unlimited | Unlimited | Unlimited  |
+| Autopilot runs / mo   | Unlimited | Unlimited | Unlimited | Unlimited  |
+| Running experiments   | 3         | 10        | 25        | Unlimited  |
+| Groups per experiment | 4         | 10        | 20        | Unlimited  |
+| Universes             | 3         | 10        | 25        | Unlimited  |
+| Metrics               | 25        | 100       | 500       | Unlimited  |
+| Event catalog entries | 50        | 250       | 1,000     | Unlimited  |
+| SDK keys              | 10        | 50        | 200       | Unlimited  |
+| i18n keys             | 1,000     | 10,000    | 50,000    | Unlimited  |
+| i18n locale profiles  | 2         | Unlimited | Unlimited | Unlimited  |
 
-## Included monthly usage
+## Included monthly usage & overage
 
-Usage is **notify-only** — events are never dropped or rejected. When a project crosses 80% / 100% of its monthly credit, the usage cron notifies you (and ops, for paid projects). `Uncapped` means no credit tracking.
+Event usage is **notify-only** on paid plans — events are never dropped or rejected. When a project crosses 80% / 100% of its monthly credit, the usage cron notifies you (and ops, for paid projects). **Flag evaluations are never metered.** Free is hard-capped per day for abuse protection.
 
-| Allowance           | Free | Team |
-| ------------------- | ---- | ---- |
-| Events / month      | ~1M  | ~20M |
-| Evaluations / month | ~1M  | ~50M |
+| Allowance / rate    | Free           | Pro                  | Business                 | Enterprise    |
+| ------------------- | -------------- | -------------------- | ------------------------ | ------------- |
+| Events / month      | 1M (daily cap) | 20M, then **$1 / M** | 100M, then **$0.75 / M** | Committed     |
+| Flag evaluations    | Anti-abuse cap | Never metered        | Never metered            | Never metered |
+| Included ops seats  | Unlimited      | 3, then $7/seat      | 5, then $12/seat         | Custom        |
+| AI-translated words | 5K             | 50K                  | 250K                     | Custom        |
 
 ## Retention
 
-| Data                          | Free     | Team      |
-| ----------------------------- | -------- | --------- |
-| Experiment results            | ~30 days | ~365 days |
-| Raw events (Analytics Engine) | ~90 days | ~540 days |
-| Audit log                     | ~7 days  | ~365 days |
+| Data                          | Free     | Pro      | Business  | Enterprise |
+| ----------------------------- | -------- | -------- | --------- | ---------- |
+| Experiment results            | ~30 days | ~90 days | ~180 days | ~365 days  |
+| Raw events (Analytics Engine) | ~90 days | ~90 days | ~90 days  | ~90 days   |
+| Audit log                     | ~7 days  | ~30 days | ~180 days | ~365 days  |
 
 ## Feature availability
 
-Some capabilities — chiefly the heavier statistics — are tier-gated.
+Statistics land at **Pro**; governance (SAML/SSO, RBAC, audit, holdouts) lands at **Business** — never behind an enterprise-only paywall.
 
-| Feature                       | Free | Team |
-| ----------------------------- | ---- | ---- |
-| SRM detection                 | ✅   | ✅   |
-| MCP access                    | ✅   | ✅   |
-| Holdout groups                | —    | ✅   |
-| CUPED variance reduction      | —    | ✅   |
-| Sequential testing            | —    | ✅   |
-| Custom significance threshold | —    | ✅   |
-| Data export                   | —    | ✅   |
+| Feature                       | Free | Pro | Business | Enterprise |
+| ----------------------------- | ---- | --- | -------- | ---------- |
+| SRM detection                 | ✅   | ✅  | ✅       | ✅         |
+| MCP access                    | ✅   | ✅  | ✅       | ✅         |
+| CUPED variance reduction      | —    | ✅  | ✅       | ✅         |
+| Sequential testing            | —    | ✅  | ✅       | ✅         |
+| Custom significance threshold | —    | ✅  | ✅       | ✅         |
+| Change approvals              | —    | ✅  | ✅       | ✅         |
+| Holdout groups                | —    | —   | ✅       | ✅         |
+| Data / warehouse export       | —    | —   | ✅       | ✅         |
+| SAML / SSO                    | —    | —   | ✅       | ✅         |
+| Custom RBAC roles             | —    | —   | ✅       | ✅         |
+| SCIM provisioning             | —    | —   | —        | ✅         |
 
 <Callout type="info" title="Sequential testing & holdouts">
-  **Sequential testing** lets you peek at results without inflating false positives — available on
-  Team. **Holdouts** live on the universe (a fixed segment excluded from every experiment in it),
-  also a Team feature. SRM detection (sample-ratio-mismatch guard) is on for everyone.
+  **Sequential testing** lets you peek at results without inflating false positives — available from
+  **Pro**. **Holdouts** live on the universe (a fixed segment excluded from every experiment in it),
+  a **Business** feature. SRM detection (sample-ratio-mismatch guard) is on for everyone.
 </Callout>
 
 ## Changing plans
