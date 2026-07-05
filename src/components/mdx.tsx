@@ -383,36 +383,11 @@ export function ConvertCTA({
 }
 
 /* ──────────────────────────────────────────────────────────────
-   Doc nav (prev / next) and feedback footer.
+   Feedback footer.
    ────────────────────────────────────────────────────────────── */
-export function DocNav({
-  prev,
-  next,
-}: {
-  prev?: { href: string; title: string };
-  next?: { href: string; title: string };
-}) {
-  return (
-    <nav className="se-doc-nav not-prose">
-      {prev ? (
-        <a href={prev.href} className="prev">
-          <div className="lab">← Previous</div>
-          <div className="ti">{prev.title}</div>
-        </a>
-      ) : (
-        <span />
-      )}
-      {next ? (
-        <a href={next.href} className="next">
-          <div className="lab">Next →</div>
-          <div className="ti">{next.title}</div>
-        </a>
-      ) : (
-        <span />
-      )}
-    </nav>
-  );
-}
+// Prev/next page navigation is rendered by Fumadocs' built-in <DocsPage>
+// footer (auto-derived from the page tree) — see `lib/doc-page.tsx`. Don't
+// re-add a hand-placed DocNav in MDX or it double-renders under the footer.
 
 // The "Was this page helpful?" footer is interactive (beacons votes to the edge
 // worker) and lives in its own "use client" module. It's rendered once per page
@@ -569,7 +544,7 @@ export function JourneyPath({
 
 /* ──────────────────────────────────────────────────────────────
    See also — compact "Related" link list for the leaf-page footer.
-   Lighter than <CardGrid>; pairs with <DocNav> + <DocFeedback>.
+   Lighter than <CardGrid>; pairs with <DocFeedback> above the footer nav.
    Use:
      <SeeAlso links={[
        { href: "/flags-experiments/gates/targeting", title: "Targeting rules" },

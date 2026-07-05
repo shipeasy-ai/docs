@@ -2589,65 +2589,8 @@ button[aria-label="Open Sidebar"] {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   Doc nav (prev / next) and feedback footer.
+   Feedback footer.
    ────────────────────────────────────────────────────────────── */
-.se-doc-nav {
-  margin: 48px 0 0;
-  padding-top: 28px;
-  border-top: 1px solid var(--se-line);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-.se-doc-nav a {
-  padding: 16px 18px;
-  border: 1px solid var(--se-line);
-  border-radius: 10px;
-  background: var(--se-bg-1);
-  text-decoration: none !important;
-  color: var(--se-fg) !important;
-  transition:
-    border-color 0.15s,
-    background 0.15s;
-}
-.se-doc-nav a:hover {
-  border-color: color-mix(in oklab, var(--se-accent) 35%, transparent);
-  background: color-mix(in oklab, var(--se-accent) 3%, var(--se-bg-1));
-}
-.se-doc-nav .lab {
-  font-family: var(--se-mono);
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--se-fg-4);
-  margin-bottom: 6px;
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-.se-doc-nav .ti {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--se-fg);
-}
-.se-doc-nav a.next {
-  text-align: right;
-}
-.se-doc-nav a.next .lab {
-  justify-content: flex-end;
-}
-@media (max-width: 720px) {
-  .se-doc-nav {
-    grid-template-columns: 1fr;
-  }
-  .se-doc-nav a.next {
-    text-align: left;
-  }
-  .se-doc-nav a.next .lab {
-    justify-content: flex-start;
-  }
-}
-
 .se-feedback {
   margin: 40px 0 0;
   padding: 14px 16px;
