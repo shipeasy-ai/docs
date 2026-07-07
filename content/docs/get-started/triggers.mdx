@@ -39,7 +39,7 @@ where `<platform>` is `claude` (default), `cursor`, `copilot`, `windsurf`, `code
 | ------------ | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
 | `claude`     | `/schedule` cloud routine                                                                            | runs `ops:work --pr`; **registers a Shipeasy connector** |
 | `cursor`     | Cursor Automation / `POST /v1/agents`                                                                | `autoCreatePR`; `CURSOR_API_KEY`                         |
-| `copilot`    | Copilot automations, or scheduled Actions + cloud agent                                              | PAT with "Copilot Requests"                              |
+| `copilot`    | GitHub coding-agent task via `.github/agents/shipeasy.agent.md` (MCP-wired custom agent)             | **Connect GitHub** (user-to-server token); PAT fallback  |
 | `windsurf`   | Devin Scheduled Sessions (cloud VM)                                                                  | `WINDSURF_API_KEY` / `DEVIN_API_KEY`                     |
 | `cline`      | `cline schedule create --cron`                                                                       | `cline --auto-approve true`                              |
 | `openclaw`   | `openclaw cron create`                                                                               | static API key only                                      |
