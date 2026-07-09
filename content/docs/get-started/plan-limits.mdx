@@ -32,34 +32,32 @@ The poll interval is the worst-case lag between an edit going live at the edge a
 
 ## Resource caps
 
-Flags, configs, and team members are **unlimited on every tier** — we cap usage (events), not capability. `Unlimited` means no plan-level cap (platform fair-use ceilings still apply for abuse protection).
+Team members and Autopilot scheduled runs are **unlimited on every tier**. Free caps capability (10 flags / configs / kill switches); Pro and above lift those caps. Experiments & universes are **Business+**. `Unlimited` means no plan-level cap (platform fair-use ceilings still apply for abuse protection).
 
-| Resource              | Free      | Pro       | Business  | Enterprise |
-| --------------------- | --------- | --------- | --------- | ---------- |
-| Feature flags (gates) | Unlimited | Unlimited | Unlimited | Unlimited  |
-| Dynamic configs       | Unlimited | Unlimited | Unlimited | Unlimited  |
-| Team members          | Unlimited | Unlimited | Unlimited | Unlimited  |
-| Ops issues            | Unlimited | Unlimited | Unlimited | Unlimited  |
-| Autopilot runs / mo   | Unlimited | Unlimited | Unlimited | Unlimited  |
-| Running experiments   | 3         | 10        | 25        | Unlimited  |
-| Groups per experiment | 4         | 10        | 20        | Unlimited  |
-| Universes             | 3         | 10        | 25        | Unlimited  |
-| Metrics               | 25        | 100       | 500       | Unlimited  |
-| Event catalog entries | 50        | 250       | 1,000     | Unlimited  |
-| SDK keys              | 10        | 50        | 200       | Unlimited  |
-| i18n keys             | 1,000     | 10,000    | 50,000    | Unlimited  |
-| i18n locale profiles  | 2         | Unlimited | Unlimited | Unlimited  |
+| Resource                      | Free      | Pro                          | Business                     | Enterprise |
+| ----------------------------- | --------- | ---------------------------- | ---------------------------- | ---------- |
+| Feature flags (gates)         | 10        | Unlimited                    | Unlimited                    | Unlimited  |
+| Dynamic configs               | 10        | Unlimited                    | Unlimited                    | Unlimited  |
+| Kill switches                 | 10        | Unlimited                    | Unlimited                    | Unlimited  |
+| Team members                  | Unlimited | Unlimited                    | Unlimited                    | Unlimited  |
+| Bugs & feature requests       | 1,000     | 1,000 incl, then usage-based | 1,000 incl, then usage-based | Custom     |
+| Autopilot scheduled runs / mo | Unlimited | Unlimited                    | Unlimited                    | Unlimited  |
+| Running experiments           | —         | —                            | Unlimited                    | Unlimited  |
+| Universes                     | —         | —                            | Unlimited                    | Unlimited  |
+| Metrics                       | 10        | 20                           | 50                           | Unlimited  |
+| Event catalog entries         | 50        | 250                          | 1,000                        | Unlimited  |
+| SDK keys                      | 5         | 50                           | 200                          | Unlimited  |
 
 ## Included monthly usage & overage
 
-Event usage is **notify-only** on paid plans — events are never dropped or rejected. When a project crosses 80% / 100% of its monthly credit, the usage cron notifies you (and ops, for paid projects). **Flag evaluations are never metered.** Free is hard-capped per day for abuse protection.
+Event usage is **notify-only** on paid plans — events are never dropped or rejected. When a project crosses 80% / 100% of its monthly credit, the usage cron notifies you (and ops, for paid projects). **Flag evaluations are never metered.** Free is hard-capped per day for abuse protection. Production error events (SEE) **share the events meter** — there is no separate per-error price.
 
-| Allowance / rate    | Free           | Pro                  | Business                 | Enterprise    |
-| ------------------- | -------------- | -------------------- | ------------------------ | ------------- |
-| Events / month      | 1M (daily cap) | 20M, then **$1 / M** | 100M, then **$0.75 / M** | Committed     |
-| Flag evaluations    | Anti-abuse cap | Never metered        | Never metered            | Never metered |
-| Included ops seats  | Unlimited      | 3, then $7/seat      | 5, then $12/seat         | Custom        |
-| AI-translated words | 5K             | 50K                  | 250K                     | Custom        |
+| Allowance / rate   | Free             | Pro                   | Business               | Enterprise    |
+| ------------------ | ---------------- | --------------------- | ---------------------- | ------------- |
+| Events / month     | 100K (daily cap) | 100K, then **$1 / M** | 1M, then **$0.75 / M** | Committed     |
+| Flag evaluations   | Anti-abuse cap   | Never metered         | Never metered          | Never metered |
+| Included ops seats | Unlimited        | 3, then $7/seat       | 5, then $12/seat       | Custom        |
+| Jarvis credits     | Pay-as-you-go    | $3 / mo, then credits | $3 / mo, then credits  | Custom        |
 
 ## Retention
 
@@ -71,26 +69,36 @@ Event usage is **notify-only** on paid plans — events are never dropped or rej
 
 ## Feature availability
 
-Statistics land at **Pro**; governance (SAML/SSO, RBAC, audit, holdouts) lands at **Business** — never behind an enterprise-only paywall.
+Experiments with **basic stats** (Welch t-test, SRM) and exposure logging land at **Business**. **Advanced statistics** — anything that needs pre-experiment data storage or extra computation (CUPED, mSPRT sequential testing, custom α) — plus SSO/RBAC and DWH extraction land at **Enterprise**.
 
-| Feature                       | Free | Pro | Business | Enterprise |
-| ----------------------------- | ---- | --- | -------- | ---------- |
-| SRM detection                 | ✅   | ✅  | ✅       | ✅         |
-| MCP access                    | ✅   | ✅  | ✅       | ✅         |
-| CUPED variance reduction      | —    | ✅  | ✅       | ✅         |
-| Sequential testing            | —    | ✅  | ✅       | ✅         |
-| Custom significance threshold | —    | ✅  | ✅       | ✅         |
-| Change approvals              | —    | ✅  | ✅       | ✅         |
-| Holdout groups                | —    | —   | ✅       | ✅         |
-| Data / warehouse export       | —    | —   | ✅       | ✅         |
-| SAML / SSO                    | —    | —   | ✅       | ✅         |
-| Custom RBAC roles             | —    | —   | ✅       | ✅         |
-| SCIM provisioning             | —    | —   | —        | ✅         |
+| Feature                        | Free | Pro | Business | Enterprise |
+| ------------------------------ | ---- | --- | -------- | ---------- |
+| SRM detection                  | ✅   | ✅  | ✅       | ✅         |
+| MCP access (stdio library)     | ✅   | ✅  | ✅       | ✅         |
+| Hosted MCP server              | —    | ✅  | ✅       | ✅         |
+| Gradual rollouts               | —    | ✅  | ✅       | ✅         |
+| A/B tests on gates             | —    | ✅  | ✅       | ✅         |
+| Metric alerts                  | —    | ✅  | ✅       | ✅         |
+| Auto-filed error issues        | —    | ✅  | ✅       | ✅         |
+| Auto-trigger agents on issues  | —    | ✅  | ✅       | ✅         |
+| Change approvals               | —    | ✅  | ✅       | ✅         |
+| Experiments & universes        | —    | —   | ✅       | ✅         |
+| Custom gate templates          | —    | —   | ✅       | ✅         |
+| Kill-switch exception switches | —    | —   | ✅       | ✅         |
+| Holdout groups                 | —    | —   | ✅       | ✅         |
+| CUPED variance reduction       | —    | —   | —        | ✅         |
+| Sequential testing (mSPRT)     | —    | —   | —        | ✅         |
+| Custom significance threshold  | —    | —   | —        | ✅         |
+| DWH data extraction            | —    | —   | —        | ✅         |
+| SAML / SSO                     | —    | —   | —        | ✅         |
+| Custom RBAC roles              | —    | —   | —        | ✅         |
+| SCIM provisioning              | —    | —   | —        | ✅         |
 
 <Callout type="info" title="Sequential testing & holdouts">
-  **Sequential testing** lets you peek at results without inflating false positives — available from
-  **Pro**. **Holdouts** live on the universe (a fixed segment excluded from every experiment in it),
-  a **Business** feature. SRM detection (sample-ratio-mismatch guard) is on for everyone.
+  **Sequential testing** lets you peek at results without inflating false positives — an
+  **Enterprise** feature. **Holdouts** live on the universe (a fixed segment excluded from every
+  experiment in it), a **Business** feature. SRM detection (sample-ratio-mismatch guard) is on for
+  everyone.
 </Callout>
 
 ## Changing plans

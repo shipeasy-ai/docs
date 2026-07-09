@@ -125,15 +125,15 @@ Shipeasy.configure(Shipeasy.options(System.getenv("SHIPEASY_SERVER_KEY"))
 Build options with `Shipeasy.options(apiKey)` and chain the setters, then pass
 the result to `Shipeasy.configure(...)`:
 
-| Method                            | Default                     | Meaning                                                                                             |
-| --------------------------------- | --------------------------- | --------------------------------------------------------------------------------------------------- |
-| `.baseUrl(String)`                | `https://edge.shipeasy.dev` | Override the edge API base URL.                                                                     |
-| `.env(String)`                    | `"prod"`                    | Deployment env tagged on usage telemetry and `see()` events.                                        |
-| `.disableTelemetry(boolean)`      | `false`                     | Turn off per-evaluation usage beacons.                                                              |
-| `.poll(boolean)`                  | `false`                     | Start the background poll (initial fetch + periodic refresh) instead of a one-shot fetch.           |
-| `.privateAttributes(List)`        | empty                       | Attribute keys usable for targeting but stripped from outbound events. See [Advanced](advanced.md). |
-| `.stickyStore(StickyBucketStore)` | none                        | Pluggable sticky-bucketing store. See [Advanced](advanced.md).                                      |
-| `.attributes(Function)`           | identity                    | Map your user object to the attribute map.                                                          |
+| Method                            | Default                   | Meaning                                                                                             |
+| --------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------- |
+| `.baseUrl(String)`                | `https://api.shipeasy.ai` | Override the edge API base URL.                                                                     |
+| `.env(String)`                    | `"prod"`                  | Deployment env tagged on usage telemetry and `see()` events.                                        |
+| `.disableTelemetry(boolean)`      | `false`                   | Turn off per-evaluation usage beacons.                                                              |
+| `.poll(boolean)`                  | `false`                   | Start the background poll (initial fetch + periodic refresh) instead of a one-shot fetch.           |
+| `.privateAttributes(List)`        | empty                     | Attribute keys usable for targeting but stripped from outbound events. See [Advanced](advanced.md). |
+| `.stickyStore(StickyBucketStore)` | none                      | Pluggable sticky-bucketing store. See [Advanced](advanced.md).                                      |
+| `.attributes(Function)`           | identity                  | Map your user object to the attribute map.                                                          |
 
 ```java
 Shipeasy.configure(Shipeasy.options(System.getenv("SHIPEASY_SERVER_KEY"))

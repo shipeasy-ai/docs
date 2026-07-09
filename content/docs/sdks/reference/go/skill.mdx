@@ -8,7 +8,7 @@ An installable agent skill for the Go SDK. Fetch it with `shipeasy docs skill --
 ````markdown
 ---
 name: shipeasy-go
-description: Use Shipeasy (feature flags, configs, kill switches, A/B experiments, i18n) from Go. Covers Configure() + NewClient(user), GetFlag/GetConfig/GetExperiment/GetKillswitch, Track, testing, OpenFeature.
+description: Use Shipeasy (feature flags, configs, kill switches, A/B experiments, i18n) from Go. Covers Configure() + NewClient(user), GetFlag/GetConfig/Universe().Assign()/GetKillswitch, Track, testing, OpenFeature.
 ---
 
 # Shipeasy Go SDK
@@ -51,7 +51,13 @@ c := shipeasy.NewClient(acct)            // or NewClient(shipeasy.User{"user_id"
 
 `Configure` is first-config-wins and owns the fetch lifecycle (one-shot by
 default; `Poll: true` for a background refresh — you never call `Init` yourself).
-`NewClient` panics if called before `Configure`. Reference:
+`NewClient` panics if called before `Configure`.
+
+**Egress is quiet outside production.** `IsNetworkEnabled`/`IsTrackingEnabled`
+(both `*bool`) default ON in production and OFF everywhere else, so dev/CI runs
+make no outbound request. "Production" = `SHIPEASY_ENV`/`APP_ENV`/`GO_ENV`/`ENV`
+being `production`/`prod`, else the `Env` option (defaults `"prod"`). Force it with
+`x := true; Options{IsNetworkEnabled: &x}`. Reference:
 <https://shipeasy-ai.github.io/sdk-go/pages/configuration.md>
 
 ## Evaluate
@@ -77,12 +83,15 @@ paused := c.GetKillswitch("payments_paused")         // true = killed
 
 ## Experiments + track (Client-only, end to end)
 
+Experiments are read by **universe** — a mutual-exclusion pool; a unit lands in
+<=1 experiment. `Assign()` auto-logs a single deduped exposure when enrolled.
+
 ```go
 c := shipeasy.NewClient(acct)                        // construct once per callsite
-r := c.GetExperiment("checkout_button", map[string]any{"color": "blue"})
-// r.InExperiment bool, r.Group string, r.Params any (defaultParams when not enrolled)
+a := c.Universe("checkout").Assign()                 // Assignment (no getExperiment)
+// a.Enrolled bool, a.Name/a.Group string ("" when not enrolled)
+color := a.Get("color", "blue")                      // variant ?? universe default ?? fallback
 
-c.LogExposure("checkout_button")                     // record where you present the treatment
 c.Track("purchase", map[string]any{"amount": 49})    // conversion for the bound user
 ```
 

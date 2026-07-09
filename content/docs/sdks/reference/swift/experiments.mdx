@@ -1,6 +1,6 @@
 ---
 title: "Experiments"
-description: "getExperiment enrols the bound user into an A/B experiment and returns an ExperimentResult."
+description: "A universe is a mutual-exclusion pool: the device user lands in at most one experiment per universe. You don't read an experiment by name — you ask a…"
 ---
 
 <Callout type="info">
@@ -8,54 +8,70 @@ description: "getExperiment enrols the bound user into an A/B experiment and ret
   [`https://shipeasy-ai.github.io/sdk-swift/pages/experiments.md`](https://shipeasy-ai.github.io/sdk-swift/pages/experiments.md).
 </Callout>
 
-`getExperiment` enrols the bound user into an A/B experiment and returns an
-`ExperimentResult`.
+A **universe** is a mutual-exclusion pool: the device user lands in **at most one**
+experiment per universe. You don't read an experiment by name — you ask a universe
+for an assignment. `universe(name).assign()` reads the device user's assignment
+from the cached `/sdk/evaluate` response and returns an `Assignment`.
 
-## The `ExperimentResult` shape
+## The `Assignment` shape
 
 ```swift
-public struct ExperimentResult: Sendable {
-    public let inExperiment: Bool   // was the user enrolled?
-    public let group: String        // assigned group, e.g. "control" / "treatment"
-    public let params: Any?         // the variant params (or your defaultParams)
+public struct Assignment: Sendable {
+    public let name: String?        // experiment the unit landed in, or nil when not enrolled
+    public let group: String?       // assigned group, e.g. "treatment", or nil when not enrolled
+    public var enrolled: Bool       // group != nil
+    // Read a resolved param: variant override ?? universe default ?? fallback.
+    public func get<T>(_ field: String, _ fallback: T? = nil) -> T?
+    public func get(_ field: String) -> Any?   // untyped
 }
 ```
 
-When the user is **not** enrolled, you get `inExperiment: false`, `group:
-"control"`, and your `defaultParams` echoed back as `params`.
+The handle **never throws**. A not-enrolled unit still resolves `get()` — you get
+the universe default (or your fallback), so branching code always has a value.
 
-## Enrol and branch
+## Assign and branch
 
 ```swift
-let client = try Client(["user_id": "u_123"])
-let r = await client.getExperiment("checkout_button", defaultParams: ["color": "blue"])
+let client = shipeasyClient()!
+await client.identify(["user_id": "u_123"])
 
-if r.inExperiment, r.group == "treatment" {
-    let color = (r.params as? [String: Any])?["color"] as? String
+let a = await client.universe("checkout").assign()
+
+if a.enrolled, a.group == "treatment" {
+    let color = a.get("button_color", "blue")   // variant param, else universe default, else "blue"
     // render the treatment
+} else {
+    let color = a.get("button_color", "blue")   // resolves to the universe default here
+    // render the control
 }
 ```
 
-`defaultParams` is the value returned for `params` whenever the user isn't
-enrolled (or the experiment is absent). Pass `nil` if you don't need a fallback.
+`get(field, fallback)` resolves in order: the variant's override, then the
+universe default, then your `fallback`. When not enrolled there is no variant, so
+you get the universe default (or `fallback`). Enrolled params are already merged
+(universe defaults ⊕ variant) by the edge.
 
-## Tracking conversions
+## Exposure — automatic
 
-Record a conversion event so the analysis pipeline can compute lift. You already
-hold a bound `Client` from `getExperiment`, so call `track` straight on it — the
-unit is derived from the bound user (`user_id`, else `anonymous_id`), no id
-argument needed. Experiments are end-to-end Client-only:
+`assign()` **auto-logs a single exposure** when the unit is enrolled — you don't
+call anything separately. There is no `logExposure`. Pass `logExposure: false` to
+suppress the auto-exposure (e.g. when you assign to inspect the group but don't yet
+present the variant):
 
 ```swift
-let client = try Client(["user_id": "u_123"])
-await client.track("{{SUCCESS_EVENT}}", properties: ["amount": 49])
+let a = await client.universe("checkout").assign(logExposure: false)
 ```
 
-`logExposure` is on the bound `Client` too — record an exposure explicitly at the
-point you present the treatment (re-evaluates and only emits when the bound user
-is enrolled). It is a no-op when the bound user has no unit, and a no-op in
-testing/offline mode:
+Exposure is fire-and-forget and never blocks; it is a no-op when the unit isn't
+enrolled or telemetry is disabled.
+
+## Tracking conversions — `track`
+
+Record a conversion event so the analysis pipeline can compute lift. The unit is
+derived from the identified user (`user_id`, else the persisted `anonymous_id`),
+so no id argument is needed. Fire-and-forget; private attributes are stripped
+before egress:
 
 ```swift
-await client.logExposure("checkout_button")
+await client.track("{{SUCCESS_EVENT}}", properties: ["amount": 49])
 ```

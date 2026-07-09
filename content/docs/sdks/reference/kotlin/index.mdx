@@ -33,8 +33,8 @@ You learn exactly two things:
 1. **`configure()`** (and its test/offline siblings `configureForTesting()` /
    `configureForOffline()`) — call it once at app boot.
 2. **`Client(user)`** — the cheap, user-bound handle for every read:
-   `getFlag` / `getFlagDetail` / `getConfig` / `getKillswitch` / `getExperiment`
-   / `track` / `logExposure`.
+   `getFlag` / `getFlagDetail` / `getConfig` / `getKillswitch` /
+   `universe(name).assign()` / `track`.
 
 The user (and the `attributes` transform you register at configure time) is bound
 when you construct the `Client`, so its methods take no user argument. Construct a
@@ -46,6 +46,17 @@ heavyweight object: `overrideFlag` / `overrideConfig` / `overrideExperiment` /
 `clearOverrides`, `onChange`, `bootstrapScriptTag` / `i18nScriptTag`, and the
 `see()` family.
 
+## Shipping in an Android app? Use `ShipeasyClient`
+
+`configure()` / `Client(user)` above is the **server** SDK — it holds a server
+key and evaluates rules locally. **Never embed a server key in a shipped app.**
+For an Android app, use `configureAndroid(context, clientKey)` +
+`ShipeasyClient`: a **public client key**, server-side evaluation over
+`POST /sdk/evaluate`, and a **persisted device `anonymous_id`** so logged-out
+users bucket identically across launches. It ships in the companion artifact
+`ai.shipeasy:shipeasy-kotlin-android`; the core jar stays pure-JVM (Ktor / Spring
+/ http4k servers are unaffected). See [Installation](installation.md#native-mobile-client--android-shipeasyclient).
+
 ## Feature reference
 
 - [Installation](installation.md) — Gradle/Maven dependency, runtime, imports, and the canonical `configure()` reference.
@@ -53,7 +64,7 @@ heavyweight object: `overrideFlag` / `overrideConfig` / `overrideExperiment` /
 - [Flags](flags.md) — `getFlag` / `getFlagDetail`.
 - [Configs](configs.md) — `getConfig`.
 - [Kill switches](killswitches.md) — `getKillswitch`.
-- [Experiments](experiments.md) — `getExperiment`, `ExperimentResult`, `track`, `logExposure`.
+- [Experiments](experiments.md) — `universe(name).assign()`, `Assignment`, `track`.
 - [i18n](i18n.md) — SSR bootstrap + the client-side translation story.
 - [Error reporting](error-reporting.md) — `see()` structured error reporting.
 - [Testing](testing.md) — `configureForTesting()` / `configureForOffline()` + the override helpers.

@@ -16,15 +16,14 @@ Everything about a project — its name, which features it exposes, experiment d
 
 The **Modules** tab toggles which parts of Shipeasy are exposed in this project's devtools overlay and admin tabs. Turning a module off hides its surface; it doesn't delete data.
 
-| Module key     | Tab name                | What it controls                                                           |
-| -------------- | ----------------------- | -------------------------------------------------------------------------- |
-| `gates`        | Gatekeepers             | Feature flags with targeting rules and percentage rollouts.                |
-| `configs`      | Configs                 | Per-environment JSON config values published to your SDK clients.          |
-| `experiments`  | Experiments             | A/B tests with universes, metrics, and statistical analysis.               |
-| `translations` | Translations            | i18n profiles, drafts, and label keys served from the CDN.                 |
-| `feedback`     | Bugs & feature requests | In-app bug reports and feature requests captured via the devtools overlay. |
-| `events`       | Events                  | Live SDK event stream (evaluations, overrides) in the devtools overlay.    |
-| `user`         | User                    | Devtools tab for inspecting and overriding the current SDK user.           |
+| Module key    | Tab name                | What it controls                                                           |
+| ------------- | ----------------------- | -------------------------------------------------------------------------- |
+| `gates`       | Gatekeepers             | Feature flags with targeting rules and percentage rollouts.                |
+| `configs`     | Configs                 | Per-environment JSON config values published to your SDK clients.          |
+| `experiments` | Experiments             | A/B tests with universes, metrics, and statistical analysis.               |
+| `feedback`    | Bugs & feature requests | In-app bug reports and feature requests captured via the devtools overlay. |
+| `events`      | Events                  | Live SDK event stream (evaluations, overrides) in the devtools overlay.    |
+| `user`        | User                    | Devtools tab for inspecting and overriding the current SDK user.           |
 
 <Callout type="info" title="Modules are per project">
   Each project chooses its own module set, so a flags-only project and an experimentation project
@@ -50,7 +49,7 @@ The **Notifications** tab manages per-event notification preferences for the pro
 
 ## Billing & plan limits
 
-The **Billing** tab shows your subscription status, lets you upgrade/downgrade or switch billing interval, top up assistant credits, and lists the hard limits for your current plan (flags, configs, running experiments, universes, i18n keys, SDK keys, team seats, and SDK poll interval). See [Plan limits](/get-started/plan-limits) for what each limit means.
+The **Billing** tab shows your subscription status, lets you upgrade/downgrade or switch billing interval, top up assistant credits, and lists the hard limits for your current plan (flags, configs, kill switches, metrics, running experiments, universes, SDK keys, and SDK poll interval). See [Plan limits](/get-started/plan-limits) for what each limit means.
 
 ## Danger zone
 

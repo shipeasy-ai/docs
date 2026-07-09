@@ -1,6 +1,6 @@
 ---
 title: "Snippets"
-description: "Minimal copy-paste blocks for flags, configs, kill switches, experiments and i18n."
+description: "Minimal copy-paste blocks for flags, configs, kill switches and experiments."
 ---
 
 Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same leaves the `docs get` op returns.
@@ -66,30 +66,35 @@ if (killed) {
 
 ### release / experiments
 
-Bucket a user into `{{EXPERIMENT_KEY}}`, then track the `{{SUCCESS_EVENT}}`
-conversion. Assumes `configure()` ran at startup — see Installation.
+Assign a unit within a universe (a mutual-exclusion pool — the unit lands in &lt;=1
+experiment), read the assigned params, then record the conversion event on the
+same bound `Client`. Assumes `configure()` ran at startup — see Installation.
 
 ```java
 import ai.shipeasy.Client;
-import ai.shipeasy.ExperimentResult;
+import ai.shipeasy.Assignment;
 import java.util.Map;
 
-// construct once per callsite (cheap; binds the user)
+// construct once per callsite (cheap; binds the user + runs the attributes transform)
 Client client = new Client(Map.of("user_id", "u_123"));
 
-ExperimentResult r = client.getExperiment(
-    "{{EXPERIMENT_KEY}}",        // experiment name
-    Map.of("color", "blue"));   // defaultParams — filled in when not enrolled
+// universe(name).assign() -> Assignment
+//   name       — the UNIVERSE name (not an experiment); the unit lands in <=1 experiment
+//   .name()    — the experiment the unit landed in, or null when not enrolled
+//   .group()   — the assigned variant, or null when not enrolled
+//   .enrolled()— == (group() != null)
+//   .get(field, fallback) — variant override ?? universe default ?? fallback
+// assign() takes no arg (user bound at construction) and auto-logs one exposure.
+Assignment exp = client.universe("{{EXPERIMENT_KEY}}").assign();
 
-if (r.inExperiment && "treatment".equals(r.group)) {
-    // render the treatment variant; r.params carries the assigned parameters
-}
+String label = (String) exp.get("primary_label", "Sign up"); // always safe — falls back when not enrolled
 
-// later, on conversion — track() lives on the bound Client (NOT the Engine);
-// the unit id is derived from the bound user (user_id, else anonymous_id):
-client.track(
-    "{{SUCCESS_EVENT}}",        // event name
-    Map.of("amount", 49));      // optional properties bag (track(name) omits it)
+// On conversion — Client-only track (NOT the Engine); the unit is inferred
+// from the bound user (user_id, else anonymous_id):
+//   track(eventName, props?)
+//     eventName — the success event name
+//     props     — optional metric properties (private attrs are stripped)
+client.track("{{SUCCESS_EVENT}}", Map.of("group", String.valueOf(exp.group()))); // props optional
 ```
 
 ## metrics
@@ -125,42 +130,6 @@ Fire-and-forget (never blocks your response) and a no-op under
 Client client = new Client(Map.of("user_id", "u_123")); // construct once per callsite
 
 client.track("{{EVENT_NAME}}", Map.of()); // props are optional (pass an empty map)
-```
-
-## i18n
-
-### i18n / setup
-
-The Java server SDK has no `t()` — emit the i18n loader `<script>` tag (with the
-**public client key**) so the browser SDK loads the `{{PROFILE}}` profile.
-Assumes `configure()` ran at startup — see Installation.
-
-```java
-import ai.shipeasy.Engine;
-import ai.shipeasy.Shipeasy;
-
-// grab the already-configured global Engine (the SSR/script-tag helpers live on
-// the Engine, not the bound Client)
-Engine engine = Shipeasy.engine();
-
-String clientKey = System.getenv("SHIPEASY_CLIENT_KEY"); // PUBLIC key (never the server key)
-String head = engine.i18nScriptTag(
-    clientKey,      // public client key embedded in the loader tag
-    "{{PROFILE}}"); // locale profile, e.g. en:prod
-// → render `head` inside the document <head>
-// 3-arg overload also takes a CDN baseUrl (defaults to https://cdn.shipeasy.ai).
-```
-
-### i18n / render
-
-Rendering a translated label is **client-side only** — the Java server SDK does
-not expose `t()`. Once the loader tag (see setup) has hydrated the browser, the
-client SDK renders keys:
-
-```js
-// browser, @shipeasy/sdk client
-import { t } from "@shipeasy/sdk/client";
-t("checkout.cta"); // → translated string for the active {{PROFILE}} profile
 ```
 
 ## ops

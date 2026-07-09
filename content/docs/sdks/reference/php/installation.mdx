@@ -62,11 +62,13 @@ configure(
     ],
     [                               // $opts — optional configure() options (all optional)
         'env'               => 'prod',                       // read environment for the blob
-        'baseUrl'           => 'https://edge.shipeasy.dev',  // edge API base
-        'disableTelemetry'  => false,                        // opt out of the usage beacon
+        'baseUrl'           => 'https://api.shipeasy.ai',  // edge API base
+        'isNetworkEnabled'  => null,                         // master egress switch; null = env-derived (on in prod, off elsewhere)
+        'disableTelemetry'  => null,                         // usage beacon; null = env-derived (off outside prod)
         'telemetryUrl'      => null,                         // override telemetry endpoint
         'privateAttributes' => ['email'],                    // attrs stripped from event payloads
         'stickyStore'       => null,                         // Shipeasy\StickyBucketStore for durable bucketing
+        'logLevel'          => 'warn',                       // SDK diagnostics: silent|error|warn|info|debug
     ],
 );
 ```
@@ -90,14 +92,16 @@ $enabled = $client->getFlag('new_checkout');
 
 ### `$opts` keys
 
-| Key                 | Default                     | Meaning                                                                                                              |
-| ------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `env`               | `'prod'`                    | The read environment for the blob.                                                                                   |
-| `baseUrl`           | `https://edge.shipeasy.dev` | Edge API base.                                                                                                       |
-| `disableTelemetry`  | `false`                     | Opt out of the usage-telemetry beacon.                                                                               |
-| `telemetryUrl`      | (built-in)                  | Override the telemetry endpoint.                                                                                     |
-| `privateAttributes` | `[]`                        | Attribute names stripped from outbound event payloads (LD/Statsig `privateAttributes`). See [Advanced](advanced.md). |
-| `stickyStore`       | `null`                      | A `Shipeasy\StickyBucketStore` for durable experiment bucketing. See [Advanced](advanced.md).                        |
+| Key                 | Default                   | Meaning                                                                                                                                                                                 |
+| ------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `env`               | `'prod'`                  | The read environment for the blob.                                                                                                                                                      |
+| `baseUrl`           | `https://api.shipeasy.ai` | Edge API base.                                                                                                                                                                          |
+| `isNetworkEnabled`  | env-derived               | Master switch for **all** outbound requests. `null` ⇒ on in production, off everywhere else. See [Configuration](configuration.md).                                                     |
+| `disableTelemetry`  | env-derived               | Opt out of the usage-telemetry beacon. `null` ⇒ on in production, off everywhere else.                                                                                                  |
+| `telemetryUrl`      | (built-in)                | Override the telemetry endpoint.                                                                                                                                                        |
+| `privateAttributes` | `[]`                      | Attribute names stripped from outbound event payloads (LD/Statsig `privateAttributes`). See [Advanced](advanced.md).                                                                    |
+| `stickyStore`       | `null`                    | A `Shipeasy\StickyBucketStore` for durable experiment bucketing. See [Advanced](advanced.md).                                                                                           |
+| `logLevel`          | `'warn'`                  | SDK diagnostic verbosity: `'silent'`, `'error'`, `'warn'`, `'info'`, `'debug'`. Runtime reads are fail-safe (never throw) and log at this level. See [Configuration](configuration.md). |
 
 The **public client key** (a separate value) is _not_ passed to `configure()`.
 It is only used for the i18n loader `<script>` tag — see [i18n](i18n.md).

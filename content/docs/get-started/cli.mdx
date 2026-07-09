@@ -1,6 +1,6 @@
 ---
 title: CLI
-description: The `shipeasy` command — manage flags, experiments, keys, translations, and the MCP server from your terminal or CI.
+description: The `shipeasy` command — manage flags, experiments, keys, and the MCP server from your terminal or CI.
 ---
 
 <DocMeta
@@ -39,7 +39,6 @@ shipeasy flags list
 shipeasy configs list
 shipeasy experiments list
 shipeasy keys list
-shipeasy i18n scan ./src
 shipeasy mcp install
 ```
 
@@ -182,28 +181,6 @@ via the `SHIPEASY_CLI_TOKEN` env. See
 [Authenticate → SDK keys vs API tokens](/get-started/authenticate#sdk-keys-vs-api-tokens-pick-the-right-one)
 for when to use each.
 
-## i18n (Translations)
-
-| Command                                | Description                                                                |
-| -------------------------------------- | -------------------------------------------------------------------------- |
-| `shipeasy i18n install-loader`         | Inject the loader script tag into the right file (auto-detects framework). |
-| `shipeasy i18n scan [paths...]`        | Discover `t("key")` calls in source. `--rewrite` enables the codemod.      |
-| `shipeasy i18n push <file>`            | Push a JSON of keys to a profile. `--chunk` to bucket.                     |
-| `shipeasy i18n profiles create <name>` | Create a profile.                                                          |
-| `shipeasy i18n profiles list`          | List profiles.                                                             |
-| `shipeasy i18n publish --profile en`   | Push the merged profile to KV (live in seconds).                           |
-| `shipeasy i18n validate [paths...]`    | Fail if any key referenced in code is missing from the profile. Use in CI. |
-
-AI translation drafts are produced in the dashboard's **Drafts** panel or
-via the `i18n_translate_draft` MCP tool — there isn't a CLI
-subcommand for that step today.
-
-## Codemod
-
-| Command                            | Description                                                                                                         |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `shipeasy codemod i18n [paths...]` | Run the i18n codemod standalone — same as `i18n scan --rewrite` but exposed as a top-level command for easy CI use. |
-
 ## Feedback (bugs & requests)
 
 | Command                                   | Description                                                              |
@@ -315,18 +292,9 @@ shipeasy flags create checkout-v2 --rules '[{"attr":"plan","op":"eq","value":"pr
 shipeasy flags rollout checkout-v2 5
 shipeasy flags rollout checkout-v2 100
 
-# Scan a Next.js app for translatable strings, push to the source profile,
-# then publish. AI translation drafts are produced from the dashboard's
-# Drafts panel (or the `i18n_translate_draft` MCP tool) today — the CLI
-# subcommand for it isn't shipped.
-shipeasy i18n install-loader --profile en:prod
-shipeasy i18n scan ./src --rewrite --profile en:prod
-shipeasy i18n push --profile en:prod --source codemod
-shipeasy i18n profiles create fr:prod --locales fr
-shipeasy i18n publish --profile fr:prod
-
-# CI smoke test — fail the build if a translatable key is missing from prod.
-SHIPEASY_CLI_TOKEN="$CI_TOKEN" shipeasy i18n validate ./src
+# File a bug from CI when a smoke test fails.
+SHIPEASY_CLI_TOKEN="$CI_TOKEN" shipeasy feedback bugs create \
+  --title "Smoke test failed on deploy" --steps "See CI run" --priority high
 ```
 
 <Callout type="info" title="Pipe-friendly by design">

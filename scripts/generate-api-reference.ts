@@ -74,6 +74,25 @@ async function main() {
       description: toMetaDescription(description, title),
       full: true,
     }),
+    // i18n is hidden from all public surfaces (2026-07 pricing restructure):
+    // drop the *I18n* operation pages and their meta.json entries so a regen
+    // never resurrects them. The ops stay in the OpenAPI spec (CLI/MCP keep
+    // working); only the public docs pages disappear.
+    beforeWrite(files) {
+      const isI18n = (s: string) => /i18n/i.test(s);
+      for (let i = files.length - 1; i >= 0; i--) {
+        const f = files[i];
+        if (f.path.endsWith("meta.json")) {
+          const meta = JSON.parse(f.content) as { pages?: unknown[] };
+          if (Array.isArray(meta.pages)) {
+            meta.pages = meta.pages.filter((p) => !isI18n(String(p)));
+            f.content = JSON.stringify(meta, null, 2) + "\n";
+          }
+        } else if (isI18n(f.path)) {
+          files.splice(i, 1);
+        }
+      }
+    },
   });
 
   console.log(`generated MDX under ${OUT}`);

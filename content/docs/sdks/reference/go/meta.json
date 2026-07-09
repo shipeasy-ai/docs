@@ -8,7 +8,6 @@
     "configs",
     "killswitches",
     "experiments",
-    "i18n",
     "error-reporting",
     "testing",
     "openfeature",

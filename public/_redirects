@@ -1,0 +1,9 @@
+# i18n/Translations is hidden from all public surfaces (2026-07 pricing
+# restructure). The content is parked in content/_hidden/ (see its README),
+# so nothing under /translations is exported; these rules catch old
+# bookmarks/backlinks. Workers static assets evaluate _redirects before
+# serving assets or 404s.
+/translations/* / 302
+/translations / 302
+/llms/i18n-strings/ /llms/ 302
+/llms/i18n-strings /llms/ 302

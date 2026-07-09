@@ -1,6 +1,6 @@
 ---
 title: "Snippets"
-description: "Minimal copy-paste blocks for flags, configs, kill switches, experiments and i18n."
+description: "Minimal copy-paste blocks for flags, configs, kill switches and experiments."
 ---
 
 Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same leaves the `docs get` op returns.
@@ -9,47 +9,30 @@ Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same 
 
 ### release / flags
 
-Evaluate the feature gate `{{FLAG_KEY}}` on a user-bound `Client`. Assumes `configure()` ran at startup — see Installation.
-
-### Basic check
+Evaluate the feature gate `{{FLAG_KEY}}` from the configured `ShipeasyClient`
+(cached `/sdk/evaluate` read). Assumes `configureClient(...)` ran at startup — see
+Installation.
 
 ```swift
-// construct once per callsite (cheap; binds the user + runs the attributes transform)
-let client = try Client(["user_id": "u_123"])
-
-// name; getFlag returns false when the rules aren't ready or the flag is absent
-let enabled = await client.getFlag("{{FLAG_KEY}}")
+// name; getFlag returns the default when assignments aren't loaded or the flag is absent
+let enabled = await shipeasyClient()?.getFlag("{{FLAG_KEY}}") ?? false
 
 // optional `default:` — returned ONLY when the flag can't be evaluated
-// (rules not ready / flag not found), never when it evaluates to false
-let safe = await client.getFlag("{{FLAG_KEY}}", default: false)
-```
-
-### Why it resolved that way — `getFlagDetail`
-
-```swift
-// construct once per callsite (cheap; binds the user)
-let client = try Client(["user_id": "u_123"])
-
-// returns a FlagDetail (.value, .reason); reason ∈ RULE_MATCH / DEFAULT / OFF /
-// OVERRIDE / FLAG_NOT_FOUND / CLIENT_NOT_READY
-let detail = await client.getFlagDetail("{{FLAG_KEY}}")
-print("flag={{FLAG_KEY}} value=\(detail.value) reason=\(detail.reason)")
+// (assignments not loaded / flag not found), never when it evaluates to false
+let safe = await shipeasyClient()?.getFlag("{{FLAG_KEY}}", default: false) ?? false
 ```
 
 ### release / configs
 
-Read the dynamic config `{{CONFIG_KEY}}` (returns `Any?`). Assumes `configure()` ran at startup — see Installation.
+Read the dynamic config `{{CONFIG_KEY}}` from the configured `ShipeasyClient`
+(returns `Any?`). Assumes `configureClient(...)` ran at startup — see Installation.
 
 ```swift
-// construct once per callsite (cheap; binds the user)
-let client = try Client(["user_id": "u_123"])
-
-// name; returns nil when the key is absent (or the rules aren't ready)
-let value = await client.getConfig("{{CONFIG_KEY}}")
+// name; returns nil when the key is absent (or assignments aren't loaded)
+let value = await shipeasyClient()?.getConfig("{{CONFIG_KEY}}")
 
 // optional `default:` — returned when the config key is absent
-let copy = await client.getConfig("{{CONFIG_KEY}}", default: ["headline": "Welcome"])
+let copy = await shipeasyClient()?.getConfig("{{CONFIG_KEY}}", default: ["headline": "Welcome"])
 
 // the value is Any? — cast to the shape your config defines
 let headline = (copy as? [String: Any])?["headline"] as? String
@@ -57,47 +40,45 @@ let headline = (copy as? [String: Any])?["headline"] as? String
 
 ### release / killswitches
 
-Check whether the kill switch `{{KILLSWITCH_KEY}}` is engaged (`true` = killed). Assumes `configure()` ran at startup — see Installation.
+Check whether the kill switch `{{KILLSWITCH_KEY}}` is engaged (`true` = killed)
+from the configured `ShipeasyClient`. Assumes `configureClient(...)` ran at startup
+— see Installation.
 
 ### Top-level switch
 
 ```swift
-// construct once per callsite (cheap; binds the user)
-let client = try Client(["user_id": "u_123"])
-
 // name; getKillswitch returns true when the switch is on (the guarded path is killed)
-let killed = await client.getKillswitch("{{KILLSWITCH_KEY}}")
+let killed = await shipeasyClient()?.getKillswitch("{{KILLSWITCH_KEY}}") ?? false
 ```
 
 ### Named per-key override switch
 
 ```swift
-// construct once per callsite (cheap; binds the user)
-let client = try Client(["user_id": "u_123"])
-
 // switchKey: read one named override (e.g. per region); an unset key falls back
 // to the kill switch's top-level value
-let killedEu = await client.getKillswitch("{{KILLSWITCH_KEY}}", switchKey: "eu_region")
+let killedEu = await shipeasyClient()?.getKillswitch("{{KILLSWITCH_KEY}}", switchKey: "eu_region") ?? false
 ```
 
 ### release / experiments
 
-Enrol a user into `{{EXPERIMENT_KEY}}`, branch on the group, and track the conversion event. Assumes `configure()` ran at startup — see Installation.
+Assign the device user within the `{{EXPERIMENT_KEY}}` universe (a mutual-exclusion
+pool → ≤1 experiment), branch on the group, and track the conversion event — all
+from the configured `ShipeasyClient`. Assumes `configureClient(...)` ran at startup
+— see Installation.
 
 ```swift
-// construct once per callsite (cheap; binds the user)
-let client = try Client(["user_id": "u_123"])
+let client = shipeasyClient()!   // configured once at app launch
 
-// name; defaultParams: params returned when the user isn't enrolled (nil for none)
-let r = await client.getExperiment("{{EXPERIMENT_KEY}}", defaultParams: ["color": "blue"])
+// universe name; assign() auto-logs one exposure when enrolled
+let a = await client.universe("{{EXPERIMENT_KEY}}").assign()
 
-if r.inExperiment, r.group == "treatment" {
-    // r.params holds the variant params — cast to your shape
-    let color = (r.params as? [String: Any])?["color"] as? String
+if a.enrolled, a.group == "treatment" {
+    // get(field, fallback): variant override ?? universe default ?? fallback
+    let color = a.get("button_color", "blue")
     // render the treatment variant
 }
 
-// Client-only conversion event — the unit is the bound user (no id argument);
+// conversion event — the unit is the identified user (no id argument);
 // event name; optional `properties:` bag (default [:])
 await client.track("{{SUCCESS_EVENT}}", properties: ["amount": 49])
 ```
@@ -106,67 +87,27 @@ await client.track("{{SUCCESS_EVENT}}", properties: ["amount": 49])
 
 ### metrics / track
 
-Track a metric/conversion event from the bound `Client`. Metrics in the dashboard
-are computed from these events. Assumes `configure()` ran at startup — see
-Installation.
+Track a metric/conversion event from the configured `ShipeasyClient`. Metrics in
+the dashboard are computed from these events. Assumes `configureClient(...)` ran at
+startup — see Installation.
 
 ### Track an event
 
 ```swift
-// construct once per callsite (cheap; binds the user)
-let client = try Client(["user_id": "u_123"])
-
 // track(event, properties:)
 //   event       — the event your metric is built on (required)
 //   properties: — optional payload; numeric/string fields you can sum/filter on
 //                 in a metric (private attributes are stripped before egress)
-await client.track("{{EVENT_NAME}}", properties: ["amount": 49, "currency": "usd"])
+await shipeasyClient()?.track("{{EVENT_NAME}}", properties: ["amount": 49, "currency": "usd"])
 ```
 
-Fire-and-forget (never blocks your response) and a no-op under
-`configureForTesting` / `configureForOffline`. The unit is the bound user
-(`user_id`, else `anonymous_id`); with no unit the call is a no-op.
+Fire-and-forget (never blocks). The unit is the identified user (`user_id`, else
+the persisted `anonymous_id`), attached automatically.
 
 ### Track without properties
 
 ```swift
-// construct once per callsite (cheap; binds the user)
-let client = try Client(["user_id": "u_123"])
-
-await client.track("{{EVENT_NAME}}")   // properties default to [:]
-```
-
-## i18n
-
-### i18n / setup
-
-The Swift SDK is server-side: it emits the SSR loader tag for the browser SDK
-(the public **client** key goes on the i18n tag, never the server key). The
-script-tag helpers are package-level functions (no Engine needed). Assumes
-`configure()` ran at startup — see Installation.
-
-```swift
-// bootstrapScriptTag: user attribute map; anonId: stable __se_anon_id unit (no key);
-// optional i18nProfile: locale profile ("en:prod"); optional baseURL: CDN host
-let bootstrap = await bootstrapScriptTag(["user_id": "u_123"], anonId: anonId)
-
-// i18nScriptTag: PUBLIC clientKey (positional); profile: locale profile ("en:prod" default);
-// optional baseURL: CDN host (defaults to https://cdn.shipeasy.ai)
-let i18n = await i18nScriptTag(clientKey, profile: "{{PROFILE}}")
-
-let head = bootstrap + i18n // inject into the document <head>
-```
-
-### i18n / render
-
-Rendering a translated label is **client-side** — the Swift server SDK has no
-`t()`. After the loader from `i18nScriptTag(...)` hydrates the `{{PROFILE}}`
-profile, render in the browser with the client SDK:
-
-```ts
-// browser (@shipeasy/sdk client) — NOT Swift
-import { t } from "@shipeasy/sdk/client";
-t("checkout.cta"); // -> the translated string
+await shipeasyClient()?.track("{{EVENT_NAME}}")   // properties default to [:]
 ```
 
 ## ops
@@ -174,9 +115,9 @@ t("checkout.cta"); // -> the translated string
 ### ops / see
 
 Report a caught, handled error (or a non-exception "violation") to Shipeasy with
-`see()` — fire-and-forget, never re-throws. Package-level, so it reports against
-the configuration from `configure()`. Assumes `configure()` ran at startup — see
-Installation.
+`see()` — fire-and-forget, never re-throws, tagged with the side `"client"`.
+Package-level, so it reports against the client from `configureClient(...)`. Assumes
+`configureClient(...)` ran at startup — see Installation.
 
 ### Report a handled exception
 
@@ -186,7 +127,7 @@ do {
 } catch {
     // .causesThe(subject)   what the error affects (e.g. "checkout")
     // .to(outcome)          the terminal — what you do about it; builds + fires once
-    see(error).causesThe("checkout").to("use the backup processor")
+    see(error).causesThe("checkout").to("use cached prices")
     try? fallbackCharge(order)
 }
 ```
@@ -198,6 +139,7 @@ do {
     try charge(order)
 } catch {
     // .extras(dict)         structured fields attached to the report
+    //                       (private attributes are stripped before egress)
     see(error).causesThe("checkout").extras(["order_id": orderId]).to("use cached prices")
 }
 ```
@@ -207,7 +149,7 @@ do {
 ```swift
 // a bad state that isn't an exception — the name is a STABLE fingerprint; put
 // variable data in .extras, never the name. .to() is the terminal.
-seeViolation("missing_invoice").causesThe("billing").to("skip the dunning email")
+seeViolation("large query").causesThe("search results").to("be trimmed")
 ```
 
 ### Mark an expected exception — report NOTHING

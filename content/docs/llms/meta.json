@@ -1,5 +1,5 @@
 {
   "title": "AI Agents",
   "root": true,
-  "pages": ["index", "i18n-strings"]
+  "pages": ["index"]
 }

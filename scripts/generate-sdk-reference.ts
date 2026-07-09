@@ -176,6 +176,7 @@ function emitSnippets(outDir: string, m: Manifest, docsDir: string, base: string
   let body =
     "Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same leaves the `docs get` op returns.\n\n";
   for (const [group, leaves] of Object.entries(m.snippets ?? {})) {
+    if (/i18n/i.test(group)) continue; // i18n hidden from public docs (2026-07)
     body += `## ${group}\n\n`;
     for (const [leaf, rel] of Object.entries(leaves)) {
       const raw = read(docsDir, rel);
@@ -188,7 +189,7 @@ function emitSnippets(outDir: string, m: Manifest, docsDir: string, base: string
     join(outDir, "snippets.mdx"),
     frontmatter(
       "Snippets",
-      "Minimal copy-paste blocks for flags, configs, kill switches, experiments and i18n.",
+      "Minimal copy-paste blocks for flags, configs, kill switches and experiments.",
     ) + body,
   );
 }
@@ -236,6 +237,9 @@ function main() {
 
     const navPages: string[] = [];
     for (const key of PAGE_ORDER) {
+      // i18n is hidden from all public surfaces (2026-07 pricing restructure) —
+      // skip its reference page; the SDK's raw GitHub Pages docs keep it.
+      if (key === "i18n") continue;
       const rel = m.pages[key];
       if (!rel) continue;
       const fileBase = key === "overview" ? "index" : key;

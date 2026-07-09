@@ -23,13 +23,8 @@ const PRODUCTS: Product[] = [
     desc: "Gates, configs, killswitches & A/B tests",
     color: ACCENT,
   },
-  {
-    slug: "translations",
-    name: "Translations",
-    href: "/translations",
-    desc: "Localized labels & AI translations",
-    color: ACCENT,
-  },
+  // "Translations" removed 2026-07 — the i18n product is hidden from all
+  // public surfaces (internal `translations` gate on the dashboard side).
   {
     slug: "feedback",
     name: "Bugs & Requests",

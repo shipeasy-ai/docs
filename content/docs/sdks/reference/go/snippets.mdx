@@ -1,6 +1,6 @@
 ---
 title: "Snippets"
-description: "Minimal copy-paste blocks for flags, configs, kill switches, experiments and i18n."
+description: "Minimal copy-paste blocks for flags, configs, kill switches and experiments."
 ---
 
 Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same leaves the `docs get` op returns.
@@ -99,21 +99,22 @@ if c.GetKillswitch("{{KILLSWITCH_KEY}}", "eu") {
 
 ### release / experiments
 
-Evaluate the `{{EXPERIMENT_KEY}}` experiment and track the `{{SUCCESS_EVENT}}` conversion. Assumes `Configure()` ran at startup — see Installation.
+Assign a unit within the `{{EXPERIMENT_KEY}}` universe (a mutual-exclusion pool — the unit lands in &lt;=1 experiment), read the assigned params, then record the `{{SUCCESS_EVENT}}` conversion on the same bound `Client`. Assumes `Configure()` ran at startup — see Installation.
 
-### Evaluate and render the assigned group
+### Assign within a universe and render the assigned group
 
 ```go
 // construct once per callsite (cheap; binds the user)
 c := shipeasy.NewClient(shipeasy.User{"user_id": "u_123"})
 
-// GetExperiment(name, defaultParams) — name is the experiment key;
-// defaultParams is returned as r.Params when the user isn't enrolled.
-r := c.GetExperiment("{{EXPERIMENT_KEY}}", map[string]any{"color": "blue"})
-if r.InExperiment {
-    p := r.Params.(map[string]any)
-    render(p["color"])
-}
+// Universe(name).Assign() → Assignment
+//   name  — the UNIVERSE name (not an experiment); the unit lands in <=1 experiment
+//   a.Name     — the experiment the unit landed in, or "" when not enrolled
+//   a.Group    — the assigned variant, or "" when not enrolled
+//   a.Enrolled — true iff enrolled (Group != "")
+//   a.Get(field, fallback) — variant override ?? universe default ?? fallback
+a := c.Universe("{{EXPERIMENT_KEY}}").Assign()
+render(a.Get("color", "blue")) // always safe — falls back when not enrolled
 ```
 
 ### Track the conversion
@@ -160,31 +161,6 @@ Fire-and-forget (never blocks your response) and a no-op under
 c := shipeasy.NewClient(shipeasy.User{"user_id": "u_123"})
 
 c.Track("{{EVENT_NAME}}", nil) // props are optional — pass nil
-```
-
-## i18n
-
-### i18n / setup
-
-The Go SDK is server-side: it emits the browser i18n loader tag (public client key) for the `{{PROFILE}}` profile. Translation rendering itself happens in the browser via the client SDK's `t()`. Assumes `Configure()` ran at startup — see Installation.
-
-```go
-// I18nScriptTag is package-level — it runs off the global Configure(). Emit
-// the returned tag in your document <head>.
-//   clientKey      string   the PUBLIC client key (NOT the server key)
-//   "{{PROFILE}}"  string   the locale profile to load (e.g. "en:prod")
-//   BootstrapTagOptions{}   optional: AnonID, I18nProfile, BaseURL
-tag := shipeasy.I18nScriptTag(clientKey, "{{PROFILE}}", shipeasy.BootstrapTagOptions{})
-_ = tag
-```
-
-### i18n / render
-
-There is no server-side `t()` in Go — translated labels are rendered in the **browser** by the client SDK once `I18nScriptTag` has loaded the `{{PROFILE}}` profile.
-
-```js
-// Browser (client SDK), after the loader installs the {{PROFILE}} labels:
-const label = shipeasy.t("checkout.cta");
 ```
 
 ## ops

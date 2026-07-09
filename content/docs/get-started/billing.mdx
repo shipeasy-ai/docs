@@ -20,14 +20,14 @@ Everything billing lives in one place: **Project → Settings → Billing**. You
 
 ## Plans
 
-| Plan           | Price                                    | For                                                                       |
-| -------------- | ---------------------------------------- | ------------------------------------------------------------------------- |
-| **Free**       | $0 / forever                             | Side projects and small teams — generous caps, no card.                   |
-| **Pro**        | $49 / mo (or $39 / mo billed annually)   | Teams shipping experiments weekly — full stats, no seat tax.              |
-| **Business**   | $199 / mo (or $159 / mo billed annually) | Governance and scale — SAML/SSO, RBAC, audit, holdouts, warehouse export. |
-| **Enterprise** | Contact sales                            | Committed volume, SCIM, data residency, dedicated support + SLA.          |
+| Plan           | Price                                    | For                                                                            |
+| -------------- | ---------------------------------------- | ------------------------------------------------------------------------------ |
+| **Free**       | $0 / forever                             | Side projects and solo work — 10 flags/configs/kill switches, no card.         |
+| **Pro**        | $49 / mo (or $39 / mo billed annually)   | Teams shipping weekly — unlimited flags, agents auto-triggered on new issues.  |
+| **Business**   | $199 / mo (or $159 / mo billed annually) | The experimentation tier — unlimited experiments & universes with basic stats. |
+| **Enterprise** | Contact sales                            | Advanced stats (CUPED, mSPRT, custom α), DWH extraction, SSO/RBAC/SCIM, SLA.   |
 
-Flags, configs, issues, team members, and **Autopilot runs are unlimited on every tier**, and **flag evaluations are never metered** — you're only billed for analytics events past your monthly credit (see [overage](#usage--overage)). Pro and Business include a **14-day free trial**. The full picture — resource caps, retention, governance, and tier-gated features — is on the [pricing page](https://shipeasy.ai/pricing) and in [Plan limits & quotas](/get-started/plan-limits).
+Team members and **Autopilot scheduled runs are unlimited on every tier**, and **flag evaluations are never metered** — you're only billed for analytics events past your monthly credit (see [overage](#usage--overage)). Pro and Business include a **14-day free trial**. The full picture — resource caps, retention, governance, and tier-gated features — is on the [pricing page](https://shipeasy.ai/pricing) and in [Plan limits & quotas](/get-started/plan-limits).
 
 ## Upgrading
 
@@ -41,10 +41,10 @@ Toggle the billing interval in the plan picker. Annual is cheaper per month but 
 
 Paid plans include a large monthly **event** allowance; past it you're billed for the overage at a COGS-anchored, per-million rate. **Flag evaluations are never metered** on any plan — they're free, forever.
 
-| Metered usage    | Free           | Pro                  | Business                 |
-| ---------------- | -------------- | -------------------- | ------------------------ |
-| Events / month   | 1M (daily cap) | 20M, then **$1 / M** | 100M, then **$0.75 / M** |
-| Flag evaluations | Anti-abuse cap | Never metered        | Never metered            |
+| Metered usage    | Free             | Pro                   | Business               |
+| ---------------- | ---------------- | --------------------- | ---------------------- |
+| Events / month   | 100K (daily cap) | 100K, then **$1 / M** | 1M, then **$0.75 / M** |
+| Flag evaluations | Anti-abuse cap   | Never metered         | Never metered          |
 
 <Callout type="info" title="Nothing is ever dropped">
   Event usage is **notify-only** on paid plans — events always flow, even past your included credit.
