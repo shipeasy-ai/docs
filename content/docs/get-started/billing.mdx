@@ -25,9 +25,9 @@ Everything billing lives in one place: **Project → Settings → Billing**. You
 | **Free**       | $0 / forever                             | Side projects and solo work — 10 flags/configs/kill switches, no card.         |
 | **Pro**        | $49 / mo (or $39 / mo billed annually)   | Teams shipping weekly — unlimited flags, agents auto-triggered on new issues.  |
 | **Business**   | $199 / mo (or $159 / mo billed annually) | The experimentation tier — unlimited experiments & universes with basic stats. |
-| **Enterprise** | Contact sales                            | Advanced stats (CUPED, mSPRT, custom α), DWH extraction, SSO/RBAC/SCIM, SLA.   |
+| **Enterprise** | Contact sales                            | Advanced stats (CUPED, mSPRT, custom α), warehouse export, SSO/RBAC/SCIM, SLA. |
 
-Team members and **Autopilot scheduled runs are unlimited on every tier**, and **flag evaluations are never metered** — you're only billed for analytics events past your monthly credit (see [overage](#usage--overage)). Pro and Business include a **14-day free trial**. The full picture — resource caps, retention, governance, and tier-gated features — is on the [pricing page](https://shipeasy.ai/pricing) and in [Plan limits & quotas](/get-started/plan-limits).
+Team members and **Autopilot scheduled runs are unlimited on every tier**. Analytics events and flag evaluations each carry a generous monthly credit, then metered overage at published per-million rates (see [overage](#usage--overage)). Pro and Business include a **14-day free trial**. The full picture — resource caps, retention, governance, and tier-gated features — is on the [pricing page](https://shipeasy.ai/pricing) and in [Plan limits & quotas](/get-started/plan-limits).
 
 ## Upgrading
 
@@ -39,12 +39,12 @@ Toggle the billing interval in the plan picker. Annual is cheaper per month but 
 
 ## Usage & overage
 
-Paid plans include a large monthly **event** allowance; past it you're billed for the overage at a COGS-anchored, per-million rate. **Flag evaluations are never metered** on any plan — they're free, forever.
+Paid plans include large monthly **event** and **flag evaluation** allowances; past them you're billed for the overage at a COGS-anchored, per-million rate. Exposure events (from experiments and gate A/B tests) count toward the events meter and bill at the event overage rate.
 
-| Metered usage    | Free             | Pro                   | Business               |
-| ---------------- | ---------------- | --------------------- | ---------------------- |
-| Events / month   | 100K (daily cap) | 100K, then **$1 / M** | 1M, then **$0.75 / M** |
-| Flag evaluations | Anti-abuse cap   | Never metered         | Never metered          |
+| Metered usage       | Free             | Pro                     | Business                |
+| ------------------- | ---------------- | ----------------------- | ----------------------- |
+| Events / month      | 100K (daily cap) | 100K, then **$1 / M**   | 1M, then **$0.75 / M**  |
+| Evaluations / month | 1.5M (daily cap) | 10M, then **$0.10 / M** | 50M, then **$0.05 / M** |
 
 <Callout type="info" title="Nothing is ever dropped">
   Event usage is **notify-only** on paid plans — events always flow, even past your included credit.

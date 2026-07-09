@@ -50,14 +50,14 @@ Team members and Autopilot scheduled runs are **unlimited on every tier**. Free 
 
 ## Included monthly usage & overage
 
-Event usage is **notify-only** on paid plans — events are never dropped or rejected. When a project crosses 80% / 100% of its monthly credit, the usage cron notifies you (and ops, for paid projects). **Flag evaluations are never metered.** Free is hard-capped per day for abuse protection. Production error events (SEE) **share the events meter** — there is no separate per-error price.
+Event usage is **notify-only** on paid plans — events are never dropped or rejected. When a project crosses 80% / 100% of its monthly credit, the usage cron notifies you (and ops, for paid projects). Free is hard-capped per day for abuse protection. Production error events (SEE) and experiment/gate-test exposures **share the events meter** — there is no separate per-error or per-exposure price. Flag evaluations carry their own monthly credit, then per-million overage on paid tiers.
 
-| Allowance / rate   | Free             | Pro                   | Business               | Enterprise    |
-| ------------------ | ---------------- | --------------------- | ---------------------- | ------------- |
-| Events / month     | 100K (daily cap) | 100K, then **$1 / M** | 1M, then **$0.75 / M** | Committed     |
-| Flag evaluations   | Anti-abuse cap   | Never metered         | Never metered          | Never metered |
-| Included ops seats | Unlimited        | 3, then $7/seat       | 5, then $12/seat       | Custom        |
-| Jarvis credits     | Pay-as-you-go    | $3 / mo, then credits | $3 / mo, then credits  | Custom        |
+| Allowance / rate    | Free             | Pro                     | Business                | Enterprise |
+| ------------------- | ---------------- | ----------------------- | ----------------------- | ---------- |
+| Events / month      | 100K (daily cap) | 100K, then **$1 / M**   | 1M, then **$0.75 / M**  | Committed  |
+| Evaluations / month | 1.5M (daily cap) | 10M, then **$0.10 / M** | 50M, then **$0.05 / M** | Committed  |
+| Included ops seats  | Unlimited        | 3, then $7/seat         | 5, then $12/seat        | Custom     |
+| Jarvis credits      | Pay-as-you-go    | $3 / mo, then credits   | $3 / mo, then credits   | Custom     |
 
 ## Retention
 
@@ -69,7 +69,7 @@ Event usage is **notify-only** on paid plans — events are never dropped or rej
 
 ## Feature availability
 
-Experiments with **basic stats** (Welch t-test, SRM) and exposure logging land at **Business**. **Advanced statistics** — anything that needs pre-experiment data storage or extra computation (CUPED, mSPRT sequential testing, custom α) — plus SSO/RBAC and DWH extraction land at **Enterprise**.
+Experiments with **basic stats** (Welch t-test, SRM) and exposure logging land at **Business**. **Advanced statistics** — anything that needs pre-experiment data storage or extra computation (CUPED, mSPRT sequential testing, custom α) — plus SSO/RBAC and data warehouse export land at **Enterprise**.
 
 | Feature                        | Free | Pro | Business | Enterprise |
 | ------------------------------ | ---- | --- | -------- | ---------- |
@@ -89,7 +89,7 @@ Experiments with **basic stats** (Welch t-test, SRM) and exposure logging land a
 | CUPED variance reduction       | —    | —   | —        | ✅         |
 | Sequential testing (mSPRT)     | —    | —   | —        | ✅         |
 | Custom significance threshold  | —    | —   | —        | ✅         |
-| DWH data extraction            | —    | —   | —        | ✅         |
+| Data warehouse export          | —    | —   | —        | ✅         |
 | SAML / SSO                     | —    | —   | —        | ✅         |
 | Custom RBAC roles              | —    | —   | —        | ✅         |
 | SCIM provisioning              | —    | —   | —        | ✅         |
