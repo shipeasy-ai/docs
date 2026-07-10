@@ -79,6 +79,7 @@
     "getError",
     "updateErrorStatus",
     "fileErrorTicket",
+    "resolveError",
     "getErrorSeries",
     "listConnectors",
     "createConnector",
