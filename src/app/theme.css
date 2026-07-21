@@ -1,12 +1,10 @@
 /* ──────────────────────────────────────────────────────────────
    Shipeasy docs — design tokens + Fumadocs theme overrides.
-   Mirrors apps/ui/src/app/globals.css (warm-dark palette,
-   teal accent, Geist + Instrument Serif typography).
+   Mirrors apps/ui/src/app/globals.css: a single Helvetica UI typeface
+   (system stack, no webfont) with a system monospace for code. No
+   webfonts are loaded here — Instrument Serif lives only on the
+   landing + a couple of empty states, not the docs.
    ────────────────────────────────────────────────────────────── */
-
-/* Geist + Geist Mono + Instrument Serif from Google Fonts.
-   Hosted-only build (no GFonts plugin), so use a static link. */
-@import url("https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&family=Instrument+Serif:ital@0;1&display=swap");
 
 /* Force dark mode regardless of OS preference, matching the admin app. */
 html {
@@ -42,9 +40,13 @@ html {
   --se-info-soft: color-mix(in oklch, var(--se-info) 16%, transparent);
   --se-purple: oklch(0.72 0.18 295);
 
-  --se-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  --se-sans: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --se-serif: "Instrument Serif", ui-serif, Georgia, serif;
+  /* Real monospace for code blocks / terminals / API samples — system stack. */
+  --se-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  /* Single UI typeface — Helvetica system stack, no webfont. */
+  --se-sans: Helvetica, "Segoe UI", Arial, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  /* Serif retired in docs — heading <em> accents resolve to Helvetica (accent by
+     italic/weight, not a second face). Instrument Serif is landing-only now. */
+  --se-serif: var(--se-sans);
 
   /* Override Fumadocs tokens to point at the shipeasy palette. */
   --color-fd-background: var(--se-bg);
