@@ -262,6 +262,7 @@ shipeasy metrics create [options] <name>
 | `--winsorize-pct <value>`                  | optional | Winsorise percentile (1–99) to clamp outliers. Defaults to 99.                                                                                                                                                                                                                                                                        |
 | `--default-min-effect-of-interest <value>` | optional | Default minimum effect of interest (relative, 0–1) — the smallest change in this metric worth acting on, used as the power-planning baseline. Intrinsic to the metric; an experiment overrides it per-attachment with `min_effect_of_interest` when a specific decision has a different cost/risk bar. `null` to omit.                |
 | `--direction <value>`                      | optional | Desired direction of movement. `higher_better` (default), `lower_better`, or `neutral` (guardrail).                                                                                                                                                                                                                                   |
+| `--unit <value>`                           | optional | Display unit (e.g. `ms`, `%`, `$`), or `null` when unitless.                                                                                                                                                                                                                                                                          |
 | `--query-ir <value>`                       | optional | Typed query IR — the structured alternative to the `query` DSL string. Exactly one of `query` / `query_ir` is supplied per metric body.                                                                                                                                                                                               |
 
 ### `shipeasy metrics show`
@@ -300,6 +301,7 @@ shipeasy metrics update [options] <id>
 | `--winsorize-pct <value>`                  | optional | Winsorise percentile (1–99) to clamp outliers. Defaults to 99.                                                                                                                                                                                                                                                                        |
 | `--default-min-effect-of-interest <value>` | optional | Default minimum effect of interest (relative, 0–1) — the smallest change in this metric worth acting on, used as the power-planning baseline. Intrinsic to the metric; an experiment overrides it per-attachment with `min_effect_of_interest` when a specific decision has a different cost/risk bar. `null` to omit.                |
 | `--direction <value>`                      | optional | Desired direction of movement. `higher_better` (default), `lower_better`, or `neutral` (guardrail).                                                                                                                                                                                                                                   |
+| `--unit <value>`                           | optional | Display unit (e.g. `ms`, `%`, `$`), or `null` when unitless.                                                                                                                                                                                                                                                                          |
 | `--query-ir <value>`                       | optional | Typed query IR — the structured alternative to the `query` DSL string. Exactly one of `query` / `query_ir` is supplied per metric body.                                                                                                                                                                                               |
 
 ### `shipeasy metrics archive`
@@ -1106,6 +1108,9 @@ shipeasy release configs create [options] <name>
 | `--folder <value>`      | optional | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`).                                                   |
 | `--schema <value>`      | optional | JSON Schema (draft 2020-12) describing the shape of the config value. Top-level `type` must be `'object'`; every published value is validated against this schema.                         |
 | `--value <value>`       | optional | Initial config value. Either a single JSON object applied to every env, or a `{ env: value }` map seeding per-env values. Must match `schema`. Defaults to `{}` on every env when omitted. |
+| `--dev <value>`         | optional | Seed the **dev** env's initial value (version 1), overriding `value` for dev. Published immediately. Must match `schema`.                                                                  |
+| `--staging <value>`     | optional | Seed the **staging** env's initial value (version 1), overriding `value` for staging. Published immediately. Must match `schema`.                                                          |
+| `--prod <value>`        | optional | Seed the **prod** env's initial value (version 1), overriding `value` for prod. Published immediately. Must match `schema`.                                                                |
 
 #### `shipeasy release configs get`
 
@@ -1135,11 +1140,14 @@ shipeasy release configs update [options] <id>
 | -------- | -------- | --------------------------------------------------------- |
 | `id`     | required | Stable opaque config id (`cfg_…`) or the config's `name`. |
 
-| Option             |          | Description                                                                                                                                |
-| ------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `--schema <value>` | optional | Replacement schema. When supplied, the new schema is validated against every published value before it lands.                              |
-| `--value <value>`  | optional | Flat value applied to **every** env. Publishes a new version per env. To target one env, use `PUT /{id}/drafts` then `POST /{id}/publish`. |
-| `--folder <value>` | optional | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`).   |
+| Option              |          | Description                                                                                                                                          |
+| ------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--schema <value>`  | optional | Replacement schema. When supplied, the new schema is validated against every published value before it lands.                                        |
+| `--value <value>`   | optional | Flat value applied to **every** env. Publishes a new version per env. To publish one env only, pass that env's key (`dev`/`staging`/`prod`) instead. |
+| `--dev <value>`     | optional | Publish a new version to the **dev** env only, immediately (no draft). Overrides `value` for dev. Must match the effective schema.                   |
+| `--staging <value>` | optional | Publish a new version to the **staging** env only, immediately (no draft). Overrides `value` for staging. Must match the effective schema.           |
+| `--prod <value>`    | optional | Publish a new version to the **prod** env only, immediately (no draft). Overrides `value` for prod. Must match the effective schema.                 |
+| `--folder <value>`  | optional | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`).             |
 
 #### `shipeasy release configs archive`
 
@@ -1157,72 +1165,6 @@ shipeasy release configs archive [options] <id>
 | ---------------- | -------- | ------------------------------ |
 | `--data <value>` | optional | Request body as a JSON object. |
 
-#### `shipeasy release configs draft`
-
-Save a draft value
-
-```bash
-shipeasy release configs draft [options] <id>
-```
-
-| Argument |          | Description                                               |
-| -------- | -------- | --------------------------------------------------------- |
-| `id`     | required | Stable opaque config id (`cfg_…`) or the config's `name`. |
-
-| Option            |          | Description                                                                          |
-| ----------------- | -------- | ------------------------------------------------------------------------------------ |
-| `--env <value>`   | optional | Target environment. One of the project's configured envs (`dev`, `staging`, `prod`). |
-| `--value <value>` | optional | Draft value to stage on `env`. Validated against the config's current schema.        |
-
-#### `shipeasy release configs discard-draft`
-
-Discard a draft
-
-```bash
-shipeasy release configs discard-draft [options] <id>
-```
-
-| Argument |          | Description                                               |
-| -------- | -------- | --------------------------------------------------------- |
-| `id`     | required | Stable opaque config id (`cfg_…`) or the config's `name`. |
-
-| Option          |          | Description                                                                          |
-| --------------- | -------- | ------------------------------------------------------------------------------------ |
-| `--env <value>` | optional | Target environment. One of the project's configured envs (`dev`, `staging`, `prod`). |
-
-#### `shipeasy release configs publish`
-
-Publish a draft
-
-```bash
-shipeasy release configs publish [options] <id>
-```
-
-| Argument |          | Description                                               |
-| -------- | -------- | --------------------------------------------------------- |
-| `id`     | required | Stable opaque config id (`cfg_…`) or the config's `name`. |
-
-| Option          |          | Description                                                                          |
-| --------------- | -------- | ------------------------------------------------------------------------------------ |
-| `--env <value>` | optional | Target environment. One of the project's configured envs (`dev`, `staging`, `prod`). |
-
-#### `shipeasy release configs activity`
-
-List config activity
-
-```bash
-shipeasy release configs activity [options] <id>
-```
-
-| Argument |          | Description                                               |
-| -------- | -------- | --------------------------------------------------------- |
-| `id`     | required | Stable opaque config id (`cfg_…`) or the config's `name`. |
-
-| Option            |          | Description                                 |
-| ----------------- | -------- | ------------------------------------------- |
-| `--limit <value>` | optional | Max rows to return (1–100). Defaults to 20. |
-| `--data <value>`  | optional | Request body as a JSON object.              |
-
 #### `shipeasy release configs update-schema`
 
 Update a config schema
@@ -1238,23 +1180,6 @@ shipeasy release configs update-schema [options] <id>
 | Option             |          | Description                                                                                       |
 | ------------------ | -------- | ------------------------------------------------------------------------------------------------- |
 | `--schema <value>` | optional | Replacement JSON Schema (draft 2020-12). Validated against every published value before it lands. |
-
-#### `shipeasy release configs versions`
-
-List config version history
-
-```bash
-shipeasy release configs versions [options] <id>
-```
-
-| Argument |          | Description                                               |
-| -------- | -------- | --------------------------------------------------------- |
-| `id`     | required | Stable opaque config id (`cfg_…`) or the config's `name`. |
-
-| Option           |          | Description                                                                                     |
-| ---------------- | -------- | ----------------------------------------------------------------------------------------------- |
-| `--env <value>`  | optional | Environment to list history for (`dev`, `staging`, or `prod`). Defaults to `prod` when omitted. |
-| `--data <value>` | optional | Request body as a JSON object.                                                                  |
 
 ### `shipeasy release experiments`
 
