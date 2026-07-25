@@ -1,12 +1,9 @@
 ---
 title: "Dynamic configs"
-description: 'getConfig fetches a typed JSON value (a "dynamic config" / remote config) by name from the cached rules blob. Configs are not user-scoped — they resolve to…'
+description: "getConfig fetches a typed JSON value (a \"dynamic config\" / remote config) by name from the cached rules blob. Configs are not user-scoped — they resolve to…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-java/pages/configs.md`](https://shipeasy-ai.github.io/sdk-java/pages/configs.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-java/pages/configs.md`](https://shipeasy-ai.github.io/sdk-java/pages/configs.md).</Callout>
 
 `getConfig` fetches a typed JSON value (a "dynamic config" / remote config) by
 name from the cached rules blob. Configs are **not user-scoped** — they resolve
@@ -40,3 +37,4 @@ The default-value overload returns the fallback when the config key is absent
 ```java
 Object copy = c.getConfig("billing_copy", Map.of("title", "Default"));
 ```
+

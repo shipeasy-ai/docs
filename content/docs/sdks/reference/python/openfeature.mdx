@@ -3,10 +3,7 @@ title: "OpenFeature provider"
 description: "The Python SDK ships an OpenFeature server provider, shipeasy.openfeature.ShipeasyProvider, so apps standardised on the CNCF OpenFeature API can plug…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-python/pages/openfeature.md`](https://shipeasy-ai.github.io/sdk-python/pages/openfeature.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-python/pages/openfeature.md`](https://shipeasy-ai.github.io/sdk-python/pages/openfeature.md).</Callout>
 
 The Python SDK ships an **OpenFeature server provider**,
 `shipeasy.openfeature.ShipeasyProvider`, so apps standardised on the CNCF
@@ -53,16 +50,17 @@ carried through verbatim for targeting.
 
 ## Reason mapping (Shipeasy → OpenFeature)
 
-| Shipeasy reason    | OpenFeature reason | error code           |
-| ------------------ | ------------------ | -------------------- |
-| `RULE_MATCH`       | `TARGETING_MATCH`  | —                    |
-| `DEFAULT`          | `DEFAULT`          | —                    |
-| `OFF`              | `DISABLED`         | —                    |
-| `OVERRIDE`         | `STATIC`           | —                    |
-| `FLAG_NOT_FOUND`   | `ERROR`            | `FLAG_NOT_FOUND`     |
-| `CLIENT_NOT_READY` | `ERROR`            | `PROVIDER_NOT_READY` |
+| Shipeasy reason | OpenFeature reason | error code |
+| --- | --- | --- |
+| `RULE_MATCH` | `TARGETING_MATCH` | — |
+| `DEFAULT` | `DEFAULT` | — |
+| `OFF` | `DISABLED` | — |
+| `OVERRIDE` | `STATIC` | — |
+| `FLAG_NOT_FOUND` | `ERROR` | `FLAG_NOT_FOUND` |
+| `CLIENT_NOT_READY` | `ERROR` | `PROVIDER_NOT_READY` |
 
 A config that is absent resolves to the OpenFeature `default_value` with reason
 `DEFAULT`; a present-but-wrong-type config returns the default with
 `TYPE_MISMATCH`. Exceptions never propagate to OpenFeature — they surface as
 reason `ERROR` / `GENERAL`.
+

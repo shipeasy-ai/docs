@@ -536,15 +536,11 @@ function main() {
     JSON.stringify({ title: "Reference", pages: ["index", ...SDKS.map((s) => s.slug)] }, null, 2) +
       "\n",
   );
-  // The pre-commit hook runs `prettier --write` over content/**/*.{md,mdx,json},
-  // so format here too — otherwise every commit rewrites the generated files and
-  // a "re-run and assert no diff" check can never pass.
-  const targets = [OUT_ROOT, ...SDKS.map((s) => join(SDKS_ROOT, `${s.landing}.mdx`))];
-  execFileSync("pnpm", ["exec", "prettier", "--write", "--log-level", "warn", ...targets], {
-    cwd: REPO_ROOT,
-    stdio: "inherit",
-  });
-
+  // NOTE: this output is deliberately NOT prettier-formatted, and the paths are
+  // listed in .prettierignore. Prettier's Markdown emphasis handling rewrites
+  // upstream prose — `api_key` becomes `api*key`, `*same*` becomes `\_same*` —
+  // which corrupts the SDK repos' text. Byte-identical-to-the-generator is also
+  // what lets a re-run assert no diff.
   console.log(`\nWrote ${SDKS.length} SDK references to ${OUT_ROOT}`);
 }
 

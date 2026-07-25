@@ -3,10 +3,7 @@ title: "Kill switches"
 description: "A kill switch is an operational on/off you can flip from the dashboard to instantly disable a feature. Kill switches ride the flags blob alongside gates, so…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-go/pages/killswitches.md`](https://shipeasy-ai.github.io/sdk-go/pages/killswitches.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-go/pages/killswitches.md`](https://shipeasy-ai.github.io/sdk-go/pages/killswitches.md).</Callout>
 
 A kill switch is an operational on/off you can flip from the dashboard to
 instantly disable a feature. Kill switches ride the **flags blob** alongside
@@ -42,3 +39,4 @@ killedForEU := c.GetKillswitch("payments_paused", "eu")
 > Note: a gate's own kill state is also folded into gate evaluation — a
 > killswitched gate reads `false` from `GetFlag` with reason `OFF`. `GetKillswitch`
 > is for standalone kill-switch resources.
+

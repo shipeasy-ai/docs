@@ -3,10 +3,7 @@ title: "Installation & configuration"
 description: "This page is the canonical home for installing the SDK and calling Shipeasy\\configure() — every other page and snippet assumes configure() already ran at…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-php/pages/installation.md`](https://shipeasy-ai.github.io/sdk-php/pages/installation.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-php/pages/installation.md`](https://shipeasy-ai.github.io/sdk-php/pages/installation.md).</Callout>
 
 This page is the canonical home for installing the SDK and calling
 `Shipeasy\configure()` — every other page and snippet assumes `configure()`
@@ -84,26 +81,26 @@ $enabled = $client->getFlag('new_checkout');
 
 ### `configure()` arguments
 
-| Arg           | Type             | Notes                                                                                                                                                          |
-| ------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `$apiKey`     | `string`         | The Shipeasy **server** key. Required.                                                                                                                         |
+| Arg | Type | Notes |
+| --- | --- | --- |
+| `$apiKey` | `string` | The Shipeasy **server** key. Required. |
 | `$attributes` | `callable\|null` | `(yourUser) => attributeMap`. **Default is identity** — omit it when your user array already IS the Shipeasy attribute map. Runs once per `new Client($user)`. |
-| `$opts`       | `array`          | The options below (all optional).                                                                                                                              |
+| `$opts` | `array` | The options below (all optional). |
 
 ### `$opts` keys
 
-| Key                 | Default                   | Meaning                                                                                                                                                                                                  |
-| ------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `env`               | `'prod'`                  | The read environment for the blob.                                                                                                                                                                       |
-| `baseUrl`           | `https://api.shipeasy.ai` | Edge API base.                                                                                                                                                                                           |
-| `isNetworkEnabled`  | env-derived               | Master switch for **all** outbound requests. `null` ⇒ on in production, off everywhere else. See [Configuration](/sdks/reference/php/configuration).                                                     |
-| `disableTelemetry`  | env-derived               | Opt out of the usage-telemetry beacon. `null` ⇒ on in production, off everywhere else.                                                                                                                   |
-| `telemetryUrl`      | (built-in)                | Override the telemetry endpoint.                                                                                                                                                                         |
-| `privateAttributes` | `[]`                      | Attribute names stripped from outbound event payloads (LD/Statsig `privateAttributes`). See [Advanced](/sdks/reference/php/advanced).                                                                    |
-| `stickyStore`       | `null`                    | A `Shipeasy\StickyBucketStore` for durable experiment bucketing. See [Advanced](/sdks/reference/php/advanced).                                                                                           |
-| `logLevel`          | `'warn'`                  | SDK diagnostic verbosity: `'silent'`, `'error'`, `'warn'`, `'info'`, `'debug'`. Runtime reads are fail-safe (never throw) and log at this level. See [Configuration](/sdks/reference/php/configuration). |
+| Key | Default | Meaning |
+| --- | --- | --- |
+| `env` | `'prod'` | The read environment for the blob. |
+| `baseUrl` | `https://api.shipeasy.ai` | Edge API base. |
+| `isNetworkEnabled` | env-derived | Master switch for **all** outbound requests. `null` ⇒ on in production, off everywhere else. See [Configuration](/sdks/reference/php/configuration). |
+| `disableTelemetry` | env-derived | Opt out of the usage-telemetry beacon. `null` ⇒ on in production, off everywhere else. |
+| `telemetryUrl` | (built-in) | Override the telemetry endpoint. |
+| `privateAttributes` | `[]` | Attribute names stripped from outbound event payloads (LD/Statsig `privateAttributes`). See [Advanced](/sdks/reference/php/advanced). |
+| `stickyStore` | `null` | A `Shipeasy\StickyBucketStore` for durable experiment bucketing. See [Advanced](/sdks/reference/php/advanced). |
+| `logLevel` | `'warn'` | SDK diagnostic verbosity: `'silent'`, `'error'`, `'warn'`, `'info'`, `'debug'`. Runtime reads are fail-safe (never throw) and log at this level. See [Configuration](/sdks/reference/php/configuration). |
 
-The **public client key** (a separate value) is _not_ passed to `configure()`.
+The **public client key** (a separate value) is *not* passed to `configure()`.
 It is only used for the i18n loader `<script>` tag — see i18n.
 
 ### Identity default
@@ -132,7 +129,7 @@ explicit init step. PHP is request-scoped and has **no background poll thread**:
 ## Framework wiring
 
 Call `configure()` exactly **once** per process/request bootstrap. The frameworks
-below differ only in _where_ that single call lives.
+below differ only in *where* that single call lives.
 
 ### Laravel — `php artisan shipeasy:install`
 
@@ -313,3 +310,4 @@ $enabled = $client->getFlag('new_checkout');
 
 For Swoole / RoadRunner / queue workers, configure once at worker boot and
 refresh the blob on a schedule to keep it fresh across requests.
+

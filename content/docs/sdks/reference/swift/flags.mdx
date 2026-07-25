@@ -3,12 +3,9 @@ title: "Flags"
 description: "A flag (a.k.a. gate) evaluates to a Bool for the identified device user. Reads are served from the local cache of the last /sdk/evaluate response — no…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-swift/pages/flags.md`](https://shipeasy-ai.github.io/sdk-swift/pages/flags.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-swift/pages/flags.md`](https://shipeasy-ai.github.io/sdk-swift/pages/flags.md).</Callout>
 
-A flag (a.k.a. _gate_) evaluates to a `Bool` for the identified device user.
+A flag (a.k.a. *gate*) evaluates to a `Bool` for the identified device user.
 Reads are served from the local cache of the last `/sdk/evaluate` response — no
 per-call network, safe from any thread.
 
@@ -44,3 +41,4 @@ To re-evaluate for the current user (e.g. after you publish a flag), call
 await client.refreshAssignments()
 let on = await client.getFlag("new_checkout")
 ```
+

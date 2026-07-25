@@ -161,9 +161,9 @@ Booleans → gates; strings/numbers/objects → dynamic configs. `targetingKey` 
 - **Anonymous bucketing:** register `AnonIdFilter` (servlet `Filter`) — mints the
   `__se_anon_id` cookie.
 - **Private attributes / sticky bucketing:** `Shipeasy.options(key)
-.privateAttributes(List.of("email")).stickyStore(new InMemoryStickyStore())`.
+  .privateAttributes(List.of("email")).stickyStore(new InMemoryStickyStore())`.
 - **SSR:** package-level `Shipeasy.bootstrapScriptTag(user, anonId, profile, baseUrl)`
-  - `Shipeasy.i18nScriptTag(clientKey, "en:prod")`.
+  + `Shipeasy.i18nScriptTag(clientKey, "en:prod")`.
 - **Change listeners:** `Shipeasy.onChange(() -> ...)` (requires `.poll(true)`;
   returns a cancel `Runnable`).
 

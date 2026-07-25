@@ -3,17 +3,13 @@ title: "Installation & configuration"
 description: "One npm package, two entrypoints — @shipeasy/sdk/server (Node / Cloudflare Worker / Deno, server key) and @shipeasy/sdk/client (browser, public client key).…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-ts/pages/installation.md`](https://shipeasy-ai.github.io/sdk-ts/pages/installation.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-ts/pages/installation.md`](https://shipeasy-ai.github.io/sdk-ts/pages/installation.md).</Callout>
 
 One npm package, two entrypoints — `@shipeasy/sdk/server` (Node / Cloudflare
 Worker / Deno, **server key**) and `@shipeasy/sdk/client` (browser, public
 **client key**). This page is the canonical home for **`configure()`**: install
-
-- minimal wiring for the main TypeScript/JS frameworks, plus the one place each
-  key, the `attributes` transform, the identity default, and init-vs-one-shot live.
++ minimal wiring for the main TypeScript/JS frameworks, plus the one place each
+key, the `attributes` transform, the identity default, and init-vs-one-shot live.
 
 ## Install
 
@@ -63,18 +59,18 @@ Call `configure()` **once at app boot**, then evaluate per user with
 cache + poll lifecycle) and registers your `attributes` transform. The first
 call wins (later calls are no-ops).
 
-| Option              | Side    | Default                   | Purpose                                                                                                                                                                                                       |
-| ------------------- | ------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apiKey`            | server  | —                         | **server** key (required on `@shipeasy/sdk/server`)                                                                                                                                                           |
-| `clientKey`         | browser | —                         | public **client** key (required on `@shipeasy/sdk/client`)                                                                                                                                                    |
-| `attributes`        | both    | identity                  | `(yourUser) => ({ user_id, anonymous_id?, ...targeting })` — runs once per `new Client(user)`. Omit ⇒ **identity** transform (you must pass the attribute bag verbatim).                                      |
-| `poll`              | server  | `false`                   | `true` ⇒ start the **background poll** (initial fetch + periodic refresh) so rules stay fresh on a long-running server. The poll lifecycle lives inside the SDK — you never call an init method yourself.     |
-| `init`              | server  | `true`                    | One-shot fire-and-forget fetch on `configure()` (serverless-friendly). Ignored when `poll: true` (the poll does the initial fetch). Set `false` only to control the first fetch yourself.                     |
-| `baseUrl`           | both    | `https://cdn.shipeasy.ai` | override the CDN/edge base                                                                                                                                                                                    |
-| `env`               | server  | `prod`                    | which published env to read (`dev` / `staging` / `prod`)                                                                                                                                                      |
-| `disableTelemetry`  | both    | `false`                   | turn off per-evaluation usage beacons. On Cloudflare Workers each beacon is an outbound subrequest (cap 50 free / 1000 paid per invocation), so set `true` on hot paths that evaluate many flags per request. |
-| `privateAttributes` | both    | `[]`                      | attribute names usable for targeting but stripped from every outbound `track()` payload (LD/Statsig `privateAttributes`).                                                                                     |
-| `stickyStore`       | server  | —                         | a sticky-bucketing store so an enrolled unit stays in its first-assigned variant across requests even when allocation changes — see [Advanced → sticky bucketing](/sdks/reference/typescript/advanced).       |
+| Option | Side | Default | Purpose |
+| --- | --- | --- | --- |
+| `apiKey` | server | — | **server** key (required on `@shipeasy/sdk/server`) |
+| `clientKey` | browser | — | public **client** key (required on `@shipeasy/sdk/client`) |
+| `attributes` | both | identity | `(yourUser) => ({ user_id, anonymous_id?, ...targeting })` — runs once per `new Client(user)`. Omit ⇒ **identity** transform (you must pass the attribute bag verbatim). |
+| `poll` | server | `false` | `true` ⇒ start the **background poll** (initial fetch + periodic refresh) so rules stay fresh on a long-running server. The poll lifecycle lives inside the SDK — you never call an init method yourself. |
+| `init` | server | `true` | One-shot fire-and-forget fetch on `configure()` (serverless-friendly). Ignored when `poll: true` (the poll does the initial fetch). Set `false` only to control the first fetch yourself. |
+| `baseUrl` | both | `https://cdn.shipeasy.ai` | override the CDN/edge base |
+| `env` | server | `prod` | which published env to read (`dev` / `staging` / `prod`) |
+| `disableTelemetry` | both | `false` | turn off per-evaluation usage beacons. On Cloudflare Workers each beacon is an outbound subrequest (cap 50 free / 1000 paid per invocation), so set `true` on hot paths that evaluate many flags per request. |
+| `privateAttributes` | both | `[]` | attribute names usable for targeting but stripped from every outbound `track()` payload (LD/Statsig `privateAttributes`). |
+| `stickyStore` | server | — | a sticky-bucketing store so an enrolled unit stays in its first-assigned variant across requests even when allocation changes — see [Advanced → sticky bucketing](/sdks/reference/typescript/advanced). |
 
 `configure()` is **first-config-wins**: the first call builds the process-wide
 state, later calls are no-ops. The test/offline siblings
@@ -136,9 +132,7 @@ configure({
 });
 
 const flags = new Client(currentUser);
-if (flags.getFlag("new_checkout")) {
-  /* ... */
-}
+if (flags.getFlag("new_checkout")) { /* ... */ }
 ```
 
 ### 2. Browser entry — `"use client"` (client key)
@@ -169,10 +163,8 @@ Then in any `"use client"` component:
 import { Client } from "@shipeasy/sdk/client";
 
 const flags = new Client(currentUser); // construct once per visitor
-await flags.ready(); // optional — await first /sdk/evaluate
-if (flags.getFlag("new_checkout")) {
-  /* ... */
-}
+await flags.ready();                    // optional — await first /sdk/evaluate
+if (flags.getFlag("new_checkout")) { /* ... */ }
 ```
 
 > For React projects, [`@shipeasy/sdk-react`](https://github.com/shipeasy-ai/sdk-react)
@@ -223,7 +215,7 @@ import { configure, Client } from "@shipeasy/sdk/server";
 
 configure({
   apiKey: globalThis.SHIPEASY_SERVER_KEY ?? "", // SERVER key (from env binding)
-  disableTelemetry: true, // hot path — skip per-eval beacons
+  disableTelemetry: true,                       // hot path — skip per-eval beacons
 });
 
 export default {
@@ -261,7 +253,7 @@ function bootstrap() {
 
 // Per visitor:
 const flags = new Client(currentUser); // construct once per visitor
-await flags.ready(); // optional — await first /sdk/evaluate
+await flags.ready();                    // optional — await first /sdk/evaluate
 flags.getFlag("new_checkout");
 ```
 
@@ -317,10 +309,8 @@ configure({
 
 // Per user:
 const flags = new Client(currentUser); // construct once per visitor
-await flags.ready(); // optional — await first /sdk/evaluate
-if (flags.getFlag("new_checkout")) {
-  /* … */
-}
+await flags.ready();                    // optional — await first /sdk/evaluate
+if (flags.getFlag("new_checkout")) { /* … */ }
 ```
 
 **`anonymousStore`** is the one piece worth wiring: its `get`/`set`/`remove`
@@ -348,3 +338,4 @@ What else differs from a browser (all graceful — the SDK degrades, never throw
 See [Configuration](/sdks/reference/typescript/configuration) for the full `attributes`, identity, and
 SSR-bootstrap reference, and [Testing](/sdks/reference/typescript/testing) for the network-free
 `configureForTesting()` / `configureForOffline()` siblings.
+

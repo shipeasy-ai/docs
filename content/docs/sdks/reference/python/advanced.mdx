@@ -3,14 +3,11 @@ title: "Advanced"
 description: "For logged-out traffic you need a stable unit so a fractional rollout buckets the same on the server and in the browser. The middleware mints a first-party…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-python/pages/advanced.md`](https://shipeasy-ai.github.io/sdk-python/pages/advanced.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-python/pages/advanced.md`](https://shipeasy-ai.github.io/sdk-python/pages/advanced.md).</Callout>
 
 ## Anonymous-id bucketing + middleware
 
-For logged-out traffic you need a _stable_ unit so a fractional rollout buckets
+For logged-out traffic you need a *stable* unit so a fractional rollout buckets
 the same on the server and in the browser. The middleware mints a first-party
 `__se_anon_id` cookie (shared with every Shipeasy SDK) for any request without
 one; evaluations then **default to it** as `anonymous_id`, so `get_flag` on an
@@ -127,3 +124,4 @@ flip). Because the server already evaluated the payload for this user, the
 anon→identified flip. An anonymous request (only `anonymous_id`, or no traits)
 emits no `data-user`, so the tag carries no PII when there is no identity to
 carry.
+

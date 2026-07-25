@@ -3,10 +3,7 @@ title: "Kill switches — `get_killswitch`"
 description: "A kill switch is an admin resource that ships in the flags blob alongside gates and configs. getkillswitch reads it and returns a boolean. It is not…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-ruby/pages/killswitches.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/killswitches.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-ruby/pages/killswitches.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/killswitches.md).</Callout>
 
 A kill switch is an admin resource that ships in the flags blob alongside gates
 and configs. `get_killswitch` reads it and returns a boolean. It is **not**
@@ -29,12 +26,12 @@ Besides its single top-level on/off value, a kill switch can carry **named
 per-key switches** — independently-flippable booleans, each under a key you
 choose (one per payment provider, region, vendor, …). These are **configured on
 the kill switch itself** (in the dashboard "switches" feature, or in an offline
-snapshot — see below); the SDK only _reads_ them. They do not exist until you add
+snapshot — see below); the SDK only *reads* them. They do not exist until you add
 them.
 
 Pass that key as the second argument, `switch_key`, to check **one named switch**
-instead of the top-level value. The natural pattern is to pass _the thing you're
-about to do_ as the key, and let the kill switch decide:
+instead of the top-level value. The natural pattern is to pass *the thing you're
+about to do* as the key, and let the kill switch decide:
 
 ```ruby
 provider = "stripe"   # the variable you check against the configured switches
@@ -90,3 +87,4 @@ c.get_killswitch("payments_circuit_breaker", "other")  # => false (falls back)
 Kill switches are also folded into normal gate evaluation (a killed gate reports
 reason `OFF` from `get_flag_detail`); `get_killswitch` is the explicit read of
 that same state.
+

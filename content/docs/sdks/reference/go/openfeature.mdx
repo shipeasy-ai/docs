@@ -3,10 +3,7 @@ title: "OpenFeature provider"
 description: "The Go SDK ships a first-class OpenFeature provider so apps standardized on the CNCF OpenFeature API can plug Shipeasy in as the backing flag provider. It…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-go/pages/openfeature.md`](https://shipeasy-ai.github.io/sdk-go/pages/openfeature.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-go/pages/openfeature.md`](https://shipeasy-ai.github.io/sdk-go/pages/openfeature.md).</Callout>
 
 The Go SDK ships a first-class [OpenFeature](https://openfeature.dev) provider so
 apps standardized on the CNCF OpenFeature API can plug Shipeasy in as the backing
@@ -61,14 +58,15 @@ verbatim as a targeting attribute.
 
 ## Reason mapping (boolean flags)
 
-| Shipeasy reason    | OpenFeature reason           |
-| ------------------ | ---------------------------- |
-| `RULE_MATCH`       | `TARGETING_MATCH`            |
-| `DEFAULT`          | `DEFAULT`                    |
-| `OFF`              | `DISABLED`                   |
-| `OVERRIDE`         | `STATIC`                     |
-| `FLAG_NOT_FOUND`   | `ERROR` + `FlagNotFound`     |
+| Shipeasy reason | OpenFeature reason |
+| --- | --- |
+| `RULE_MATCH` | `TARGETING_MATCH` |
+| `DEFAULT` | `DEFAULT` |
+| `OFF` | `DISABLED` |
+| `OVERRIDE` | `STATIC` |
+| `FLAG_NOT_FOUND` | `ERROR` + `FlagNotFound` |
 | `CLIENT_NOT_READY` | `ERROR` + `ProviderNotReady` |
 
 On any error-mapped reason the default value is returned with the resolution
 error set.
+

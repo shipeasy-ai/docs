@@ -3,19 +3,9 @@ title: "Python"
 description: "The Shipeasy Python server SDK — local evaluation, configs, experiments, WSGI/ASGI anon middleware, and metric tracking."
 ---
 
-<DocMeta
-  status="Production ready"
-  read="5 min read"
-  updated="July 20, 2026"
-  works="Python 3.8+ · Django · Flask · FastAPI"
-/>
+<DocMeta status="Production ready" read="5 min read" updated="July 20, 2026" works="Python 3.8+ · Django · Flask · FastAPI" />
 
-<Callout type="info">
-  Generated from the Python SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk
-  python overview` returns, served raw at
-  [`https://shipeasy-ai.github.io/sdk-python`](https://shipeasy-ai.github.io/sdk-python). Edit it in
-  the SDK repo, not here.
-</Callout>
+<Callout type="info">Generated from the Python SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk python overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-python`](https://shipeasy-ai.github.io/sdk-python). Edit it in the SDK repo, not here.</Callout>
 
 `shipeasy` is the **server** SDK for Shipeasy — feature flags, remote configs,
 kill switches, A/B experiments, and metric tracking. It uses your **server key**
@@ -84,11 +74,11 @@ before `configure()` raises `RuntimeError`.
 
 ## The configure family
 
-| call                                                             | when                                       |
-| ---------------------------------------------------------------- | ------------------------------------------ |
-| [`configure(api_key=...)`](/sdks/reference/python/configuration) | production — your server key               |
-| [`configure_for_testing(...)`](/sdks/reference/python/testing)   | unit tests — no network, seed overrides    |
-| [`configure_for_offline(...)`](/sdks/reference/python/testing)   | evaluate real rules from a snapshot / file |
+| call | when |
+| --- | --- |
+| [`configure(api_key=...)`](/sdks/reference/python/configuration) | production — your server key |
+| [`configure_for_testing(...)`](/sdks/reference/python/testing) | unit tests — no network, seed overrides |
+| [`configure_for_offline(...)`](/sdks/reference/python/testing) | evaluate real rules from a snapshot / file |
 
 After any of them, you read the same way: `shipeasy.Client(user)`.
 
@@ -286,10 +276,6 @@ client.track("checkout_started")   # properties are optional
     { href: "/sdks/reference/python", title: "Python full reference", note: "Every feature page" },
     { href: "/sdks", title: "Shared evaluation model", note: "How every SDK buckets" },
     { href: "/sdks/reference/python/testing", title: "Testing", note: "Seed values, zero network" },
-    {
-      href: "/sdks/reference/python/error-reporting",
-      title: "Error reporting",
-      note: "The see() surface",
-    },
+    { href: "/sdks/reference/python/error-reporting", title: "Error reporting", note: "The see() surface" },
   ]}
 />

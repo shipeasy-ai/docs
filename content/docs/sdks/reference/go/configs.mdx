@@ -3,10 +3,7 @@ title: "Dynamic configs"
 description: "A dynamic config is a typed JSON value managed in the dashboard. Configs are not user-scoped — the bound Client exposes them for one-stop ergonomics but…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-go/pages/configs.md`](https://shipeasy-ai.github.io/sdk-go/pages/configs.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-go/pages/configs.md`](https://shipeasy-ai.github.io/sdk-go/pages/configs.md).</Callout>
 
 A dynamic config is a typed JSON value managed in the dashboard. Configs are
 **not** user-scoped — the bound `Client` exposes them for one-stop ergonomics but
@@ -40,3 +37,4 @@ copy := c.GetConfigOr("billing_copy", map[string]any{"cta": "Buy"})
 Configs are not user-scoped, so the bound `Client` is read the same way for any
 user — they're exposed on `Client` purely so flags, configs, kill switches,
 experiments and tracking all come off one handle.
+

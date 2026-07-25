@@ -3,10 +3,7 @@ title: "Shipeasy Python SDK — Overview"
 description: "shipeasy is the server SDK for Shipeasy — feature flags, remote configs, kill switches, A/B experiments, and metric tracking. It uses your server key and…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-python/pages/overview.md`](https://shipeasy-ai.github.io/sdk-python/pages/overview.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-python/pages/overview.md`](https://shipeasy-ai.github.io/sdk-python/pages/overview.md).</Callout>
 
 `shipeasy` is the **server** SDK for Shipeasy — feature flags, remote configs,
 kill switches, A/B experiments, and metric tracking. It uses your **server key**
@@ -60,11 +57,11 @@ before `configure()` raises `RuntimeError`.
 
 ## The configure family
 
-| call                                                             | when                                       |
-| ---------------------------------------------------------------- | ------------------------------------------ |
-| [`configure(api_key=...)`](/sdks/reference/python/configuration) | production — your server key               |
-| [`configure_for_testing(...)`](/sdks/reference/python/testing)   | unit tests — no network, seed overrides    |
-| [`configure_for_offline(...)`](/sdks/reference/python/testing)   | evaluate real rules from a snapshot / file |
+| call | when |
+| --- | --- |
+| [`configure(api_key=...)`](/sdks/reference/python/configuration) | production — your server key |
+| [`configure_for_testing(...)`](/sdks/reference/python/testing) | unit tests — no network, seed overrides |
+| [`configure_for_offline(...)`](/sdks/reference/python/testing) | evaluate real rules from a snapshot / file |
 
 After any of them, you read the same way: `shipeasy.Client(user)`.
 
@@ -80,3 +77,4 @@ After any of them, you read the same way: `shipeasy.Client(user)`.
 - [testing](/sdks/reference/python/testing) — `configure_for_testing`, `configure_for_offline`, overrides
 - [openfeature](/sdks/reference/python/openfeature) — `ShipeasyProvider`
 - [advanced](/sdks/reference/python/advanced) — anon-id middleware, private attrs, sticky bucketing, manual exposure, SSR
+

@@ -3,10 +3,7 @@ title: "OpenFeature"
 description: "This SDK ships a CNCF OpenFeature provider: Shipeasy\\OpenFeature\\ShipeasyProvider. If your app is standardized on the OpenFeature API, plug Shipeasy in as…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-php/pages/openfeature.md`](https://shipeasy-ai.github.io/sdk-php/pages/openfeature.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-php/pages/openfeature.md`](https://shipeasy-ai.github.io/sdk-php/pages/openfeature.md).</Callout>
 
 This SDK ships a CNCF [OpenFeature](https://openfeature.dev) provider:
 `Shipeasy\OpenFeature\ShipeasyProvider`. If your app is standardized on the
@@ -52,12 +49,13 @@ Constructing `new ShipeasyProvider()` before `configure()` throws
 
 Shipeasy reasons map onto OpenFeature's `Reason` / `ErrorCode`:
 
-| Shipeasy             | OpenFeature          |
-| -------------------- | -------------------- |
-| `RULE_MATCH`         | `TARGETING_MATCH`    |
-| `DEFAULT`            | `DEFAULT`            |
-| `OFF`                | `DISABLED`           |
-| `OVERRIDE`           | `STATIC`             |
-| missing flag         | `FLAG_NOT_FOUND`     |
+| Shipeasy | OpenFeature |
+| --- | --- |
+| `RULE_MATCH` | `TARGETING_MATCH` |
+| `DEFAULT` | `DEFAULT` |
+| `OFF` | `DISABLED` |
+| `OVERRIDE` | `STATIC` |
+| missing flag | `FLAG_NOT_FOUND` |
 | uninitialized client | `PROVIDER_NOT_READY` |
-| wrong config type    | `TYPE_MISMATCH`      |
+| wrong config type | `TYPE_MISMATCH` |
+

@@ -3,10 +3,7 @@ title: "Testing"
 description: "Tests run hermetically — no network, no UserDefaults — by constructing a ShipeasyClient directly with two injected dependencies:"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-swift/pages/testing.md`](https://shipeasy-ai.github.io/sdk-swift/pages/testing.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-swift/pages/testing.md`](https://shipeasy-ai.github.io/sdk-swift/pages/testing.md).</Callout>
 
 Tests run **hermetically** — no network, no `UserDefaults` — by constructing a
 `ShipeasyClient` directly with two injected dependencies:
@@ -75,10 +72,10 @@ final class FlagTests: XCTestCase {
   (see [configuration](/sdks/reference/swift/configuration#environment-derived-egress-defaults)), and
   a test process is not production, so a `/sdk/evaluate` call would never fire.
   Force it on for the client under test — or set `SHIPEASY_ENV=production` for the
-  whole test target so every client defaults to on. When you _want_ to assert the
+  whole test target so every client defaults to on. When you *want* to assert the
   offline default itself, leave it `nil` and keep the env non-production.
 - **`isTrackingEnabled: false`** — keeps the usage telemetry beacon off while the
-  evaluate/`/collect` network path stays on. If you _do_ want to assert on
+  evaluate/`/collect` network path stays on. If you *do* want to assert on
   telemetry, leave it on and record the requests in the transport instead.
 
 ## The `/sdk/evaluate` response shape
@@ -90,14 +87,7 @@ map is an empty map):
 {
   "flags": { "new_ui": true },
   "configs": { "theme": { "accent": "blue" } },
-  "experiments": {
-    "exp1": {
-      "inExperiment": true,
-      "group": "treatment",
-      "params": { "copy": "hi" },
-      "universe": "checkout"
-    }
-  },
+  "experiments": { "exp1": { "inExperiment": true, "group": "treatment", "params": { "copy": "hi" }, "universe": "checkout" } },
   "universes": { "checkout": { "defaults": { "copy": "default" } } },
   "killswitches": { "payments": true }
 }
@@ -149,3 +139,4 @@ client** (present in the cached assignments) so its owning universe is resolvabl
 If a test path went through `configureClient(...)`, drop the process-global client
 between tests with `resetClientConfig()` so the next `configureClient` takes
 effect. It exists for tests only.
+

@@ -3,10 +3,7 @@ title: "OpenFeature provider"
 description: "The Ruby SDK ships an OpenFeature server provider, Shipeasy::OpenFeature::Provider, so apps standardised on the CNCF OpenFeature API can plug Shipeasy in as…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-ruby/pages/openfeature.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/openfeature.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-ruby/pages/openfeature.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/openfeature.md).</Callout>
 
 The Ruby SDK ships an **OpenFeature server provider**,
 `Shipeasy::OpenFeature::Provider`, so apps standardised on the CNCF OpenFeature
@@ -64,25 +61,25 @@ lifecycle: `init` fetches the blob once and `shutdown` tears the poll thread dow
 
 ## Type mapping
 
-| OpenFeature call                           | Shipeasy backing                                    |
-| ------------------------------------------ | --------------------------------------------------- |
-| `fetch_boolean_value`                      | gate (`get_flag_detail`)                            |
-| `fetch_string_value`                       | dynamic config (must be a String)                   |
-| `fetch_integer_value`                      | dynamic config (must be an Integer)                 |
-| `fetch_number_value` / `fetch_float_value` | dynamic config (numeric)                            |
-| `fetch_object_value`                       | dynamic config (Hash or Array)                      |
-| `track`                                    | conversion tracking (no-op without a targeting key) |
+| OpenFeature call | Shipeasy backing |
+| --- | --- |
+| `fetch_boolean_value` | gate (`get_flag_detail`) |
+| `fetch_string_value` | dynamic config (must be a String) |
+| `fetch_integer_value` | dynamic config (must be an Integer) |
+| `fetch_number_value` / `fetch_float_value` | dynamic config (numeric) |
+| `fetch_object_value` | dynamic config (Hash or Array) |
+| `track` | conversion tracking (no-op without a targeting key) |
 
 ## Reason mapping (Shipeasy → OpenFeature)
 
-| Shipeasy `FlagDetail#reason` | OpenFeature reason | error code           |
-| ---------------------------- | ------------------ | -------------------- |
-| `RULE_MATCH`                 | `TARGETING_MATCH`  | —                    |
-| `DEFAULT`                    | `DEFAULT`          | —                    |
-| `OFF`                        | `DISABLED`         | —                    |
-| `OVERRIDE`                   | `STATIC`           | —                    |
-| `FLAG_NOT_FOUND`             | `ERROR`            | `FLAG_NOT_FOUND`     |
-| `CLIENT_NOT_READY`           | `ERROR`            | `PROVIDER_NOT_READY` |
+| Shipeasy `FlagDetail#reason` | OpenFeature reason | error code |
+| --- | --- | --- |
+| `RULE_MATCH` | `TARGETING_MATCH` | — |
+| `DEFAULT` | `DEFAULT` | — |
+| `OFF` | `DISABLED` | — |
+| `OVERRIDE` | `STATIC` | — |
+| `FLAG_NOT_FOUND` | `ERROR` | `FLAG_NOT_FOUND` |
+| `CLIENT_NOT_READY` | `ERROR` | `PROVIDER_NOT_READY` |
 
 For configs, an absent key resolves to the OpenFeature `default_value` with
 reason `DEFAULT`; a present value that fails the requested type predicate resolves
@@ -90,3 +87,4 @@ reason `DEFAULT`; a present value that fails the requested type predicate resolv
 surface as reason `ERROR` / `GENERAL`. The `EvaluationContext` `targeting_key`
 becomes the Shipeasy `user_id`; every other field is carried through verbatim for
 targeting.
+

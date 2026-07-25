@@ -3,10 +3,7 @@ title: "Error reporting (`see()`)"
 description: "see (shipeasy error) is the structured error reporter. Every handled exception documents its product consequence, not just its stack. It works in vanilla JS…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-ts/pages/error-reporting.md`](https://shipeasy-ai.github.io/sdk-ts/pages/error-reporting.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-ts/pages/error-reporting.md`](https://shipeasy-ai.github.io/sdk-ts/pages/error-reporting.md).</Callout>
 
 `see` (shipeasy error) is the structured error reporter. Every handled
 exception documents its **product consequence**, not just its stack. It works
@@ -82,8 +79,7 @@ so put variable data in `.extras()`, never the name:
 
 ```ts
 if (rows.length > LIMIT) {
-  see
-    .Violation("large query")
+  see.Violation("large query")
     .causes_the("search results")
     .to("be trimmed")
     .extras({ rows: rows.length });
@@ -120,7 +116,7 @@ The client SDK does **not** mint issues of its own for failed requests — a bar
 unactionable. Reporting is always yours: `see()` the failure where you know the
 consequence.
 
-What the SDK _does_ do (`autoCollect: { errors }`, on by default) is thread a
+What the SDK *does* do (`autoCollect: { errors }`, on by default) is thread a
 per-request **correlation token** so your report links to the backend across the
 wire. This works no matter which HTTP client you use — the SDK instruments both
 `fetch` **and** `XMLHttpRequest`, so axios (its default adapter), superagent,
@@ -151,3 +147,4 @@ rejections (no actionable consequence).
 - Never put PII or high-cardinality data in `extras`.
 - A `see()` call before `configure()` / `shipeasy()` warns and drops — it never
   throws.
+

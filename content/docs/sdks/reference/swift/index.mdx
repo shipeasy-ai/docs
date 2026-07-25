@@ -3,10 +3,7 @@ title: "Overview"
 description: "Shipeasy is the native client Swift SDK for Shipeasy — feature flags, dynamic configs, kill switches, and A/B experiments for an iOS / macOS / tvOS /…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-swift/pages/overview.md`](https://shipeasy-ai.github.io/sdk-swift/pages/overview.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-swift/pages/overview.md`](https://shipeasy-ai.github.io/sdk-swift/pages/overview.md).</Callout>
 
 `Shipeasy` is the **native client** Swift SDK for [Shipeasy](https://shipeasy.ai) —
 feature flags, dynamic configs, kill switches, and A/B experiments for an
@@ -47,16 +44,16 @@ fractional rollout and experiment on every launch. See
 
 ## The things you use
 
-| Function / type                          | Role                                                                                                                                                                                                                                |
-| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `configureClient(...)`                   | Called **once** at app launch. Wires the client key, HTTP, and the anon-id store; returns the `ShipeasyClient` and registers it globally. First-config-wins (idempotent). See [configuration](/sdks/reference/swift/configuration). |
-| `shipeasyClient()`                       | Fetch the configured client (`ShipeasyClient?`), or `nil` if `configureClient` hasn't run.                                                                                                                                          |
-| `client.identify(_:)`                    | Bind the device user + refresh assignments over `/sdk/evaluate`. Call at launch, on login, and whenever targeting attributes change.                                                                                                |
-| `client.reset()`                         | Logout: clear `user_id`, keep the device `anonymous_id`, re-evaluate as anonymous.                                                                                                                                                  |
-| `client.getFlag/getConfig/getKillswitch` | Cached reads for the current user.                                                                                                                                                                                                  |
-| `client.universe(_:).assign()`           | Assign the user within a universe (a mutual-exclusion pool — the user lands in at most one of its experiments) and read the resolved params. Auto-logs one exposure when enrolled.                                                  |
-| `client.track(_:properties:)`            | Conversion telemetry (fire-and-forget).                                                                                                                                                                                             |
-| `see(_:)` family                         | Structured error reporting. See [error-reporting](/sdks/reference/swift/error-reporting).                                                                                                                                           |
+| Function / type            | Role |
+| -------------------------- | ---- |
+| `configureClient(...)`     | Called **once** at app launch. Wires the client key, HTTP, and the anon-id store; returns the `ShipeasyClient` and registers it globally. First-config-wins (idempotent). See [configuration](/sdks/reference/swift/configuration). |
+| `shipeasyClient()`         | Fetch the configured client (`ShipeasyClient?`), or `nil` if `configureClient` hasn't run. |
+| `client.identify(_:)`      | Bind the device user + refresh assignments over `/sdk/evaluate`. Call at launch, on login, and whenever targeting attributes change. |
+| `client.reset()`           | Logout: clear `user_id`, keep the device `anonymous_id`, re-evaluate as anonymous. |
+| `client.getFlag/getConfig/getKillswitch` | Cached reads for the current user. |
+| `client.universe(_:).assign()` | Assign the user within a universe (a mutual-exclusion pool — the user lands in at most one of its experiments) and read the resolved params. Auto-logs one exposure when enrolled. |
+| `client.track(_:properties:)` | Conversion telemetry (fire-and-forget). |
+| `see(_:)` family           | Structured error reporting. See [error-reporting](/sdks/reference/swift/error-reporting). |
 
 ## Pages
 
@@ -70,3 +67,4 @@ fractional rollout and experiment on every launch. See
 - [testing](/sdks/reference/swift/testing) — hermetic tests with an in-memory store + a stub transport.
 - [openfeature](/sdks/reference/swift/openfeature) — provider status (not shipped).
 - [advanced](/sdks/reference/swift/advanced) — private attributes, custom `AnonymousStore`, `anonymousId`, `refreshAssignments`.
+

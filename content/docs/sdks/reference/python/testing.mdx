@@ -3,15 +3,12 @@ title: "Testing"
 description: "Use configurefortesting() — the test-mode sibling of configure(). It does zero network, needs no apikey, and seeds the values your code under test should…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-python/pages/testing.md`](https://shipeasy-ai.github.io/sdk-python/pages/testing.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-python/pages/testing.md`](https://shipeasy-ai.github.io/sdk-python/pages/testing.md).</Callout>
 
 Use **`configure_for_testing()`** — the test-mode sibling of
-[`configure()`](/sdks/reference/python/configuration). It does **zero network**, needs no api*key,
+[`configure()`](/sdks/reference/python/configuration). It does **zero network**, needs no api_key,
 and seeds the values your code under test should see via override arguments. Then
-read through the ordinary `shipeasy.Client(user)` — the \_same* call your
+read through the ordinary `shipeasy.Client(user)` — the *same* call your
 production code uses.
 
 ```python
@@ -51,7 +48,7 @@ first-config-wins).
 ## Quick overrides on the spot
 
 Seeding up front isn't always enough — sometimes you want to flip one value
-_mid-test_. The package-level override helpers do exactly that, layered on top of
+*mid-test*. The package-level override helpers do exactly that, layered on top of
 whatever `configure_for_testing` / `configure_for_offline` (or even a live
 `configure`) set up. They win until `clear_overrides()`:
 
@@ -70,12 +67,12 @@ assert shipeasy.Client({"user_id": "u_1"}).get_flag("new_checkout") is False
 shipeasy.clear_overrides()   # drop every on-the-spot override
 ```
 
-| helper                                     | effect                                                                                                                                                                              |
-| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `override_flag(name, value)`               | force `get_flag(name)` → `value`                                                                                                                                                    |
-| `override_config(name, value)`             | force `get_config(name)` → `value`                                                                                                                                                  |
+| helper | effect |
+| --- | --- |
+| `override_flag(name, value)` | force `get_flag(name)` → `value` |
+| `override_config(name, value)` | force `get_config(name)` → `value` |
 | `override_experiment(name, group, params)` | force enrolment in `group` with `params` — a pure override that wins over blob eval, surfacing through `universe(name).assign()` only when the experiment exists in the loaded blob |
-| `clear_overrides()`                        | drop all of the above                                                                                                                                                               |
+| `clear_overrides()` | drop all of the above |
 
 (These require a prior `configure*` call — they raise `RuntimeError` otherwise.)
 
@@ -166,3 +163,4 @@ shipeasy.configure_for_offline(
 
 Both helpers take the same `attributes` transform as `configure()`, so your
 user-object mapping is exercised in tests exactly as in production.
+

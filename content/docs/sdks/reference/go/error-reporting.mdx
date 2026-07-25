@@ -3,18 +3,15 @@ title: "Error reporting — `See()`"
 description: "The Go SDK ships a structured error-reporting surface, See(), mirroring @shipeasy/sdk's see(). Every handled error documents its product consequence, not…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-go/pages/error-reporting.md`](https://shipeasy-ai.github.io/sdk-go/pages/error-reporting.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-go/pages/error-reporting.md`](https://shipeasy-ai.github.io/sdk-go/pages/error-reporting.md).</Callout>
 
 The Go SDK ships a structured error-reporting surface, `See()`, mirroring
 `@shipeasy/sdk`'s `see()`. Every handled error documents its product
 **consequence**, not just its stack. Reports are fire-and-forget POSTs to
 `/collect` (`type:"error"`) — they never block or panic into the request path.
 
-> Rule of thumb: _if you don't know the consequence of an error, don't handle it
-> here._
+> Rule of thumb: *if you don't know the consequence of an error, don't handle it
+> here.*
 
 ## Reporting a handled error
 
@@ -83,3 +80,4 @@ tests/assertions).
   truncated to 200 chars, capped at 20 keys; `PrivateAttributes` keys are
   stripped.
 - No-op on test/offline clients (local mode).
+

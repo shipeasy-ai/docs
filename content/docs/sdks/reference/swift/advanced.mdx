@@ -3,10 +3,7 @@ title: "Advanced"
 description: "Attribute names listed in privateAttributes on configureClient(...) are usable for targeting but are stripped from every outbound telemetry payload — the…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-swift/pages/advanced.md`](https://shipeasy-ai.github.io/sdk-swift/pages/advanced.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-swift/pages/advanced.md`](https://shipeasy-ai.github.io/sdk-swift/pages/advanced.md).</Callout>
 
 ## Private attributes
 
@@ -82,7 +79,7 @@ For an identity change (login) use `identify(...)`; for logout use `reset()`. Se
 ## Exposure control
 
 There is no `logExposure` call — `assign()` auto-logs the single exposure when
-the device user is enrolled. To assign _without_ counting an exposure (you want
+the device user is enrolled. To assign *without* counting an exposure (you want
 to inspect the group but aren't presenting the variant yet), pass
 `logExposure: false`, then assign again with logging on at the point you actually
 render it:
@@ -97,3 +94,4 @@ let a = await shipeasyClient()?.universe("checkout").assign()
 
 The exposure is fire-and-forget, deduped, and a no-op when the unit isn't
 enrolled or telemetry is disabled. See [experiments](/sdks/reference/swift/experiments).
+

@@ -3,19 +3,9 @@ title: "Node / TypeScript"
 description: "The canonical Shipeasy SDK — one package with a server and a browser build, local evaluation, configs, experiments, and tracking."
 ---
 
-<DocMeta
-  status="Production ready"
-  read="6 min read"
-  updated="July 19, 2026"
-  works="Node 18+ · Cloudflare Workers · Deno · Next.js · Browsers"
-/>
+<DocMeta status="Production ready" read="6 min read" updated="July 19, 2026" works="Node 18+ · Cloudflare Workers · Deno · Next.js · Browsers" />
 
-<Callout type="info">
-  Generated from the TypeScript / JavaScript SDK repo's own `/docs/` — the same Markdown `shipeasy
-  docs get --sdk typescript overview` returns, served raw at
-  [`https://shipeasy-ai.github.io/sdk-ts`](https://shipeasy-ai.github.io/sdk-ts). Edit it in the SDK
-  repo, not here.
-</Callout>
+<Callout type="info">Generated from the TypeScript / JavaScript SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk typescript overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-ts`](https://shipeasy-ai.github.io/sdk-ts). Edit it in the SDK repo, not here.</Callout>
 
 `@shipeasy/sdk` is the TypeScript / JavaScript SDK for the [Shipeasy](https://shipeasy.ai)
 hosted platform — feature gates, runtime configs, kill switches, A/B
@@ -52,15 +42,11 @@ construction.
 ```ts
 import { configure, Client } from "@shipeasy/sdk/server"; // or /client
 
-configure({
-  apiKey: process.env.SHIPEASY_SERVER_KEY!,
-  attributes: (u: MyUser) => ({ user_id: u.id, plan: u.plan }),
-});
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY!,
+            attributes: (u: MyUser) => ({ user_id: u.id, plan: u.plan }) });
 
 const flags = new Client(currentUser);
-if (flags.getFlag("new_checkout")) {
-  /* ship it */
-}
+if (flags.getFlag("new_checkout")) { /* ship it */ }
 ```
 
 ## What `configure()` and `Client` do
@@ -81,18 +67,18 @@ everywhere you evaluate.
 
 ## Where to go next
 
-| Page                                                          | What it covers                                           |
-| ------------------------------------------------------------- | -------------------------------------------------------- |
-| [Installation](/sdks/reference/typescript/installation)       | install command, runtime versions, import lines          |
-| [Configuration](/sdks/reference/typescript/configuration)     | `configure()`, `attributes`, env vars, SSR bootstrap     |
-| [Flags](/sdks/reference/typescript/flags)                     | `getFlag`, `getFlagDetail`, defaults                     |
-| [Configs](/sdks/reference/typescript/configs)                 | `getConfig` typed values + defaults                      |
-| [Kill switches](/sdks/reference/typescript/killswitches)      | `getKillswitch` semantics                                |
-| [Experiments](/sdks/reference/typescript/experiments)         | `universe().assign()`, `Assignment`, `track`             |
-| [Error reporting](/sdks/reference/typescript/error-reporting) | `see()` grammar                                          |
-| [Testing](/sdks/reference/typescript/testing)                 | `configureForTesting`/`configureForOffline`, `override*` |
-| [OpenFeature](/sdks/reference/typescript/openfeature)         | server + web providers                                   |
-| [Advanced](/sdks/reference/typescript/advanced)               | manual exposure, private attrs, bucketBy, sticky         |
+| Page | What it covers |
+| --- | --- |
+| [Installation](/sdks/reference/typescript/installation) | install command, runtime versions, import lines |
+| [Configuration](/sdks/reference/typescript/configuration) | `configure()`, `attributes`, env vars, SSR bootstrap |
+| [Flags](/sdks/reference/typescript/flags) | `getFlag`, `getFlagDetail`, defaults |
+| [Configs](/sdks/reference/typescript/configs) | `getConfig` typed values + defaults |
+| [Kill switches](/sdks/reference/typescript/killswitches) | `getKillswitch` semantics |
+| [Experiments](/sdks/reference/typescript/experiments) | `universe().assign()`, `Assignment`, `track` |
+| [Error reporting](/sdks/reference/typescript/error-reporting) | `see()` grammar |
+| [Testing](/sdks/reference/typescript/testing) | `configureForTesting`/`configureForOffline`, `override*` |
+| [OpenFeature](/sdks/reference/typescript/openfeature) | server + web providers |
+| [Advanced](/sdks/reference/typescript/advanced) | manual exposure, private attrs, bucketBy, sticky |
 
 The blocks below are the SDK repo's own snippets — the same ones `shipeasy docs get --sdk typescript release/flags` returns, with a worked example baked in.
 
@@ -130,7 +116,7 @@ const flags = new Client(currentUser);
 //   opts.defaultValue — returned when the config key is absent
 //   opts.decode       — optional (raw) => T to validate/shape the stored value
 const cfg = flags.getConfig<{ max: number }>("billing_copy", {
-  defaultValue: { max: 50 }, // used when the key isn't published
+  defaultValue: { max: 50 },               // used when the key isn't published
   decode: (raw) => raw as { max: number }, // optional — typed decode / zod parse
 });
 ```
@@ -235,21 +221,9 @@ flags.track("checkout_started"); // props are optional
 
 <SeeAlso
   links={[
-    {
-      href: "/sdks/reference/typescript",
-      title: "TypeScript / JavaScript full reference",
-      note: "Every feature page",
-    },
+    { href: "/sdks/reference/typescript", title: "TypeScript / JavaScript full reference", note: "Every feature page" },
     { href: "/sdks", title: "Shared evaluation model", note: "How every SDK buckets" },
-    {
-      href: "/sdks/reference/typescript/testing",
-      title: "Testing",
-      note: "Seed values, zero network",
-    },
-    {
-      href: "/sdks/reference/typescript/error-reporting",
-      title: "Error reporting",
-      note: "The see() surface",
-    },
+    { href: "/sdks/reference/typescript/testing", title: "Testing", note: "Seed values, zero network" },
+    { href: "/sdks/reference/typescript/error-reporting", title: "Error reporting", note: "The see() surface" },
   ]}
 />

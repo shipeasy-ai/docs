@@ -3,10 +3,7 @@ title: "Installation & configuration"
 description: "Server SDK for the JVM (Android-compatible). Distributed on Maven Central as ai.shipeasy:shipeasy-kotlin."
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-kotlin/pages/installation.md`](https://shipeasy-ai.github.io/sdk-kotlin/pages/installation.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-kotlin/pages/installation.md`](https://shipeasy-ai.github.io/sdk-kotlin/pages/installation.md).</Callout>
 
 Server SDK for the JVM (Android-compatible). Distributed on Maven Central as
 `ai.shipeasy:shipeasy-kotlin`.
@@ -59,10 +56,10 @@ import ai.shipeasy.see           // structured error reporting
 The SDK is split into two bundles so a backend and a shipped app pull only what
 they need:
 
-| Bundle  | Coordinate                            | Contains                                                                                                                                | For                                       |
-| ------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| Core    | `ai.shipeasy:shipeasy-kotlin`         | Server front door (`configure` / `Client`, `AnonIdFilter`) **and** the client core (`ShipeasyClient` / `configureClient` / `AnonStore`) | JVM **backends** (Ktor / Spring / http4k) |
-| Android | `ai.shipeasy:shipeasy-kotlin-android` | `SharedPreferencesAnonStore` + `configureAndroid()` (depends on the core)                                                               | Shipped **Android** apps                  |
+| Bundle | Coordinate | Contains | For |
+| ------ | ---------- | -------- | --- |
+| Core | `ai.shipeasy:shipeasy-kotlin` | Server front door (`configure` / `Client`, `AnonIdFilter`) **and** the client core (`ShipeasyClient` / `configureClient` / `AnonStore`) | JVM **backends** (Ktor / Spring / http4k) |
+| Android | `ai.shipeasy:shipeasy-kotlin-android` | `SharedPreferencesAnonStore` + `configureAndroid()` (depends on the core) | Shipped **Android** apps |
 
 The core jar is **pure-JVM and Android-free** — `jakarta.servlet` is
 `compileOnly` and there are no `android.*` imports — so a backend pulls **zero**
@@ -105,22 +102,22 @@ call. For a long-running server that should also **poll** for updates, pass
 
 ### `configure(...)` options
 
-| Parameter           | Type                 | Default                   | What it does                                                                                                                                                                                 |
-| ------------------- | -------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apiKey`            | `String`             | —                         | **SERVER** key — authenticates flags/experiments/SSR. Never reaches the browser.                                                                                                             |
-| `attributes`        | `(Any?) -> Map<…>`   | identity                  | Maps YOUR user object → the targeting bag (`user_id`, `anonymous_id`, attrs). Runs once per `Client(user)`.                                                                                  |
-| `baseUrl`           | `String?`            | `https://api.shipeasy.ai` | Edge API origin override.                                                                                                                                                                    |
-| `env`               | `String`             | `"prod"`                  | Tags telemetry + `see()` events; also the fallback env for the egress defaults below.                                                                                                        |
-| `isNetworkEnabled`  | `Boolean?`           | `null` (env-derived)      | Master switch on **all** outbound requests. `null` ⇒ on in production, off elsewhere. See [Configuration](/sdks/reference/kotlin/configuration#network--telemetry-quiet-outside-production). |
-| `isTrackingEnabled` | `Boolean?`           | `null` (env-derived)      | Usage-telemetry switch. `null` ⇒ on in production, off elsewhere; forced off when the network is off.                                                                                        |
-| `disableTelemetry`  | `Boolean`            | `false`                   | Legacy hard opt-out of per-eval usage telemetry (same as `isTrackingEnabled = false`).                                                                                                       |
-| `telemetryUrl`      | `String?`            | `null`                    | Override the telemetry beacon origin.                                                                                                                                                        |
-| `privateAttributes` | `List<String>`       | `[]`                      | Attrs usable for targeting but stripped from outbound `track()` / `see()` extras.                                                                                                            |
-| `stickyStore`       | `StickyBucketStore?` | `null`                    | Lock a unit to its first-assigned variant (see [Advanced](/sdks/reference/kotlin/advanced)).                                                                                                 |
-| `poll`              | `Boolean`            | `false`                   | `true` → fetch once **and** keep polling in the background; `false` → one-shot fetch only.                                                                                                   |
+| Parameter           | Type                   | Default                       | What it does |
+| ------------------- | ---------------------- | ----------------------------- | ------------ |
+| `apiKey`            | `String`               | —                             | **SERVER** key — authenticates flags/experiments/SSR. Never reaches the browser. |
+| `attributes`        | `(Any?) -> Map<…>`     | identity                      | Maps YOUR user object → the targeting bag (`user_id`, `anonymous_id`, attrs). Runs once per `Client(user)`. |
+| `baseUrl`           | `String?`              | `https://api.shipeasy.ai`   | Edge API origin override. |
+| `env`               | `String`               | `"prod"`                      | Tags telemetry + `see()` events; also the fallback env for the egress defaults below. |
+| `isNetworkEnabled`  | `Boolean?`             | `null` (env-derived)          | Master switch on **all** outbound requests. `null` ⇒ on in production, off elsewhere. See [Configuration](/sdks/reference/kotlin/configuration#network--telemetry-quiet-outside-production). |
+| `isTrackingEnabled` | `Boolean?`             | `null` (env-derived)          | Usage-telemetry switch. `null` ⇒ on in production, off elsewhere; forced off when the network is off. |
+| `disableTelemetry`  | `Boolean`              | `false`                       | Legacy hard opt-out of per-eval usage telemetry (same as `isTrackingEnabled = false`). |
+| `telemetryUrl`      | `String?`              | `null`                        | Override the telemetry beacon origin. |
+| `privateAttributes` | `List<String>`         | `[]`                          | Attrs usable for targeting but stripped from outbound `track()` / `see()` extras. |
+| `stickyStore`       | `StickyBucketStore?`   | `null`                        | Lock a unit to its first-assigned variant (see [Advanced](/sdks/reference/kotlin/advanced)). |
+| `poll`              | `Boolean`              | `false`                       | `true` → fetch once **and** keep polling in the background; `false` → one-shot fetch only. |
 
 > **Use the SERVER key.** It authenticates flag, experiment and SSR evaluation
-> and must never reach the browser. The public _client_ key is only used by the
+> and must never reach the browser. The public *client* key is only used by the
 > i18n loader / bootstrap script tags (see i18n).
 
 ### The `attributes` transform
@@ -330,3 +327,4 @@ configureClient(clientKey = "pk_live_…", store = store)
 
 The stable device id is readable as `shipeasyClient()?.anonymousId`. See
 [Advanced](/sdks/reference/kotlin/advanced) for the anon-id persistence contract.
+

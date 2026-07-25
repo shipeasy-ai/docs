@@ -3,10 +3,7 @@ title: "Configuration"
 description: "```python import shipeasy"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-python/pages/configuration.md`](https://shipeasy-ai.github.io/sdk-python/pages/configuration.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-python/pages/configuration.md`](https://shipeasy-ai.github.io/sdk-python/pages/configuration.md).</Callout>
 
 ## `configure(...)` — the once-per-process call
 
@@ -59,20 +56,20 @@ shipeasy.configure(api_key="sdk_server_...", poll=True)
 
 Any of these pass straight through `configure(...)` as keyword arguments:
 
-| keyword                            | type                | default                   | what it does                                                                                                                                                                                                                                          |
-| ---------------------------------- | ------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `attributes`                       | `Callable`          | identity                  | YOUR user object → the Shipeasy attribute map.                                                                                                                                                                                                        |
-| `init`                             | `bool`              | `True`                    | Fire the one-shot fetch fire-and-forget.                                                                                                                                                                                                              |
-| `poll`                             | `bool`              | `False`                   | Start the background poll (refreshes the blob over time).                                                                                                                                                                                             |
-| `base_url`                         | `str`               | `https://api.shipeasy.ai` | API base URL for the blobs. Override for a self-hosted edge or in tests.                                                                                                                                                                              |
-| `env`                              | `str`               | `"prod"`                  | Deployment environment tag, attached to `see()` error events and usage telemetry. Also the fallback for the egress defaults below when no native env var is set.                                                                                      |
-| `is_network_enabled`               | `bool`              | env-derived               | Master switch for **all** outbound requests (blob fetch, `track`, exposure, `see()`, telemetry). Defaults ON in production, OFF elsewhere — see [Environment-derived egress defaults](#environment-derived-egress-defaults). `False` = fully offline. |
-| `disable_telemetry`                | `bool`              | env-derived               | Opt out of per-evaluation usage telemetry. Defaults to OFF-telemetry outside production (on in prod). Evaluation itself is unaffected; forced off whenever `is_network_enabled` is `False`.                                                           |
-| `telemetry_url`                    | `str`               | built-in                  | Override the telemetry endpoint (rarely needed).                                                                                                                                                                                                      |
-| `private_attributes`               | `Sequence[str]`     | `[]`                      | Attribute keys stripped from every outbound event before it leaves the process. They still drive **targeting** locally. See [advanced](/sdks/reference/python/advanced).                                                                              |
-| `sticky_store`                     | `StickyBucketStore` | `None`                    | Pin a user's experiment group across re-buckets. See [advanced](/sdks/reference/python/advanced).                                                                                                                                                     |
-| `log_level`                        | `str`               | `"warn"`                  | Verbosity of the SDK's own internal diagnostics. See below.                                                                                                                                                                                           |
-| `disable_internal_error_reporting` | `bool`              | `False`                   | Opt out of SDK self-monitoring (see below). Your `see()` reporting is unaffected.                                                                                                                                                                     |
+| keyword | type | default | what it does |
+| --- | --- | --- | --- |
+| `attributes` | `Callable` | identity | YOUR user object → the Shipeasy attribute map. |
+| `init` | `bool` | `True` | Fire the one-shot fetch fire-and-forget. |
+| `poll` | `bool` | `False` | Start the background poll (refreshes the blob over time). |
+| `base_url` | `str` | `https://api.shipeasy.ai` | API base URL for the blobs. Override for a self-hosted edge or in tests. |
+| `env` | `str` | `"prod"` | Deployment environment tag, attached to `see()` error events and usage telemetry. Also the fallback for the egress defaults below when no native env var is set. |
+| `is_network_enabled` | `bool` | env-derived | Master switch for **all** outbound requests (blob fetch, `track`, exposure, `see()`, telemetry). Defaults ON in production, OFF elsewhere — see [Environment-derived egress defaults](#environment-derived-egress-defaults). `False` = fully offline. |
+| `disable_telemetry` | `bool` | env-derived | Opt out of per-evaluation usage telemetry. Defaults to OFF-telemetry outside production (on in prod). Evaluation itself is unaffected; forced off whenever `is_network_enabled` is `False`. |
+| `telemetry_url` | `str` | built-in | Override the telemetry endpoint (rarely needed). |
+| `private_attributes` | `Sequence[str]` | `[]` | Attribute keys stripped from every outbound event before it leaves the process. They still drive **targeting** locally. See [advanced](/sdks/reference/python/advanced). |
+| `sticky_store` | `StickyBucketStore` | `None` | Pin a user's experiment group across re-buckets. See [advanced](/sdks/reference/python/advanced). |
+| `log_level` | `str` | `"warn"` | Verbosity of the SDK's own internal diagnostics. See below. |
+| `disable_internal_error_reporting` | `bool` | `False` | Opt out of SDK self-monitoring (see below). Your `see()` reporting is unaffected. |
 
 ## Fail-safe reads & the `log_level` option
 
@@ -131,7 +128,7 @@ The SDK is **quiet by default outside production**: it makes no outbound request
 from a dev machine or in CI unless it opts in. Two switches control egress, and
 both **default ON in production and OFF in every other environment**:
 
-- **`is_network_enabled`** — the master switch for _all_ outbound traffic: blob
+- **`is_network_enabled`** — the master switch for *all* outbound traffic: blob
   fetch/poll, `track`, experiment exposure, `see()` error reports, **and** usage
   telemetry. When off, the SDK is **fully offline** — reads resolve against your
   `override_*` values and in-code `default`s, and nothing is sent.
@@ -172,3 +169,4 @@ For unit tests and offline evaluation, use the drop-in siblings of `configure()`
 — [`configure_for_testing` / `configure_for_offline`](/sdks/reference/python/testing). They take the
 same `attributes` transform (and override args), skip the api key, and let
 `shipeasy.Client(user)` read without ever touching the network.
+

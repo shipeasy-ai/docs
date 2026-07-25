@@ -3,10 +3,7 @@ title: "Dynamic configs — `get_config`"
 description: "A config is a typed remote-config value with targeting. Configs are not user-scoped, but getconfig is exposed on the bound Client for one-stop ergonomics.…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-ruby/pages/configs.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/configs.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-ruby/pages/configs.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/configs.md).</Callout>
 
 A config is a typed remote-config value with targeting. Configs are not
 user-scoped, but `get_config` is exposed on the bound Client for one-stop
@@ -37,3 +34,4 @@ flags.get_config("limits", ->(v) { v["max"] }, default: 0)
 
 The default is returned only when the config key is genuinely absent (or the
 client isn't ready) — not for a present value that happens to be falsy.
+

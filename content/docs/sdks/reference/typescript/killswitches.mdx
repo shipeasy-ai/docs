@@ -1,12 +1,9 @@
 ---
 title: "Kill switches (`getKillswitch`)"
-description: 'A kill switch is an operational on/off control that ships in the same KV blob as gates and configs. It is not user-bound — it answers a global "is this…'
+description: "A kill switch is an operational on/off control that ships in the same KV blob as gates and configs. It is not user-bound — it answers a global \"is this…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-ts/pages/killswitches.md`](https://shipeasy-ai.github.io/sdk-ts/pages/killswitches.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-ts/pages/killswitches.md`](https://shipeasy-ai.github.io/sdk-ts/pages/killswitches.md).</Callout>
 
 A kill switch is an operational on/off control that ships in the same KV blob as
 gates and configs. It is **not user-bound** — it answers a global "is this
@@ -58,7 +55,6 @@ on first render):
 
 ```ts
 import { ks } from "@shipeasy/sdk/client";
-if (ks("payments")) {
-  /* killed */
-}
+if (ks("payments")) { /* killed */ }
 ```
+

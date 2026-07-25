@@ -1,12 +1,9 @@
 ---
 title: "Configuration"
-description: '```ruby config/initializers/shipeasy.rb Shipeasy.configure do |c| c.apikey = ENV.fetch("SHIPEASYSERVERKEY") c.attributes = -(u) { { "userid" = u.id, "plan"…'
+description: "```ruby config/initializers/shipeasy.rb Shipeasy.configure do |c| c.apikey = ENV.fetch(\"SHIPEASYSERVERKEY\") c.attributes = -(u) { { \"userid\" = u.id, \"plan\"…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-ruby/pages/configuration.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/configuration.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-ruby/pages/configuration.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/configuration.md).</Callout>
 
 ## `Shipeasy.configure { ... }` — the once-per-process call
 
@@ -59,24 +56,24 @@ Shipeasy.configure { |c| c.api_key = ENV.fetch("SHIPEASY_SERVER_KEY"); c.poll = 
 
 Set any of these in the `configure` block:
 
-| option                             | default                   | what it does                                                                                                                                                                                                                                             |
-| ---------------------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `api_key`                          | (required)                | Server SDK key. Authenticates evaluation + ingestion.                                                                                                                                                                                                    |
-| `attributes`                       | identity                  | YOUR user object → the Shipeasy attribute hash.                                                                                                                                                                                                          |
-| `init`                             | `true`                    | Fire the one-shot fetch fire-and-forget.                                                                                                                                                                                                                 |
-| `poll`                             | `false`                   | Start the background poll (refreshes the blob over time).                                                                                                                                                                                                |
-| `base_url`                         | `https://api.shipeasy.ai` | API base URL for the blobs. Override for local dev / staging.                                                                                                                                                                                            |
-| `env`                              | `"prod"`                  | Deployment environment tag, attached to `see()` events + usage telemetry. Also the fallback used to decide "is production" for the egress defaults below when no native env var is set.                                                                  |
-| `is_network_enabled`               | environment-derived       | Master switch for **all** outbound requests (blob fetch, `track`, exposures, `see()`, telemetry). On in production, off elsewhere. See [Network & telemetry defaults](#network--telemetry-defaults).                                                     |
-| `disable_telemetry`                | environment-derived       | Opt out of per-evaluation usage telemetry. Defaults off in production / on outside it. Forced off when the network is disabled. Evaluation itself is unaffected.                                                                                         |
-| `disable_internal_error_reporting` | `false`                   | Opt out of SDK self-monitoring (see below). Evaluation itself is unaffected.                                                                                                                                                                             |
-| `clean_backtrace`                  | `true`                    | Filter `see()` error stacks to your **application** frames using Rails' own backtrace cleaner (gem/framework noise stripped). No-op outside Rails. Set `false` to report the raw backtrace. See [error reporting](/sdks/reference/ruby/error-reporting). |
-| `telemetry_url`                    | built-in                  | Override the telemetry endpoint (rarely needed).                                                                                                                                                                                                         |
-| `private_attributes`               | `nil`                     | Attribute keys stripped from every outbound event before it leaves the process. They still drive **targeting** locally. See [advanced](/sdks/reference/ruby/advanced).                                                                                   |
-| `sticky_store`                     | `nil`                     | Pin a user's experiment group across re-buckets. See [advanced](/sdks/reference/ruby/advanced).                                                                                                                                                          |
-| `log_level`                        | `:warn`                   | SDK diagnostic verbosity — one of `:silent`, `:error`, `:warn`, `:info`, `:debug`. See below.                                                                                                                                                            |
-| `public_key`                       | (none)                    | Public client key — for the i18n view helpers / loader tag only.                                                                                                                                                                                         |
-| `profile`                          | `"default"`               | i18n locale profile read by the view helpers.                                                                                                                                                                                                            |
+| option | default | what it does |
+| --- | --- | --- |
+| `api_key` | (required) | Server SDK key. Authenticates evaluation + ingestion. |
+| `attributes` | identity | YOUR user object → the Shipeasy attribute hash. |
+| `init` | `true` | Fire the one-shot fetch fire-and-forget. |
+| `poll` | `false` | Start the background poll (refreshes the blob over time). |
+| `base_url` | `https://api.shipeasy.ai` | API base URL for the blobs. Override for local dev / staging. |
+| `env` | `"prod"` | Deployment environment tag, attached to `see()` events + usage telemetry. Also the fallback used to decide "is production" for the egress defaults below when no native env var is set. |
+| `is_network_enabled` | environment-derived | Master switch for **all** outbound requests (blob fetch, `track`, exposures, `see()`, telemetry). On in production, off elsewhere. See [Network & telemetry defaults](#network--telemetry-defaults). |
+| `disable_telemetry` | environment-derived | Opt out of per-evaluation usage telemetry. Defaults off in production / on outside it. Forced off when the network is disabled. Evaluation itself is unaffected. |
+| `disable_internal_error_reporting` | `false` | Opt out of SDK self-monitoring (see below). Evaluation itself is unaffected. |
+| `clean_backtrace` | `true` | Filter `see()` error stacks to your **application** frames using Rails' own backtrace cleaner (gem/framework noise stripped). No-op outside Rails. Set `false` to report the raw backtrace. See [error reporting](/sdks/reference/ruby/error-reporting). |
+| `telemetry_url` | built-in | Override the telemetry endpoint (rarely needed). |
+| `private_attributes` | `nil` | Attribute keys stripped from every outbound event before it leaves the process. They still drive **targeting** locally. See [advanced](/sdks/reference/ruby/advanced). |
+| `sticky_store` | `nil` | Pin a user's experiment group across re-buckets. See [advanced](/sdks/reference/ruby/advanced). |
+| `log_level` | `:warn` | SDK diagnostic verbosity — one of `:silent`, `:error`, `:warn`, `:info`, `:debug`. See below. |
+| `public_key` | (none) | Public client key — for the i18n view helpers / loader tag only. |
+| `profile` | `"default"` | i18n locale profile read by the view helpers. |
 
 ## Fail-safe reads & the `log_level` option
 
@@ -181,3 +178,4 @@ The SDK reads no env vars itself — you wire them through `configure`. Conventi
 
 - `SHIPEASY_SERVER_KEY` → `c.api_key`
 - `SHIPEASY_CLIENT_KEY` → `c.public_key`
+

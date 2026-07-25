@@ -3,10 +3,7 @@ title: "Advanced"
 description: "LaunchDarkly / Statsig parity features. All are set as options on configure() (or on shipeasy() for SSR), or read through the bound Client."
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-ts/pages/advanced.md`](https://shipeasy-ai.github.io/sdk-ts/pages/advanced.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-ts/pages/advanced.md`](https://shipeasy-ai.github.io/sdk-ts/pages/advanced.md).</Callout>
 
 LaunchDarkly / Statsig parity features. All are set as options on `configure()`
 (or on `shipeasy()` for SSR), or read through the bound `Client`.
@@ -121,9 +118,7 @@ import { configure, onChange } from "@shipeasy/sdk/server";
 
 configure({ apiKey: process.env.SHIPEASY_SERVER_KEY!, poll: true });
 
-const unsubscribe = onChange(() => {
-  /* re-evaluate / invalidate cache */
-});
+const unsubscribe = onChange(() => { /* re-evaluate / invalidate cache */ });
 ```
 
 In the browser, `onChange()` fires after each `identify()` / override change.
@@ -137,3 +132,4 @@ handy for QA, demos, and bug repro. The overlay ships from this package
 (`@shipeasy/sdk/browser-devtools`, or the `se-devtools.js` script tag) — see
 the Browser devtools page; React Native apps get the same panels via
 `@shipeasy/sdk/react-native-devtools`.
+

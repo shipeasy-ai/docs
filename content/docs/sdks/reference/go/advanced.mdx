@@ -3,14 +3,11 @@ title: "Advanced"
 description: "For logged-out traffic you need a stable unit so a fractional rollout buckets identically on the server and in the browser. shipeasy.Middleware mints a…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-go/pages/advanced.md`](https://shipeasy-ai.github.io/sdk-go/pages/advanced.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-go/pages/advanced.md`](https://shipeasy-ai.github.io/sdk-go/pages/advanced.md).</Callout>
 
 ## Anonymous-visitor bucketing & middleware
 
-For logged-out traffic you need a _stable_ unit so a fractional rollout buckets
+For logged-out traffic you need a *stable* unit so a fractional rollout buckets
 identically on the server and in the browser. `shipeasy.Middleware` mints a
 first-party `__se_anon_id` cookie (shared with every Shipeasy SDK) for any
 request lacking one, and exposes it via `shipeasy.AnonID(r)`:
@@ -137,3 +134,4 @@ defer cancel()
 
 A panicking listener is recovered and logged so it can't take down the poll loop.
 Test/offline configurations never poll, so they never fire listeners.
+

@@ -3,16 +3,13 @@ title: "A/B experiments — `universe(name).assign` + `track`"
 description: "Experiments are read by universe. A universe is a mutual-exclusion pool: a unit lands in at most one experiment in it. assign picks that experiment (if any)…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-ruby/pages/experiments.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/experiments.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-ruby/pages/experiments.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/experiments.md).</Callout>
 
 Experiments are read by **universe**. A universe is a mutual-exclusion pool: a
 unit lands in **at most one** experiment in it. `assign` picks that experiment
 (if any) and returns the assigned group plus its resolved parameters — it's
 side-effect free. The exposure fires on the **first `get` read**, so reading a
-param _is_ the exposure. You read parameters with `assign.get(field, fallback)`
+param *is* the exposure. You read parameters with `assign.get(field, fallback)`
 and record a conversion with `track` — all on the same bound
 [`Shipeasy::Client.new(user)`](/sdks/reference/ruby/configuration), with no user argument.
 
@@ -48,7 +45,7 @@ raises:
 - `assignment.get(field, fallback = nil, exposure: true)` — resolves **variant
   override ?? universe default ?? fallback**. Works even when not enrolled (you
   get the universe default), so reading a param is always safe. The first read
-  logs the exposure; pass `exposure: false` to peek at a param _without_ logging
+  logs the exposure; pass `exposure: false` to peek at a param *without* logging
   one.
 
 ```ruby
@@ -84,7 +81,7 @@ attributes carry no `user_id` or `anonymous_id`, the call is a no-op.
 ## Exposure logging
 
 The exposure fires on the **first `get` read** of an enrolled assignment, not at
-`assign` time — reading _is_ the exposure. It's a single (deduped) event:
+`assign` time — reading *is* the exposure. It's a single (deduped) event:
 deduped per process and durably per `(unit, experiment, group)` server-side, so
 re-reads and repeat runs don't double-count. It's fire-and-forget and a no-op
 under [`configure_for_testing` / `configure_for_offline`](/sdks/reference/ruby/testing).
@@ -95,3 +92,4 @@ Pass `exposure: false` to peek at a param without logging one:
 # read for a log line / debug view — does NOT enroll the unit's exposure
 color = assignment.get("button_color", "red", exposure: false)
 ```
+

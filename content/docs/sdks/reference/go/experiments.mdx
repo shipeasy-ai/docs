@@ -3,10 +3,7 @@ title: "A/B experiments (`Universe().Assign()` + `Track`)"
 description: "Experiments are read by universe. A universe is a mutual-exclusion pool: a unit lands in at most one experiment in it. Assign() picks that experiment (if…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-go/pages/experiments.md`](https://shipeasy-ai.github.io/sdk-go/pages/experiments.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-go/pages/experiments.md`](https://shipeasy-ai.github.io/sdk-go/pages/experiments.md).</Callout>
 
 Experiments are read by **universe**. A universe is a mutual-exclusion pool: a
 unit lands in **at most one** experiment in it. `Assign()` picks that experiment
@@ -92,3 +89,4 @@ durably deduped server-side per `(unit, experiment, group)`. Read a param with
 fire-and-forget and a no-op under `ConfigureForTesting` / `ConfigureForOffline`.
 
 See [Advanced](/sdks/reference/go/advanced) for `bucketBy` and sticky bucketing.
+

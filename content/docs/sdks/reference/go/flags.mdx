@@ -1,12 +1,9 @@
 ---
 title: "Feature flags (gates)"
-description: 'A flag ("gate") evaluates to a bool for a user. Evaluation is local against the cached blob — no network call.'
+description: "A flag (\"gate\") evaluates to a bool for a user. Evaluation is local against the cached blob — no network call."
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-go/pages/flags.md`](https://shipeasy-ai.github.io/sdk-go/pages/flags.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-go/pages/flags.md`](https://shipeasy-ai.github.io/sdk-go/pages/flags.md).</Callout>
 
 A flag ("gate") evaluates to a `bool` for a user. Evaluation is local against the
 cached blob — no network call.
@@ -63,3 +60,4 @@ d := c.GetFlagDetail("new_checkout")
 
 `GetFlagOr` returns `def` exactly when the reason is `CLIENT_NOT_READY` or
 `FLAG_NOT_FOUND`.
+

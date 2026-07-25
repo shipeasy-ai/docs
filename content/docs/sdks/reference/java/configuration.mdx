@@ -3,10 +3,7 @@ title: "Configuration"
 description: "configure() authenticates with your server key, kicks off the initial rules fetch fire-and-forget, and registers the engine used by see(). It is…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-java/pages/configuration.md`](https://shipeasy-ai.github.io/sdk-java/pages/configuration.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-java/pages/configuration.md`](https://shipeasy-ai.github.io/sdk-java/pages/configuration.md).</Callout>
 
 ## `Shipeasy.configure(...)` — call once
 
@@ -60,19 +57,19 @@ engine falls back to the request-scoped `__se_anon_id` cookie resolved by
 Build options with `Shipeasy.options(apiKey)` and chain the setters, then pass
 them to `Shipeasy.configure(...)`:
 
-| Method                                    | Default                   | Meaning                                                                                                              |
-| ----------------------------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `.baseUrl(String)`                        | `https://api.shipeasy.ai` | Override the edge API base URL.                                                                                      |
-| `.env(String)`                            | `"prod"`                  | Deployment env tagged on usage telemetry and `see()` events. Also the fallback signal for the egress defaults below. |
-| `.isNetworkEnabled(boolean)`              | env-derived (see below)   | Master egress switch. `false` = fully offline (no fetch/track/exposure/`see()`/telemetry).                           |
-| `.isTrackingEnabled(boolean)`             | env-derived (see below)   | Per-evaluation usage telemetry. Forced off when the network is disabled.                                             |
-| `.disableTelemetry(boolean)`              | env-derived (see below)   | Back-compat alias for `isTrackingEnabled(!x)`.                                                                       |
-| `.disableInternalErrorReporting(boolean)` | `false`                   | Turn off SDK self-monitoring (internal errors reported to Shipeasy's own project). See below.                        |
-| `.poll(boolean)`                          | `false`                   | Start the background poll instead of a one-shot fetch.                                                               |
-| `.privateAttributes(List)`                | empty                     | Targeting-only keys stripped from outbound events. See [Advanced](/sdks/reference/java/advanced).                    |
-| `.stickyStore(StickyBucketStore)`         | none                      | Pluggable sticky-bucketing store. See [Advanced](/sdks/reference/java/advanced).                                     |
-| `.logLevel(LogLevel)`                     | `WARN`                    | Verbosity of the SDK's own diagnostics. See below.                                                                   |
-| `.attributes(Function)`                   | identity                  | Map your user object to the attribute map.                                                                           |
+| Method | Default | Meaning |
+| --- | --- | --- |
+| `.baseUrl(String)` | `https://api.shipeasy.ai` | Override the edge API base URL. |
+| `.env(String)` | `"prod"` | Deployment env tagged on usage telemetry and `see()` events. Also the fallback signal for the egress defaults below. |
+| `.isNetworkEnabled(boolean)` | env-derived (see below) | Master egress switch. `false` = fully offline (no fetch/track/exposure/`see()`/telemetry). |
+| `.isTrackingEnabled(boolean)` | env-derived (see below) | Per-evaluation usage telemetry. Forced off when the network is disabled. |
+| `.disableTelemetry(boolean)` | env-derived (see below) | Back-compat alias for `isTrackingEnabled(!x)`. |
+| `.disableInternalErrorReporting(boolean)` | `false` | Turn off SDK self-monitoring (internal errors reported to Shipeasy's own project). See below. |
+| `.poll(boolean)` | `false` | Start the background poll instead of a one-shot fetch. |
+| `.privateAttributes(List)` | empty | Targeting-only keys stripped from outbound events. See [Advanced](/sdks/reference/java/advanced). |
+| `.stickyStore(StickyBucketStore)` | none | Pluggable sticky-bucketing store. See [Advanced](/sdks/reference/java/advanced). |
+| `.logLevel(LogLevel)` | `WARN` | Verbosity of the SDK's own diagnostics. See below. |
+| `.attributes(Function)` | identity | Map your user object to the attribute map. |
 
 ```java
 Shipeasy.configure(Shipeasy.options(key)
@@ -192,3 +189,4 @@ Shipeasy.configure(Shipeasy.options(System.getenv("SHIPEASY_SERVER_KEY"))
 The SDK reads no env vars itself — you pass the key explicitly. The convention
 is `SHIPEASY_SERVER_KEY` for the server key (and `NEXT_PUBLIC_SHIPEASY_CLIENT_KEY`
 or similar for the public client key used by the browser SDK / SSR i18n tag).
+

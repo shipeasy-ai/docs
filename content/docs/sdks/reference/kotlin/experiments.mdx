@@ -3,10 +3,7 @@ title: "A/B experiments (`universe().assign()` + `track`)"
 description: "Experiments are read by universe. A universe is a mutual-exclusion pool: a unit lands in at most one experiment in it. assign() picks that experiment (if…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-kotlin/pages/experiments.md`](https://shipeasy-ai.github.io/sdk-kotlin/pages/experiments.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-kotlin/pages/experiments.md`](https://shipeasy-ai.github.io/sdk-kotlin/pages/experiments.md).</Callout>
 
 Experiments are read by **universe**. A universe is a mutual-exclusion pool: a
 unit lands in **at most one** experiment in it. `assign()` picks that experiment
@@ -105,3 +102,4 @@ of a param when the unit is enrolled. It's deduped per process and durably per
 `(unit, experiment, group)` server-side, so re-reads never double-count. Use
 `peek(field, fallback)` to read a param without logging an exposure. See
 [Advanced](/sdks/reference/kotlin/advanced).
+

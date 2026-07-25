@@ -3,10 +3,7 @@ title: "Shipeasy Ruby SDK — Overview"
 description: "shipeasy-sdk is the server-side Ruby gem for the Shipeasy hosted service: feature gates (flags), dynamic configs, kill switches, A/B experiments, metric…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-ruby/pages/overview.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/overview.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-ruby/pages/overview.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/overview.md).</Callout>
 
 `shipeasy-sdk` is the server-side Ruby gem for the [Shipeasy](https://shipeasy.ai)
 hosted service: feature gates (flags), dynamic configs, kill switches, A/B
@@ -59,10 +56,10 @@ So an experiment is **end-to-end Client-only**. Constructing a
 
 ## The configure family
 
-| call                                                                  | when                                       |
-| --------------------------------------------------------------------- | ------------------------------------------ |
-| [`Shipeasy.configure { ... }`](/sdks/reference/ruby/configuration)    | production — your server key               |
-| [`Shipeasy.configure_for_testing(...)`](/sdks/reference/ruby/testing) | unit tests — no network, seed overrides    |
+| call | when |
+| --- | --- |
+| [`Shipeasy.configure { ... }`](/sdks/reference/ruby/configuration) | production — your server key |
+| [`Shipeasy.configure_for_testing(...)`](/sdks/reference/ruby/testing) | unit tests — no network, seed overrides |
 | [`Shipeasy.configure_for_offline(...)`](/sdks/reference/ruby/testing) | evaluate real rules from a snapshot / file |
 
 After any of them, you read the same way: `Shipeasy::Client.new(user)`.
@@ -79,3 +76,4 @@ After any of them, you read the same way: `Shipeasy::Client.new(user)`.
 - [testing](/sdks/reference/ruby/testing) — `configure_for_testing`, `configure_for_offline`, overrides
 - [openfeature](/sdks/reference/ruby/openfeature) — `Shipeasy::OpenFeature::Provider`
 - [advanced](/sdks/reference/ruby/advanced) — anon-id middleware, private attributes, sticky bucketing, manual exposure, SSR
+

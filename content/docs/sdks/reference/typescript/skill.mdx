@@ -34,17 +34,17 @@ npm install @shipeasy/sdk
 import { configure, Client } from "@shipeasy/sdk/server"; // or "@shipeasy/sdk/client"
 
 configure({
-  apiKey: process.env.SHIPEASY_SERVER_KEY!, // browser: clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY
+  apiKey: process.env.SHIPEASY_SERVER_KEY!,           // browser: clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY
   attributes: (u: MyUser) => ({ user_id: u.id, plan: u.plan }), // optional; omit = identity
   // poll: true  // long-running server: keep flags fresh with a background poll (no engine.init() needed)
 });
 
 const flags = new Client(currentUser); // browser: await flags.ready() before first read
 
-flags.getFlag("new_checkout"); // boolean (2nd arg = default if not-ready/not-found)
+flags.getFlag("new_checkout");                         // boolean (2nd arg = default if not-ready/not-found)
 flags.getConfig<{ max: number }>("limits", { defaultValue: { max: 50 } });
-flags.getKillswitch("payments"); // global on/off (not user-bound)
-flags.getFlagDetail("new_checkout"); // { value, reason }
+flags.getKillswitch("payments");                       // global on/off (not user-bound)
+flags.getFlagDetail("new_checkout");                   // { value, reason }
 ```
 
 `configure()` is first-config-wins and owns the fetch lifecycle (one-shot by
@@ -104,25 +104,17 @@ Full reference: <https://shipeasy-ai.github.io/sdk-ts/pages/i18n.md> · snippets
 ```ts
 import { see, addExtras, runWithExtras } from "@shipeasy/sdk/server"; // or /client
 
-try {
-  await submitOrder(order);
-} catch (e) {
-  see(e).causes_the("checkout").to("use cached prices", { order_id: order.id });
-}
+try { await submitOrder(order); }
+catch (e) { see(e).causes_the("checkout").to("use cached prices", { order_id: order.id }); }
 // extras inline on .to (no ordering to remember), or chained: .extras({...}).to(...)
 
 see.Violation("large query").causes_the("results").to("be trimmed").extras({ rows });
 see.ControlFlowException(e).because("because it wasn't an encoded Foo"); // expected — reports nothing
 
 // Ambient per-scope extras — buffer from any layer; every later see() merges them in.
-runWithExtras(async () => {
-  // server: per-request ALS scope
-  addExtras({ order_id: order.id, tenant }); // browser: call addExtras() directly, one user/page
-  try {
-    await charge(order);
-  } catch (e) {
-    see(e).causes_the("checkout").to("use cached prices");
-  }
+runWithExtras(async () => {                    // server: per-request ALS scope
+  addExtras({ order_id: order.id, tenant });   // browser: call addExtras() directly, one user/page
+  try { await charge(order); } catch (e) { see(e).causes_the("checkout").to("use cached prices"); }
 });
 ```
 
@@ -134,13 +126,7 @@ reference: <https://shipeasy-ai.github.io/sdk-ts/pages/error-reporting.md> · sn
 ## Testing — no network
 
 ```ts
-import {
-  configureForTesting,
-  configureForOffline,
-  Client,
-  overrideFlag,
-  clearOverrides,
-} from "@shipeasy/sdk/server";
+import { configureForTesting, configureForOffline, Client, overrideFlag, clearOverrides } from "@shipeasy/sdk/server";
 
 // Seed values up front; reads go through the ordinary new Client(user). Replaces
 // prior config, so each test can reconfigure freely.
@@ -153,7 +139,7 @@ const flags = new Client({ user_id: "u_1" });
 flags.getFlag("new_checkout"); // true
 
 overrideFlag("new_checkout", false); // flip on the spot
-clearOverrides(); // drop every override (incl. the seed)
+clearOverrides();                    // drop every override (incl. the seed)
 
 // Offline: evaluate the REAL rules from a snapshot or JSON file, no network.
 configureForOffline({ path: "./shipeasy-snapshot.json" });

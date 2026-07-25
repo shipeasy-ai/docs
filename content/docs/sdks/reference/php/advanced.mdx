@@ -3,15 +3,12 @@ title: "Advanced"
 description: "universe($name)-assign() auto-logs a single exposure when the unit is enrolled — reading is the exposure, so there is no manual logExposure primitive. The…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-php/pages/advanced.md`](https://shipeasy-ai.github.io/sdk-php/pages/advanced.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-php/pages/advanced.md`](https://shipeasy-ai.github.io/sdk-php/pages/advanced.md).</Callout>
 
 ## Exposure logging
 
 `universe($name)->assign()` **auto-logs** a single exposure when the unit is
-enrolled — reading _is_ the exposure, so there is no manual `logExposure`
+enrolled — reading *is* the exposure, so there is no manual `logExposure`
 primitive. The exposure POSTs one `exposure` event to `/collect`, deduped per
 process (a bounded set keyed by `unit:experiment:group`), so repeated `assign()`
 calls for the same unit in one request/worker emit one exposure:
@@ -89,7 +86,7 @@ a single long-running process or tests.
 
 ## Anonymous-visitor bucketing
 
-For logged-out traffic you need a _stable_ unit so a fractional rollout buckets
+For logged-out traffic you need a *stable* unit so a fractional rollout buckets
 the same on the server and in the browser. Call `Identity::ensure()` once early
 in your bootstrap (before any output) — it reads or mints the shared
 `__se_anon_id` first-party cookie used by every Shipeasy SDK:
@@ -152,3 +149,4 @@ $unsub();   // stop listening
 
 See i18n for `Shipeasy\bootstrapScriptTag()` / `Shipeasy\i18nScriptTag()`
 and wiring the browser SDK from the server-rendered `<head>`.
+

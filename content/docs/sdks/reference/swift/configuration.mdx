@@ -3,10 +3,7 @@ title: "Configuration"
 description: "configureClient(...) wires the client key, HTTP, and the anon-id store. Call it once at app launch. It returns the ShipeasyClient and registers it as the…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-swift/pages/configuration.md`](https://shipeasy-ai.github.io/sdk-swift/pages/configuration.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-swift/pages/configuration.md`](https://shipeasy-ai.github.io/sdk-swift/pages/configuration.md).</Callout>
 
 `configureClient(...)` wires the client key, HTTP, and the anon-id store. Call it
 **once** at app launch. It returns the `ShipeasyClient` and registers it as the
@@ -25,18 +22,18 @@ resolves for logged-out users without an explicit `identify`.
 
 ## `configureClient()` options
 
-| Param               | Default                        | Purpose                                                                                                                                                                                                                                                                         |
-| ------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `clientKey`         | —                              | Your **public client** key (`pk_…`). Safe to embed in a shipped app. Required.                                                                                                                                                                                                  |
-| `baseURL`           | `https://api.shipeasy.ai`      | The edge endpoint that evaluates and returns assignments.                                                                                                                                                                                                                       |
-| `env`               | `"prod"`                       | Deployment env; selects which environment's rules the edge evaluates, and is stamped onto `see()` error events.                                                                                                                                                                 |
-| `isNetworkEnabled`  | env-derived (see below)        | Master egress switch. When `false` the client is fully **offline** — no `/sdk/evaluate`, no `/collect` (`track` / exposures / `see()`), no telemetry; reads serve the cache / supplied defaults. Leave `nil` to use the environment default; pass `true` / `false` to force it. |
-| `isTrackingEnabled` | env-derived (see below)        | Usage telemetry on/off (the per-evaluation usage beacon). Leave `nil` for the environment default; pass `false` to keep it off while the network stays on. Forced off whenever `isNetworkEnabled` is off.                                                                       |
-| `telemetryURL`      | `https://t.shipeasy.ai`        | Where telemetry POSTs go.                                                                                                                                                                                                                                                       |
-| `store`             | `UserDefaultsAnonymousStore()` | Where the persistent `anonymous_id` lives. Supply your own `AnonymousStore` for the Keychain / app-group / tests — see [advanced](/sdks/reference/swift/advanced#anonymous-id-persistence-anonymousstore).                                                                      |
-| `privateAttributes` | `[]`                           | Attribute names usable for targeting but stripped from outbound `track()` / `see()` payloads. See [advanced](/sdks/reference/swift/advanced#private-attributes).                                                                                                                |
-| `session`           | shared `URLSession`            | Optional `URLSession` for the HTTP calls.                                                                                                                                                                                                                                       |
-| `transport`         | `URLSession`-backed            | Optional low-level request transport. Injecting a stub is how tests run hermetically — see [testing](/sdks/reference/swift/testing).                                                                                                                                            |
+| Param               | Default | Purpose |
+| ------------------- | ------- | ------- |
+| `clientKey`         | —       | Your **public client** key (`pk_…`). Safe to embed in a shipped app. Required. |
+| `baseURL`           | `https://api.shipeasy.ai` | The edge endpoint that evaluates and returns assignments. |
+| `env`               | `"prod"` | Deployment env; selects which environment's rules the edge evaluates, and is stamped onto `see()` error events. |
+| `isNetworkEnabled`  | env-derived (see below) | Master egress switch. When `false` the client is fully **offline** — no `/sdk/evaluate`, no `/collect` (`track` / exposures / `see()`), no telemetry; reads serve the cache / supplied defaults. Leave `nil` to use the environment default; pass `true` / `false` to force it. |
+| `isTrackingEnabled` | env-derived (see below) | Usage telemetry on/off (the per-evaluation usage beacon). Leave `nil` for the environment default; pass `false` to keep it off while the network stays on. Forced off whenever `isNetworkEnabled` is off. |
+| `telemetryURL`      | `https://t.shipeasy.ai` | Where telemetry POSTs go. |
+| `store`             | `UserDefaultsAnonymousStore()` | Where the persistent `anonymous_id` lives. Supply your own `AnonymousStore` for the Keychain / app-group / tests — see [advanced](/sdks/reference/swift/advanced#anonymous-id-persistence-anonymousstore). |
+| `privateAttributes` | `[]`    | Attribute names usable for targeting but stripped from outbound `track()` / `see()` payloads. See [advanced](/sdks/reference/swift/advanced#private-attributes). |
+| `session`           | shared `URLSession` | Optional `URLSession` for the HTTP calls. |
+| `transport`         | `URLSession`-backed | Optional low-level request transport. Injecting a stub is how tests run hermetically — see [testing](/sdks/reference/swift/testing). |
 
 ## Environment-derived egress defaults
 
@@ -125,3 +122,4 @@ what keeps a logged-out visitor in the same bucket for every fractional rollout
 and experiment on every launch. See
 [advanced](/sdks/reference/swift/advanced#anonymous-id-persistence-anonymousstore) to back it with
 the Keychain or an app-group container.
+

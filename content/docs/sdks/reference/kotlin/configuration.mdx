@@ -3,10 +3,7 @@ title: "Configuration"
 description: "Configure the SDK once at app boot with configure(...), then evaluate per user/request with Client(user)."
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-kotlin/pages/configuration.md`](https://shipeasy-ai.github.io/sdk-kotlin/pages/configuration.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-kotlin/pages/configuration.md`](https://shipeasy-ai.github.io/sdk-kotlin/pages/configuration.md).</Callout>
 
 Configure the SDK **once** at app boot with `configure(...)`, then evaluate per
 user/request with `Client(user)`.
@@ -30,27 +27,27 @@ exactly once.
 
 ### Options
 
-| Parameter                       | Default                   | What it does                                                                                          |
-| ------------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `apiKey`                        | —                         | **SERVER** key — authenticates flags/experiments/SSR.                                                 |
-| `attributes`                    | identity                  | Your user object → attribute map. Runs once per `Client(user)`.                                       |
-| `baseUrl`                       | `https://api.shipeasy.ai` | Edge API origin override.                                                                             |
-| `env`                           | `"prod"`                  | Tags telemetry + `see()` events; also the fallback for the egress defaults (below).                   |
-| `isNetworkEnabled`              | `null` (env-derived)      | Master switch on **all** outbound requests. `null` ⇒ on in production, off elsewhere.                 |
-| `isTrackingEnabled`             | `null` (env-derived)      | Usage-telemetry switch. `null` ⇒ on in production, off elsewhere. Forced off when the network is off. |
-| `disableTelemetry`              | `false`                   | Legacy hard opt-out of per-eval usage telemetry (equivalent to `isTrackingEnabled = false`).          |
-| `telemetryUrl`                  | `null`                    | Override the telemetry beacon origin.                                                                 |
-| `privateAttributes`             | `[]`                      | Attrs usable for targeting but stripped from outbound payloads.                                       |
-| `stickyStore`                   | `null`                    | Lock a unit to its first-assigned variant.                                                            |
-| `poll`                          | `false`                   | `true` → fetch once and keep polling; `false` → one-shot fetch.                                       |
-| `logLevel`                      | `LogLevel.WARN`           | SDK log verbosity (`SILENT`, `ERROR`, `WARN`, `INFO`, `DEBUG`).                                       |
-| `disableInternalErrorReporting` | `false`                   | Opt out of self-reporting SDK-internal errors to Shipeasy.                                            |
+| Parameter           | Default                       | What it does |
+| ------------------- | ----------------------------- | ------------ |
+| `apiKey`            | —                             | **SERVER** key — authenticates flags/experiments/SSR. |
+| `attributes`        | identity                      | Your user object → attribute map. Runs once per `Client(user)`. |
+| `baseUrl`           | `https://api.shipeasy.ai`   | Edge API origin override. |
+| `env`               | `"prod"`                      | Tags telemetry + `see()` events; also the fallback for the egress defaults (below). |
+| `isNetworkEnabled`  | `null` (env-derived)          | Master switch on **all** outbound requests. `null` ⇒ on in production, off elsewhere. |
+| `isTrackingEnabled` | `null` (env-derived)          | Usage-telemetry switch. `null` ⇒ on in production, off elsewhere. Forced off when the network is off. |
+| `disableTelemetry`  | `false`                       | Legacy hard opt-out of per-eval usage telemetry (equivalent to `isTrackingEnabled = false`). |
+| `telemetryUrl`      | `null`                        | Override the telemetry beacon origin. |
+| `privateAttributes` | `[]`                          | Attrs usable for targeting but stripped from outbound payloads. |
+| `stickyStore`       | `null`                        | Lock a unit to its first-assigned variant. |
+| `poll`              | `false`                       | `true` → fetch once and keep polling; `false` → one-shot fetch. |
+| `logLevel`          | `LogLevel.WARN`               | SDK log verbosity (`SILENT`, `ERROR`, `WARN`, `INFO`, `DEBUG`). |
+| `disableInternalErrorReporting` | `false`           | Opt out of self-reporting SDK-internal errors to Shipeasy. |
 
 The full options table with types lives on the [Installation](/sdks/reference/kotlin/installation)
 page — that page is the canonical home for `configure()`.
 
 > **Use the SERVER key.** It authenticates flag, experiment and SSR evaluation
-> and must never reach the browser. The public _client_ key is only used by the
+> and must never reach the browser. The public *client* key is only used by the
 > i18n loader / bootstrap script tags (see [Advanced](/sdks/reference/kotlin/advanced) / i18n).
 
 ## The `attributes` transform
@@ -104,7 +101,7 @@ snapshot path still throw, because those are boot-time misconfiguration you want
 surfaced.
 
 When one of these last-resort guards catches an internal SDK failure — a bug on
-_our_ side, not yours — the SDK also reports it to **Shipeasy's own** project so
+*our* side, not yours — the SDK also reports it to **Shipeasy's own** project so
 we can find and fix SDK bugs across the apps that run it. This never touches your
 project or your Errors tab, carries no user/app data beyond the error itself, and
 is fire-and-forget (it can never slow down or break a read). It is on by default;
@@ -138,7 +135,7 @@ Logging goes through `java.util.logging` under the logger name `"shipeasy"`.
 ## Network & telemetry: quiet outside production
 
 Since **0.16.0** the SDK is **offline by default outside production**. Both egress
-controls — `isNetworkEnabled` (the master switch on _every_ outbound request:
+controls — `isNetworkEnabled` (the master switch on *every* outbound request:
 flag/experiment fetch, poll, `track`, exposure, `see()`, and usage telemetry) and
 `isTrackingEnabled` (just the usage beacon) — default to **on in production and
 off in every other environment**. So running an app that embeds the SDK on a dev
@@ -179,3 +176,4 @@ fully offline.
 Apart from the egress signals above (`SHIPEASY_ENV` / `APP_ENV` / `ENV`, all
 optional), the SDK reads no env vars implicitly — pass `apiKey` (and any
 `baseUrl`) explicitly. By convention the key lives in `SHIPEASY_SERVER_KEY`.
+

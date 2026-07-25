@@ -3,10 +3,7 @@ title: "Dynamic configs"
 description: "A dynamic config is a typed JSON value (string, number, bool, array, or object) fetched by name from the cached /sdk/evaluate response."
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-swift/pages/configs.md`](https://shipeasy-ai.github.io/sdk-swift/pages/configs.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-swift/pages/configs.md`](https://shipeasy-ai.github.io/sdk-swift/pages/configs.md).</Callout>
 
 A dynamic config is a typed JSON value (string, number, bool, array, or object)
 fetched by name from the cached `/sdk/evaluate` response.
@@ -42,3 +39,4 @@ let banner   = (await client.getConfig("banner_text")) as? String
 let theme    = (await client.getConfig("theme")) as? [String: Any]
 let accent   = theme?["accent"] as? String
 ```
+

@@ -1,4 +1,14 @@
 {
   "title": "Reference",
-  "pages": ["index", "typescript", "python", "go", "java", "kotlin", "php", "swift", "ruby"]
+  "pages": [
+    "index",
+    "typescript",
+    "python",
+    "go",
+    "java",
+    "kotlin",
+    "php",
+    "swift",
+    "ruby"
+  ]
 }

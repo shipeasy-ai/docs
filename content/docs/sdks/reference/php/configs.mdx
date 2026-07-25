@@ -3,10 +3,7 @@ title: "Dynamic configs"
 description: "A dynamic config is a typed JSON value (string, number, array/object) managed in the dashboard. Configs are not user-scoped in this SDK — they are read by name."
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-php/pages/configs.md`](https://shipeasy-ai.github.io/sdk-php/pages/configs.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-php/pages/configs.md`](https://shipeasy-ai.github.io/sdk-php/pages/configs.md).</Callout>
 
 A **dynamic config** is a typed JSON value (string, number, array/object)
 managed in the dashboard. Configs are **not user-scoped** in this SDK — they are
@@ -39,3 +36,4 @@ $client->getConfig('billing_copy', ['headline' => 'Welcome']);
 
 The default is returned **only** when the config key is not present in the
 fetched blob.
+

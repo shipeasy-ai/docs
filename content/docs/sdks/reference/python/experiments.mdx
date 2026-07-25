@@ -3,10 +3,7 @@ title: "A/B experiments — `universe(name).assign()` + `track`"
 description: "After configure(), an experiment is end-to-end through the bound shipeasy.Client(user) — read the assignment (the first get() logs exposure) and track the…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-python/pages/experiments.md`](https://shipeasy-ai.github.io/sdk-python/pages/experiments.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-python/pages/experiments.md`](https://shipeasy-ai.github.io/sdk-python/pages/experiments.md).</Callout>
 
 After [`configure()`](/sdks/reference/python/configuration), an experiment is **end-to-end through
 the bound `shipeasy.Client(user)`** — read the assignment (the first `get()`
@@ -57,10 +54,10 @@ a.get("button_color", "red")   # variant override → universe default → "red"
 
 ## Exposure fires on read
 
-Reading _is_ the exposure. `assign()` itself is side-effect free — the exposure
+Reading *is* the exposure. `assign()` itself is side-effect free — the exposure
 is logged the **first time you read a param** via `get()` on an enrolled
 assignment, i.e. at the point you actually present the treatment. It's deduped
-per process _and_ durably per `(unit, experiment, group)` server-side, so
+per process *and* durably per `(unit, experiment, group)` server-side, so
 repeated `get()` calls — and repeated `assign()` calls across requests — don't
 spam the collector. There is no manual `log_exposure` primitive.
 
@@ -92,3 +89,4 @@ client.track("purchase", {"amount": 49})
 
 `track()` is fire-and-forget and a no-op in test/offline mode. If the bound
 attributes carry no `user_id` or `anonymous_id`, the call is a no-op.
+

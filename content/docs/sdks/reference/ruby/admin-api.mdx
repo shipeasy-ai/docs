@@ -3,14 +3,11 @@ title: "Admin API client (optional) — `Shipeasy::Admin`"
 description: "The base SDK evaluates flags, configs, and experiments (Shipeasy.configure + Shipeasy::Client.new(user)). The Admin API client is a separate, optional…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-ruby/pages/admin-api.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/admin-api.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-ruby/pages/admin-api.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/admin-api.md).</Callout>
 
-The base SDK _evaluates_ flags, configs, and experiments
+The base SDK *evaluates* flags, configs, and experiments
 (`Shipeasy.configure` + `Shipeasy::Client.new(user)`). The **Admin API client** is
-a separate, optional surface for _administering_ those resources from server code
+a separate, optional surface for *administering* those resources from server code
 — creating gates, starting experiments, managing configs, kill switches,
 universes, metrics, events, and more.
 
@@ -28,7 +25,7 @@ require "shipeasy/admin"
 ```
 
 The client is **generated from the Shipeasy OpenAPI spec**, so it is a raw, 1:1
-projection of the REST API: id-based, basis-points, snake*case. It does \_not* add
+projection of the REST API: id-based, basis-points, snake_case. It does *not* add
 the name→id resolution or percent→basis-point conveniences of the Shipeasy
 CLI/MCP — reach for those tools when you want the ergonomic surface, and for this
 client when you want a typed, programmatic mirror of the API.
@@ -80,3 +77,4 @@ bash scripts/gen_admin.sh
 ```
 
 The generator version is pinned in `openapitools.json`.
+

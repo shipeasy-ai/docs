@@ -3,10 +3,7 @@ title: "Testing"
 description: "In unit tests you want deterministic flag/config/experiment values with no network and no API key. Configure test mode once, then read through the bound…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-php/pages/testing.md`](https://shipeasy-ai.github.io/sdk-php/pages/testing.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-php/pages/testing.md`](https://shipeasy-ai.github.io/sdk-php/pages/testing.md).</Callout>
 
 In unit tests you want deterministic flag/config/experiment values with **no
 network and no API key**. Configure test mode once, then read through the bound
@@ -46,7 +43,7 @@ $client->track('purchase', ['amount' => 49]);
 
 Experiments are read by **universe**. An `experiments` seed (and
 `overrideExperiment`) **refines** an experiment that already lives in a universe —
-it forces that experiment's variant. It does _not_ invent an experiment in an
+it forces that experiment's variant. It does *not* invent an experiment in an
 empty universe, and it is read by universe, not by experiment name. Seed the
 universe + experiment via `configureForOffline()`, then force the variant:
 
@@ -89,12 +86,12 @@ The package-level override helpers layer on top of whatever
 `configureForTesting()` / `configureForOffline()` set up — an override always
 wins until `clearOverrides()`:
 
-| Function                                                           | Effect                                                                                                                     |
-| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
-| `Shipeasy\overrideFlag($name, bool $value)`                        | Force a gate's boolean value.                                                                                              |
-| `Shipeasy\overrideConfig($name, mixed $value)`                     | Force a dynamic config's value.                                                                                            |
+| Function | Effect |
+| --- | --- |
+| `Shipeasy\overrideFlag($name, bool $value)` | Force a gate's boolean value. |
+| `Shipeasy\overrideConfig($name, mixed $value)` | Force a dynamic config's value. |
 | `Shipeasy\overrideExperiment($name, string $group, mixed $params)` | Force an experiment's variant. Surfaces through `universe($name)->assign()` when the experiment exists in the loaded blob. |
-| `Shipeasy\clearOverrides()`                                        | Drop all on-the-spot overrides.                                                                                            |
+| `Shipeasy\clearOverrides()` | Drop all on-the-spot overrides. |
 
 ```php
 overrideFlag('new_checkout', true);
@@ -146,3 +143,4 @@ A gate entry is `{"enabled":true,"rules":[],"rolloutPct":10000,"salt":"s"}`.
 `rolloutPct` is in **basis points** — `10000` = 100%, `5000` = 50%. The real
 evaluator runs against this snapshot (overrides apply on top); no network, no
 telemetry.
+

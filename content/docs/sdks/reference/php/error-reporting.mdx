@@ -1,12 +1,9 @@
 ---
 title: "Error reporting — `see()`"
-description: 'This SDK ships the see() error-reporting surface (parity with the TS SDK). Use it to report a handled throwable (or a non-exception "violation") to Shipeasy…'
+description: "This SDK ships the see() error-reporting surface (parity with the TS SDK). Use it to report a handled throwable (or a non-exception \"violation\") to Shipeasy…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-php/pages/error-reporting.md`](https://shipeasy-ai.github.io/sdk-php/pages/error-reporting.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-php/pages/error-reporting.md`](https://shipeasy-ai.github.io/sdk-php/pages/error-reporting.md).</Callout>
 
 This SDK ships the `see()` error-reporting surface (parity with the TS SDK).
 Use it to report a **handled** throwable (or a non-exception "violation") to
@@ -39,7 +36,7 @@ The chain is `see($problem)->causesThe($subject)->extras($extras)->to($outcome)`
 - `causesThe(string $subject)` — what the error affected (default `'app'`).
 - `extras(array $extras)` — structured debug context attached to the report
   (sanitized: string/int/float/bool only, truncated, ≤20 keys, private attributes
-  stripped). Chainable in any order _before_ `to()`.
+  stripped). Chainable in any order *before* `to()`.
 - `to(string $outcome, ?array $extras = null)` — **terminal**; builds the event
   and fire-and-forgets the report. Idempotent (a second `to()` is a no-op). The
   default outcome is `'hit an error'`. Pass `$extras` inline here to fold them in
@@ -123,3 +120,4 @@ try {
   terminal is wrapped in `try/catch`.
 - `see()` is server-key telemetry: it travels over the configured transport, no
   extra setup.
+

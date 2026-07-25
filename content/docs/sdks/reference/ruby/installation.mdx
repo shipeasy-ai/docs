@@ -3,10 +3,7 @@ title: "Installation & configuration"
 description: "This is the canonical home for install + Shipeasy.configure. Snippets elsewhere assume configure already ran at boot; this page is where it lives."
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-ruby/pages/installation.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/installation.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-ruby/pages/installation.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/installation.md).</Callout>
 
 This is the canonical home for **install + `Shipeasy.configure`**. Snippets
 elsewhere assume `configure` already ran at boot; this page is where it lives.
@@ -71,10 +68,10 @@ Shipeasy.configure do |c|
 end
 ```
 
-- **`c.api_key`** _(required)_ — your Shipeasy **server key**. Authenticates
+- **`c.api_key`** *(required)* — your Shipeasy **server key**. Authenticates
   flags, configs, kill switches and experiments. Read it from the environment;
   never hard-code it.
-- **`c.attributes`** _(optional)_ — a transform from YOUR user object to the
+- **`c.attributes`** *(optional)* — a transform from YOUR user object to the
   Shipeasy attribute hash that targeting evaluates against. The default is
   identity, so if your user object is already that hash you can omit it:
 
@@ -100,20 +97,20 @@ are a no-op.
 
 ### `configure` options
 
-| option               | default                   | what it does                                                                                                                                                           |
-| -------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `api_key`            | (required)                | Server SDK key. Authenticates evaluation + ingestion.                                                                                                                  |
-| `attributes`         | identity                  | Callable mapping your user object → the Shipeasy attribute hash.                                                                                                       |
-| `init`               | `true`                    | Fire the one-shot fetch fire-and-forget.                                                                                                                               |
-| `poll`               | `false`                   | Start the background poll (refreshes the blob over time).                                                                                                              |
-| `base_url`           | `https://api.shipeasy.ai` | API base URL for the blobs. Override for local dev / staging.                                                                                                          |
-| `env`                | `"prod"`                  | Deployment environment tag, attached to `see()` events + usage telemetry.                                                                                              |
-| `disable_telemetry`  | `false`                   | Opt out of per-evaluation usage telemetry. Evaluation itself is unaffected.                                                                                            |
-| `telemetry_url`      | built-in                  | Override the telemetry endpoint (rarely needed).                                                                                                                       |
-| `private_attributes` | `nil`                     | Attribute keys stripped from every outbound event before it leaves the process. They still drive **targeting** locally. See [advanced](/sdks/reference/ruby/advanced). |
-| `sticky_store`       | `nil`                     | Pin a user's experiment group across re-buckets. See [advanced](/sdks/reference/ruby/advanced).                                                                        |
-| `public_key`         | (none)                    | Public client key — for the i18n view helpers / loader tag only.                                                                                                       |
-| `profile`            | `"default"`               | i18n locale profile read by the view helpers.                                                                                                                          |
+| option | default | what it does |
+| --- | --- | --- |
+| `api_key` | (required) | Server SDK key. Authenticates evaluation + ingestion. |
+| `attributes` | identity | Callable mapping your user object → the Shipeasy attribute hash. |
+| `init` | `true` | Fire the one-shot fetch fire-and-forget. |
+| `poll` | `false` | Start the background poll (refreshes the blob over time). |
+| `base_url` | `https://api.shipeasy.ai` | API base URL for the blobs. Override for local dev / staging. |
+| `env` | `"prod"` | Deployment environment tag, attached to `see()` events + usage telemetry. |
+| `disable_telemetry` | `false` | Opt out of per-evaluation usage telemetry. Evaluation itself is unaffected. |
+| `telemetry_url` | built-in | Override the telemetry endpoint (rarely needed). |
+| `private_attributes` | `nil` | Attribute keys stripped from every outbound event before it leaves the process. They still drive **targeting** locally. See [advanced](/sdks/reference/ruby/advanced). |
+| `sticky_store` | `nil` | Pin a user's experiment group across re-buckets. See [advanced](/sdks/reference/ruby/advanced). |
+| `public_key` | (none) | Public client key — for the i18n view helpers / loader tag only. |
+| `profile` | `"default"` | i18n locale profile read by the view helpers. |
 
 ```ruby
 # example: staging env, telemetry off, redact `email`, background poll
@@ -258,3 +255,4 @@ See [testing](/sdks/reference/ruby/testing) for the full override args.
 
 Next: [configuration deep-dive](/sdks/reference/ruby/configuration) · [flags](/sdks/reference/ruby/flags) ·
 [experiments](/sdks/reference/ruby/experiments) · i18n.
+

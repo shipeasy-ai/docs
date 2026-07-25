@@ -41,7 +41,7 @@ const flags = new Client(currentUser);
 //   opts.defaultValue — returned when the config key is absent
 //   opts.decode       — optional (raw) => T to validate/shape the stored value
 const cfg = flags.getConfig<{ max: number }>("billing_copy", {
-  defaultValue: { max: 50 }, // used when the key isn't published
+  defaultValue: { max: 50 },               // used when the key isn't published
   decode: (raw) => raw as { max: number }, // optional — typed decode / zod parse
 });
 ```
@@ -194,8 +194,7 @@ import { see, addExtras, clearExtras, runWithExtras } from "@shipeasy/sdk/server
 // Buffer extras earlier — from any layer, not just the catch. Every see() report
 // that fires LATER in the same scope carries them, so you don't thread context
 // down into the catch site. A chained .extras / .to extra of the same key wins.
-runWithExtras(async () => {
-  // server: per-request AsyncLocalStorage scope
+runWithExtras(async () => {          // server: per-request AsyncLocalStorage scope
   addExtras({ order_id: order.id, tenant: tenant.slug });
 
   // ...deep in a service, later in the same request...
@@ -228,3 +227,4 @@ try {
   see.ControlFlowException(e).because("because end of stream is expected");
 }
 ```
+

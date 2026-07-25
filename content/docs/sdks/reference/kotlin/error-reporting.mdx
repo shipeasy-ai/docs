@@ -3,14 +3,11 @@ title: "Error reporting — `see()`"
 description: "The Kotlin SDK ships the see() structured-error surface (parity with @shipeasy/sdk and the Python reference). It reports a handled error along with its…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-kotlin/pages/error-reporting.md`](https://shipeasy-ai.github.io/sdk-kotlin/pages/error-reporting.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-kotlin/pages/error-reporting.md`](https://shipeasy-ai.github.io/sdk-kotlin/pages/error-reporting.md).</Callout>
 
 The Kotlin SDK ships the `see()` structured-error surface (parity with
 `@shipeasy/sdk` and the Python reference). It reports a **handled** error along
-with its product _consequence_ — not just a stack trace — fire-and-forget to
+with its product *consequence* — not just a stack trace — fire-and-forget to
 `/collect`. Reporting never blocks and never throws into your request path.
 
 > If you don't know the consequence of an exception, don't catch it.
@@ -80,3 +77,4 @@ controlFlowException(e).because("retryable timeout — handled by the retry loop
 - Configured `privateAttributes` are stripped from `extras()`.
 - `env` (from `configure()`) is tagged onto every event.
 - Calling `see()` before `configure()` ran logs a warning and is a no-op.
+

@@ -1,12 +1,9 @@
 ---
 title: "Kill switches"
-description: 'getKillswitch reads an operational kill switch from the cached rules blob. A kill switch is the panic lever: true means "killed" (the protected path should…'
+description: "getKillswitch reads an operational kill switch from the cached rules blob. A kill switch is the panic lever: true means \"killed\" (the protected path should…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-java/pages/killswitches.md`](https://shipeasy-ai.github.io/sdk-java/pages/killswitches.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-java/pages/killswitches.md`](https://shipeasy-ai.github.io/sdk-java/pages/killswitches.md).</Callout>
 
 `getKillswitch` reads an operational kill switch from the cached rules blob.
 A kill switch is the panic lever: `true` means "killed" (the protected path
@@ -43,3 +40,4 @@ killed. A `null` `switchKey` reads the whole-kill-switch killed state directly.
 
 Kill switches are not user-scoped — the bound user is irrelevant to the result,
 but reading them off the same `Client` keeps everything one-stop.
+

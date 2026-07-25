@@ -3,10 +3,7 @@ title: "Error reporting — `see()`"
 description: "The Swift SDK ships the full see() structured-error surface. Every handled exception documents its product consequence, not just its stack. Reports are…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-swift/pages/error-reporting.md`](https://shipeasy-ai.github.io/sdk-swift/pages/error-reporting.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-swift/pages/error-reporting.md`](https://shipeasy-ai.github.io/sdk-swift/pages/error-reporting.md).</Callout>
 
 The Swift SDK ships the full `see()` structured-error surface. Every handled
 exception documents its product **consequence**, not just its stack. Reports are
@@ -18,7 +15,7 @@ event is tagged with the side `"client"`.
 `see(error).causesThe(subject).to(outcome)` — `to(_:)` is the **terminal**: it
 builds the wire event and fire-and-forgets the report. Nothing sends without it.
 `causesThe(_:)` and `extras(_:)` are chainable setters callable in any order
-_before_ `to(_:)`.
+*before* `to(_:)`.
 
 The package-level `see(_:)` reports against the client built by
 `configureClient(...)`:
@@ -59,7 +56,7 @@ seeViolation("large query")
 
 ## Expected control flow — reports nothing
 
-`controlFlowException(error).because("...")` marks an exception as _expected_ and
+`controlFlowException(error).because("...")` marks an exception as *expected* and
 reports **nothing** — use it to document a deliberate catch so it isn't mistaken
 for an unhandled error. `extras` on the tail is stored for local debugging only,
 never transmitted:
@@ -89,3 +86,4 @@ subjects, and extras are truncated; extras are capped at 20 keys and limited to
 String / finite-number / Bool values. Swift has no per-throw stack, so the stack
 is captured best-effort at report time (it points at the `see()` call site).
 `see()` is idempotent — calling `.to(...)` twice on the same chain sends once.
+

@@ -3,19 +3,9 @@ title: "Ruby"
 description: "The Shipeasy Ruby gem — fork-safe singleton, Rails railtie, local evaluation, configs, experiments, and tracking."
 ---
 
-<DocMeta
-  status="Production ready"
-  read="6 min read"
-  updated="July 20, 2026"
-  works="Ruby 3.0+ · Rails · Sinatra · Rack"
-/>
+<DocMeta status="Production ready" read="6 min read" updated="July 20, 2026" works="Ruby 3.0+ · Rails · Sinatra · Rack" />
 
-<Callout type="info">
-  Generated from the Ruby SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk ruby
-  overview` returns, served raw at
-  [`https://shipeasy-ai.github.io/sdk-ruby`](https://shipeasy-ai.github.io/sdk-ruby). Edit it in the
-  SDK repo, not here.
-</Callout>
+<Callout type="info">Generated from the Ruby SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk ruby overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-ruby`](https://shipeasy-ai.github.io/sdk-ruby). Edit it in the SDK repo, not here.</Callout>
 
 `shipeasy-sdk` is the server-side Ruby gem for the [Shipeasy](https://shipeasy.ai)
 hosted service: feature gates (flags), dynamic configs, kill switches, A/B
@@ -77,10 +67,10 @@ So an experiment is **end-to-end Client-only**. Constructing a
 
 ## The configure family
 
-| call                                                                  | when                                       |
-| --------------------------------------------------------------------- | ------------------------------------------ |
-| [`Shipeasy.configure { ... }`](/sdks/reference/ruby/configuration)    | production — your server key               |
-| [`Shipeasy.configure_for_testing(...)`](/sdks/reference/ruby/testing) | unit tests — no network, seed overrides    |
+| call | when |
+| --- | --- |
+| [`Shipeasy.configure { ... }`](/sdks/reference/ruby/configuration) | production — your server key |
+| [`Shipeasy.configure_for_testing(...)`](/sdks/reference/ruby/testing) | unit tests — no network, seed overrides |
 | [`Shipeasy.configure_for_offline(...)`](/sdks/reference/ruby/testing) | evaluate real rules from a snapshot / file |
 
 After any of them, you read the same way: `Shipeasy::Client.new(user)`.
@@ -254,10 +244,6 @@ flags.track("checkout_started")   # props are optional
     { href: "/sdks/reference/ruby", title: "Ruby full reference", note: "Every feature page" },
     { href: "/sdks", title: "Shared evaluation model", note: "How every SDK buckets" },
     { href: "/sdks/reference/ruby/testing", title: "Testing", note: "Seed values, zero network" },
-    {
-      href: "/sdks/reference/ruby/error-reporting",
-      title: "Error reporting",
-      note: "The see() surface",
-    },
+    { href: "/sdks/reference/ruby/error-reporting", title: "Error reporting", note: "The see() surface" },
   ]}
 />

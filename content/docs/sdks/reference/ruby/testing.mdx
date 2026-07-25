@@ -3,15 +3,12 @@ title: "Testing"
 description: "Use Shipeasy.configurefortesting — the test-mode sibling of Shipeasy.configure. It does zero network, needs no api key, and seeds the values your code under…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-ruby/pages/testing.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/testing.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-ruby/pages/testing.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/testing.md).</Callout>
 
 Use **`Shipeasy.configure_for_testing`** — the test-mode sibling of
 [`Shipeasy.configure`](/sdks/reference/ruby/configuration). It does **zero network**, needs no api
 key, and seeds the values your code under test should see via override arguments.
-Then read through the ordinary `Shipeasy::Client.new(user)` — the _same_ call
+Then read through the ordinary `Shipeasy::Client.new(user)` — the *same* call
 your production code uses.
 
 ```ruby
@@ -54,7 +51,7 @@ first-config-wins).
 ## Quick overrides on the spot
 
 Seeding up front isn't always enough — sometimes you want to flip one value
-_mid-test_. The package-level override helpers do exactly that, layered on top of
+*mid-test*. The package-level override helpers do exactly that, layered on top of
 whatever `configure_for_testing` / `configure_for_offline` (or even a live
 `configure`) set up. They win until `clear_overrides`:
 
@@ -71,12 +68,12 @@ Shipeasy::Client.new({ "user_id" => "u_1" }).get_flag("new_checkout")  # => fals
 Shipeasy.clear_overrides   # drop every on-the-spot override
 ```
 
-| helper                                              | effect                                   |
-| --------------------------------------------------- | ---------------------------------------- |
-| `Shipeasy.override_flag(name, value)`               | force `get_flag(name)` → `value`         |
-| `Shipeasy.override_config(name, value)`             | force `get_config(name)` → `value`       |
+| helper | effect |
+| --- | --- |
+| `Shipeasy.override_flag(name, value)` | force `get_flag(name)` → `value` |
+| `Shipeasy.override_config(name, value)` | force `get_config(name)` → `value` |
 | `Shipeasy.override_experiment(name, group, params)` | force enrolment in `group` with `params` |
-| `Shipeasy.clear_overrides`                          | drop all of the above                    |
+| `Shipeasy.clear_overrides` | drop all of the above |
 
 (These require a prior `configure*` call — they raise `Shipeasy::Error` otherwise.)
 
@@ -110,7 +107,7 @@ evaluates exactly as written:
   "flags": {
     "gates": {
       "new_checkout": { "enabled": true, "rolloutPct": 10000, "salt": "new_checkout", "rules": [] },
-      "beta_banner": { "enabled": false, "rolloutPct": 0, "salt": "beta_banner", "rules": [] }
+      "beta_banner":  { "enabled": false, "rolloutPct": 0, "salt": "beta_banner", "rules": [] }
     },
     "configs": {
       "billing_copy": { "value": { "title": "Welcome back", "cta": "Upgrade" } },
@@ -165,3 +162,4 @@ gem defaults to **`render_keys_only`**, so `i18n_t("checkout.cta")` returns the
 key `"checkout.cta"` and your specs assert against stable data with no setup.
 Force it on/off with `c.render_keys_only = true/false` in `Shipeasy.configure` —
 see i18n → Render keys only.
+

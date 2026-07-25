@@ -3,10 +3,7 @@ title: "Installation"
 description: "- Java 17+ (the SDK uses java.net.http.HttpClient and modern language features). - A Shipeasy server key (SHIPEASYSERVERKEY)."
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-java/pages/installation.md`](https://shipeasy-ai.github.io/sdk-java/pages/installation.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-java/pages/installation.md`](https://shipeasy-ai.github.io/sdk-java/pages/installation.md).</Callout>
 
 ## Requirements
 
@@ -125,15 +122,15 @@ Shipeasy.configure(Shipeasy.options(System.getenv("SHIPEASY_SERVER_KEY"))
 Build options with `Shipeasy.options(apiKey)` and chain the setters, then pass
 the result to `Shipeasy.configure(...)`:
 
-| Method                            | Default                   | Meaning                                                                                                               |
-| --------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `.baseUrl(String)`                | `https://api.shipeasy.ai` | Override the edge API base URL.                                                                                       |
-| `.env(String)`                    | `"prod"`                  | Deployment env tagged on usage telemetry and `see()` events.                                                          |
-| `.disableTelemetry(boolean)`      | `false`                   | Turn off per-evaluation usage beacons.                                                                                |
-| `.poll(boolean)`                  | `false`                   | Start the background poll (initial fetch + periodic refresh) instead of a one-shot fetch.                             |
-| `.privateAttributes(List)`        | empty                     | Attribute keys usable for targeting but stripped from outbound events. See [Advanced](/sdks/reference/java/advanced). |
-| `.stickyStore(StickyBucketStore)` | none                      | Pluggable sticky-bucketing store. See [Advanced](/sdks/reference/java/advanced).                                      |
-| `.attributes(Function)`           | identity                  | Map your user object to the attribute map.                                                                            |
+| Method | Default | Meaning |
+| --- | --- | --- |
+| `.baseUrl(String)` | `https://api.shipeasy.ai` | Override the edge API base URL. |
+| `.env(String)` | `"prod"` | Deployment env tagged on usage telemetry and `see()` events. |
+| `.disableTelemetry(boolean)` | `false` | Turn off per-evaluation usage beacons. |
+| `.poll(boolean)` | `false` | Start the background poll (initial fetch + periodic refresh) instead of a one-shot fetch. |
+| `.privateAttributes(List)` | empty | Attribute keys usable for targeting but stripped from outbound events. See [Advanced](/sdks/reference/java/advanced). |
+| `.stickyStore(StickyBucketStore)` | none | Pluggable sticky-bucketing store. See [Advanced](/sdks/reference/java/advanced). |
+| `.attributes(Function)` | identity | Map your user object to the attribute map. |
 
 ```java
 Shipeasy.configure(Shipeasy.options(System.getenv("SHIPEASY_SERVER_KEY"))
@@ -288,3 +285,4 @@ public class App {
     }
 }
 ```
+

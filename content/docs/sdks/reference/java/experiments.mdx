@@ -3,10 +3,7 @@ title: "A/B experiments (`universe().assign()` + `track`)"
 description: "Experiments are read by universe. A universe is a mutual-exclusion pool: a unit lands in at most one experiment in it. assign() picks that experiment (if…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-java/pages/experiments.md`](https://shipeasy-ai.github.io/sdk-java/pages/experiments.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-java/pages/experiments.md`](https://shipeasy-ai.github.io/sdk-java/pages/experiments.md).</Callout>
 
 Experiments are read by **universe**. A universe is a mutual-exclusion pool: a
 unit lands in **at most one** experiment in it. `assign()` picks that experiment
@@ -116,3 +113,4 @@ manual `logExposure`. An assignment that is computed but never read logs nothing
 Reach for `peek(...)` to read a param without logging. The exposure is deduped
 per process, and durably per `(unit, experiment, group)` server-side, so repeated
 reads never double-count. See [Advanced → exposure logging](/sdks/reference/java/advanced).
+

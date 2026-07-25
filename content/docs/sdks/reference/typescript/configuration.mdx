@@ -3,10 +3,7 @@ title: "Configuration"
 description: "Configure the SDK once at app boot, then evaluate per user with new Client(user). configure() builds the process-wide machinery (HTTP + blob cache + poll…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-ts/pages/configuration.md`](https://shipeasy-ai.github.io/sdk-ts/pages/configuration.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-ts/pages/configuration.md`](https://shipeasy-ai.github.io/sdk-ts/pages/configuration.md).</Callout>
 
 Configure the SDK **once** at app boot, then evaluate per user with
 `new Client(user)`. `configure()` builds the process-wide machinery (HTTP +
@@ -24,9 +21,7 @@ configure({
 
 // Per request:
 const flags = new Client(req.user);
-if (flags.getFlag("new_checkout")) {
-  /* ... */
-}
+if (flags.getFlag("new_checkout")) { /* ... */ }
 ```
 
 `configure()` kicks off a one-shot fetch so the first
@@ -84,7 +79,7 @@ the browser `configure({ clientKey, logLevel })` and on the SSR
 `shipeasy({ serverKey, logLevel })` helper.
 
 When one of these last-resort guards catches an internal SDK failure — a bug on
-_our_ side, not yours — the SDK also reports it to **Shipeasy's own** project so
+*our* side, not yours — the SDK also reports it to **Shipeasy's own** project so
 we can find and fix SDK bugs across the apps that run it. This never touches
 your project or your Errors tab, carries no user/app data beyond the error
 itself, and is fire-and-forget (it can never slow down or break a read). It is
@@ -122,10 +117,10 @@ The SDK is **quiet by default outside production** — an app that embeds it nev
 phones home from a local dev machine or a CI run. Two switches control egress,
 and both **default to ON in production and OFF everywhere else**:
 
-| Option             | Controls                                                                                                                                                                                                                          | Default                             |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| `isNetworkEnabled` | **Any** outbound request — flag/experiment fetches, `track()`, exposure logging, `see()` reports, usage telemetry, internal error self-monitoring. When `false` the SDK is fully offline: reads return code defaults / overrides. | `true` in prod, `false` otherwise   |
-| `disableTelemetry` | Just the per-evaluation usage telemetry beacon ("tracking"/outside logging).                                                                                                                                                      | telemetry ON in prod, OFF otherwise |
+| Option | Controls | Default |
+| --- | --- | --- |
+| `isNetworkEnabled` | **Any** outbound request — flag/experiment fetches, `track()`, exposure logging, `see()` reports, usage telemetry, internal error self-monitoring. When `false` the SDK is fully offline: reads return code defaults / overrides. | `true` in prod, `false` otherwise |
+| `disableTelemetry` | Just the per-evaluation usage telemetry beacon ("tracking"/outside logging). | telemetry ON in prod, OFF otherwise |
 
 Production is inferred, in order:
 
@@ -208,7 +203,9 @@ import { auth } from "@/auth";
 export async function register() {
   setServerIdentity(async () => {
     const session = await auth(); // reads this request's session cookie
-    return session?.user?.email ? { user_id: session.user.email, email: session.user.email } : null; // null ⇒ anonymous request
+    return session?.user?.email
+      ? { user_id: session.user.email, email: session.user.email }
+      : null; // null ⇒ anonymous request
   });
 }
 ```
@@ -232,7 +229,8 @@ requests emit none.
 
 ## Environment variables (convention)
 
-| Variable                          | Side    | Purpose                                                            |
-| --------------------------------- | ------- | ------------------------------------------------------------------ |
-| `SHIPEASY_SERVER_KEY`             | server  | server key for `configure({ apiKey })` / `shipeasy({ serverKey })` |
-| `NEXT_PUBLIC_SHIPEASY_CLIENT_KEY` | browser | public client key for `configure({ clientKey })`                   |
+| Variable | Side | Purpose |
+| --- | --- | --- |
+| `SHIPEASY_SERVER_KEY` | server | server key for `configure({ apiKey })` / `shipeasy({ serverKey })` |
+| `NEXT_PUBLIC_SHIPEASY_CLIENT_KEY` | browser | public client key for `configure({ clientKey })` |
+

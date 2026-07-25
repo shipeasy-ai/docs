@@ -3,10 +3,7 @@ title: "Testing"
 description: "In tests you don't want a live edge or a real API key. Configure Shipeasy in test mode with ConfigureForTesting (or ConfigureForOffline), then read the…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-go/pages/testing.md`](https://shipeasy-ai.github.io/sdk-go/pages/testing.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-go/pages/testing.md`](https://shipeasy-ai.github.io/sdk-go/pages/testing.md).</Callout>
 
 In tests you don't want a live edge or a real API key. Configure Shipeasy in
 test mode with `ConfigureForTesting` (or `ConfigureForOffline`), then read the
@@ -33,7 +30,7 @@ func TestCheckout(t *testing.T) {
 ```
 
 To assert an **experiment** assignment, seed a real universe + experiment with
-`ConfigureForOffline` (below) — an experiment override _refines_ an experiment
+`ConfigureForOffline` (below) — an experiment override *refines* an experiment
 that lives in a universe; it doesn't invent one in an empty universe. Read it by
 universe with `Universe(name).Assign()`:
 
@@ -46,12 +43,12 @@ _ = a.Get("primary_label", "Sign up") // variant ?? universe default ?? fallback
 
 `TestOptions` fields are all optional:
 
-| Field         | Type                            | Effect                                                                   |
-| ------------- | ------------------------------- | ------------------------------------------------------------------------ |
-| `Flags`       | `map[string]bool`               | forced `GetFlag` results                                                 |
-| `Configs`     | `map[string]any`                | forced `GetConfig` results                                               |
+| Field | Type | Effect |
+| --- | --- | --- |
+| `Flags` | `map[string]bool` | forced `GetFlag` results |
+| `Configs` | `map[string]any` | forced `GetConfig` results |
 | `Experiments` | `map[string]ExperimentOverride` | forced enrolment for an experiment that exists in a universe (see below) |
-| `Attributes`  | `func(any) User`                | same transform as `Configure` (default identity)                         |
+| `Attributes` | `func(any) User` | same transform as `Configure` (default identity) |
 
 An `Experiments` seed (and `OverrideExperiment`) **refines** an experiment that
 already lives in a universe — it forces that experiment's variant. It does not
@@ -78,12 +75,12 @@ shipeasy.OverrideExperiment("checkout_button", "treatment", map[string]any{"colo
 shipeasy.ClearOverrides() // reset between cases
 ```
 
-| Helper                                    | Effect                                     |
-| ----------------------------------------- | ------------------------------------------ |
-| `OverrideFlag(name, bool)`                | force `GetFlag(name)` to that value        |
-| `OverrideConfig(name, value)`             | force `GetConfig(name)` → `(value, true)`  |
-| `OverrideExperiment(name, group, params)` | force enrolment with `group` / `params`    |
-| `ClearOverrides()`                        | drop every flag/config/experiment override |
+| Helper | Effect |
+| --- | --- |
+| `OverrideFlag(name, bool)` | force `GetFlag(name)` to that value |
+| `OverrideConfig(name, value)` | force `GetConfig(name)` → `(value, true)` |
+| `OverrideExperiment(name, group, params)` | force enrolment with `group` / `params` |
+| `ClearOverrides()` | drop every flag/config/experiment override |
 
 Under `ConfigureForTesting` there is no blob beneath, so `ClearOverrides` reverts
 everything (including the `TestOptions` seed) to empty-blob defaults. Under
@@ -141,3 +138,4 @@ users:
 
 `rolloutPct` is in **basis points**: `10000` = 100%, `1000` = 10%, `0` = off. A
 gate object is `{ "rules": [...], "rolloutPct": <bp>, "salt": "<str>", "enabled": 0|1 }`.
+

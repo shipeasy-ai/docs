@@ -3,10 +3,7 @@ title: "Overview"
 description: "@shipeasy/sdk is the TypeScript / JavaScript SDK for the Shipeasy hosted platform — feature gates, runtime configs, kill switches, A/B experiments, metrics,…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-ts/pages/overview.md`](https://shipeasy-ai.github.io/sdk-ts/pages/overview.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-ts/pages/overview.md`](https://shipeasy-ai.github.io/sdk-ts/pages/overview.md).</Callout>
 
 `@shipeasy/sdk` is the TypeScript / JavaScript SDK for the [Shipeasy](https://shipeasy.ai)
 hosted platform — feature gates, runtime configs, kill switches, A/B
@@ -31,15 +28,11 @@ construction.
 ```ts
 import { configure, Client } from "@shipeasy/sdk/server"; // or /client
 
-configure({
-  apiKey: process.env.SHIPEASY_SERVER_KEY!,
-  attributes: (u: MyUser) => ({ user_id: u.id, plan: u.plan }),
-});
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY!,
+            attributes: (u: MyUser) => ({ user_id: u.id, plan: u.plan }) });
 
 const flags = new Client(currentUser);
-if (flags.getFlag("new_checkout")) {
-  /* ship it */
-}
+if (flags.getFlag("new_checkout")) { /* ship it */ }
 ```
 
 ## What `configure()` and `Client` do
@@ -60,15 +53,16 @@ everywhere you evaluate.
 
 ## Where to go next
 
-| Page                                                          | What it covers                                           |
-| ------------------------------------------------------------- | -------------------------------------------------------- |
-| [Installation](/sdks/reference/typescript/installation)       | install command, runtime versions, import lines          |
-| [Configuration](/sdks/reference/typescript/configuration)     | `configure()`, `attributes`, env vars, SSR bootstrap     |
-| [Flags](/sdks/reference/typescript/flags)                     | `getFlag`, `getFlagDetail`, defaults                     |
-| [Configs](/sdks/reference/typescript/configs)                 | `getConfig` typed values + defaults                      |
-| [Kill switches](/sdks/reference/typescript/killswitches)      | `getKillswitch` semantics                                |
-| [Experiments](/sdks/reference/typescript/experiments)         | `universe().assign()`, `Assignment`, `track`             |
-| [Error reporting](/sdks/reference/typescript/error-reporting) | `see()` grammar                                          |
-| [Testing](/sdks/reference/typescript/testing)                 | `configureForTesting`/`configureForOffline`, `override*` |
-| [OpenFeature](/sdks/reference/typescript/openfeature)         | server + web providers                                   |
-| [Advanced](/sdks/reference/typescript/advanced)               | manual exposure, private attrs, bucketBy, sticky         |
+| Page | What it covers |
+| --- | --- |
+| [Installation](/sdks/reference/typescript/installation) | install command, runtime versions, import lines |
+| [Configuration](/sdks/reference/typescript/configuration) | `configure()`, `attributes`, env vars, SSR bootstrap |
+| [Flags](/sdks/reference/typescript/flags) | `getFlag`, `getFlagDetail`, defaults |
+| [Configs](/sdks/reference/typescript/configs) | `getConfig` typed values + defaults |
+| [Kill switches](/sdks/reference/typescript/killswitches) | `getKillswitch` semantics |
+| [Experiments](/sdks/reference/typescript/experiments) | `universe().assign()`, `Assignment`, `track` |
+| [Error reporting](/sdks/reference/typescript/error-reporting) | `see()` grammar |
+| [Testing](/sdks/reference/typescript/testing) | `configureForTesting`/`configureForOffline`, `override*` |
+| [OpenFeature](/sdks/reference/typescript/openfeature) | server + web providers |
+| [Advanced](/sdks/reference/typescript/advanced) | manual exposure, private attrs, bucketBy, sticky |
+

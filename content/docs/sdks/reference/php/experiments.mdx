@@ -3,10 +3,7 @@ title: "Experiments (`universe()->assign()` + `track`)"
 description: "Experiments are read by universe. A universe is a mutual-exclusion pool: a unit lands in at most one experiment in it. assign() picks that experiment (if…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-php/pages/experiments.md`](https://shipeasy-ai.github.io/sdk-php/pages/experiments.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-php/pages/experiments.md`](https://shipeasy-ai.github.io/sdk-php/pages/experiments.md).</Callout>
 
 Experiments are read by **universe**. A universe is a mutual-exclusion pool: a
 unit lands in **at most one** experiment in it. `assign()` picks that experiment
@@ -101,5 +98,6 @@ side-effect free. Exposure is deduped per process **and** durably per
 `(unit, experiment, group)` server-side, so repeated reads — or a re-`assign()`
 then re-`get()` — emit one exposure. Pass `exposure: false` to `get()` to read a
 param without logging (`$cta->get('field', $fb, false)`). There is no manual
-`logExposure` primitive — reading _is_ the exposure. See [Advanced](/sdks/reference/php/advanced)
+`logExposure` primitive — reading *is* the exposure. See [Advanced](/sdks/reference/php/advanced)
 for the private-attribute and sticky-bucketing notes.
+

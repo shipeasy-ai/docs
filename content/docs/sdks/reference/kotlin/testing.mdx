@@ -3,10 +3,7 @@ title: "Testing"
 description: "Two configure() siblings let your tests evaluate without ever touching the network — both REPLACE any prior configuration (unlike configure()'s…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-kotlin/pages/testing.md`](https://shipeasy-ai.github.io/sdk-kotlin/pages/testing.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-kotlin/pages/testing.md`](https://shipeasy-ai.github.io/sdk-kotlin/pages/testing.md).</Callout>
 
 Two `configure()` siblings let your tests evaluate without ever touching the
 network — both REPLACE any prior configuration (unlike `configure()`'s
@@ -121,3 +118,4 @@ Your production code constructs `Client(user)` directly. In tests, just call a
 `configureFor*` sibling at setup — it installs the test/offline state as the
 global config — then construct `Client(user)` exactly as production does. No test
 double or seam is needed.
+

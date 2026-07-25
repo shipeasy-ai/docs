@@ -3,13 +3,10 @@ title: "Error reporting — `see()`"
 description: "This SDK has see() — a structured error-reporting surface: every handled exception documents its product consequence, not just its stack. The report is a…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-ruby/pages/error-reporting.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/error-reporting.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-ruby/pages/error-reporting.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/error-reporting.md).</Callout>
 
 **This SDK has `see()`** — a structured error-reporting surface: every handled
-exception documents its product _consequence_, not just its stack. The report is
+exception documents its product *consequence*, not just its stack. The report is
 a fire-and-forget POST; it never blocks or raises into the request path. It is
 package-level — it reports against the engine you set up with
 [`Shipeasy.configure`](/sdks/reference/ruby/configuration), so there is no object to construct or
@@ -66,7 +63,7 @@ end
 ```
 
 The buffer is **fiber-local**, so concurrent requests never bleed into each
-other, and it merges into _every_ report in the request (not just the first). A
+other, and it merges into *every* report in the request (not just the first). A
 chained `.extras` / `.to` extra of the same key overrides an ambient one. The
 Rack middleware clears the buffer at the end of each request (Rails auto-mounts
 it); in a background job or script call `Shipeasy.clear_extras` when a unit of
@@ -122,3 +119,4 @@ end
   raises.
 - `extras` are sanitized (string/numeric/boolean only, truncated, ≤20 keys) and
   respect the configured private-attribute list.
+

@@ -3,10 +3,7 @@ title: "Dynamic configs"
 description: "getConfig(name) returns the typed value of a dynamic config — a JSON value (String, Number, Boolean, Map, List, or null) managed in the dashboard."
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-kotlin/pages/configs.md`](https://shipeasy-ai.github.io/sdk-kotlin/pages/configs.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-kotlin/pages/configs.md`](https://shipeasy-ai.github.io/sdk-kotlin/pages/configs.md).</Callout>
 
 `getConfig(name)` returns the typed value of a dynamic config — a JSON value
 (`String`, `Number`, `Boolean`, `Map`, `List`, or `null`) managed in the
@@ -44,3 +41,4 @@ val limits = flags.getConfig("rate_limits") as? Map<String, Any?> ?: emptyMap()
 Configs carry their value in the blob (targeting is resolved server-side at
 publish), so `getConfig` is not user-scoped — but you still read it through the
 bound `Client` like every other lookup.
+

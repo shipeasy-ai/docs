@@ -3,10 +3,7 @@ title: "Dynamic configs — `get_config`"
 description: "A config is a typed JSON value with targeting. After configure(), read it through the bound shipeasy.Client(user)."
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-python/pages/configs.md`](https://shipeasy-ai.github.io/sdk-python/pages/configs.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-python/pages/configs.md`](https://shipeasy-ai.github.io/sdk-python/pages/configs.md).</Callout>
 
 A config is a typed JSON value with targeting. After
 [`configure()`](/sdks/reference/python/configuration), read it through the bound
@@ -36,3 +33,4 @@ It applies on top of any override; if it raises, the `default` is returned:
 ```python
 client.get_config("limits", decode=lambda v: v["max"], default=0)
 ```
+

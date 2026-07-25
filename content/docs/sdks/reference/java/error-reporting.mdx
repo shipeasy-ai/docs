@@ -3,10 +3,7 @@ title: "Error reporting — `see()`"
 description: "The Java SDK ships the see() surface: structured error reporting that documents an error's product consequence, not just its stack. It mirrors @shipeasy/sdk…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-java/pages/error-reporting.md`](https://shipeasy-ai.github.io/sdk-java/pages/error-reporting.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-java/pages/error-reporting.md`](https://shipeasy-ai.github.io/sdk-java/pages/error-reporting.md).</Callout>
 
 The Java SDK ships the `see()` surface: structured error reporting that
 documents an error's product **consequence**, not just its stack. It mirrors
@@ -68,7 +65,7 @@ try {
 ```
 
 The buffer is **thread-local**, so concurrent requests never bleed into each
-other, and it merges into _every_ report in the request (not just the first). A
+other, and it merges into *every* report in the request (not just the first). A
 chained `.extras` / inline `.to` extra of the same key overrides an ambient one.
 `AnonIdFilter` clears the buffer at the end of each request (register it like any
 servlet filter); in a background job or script call `See.clearExtras()` when a
@@ -118,3 +115,4 @@ try {
 200-char values), a 30s dedup window suppresses duplicates, and the per-process
 cap is 25 sends. Private attributes (see [Advanced](/sdks/reference/java/advanced)) are stripped
 from outbound extras.
+

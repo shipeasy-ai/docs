@@ -1,12 +1,9 @@
 ---
 title: "Error reporting — `see()`"
-description: 'The Python SDK ships the see() structured-error surface. It reports a caught, handled error (or a non-exception "violation") to Shipeasy as a…'
+description: "The Python SDK ships the see() structured-error surface. It reports a caught, handled error (or a non-exception \"violation\") to Shipeasy as a…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-python/pages/error-reporting.md`](https://shipeasy-ai.github.io/sdk-python/pages/error-reporting.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-python/pages/error-reporting.md`](https://shipeasy-ai.github.io/sdk-python/pages/error-reporting.md).</Callout>
 
 The Python SDK ships the `see()` structured-error surface. It reports a **caught,
 handled** error (or a non-exception "violation") to Shipeasy as a fire-and-forget
@@ -66,7 +63,7 @@ except PaymentError as e:
 ```
 
 The buffer is backed by a **`ContextVar`**, so concurrent requests and async
-tasks never bleed into each other, and it merges into _every_ report in the
+tasks never bleed into each other, and it merges into *every* report in the
 request (not just the first). A chained `.extras` / `.to` extra of the same key
 overrides an ambient one. The WSGI / ASGI / Django middleware clears the buffer
 at the end of each request; in a background job or script call
@@ -98,3 +95,4 @@ except StopIteration as e:
 
 The SDK carries a per-process limiter, so repeated reports of the same issue
 collapse to a single send.
+

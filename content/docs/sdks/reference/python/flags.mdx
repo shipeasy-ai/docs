@@ -3,10 +3,7 @@ title: "Feature flags — `get_flag`"
 description: "A flag (gate) evaluates to a boolean for a given user. After configure() has run once at startup, bind a user with shipeasy.Client(user) and read with no…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-python/pages/flags.md`](https://shipeasy-ai.github.io/sdk-python/pages/flags.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-python/pages/flags.md`](https://shipeasy-ai.github.io/sdk-python/pages/flags.md).</Callout>
 
 A flag (gate) evaluates to a boolean for a given user. After
 [`configure()`](/sdks/reference/python/configuration) has run once at startup, bind a user with
@@ -33,7 +30,7 @@ client.get_flag("new_checkout", default=True)
 
 ## Evaluation detail — `get_flag_detail`
 
-`get_flag_detail` returns `FlagDetail(value, reason)` so you can log _why_ a flag
+`get_flag_detail` returns `FlagDetail(value, reason)` so you can log *why* a flag
 resolved the way it did. `reason` is one of the exported constants:
 
 ```python
@@ -45,14 +42,14 @@ d = client.get_flag_detail("new_checkout")
 print(d.value, d.reason)   # e.g. True RULE_MATCH
 ```
 
-| reason             | meaning                                                                               |
-| ------------------ | ------------------------------------------------------------------------------------- |
-| `OVERRIDE`         | a [`configure_for_testing`](/sdks/reference/python/testing) override forced the value |
-| `CLIENT_NOT_READY` | the first fetch hasn't completed yet → `value=False`                                  |
-| `FLAG_NOT_FOUND`   | no gate by that name in the blob → `value=False`                                      |
-| `OFF`              | the gate exists but is disabled → `value=False`                                       |
-| `RULE_MATCH`       | evaluated **on** (targeting + rollout)                                                |
-| `DEFAULT`          | evaluated **off** (fell through)                                                      |
+| reason | meaning |
+| --- | --- |
+| `OVERRIDE` | a [`configure_for_testing`](/sdks/reference/python/testing) override forced the value |
+| `CLIENT_NOT_READY` | the first fetch hasn't completed yet → `value=False` |
+| `FLAG_NOT_FOUND` | no gate by that name in the blob → `value=False` |
+| `OFF` | the gate exists but is disabled → `value=False` |
+| `RULE_MATCH` | evaluated **on** (targeting + rollout) |
+| `DEFAULT` | evaluated **off** (fell through) |
 
 `get_flag` delegates to `get_flag_detail` and returns `.value`, substituting
 `default` for the `CLIENT_NOT_READY` / `FLAG_NOT_FOUND` cases.
@@ -70,3 +67,4 @@ unsubscribe = shipeasy.on_change(lambda: print("flags changed, rebuild cache"))
 ...
 unsubscribe()  # stop listening
 ```
+

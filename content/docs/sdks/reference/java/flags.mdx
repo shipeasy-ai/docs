@@ -3,10 +3,7 @@ title: "Feature flags"
 description: "getFlag evaluates a boolean feature gate for the bound user against the cached rules blob. Evaluation is local — no network call per evaluation."
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-java/pages/flags.md`](https://shipeasy-ai.github.io/sdk-java/pages/flags.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-java/pages/flags.md`](https://shipeasy-ai.github.io/sdk-java/pages/flags.md).</Callout>
 
 `getFlag` evaluates a boolean feature gate for the bound user against the cached
 rules blob. Evaluation is **local** — no network call per evaluation.
@@ -53,11 +50,12 @@ d.value();   // boolean
 d.reason();  // one of the FlagDetail.* reason constants
 ```
 
-| Reason (`FlagDetail.*`) | Meaning                                                |
-| ----------------------- | ------------------------------------------------------ |
-| `OVERRIDE`              | An override was set (short-circuits; no telemetry).    |
-| `CLIENT_NOT_READY`      | No blob fetched yet (engine not initialized).          |
-| `FLAG_NOT_FOUND`        | The flag is not present in the fetched blob.           |
-| `OFF`                   | The flag is disabled or kill-switched.                 |
-| `RULE_MATCH`            | The flag evaluated to `true` via its rules/rollout.    |
-| `DEFAULT`               | The flag is on but evaluated to `false` for this user. |
+| Reason (`FlagDetail.*`) | Meaning |
+| --- | --- |
+| `OVERRIDE` | An override was set (short-circuits; no telemetry). |
+| `CLIENT_NOT_READY` | No blob fetched yet (engine not initialized). |
+| `FLAG_NOT_FOUND` | The flag is not present in the fetched blob. |
+| `OFF` | The flag is disabled or kill-switched. |
+| `RULE_MATCH` | The flag evaluated to `true` via its rules/rollout. |
+| `DEFAULT` | The flag is on but evaluated to `false` for this user. |
+

@@ -174,7 +174,7 @@ outside a request). A stray `.extras` after `.to` is ignored (never raises).
 - Exposure fires on read: the first `a.get(field)` on an enrolled assignment
   logs one exposure (deduped per process and durably per unit/experiment/group);
   `assign()` itself is side-effect free, and `a.get(field, fallback,
-exposure=False)` peeks without logging. There is no manual `log_exposure`.
+  exposure=False)` peeks without logging. There is no manual `log_exposure`.
 - SSR: `shipeasy.bootstrap_script_tag(user)` + `shipeasy.i18n_script_tag(client_key, "en:prod")`.
 
 → More: `pages/advanced.md`.

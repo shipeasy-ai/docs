@@ -3,18 +3,15 @@ title: "OpenFeature"
 description: "This SDK ships an OpenFeature provider (CNCF OpenFeature parity) so apps standardized on the OpenFeature API can plug Shipeasy in as the backing provider.…"
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-ts/pages/openfeature.md`](https://shipeasy-ai.github.io/sdk-ts/pages/openfeature.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-ts/pages/openfeature.md`](https://shipeasy-ai.github.io/sdk-ts/pages/openfeature.md).</Callout>
 
 This SDK ships an OpenFeature provider (CNCF OpenFeature parity) so apps
 standardized on the OpenFeature API can plug Shipeasy in as the backing
 provider. The provider is a pure adapter over the SDK's local evaluation — no
 change to how flags resolve.
 
-| Entrypoint                         | Pair with                 | Peer dep (optional)       |
-| ---------------------------------- | ------------------------- | ------------------------- |
+| Entrypoint | Pair with | Peer dep (optional) |
+| --- | --- | --- |
 | `@shipeasy/sdk/openfeature-server` | `@openfeature/server-sdk` | `@openfeature/server-sdk` |
 
 The provider class is named `ShipeasyProvider`.
@@ -61,3 +58,4 @@ The `EvaluationContext.targetingKey` becomes the bucketing `user_id`.
 The provider's OpenFeature `track()` forwards to the SDK's `track()` (no-op
 without a `targetingKey`), so conversions for experiment analysis flow through
 the same pipeline.
+

@@ -3,10 +3,7 @@ title: "Installation & configuration"
 description: "This is the canonical home for install + configure(). Snippets elsewhere assume configure() already ran at startup; this page is where it lives."
 ---
 
-<Callout type="info">
-  Generated from the SDK's own `/docs/` — also served raw at
-  [`https://shipeasy-ai.github.io/sdk-python/pages/installation.md`](https://shipeasy-ai.github.io/sdk-python/pages/installation.md).
-</Callout>
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-python/pages/installation.md`](https://shipeasy-ai.github.io/sdk-python/pages/installation.md).</Callout>
 
 This is the canonical home for **install + `configure()`**. Snippets elsewhere
 assume `configure()` already ran at startup; this page is where it lives.
@@ -69,10 +66,10 @@ shipeasy.configure(
 )
 ```
 
-- **`api_key`** _(required)_ — your Shipeasy **server key** (`sdk_server_...`).
+- **`api_key`** *(required)* — your Shipeasy **server key** (`sdk_server_...`).
   Authenticates flags, configs, kill switches and experiments. Read it from the
   environment (`os.environ["SHIPEASY_SERVER_KEY"]`); never hard-code it.
-- **`attributes`** _(optional)_ — a transform from YOUR user object to the
+- **`attributes`** *(optional)* — a transform from YOUR user object to the
   Shipeasy attribute map that targeting evaluates against. The default is
   identity, so if your user object is already that map you can omit it:
 
@@ -82,11 +79,10 @@ shipeasy.configure(
   client = shipeasy.Client({"user_id": "u_123", "country": "US"})
   client.get_flag("new_checkout")
   ```
-
-- **`init`** _(optional, default `True`)_ — fire a one-shot fetch (in a daemon
+- **`init`** *(optional, default `True`)* — fire a one-shot fetch (in a daemon
   thread) so the first `Client(user).get_flag(...)` resolves against real rules.
   Ideal for serverless / short-lived processes.
-- **`poll`** _(optional, default `False`)_ — for a long-running server, pass
+- **`poll`** *(optional, default `False`)* — for a long-running server, pass
   `poll=True` to start the **background poll** (initial fetch + periodic refresh)
   so flags stay fresh without a redeploy. Configuration owns the lifecycle:
 
@@ -97,14 +93,14 @@ shipeasy.configure(
 **`configure()` options.** Beyond `api_key`, `attributes`, `init` and `poll`,
 `configure()` accepts the following advanced keywords:
 
-| keyword              | type                | default                   | what it does                                                                                                                                                                                                                                                            |
-| -------------------- | ------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `base_url`           | `str`               | `https://api.shipeasy.ai` | API base URL for the flag/experiment blobs. Override for a self-hosted edge or in tests; a trailing slash is stripped.                                                                                                                                                  |
-| `env`                | `str`               | `"prod"`                  | Deployment environment tag, attached to `see()` error events and usage telemetry so the dashboard can split by environment.                                                                                                                                             |
-| `disable_telemetry`  | `bool`              | `False`                   | Opt out of per-evaluation usage telemetry (the fire-and-forget beacon). Evaluation itself is unaffected.                                                                                                                                                                |
-| `telemetry_url`      | `str`               | built-in                  | Override the telemetry endpoint. Rarely needed; pair with a self-hosted collector.                                                                                                                                                                                      |
-| `private_attributes` | `Sequence[str]`     | `[]`                      | Attribute keys stripped from every outbound event `properties` bag before it leaves the process (LaunchDarkly/Statsig `privateAttributes`). They still drive **targeting** locally — they just never reach `/collect`. See [advanced](/sdks/reference/python/advanced). |
-| `sticky_store`       | `StickyBucketStore` | `None`                    | Pluggable store that pins a user's experiment group across re-buckets (doc 20 §2). Absent ⇒ purely deterministic hashing. See [advanced](/sdks/reference/python/advanced).                                                                                              |
+| keyword | type | default | what it does |
+| --- | --- | --- | --- |
+| `base_url` | `str` | `https://api.shipeasy.ai` | API base URL for the flag/experiment blobs. Override for a self-hosted edge or in tests; a trailing slash is stripped. |
+| `env` | `str` | `"prod"` | Deployment environment tag, attached to `see()` error events and usage telemetry so the dashboard can split by environment. |
+| `disable_telemetry` | `bool` | `False` | Opt out of per-evaluation usage telemetry (the fire-and-forget beacon). Evaluation itself is unaffected. |
+| `telemetry_url` | `str` | built-in | Override the telemetry endpoint. Rarely needed; pair with a self-hosted collector. |
+| `private_attributes` | `Sequence[str]` | `[]` | Attribute keys stripped from every outbound event `properties` bag before it leaves the process (LaunchDarkly/Statsig `privateAttributes`). They still drive **targeting** locally — they just never reach `/collect`. See [advanced](/sdks/reference/python/advanced). |
+| `sticky_store` | `StickyBucketStore` | `None` | Pluggable store that pins a user's experiment group across re-buckets (doc 20 §2). Absent ⇒ purely deterministic hashing. See [advanced](/sdks/reference/python/advanced). |
 
 ```python
 import shipeasy
@@ -328,3 +324,4 @@ shipeasy.configure_for_offline(path="shipeasy-snapshot.json")
 ```
 
 See [testing](/sdks/reference/python/testing) for the full override args.
+
