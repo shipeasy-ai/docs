@@ -52,7 +52,7 @@ Think of a universe as a population: every eligible user is sliced into one of t
     allocation weights.
   </Tile>
   <Tile
-    href="#targeting-feature-flags-on-universes"
+    href="#targeting"
     icon="✎"
     title="Untargeted / unallocated"
     meta={
@@ -81,8 +81,8 @@ A 5% holdout in the `checkout` universe means: 5% of users are pinned to never s
 Holdouts are **persistent**: a user assigned to the holdout stays in it across experiments and across time. The universe name (the salt) is immutable, so the only thing that can move a user in or out is changing the holdout range itself.
 
 ```bash
-# --holdout takes a basis-point range, lo,hi (0–9999). 0,499 = first
-# 5% of bucketed users sit in the holdout.
+# --holdout-range takes an inclusive [lo, hi] bucket range (0–9999).
+# [0,499] = the first 5% of bucketed users sit in the holdout.
 shipeasy release experiments universes create checkout --holdout-range '[0,499]'
 ```
 
