@@ -60,7 +60,7 @@ c := shipeasy.NewClient(acct)            // acct is your own *Account
 if c.GetFlag("new_checkout") { /* ... */ }
 ```
 
-If you don't supply an `Attributes` transform (see [Installation](installation.md)),
+If you don't supply an `Attributes` transform (see [Installation](/sdks/reference/go/installation)),
 the value you pass to `NewClient` is assumed to already BE the attribute map, so
 `shipeasy.NewClient(shipeasy.User{"user_id": "u_123", "plan": "pro"})` works
 as-is. `NewClient` **panics** if `Configure` was not called first (the api key
@@ -68,14 +68,13 @@ lives in the global config — failing loudly surfaces the misconfiguration).
 
 ## Feature pages
 
-- [Installation](installation.md) — `go get`, per-framework wiring, the global `Configure()` call + options table.
-- [Configuration](configuration.md) — `Configure` options, env vars, init/poll vs one-shot, change listeners.
-- [Flags](flags.md) — `GetFlag`, `GetFlagOr`, `GetFlagDetail`.
-- [Configs](configs.md) — `GetConfig`, `GetConfigOr`.
-- [Kill switches](killswitches.md) — `GetKillswitch`, named switches.
-- [Experiments](experiments.md) — `Universe(name).Assign()`, `Assignment`, `Track`.
-- [i18n](i18n.md) — server SSR loader tag + the browser SDK's `t()`.
-- [Error reporting](error-reporting.md) — the `See()` surface.
-- [Testing](testing.md) — `ConfigureForTesting`, `ConfigureForOffline`, the `Override*` helpers.
-- [OpenFeature](openfeature.md) — `NewGlobalProvider()`.
-- [Advanced](advanced.md) — manual exposure, private attributes, bucketBy, sticky bucketing, anon-id middleware.
+- [Installation](/sdks/reference/go/installation) — `go get`, per-framework wiring, the global `Configure()` call + options table.
+- [Configuration](/sdks/reference/go/configuration) — `Configure` options, env vars, init/poll vs one-shot, change listeners.
+- [Flags](/sdks/reference/go/flags) — `GetFlag`, `GetFlagOr`, `GetFlagDetail`.
+- [Configs](/sdks/reference/go/configs) — `GetConfig`, `GetConfigOr`.
+- [Kill switches](/sdks/reference/go/killswitches) — `GetKillswitch`, named switches.
+- [Experiments](/sdks/reference/go/experiments) — `Universe(name).Assign()`, `Assignment`, `Track`.
+- [Error reporting](/sdks/reference/go/error-reporting) — the `See()` surface.
+- [Testing](/sdks/reference/go/testing) — `ConfigureForTesting`, `ConfigureForOffline`, the `Override*` helpers.
+- [OpenFeature](/sdks/reference/go/openfeature) — `NewGlobalProvider()`.
+- [Advanced](/sdks/reference/go/advanced) — manual exposure, private attributes, bucketBy, sticky bucketing, anon-id middleware.

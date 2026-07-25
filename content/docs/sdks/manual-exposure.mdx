@@ -1,83 +1,80 @@
 ---
-title: Manual exposure
-description: Suppress the automatic exposure on getExperiment and log it yourself, so an exposure only counts when the user actually sees the variant.
+title: Exposure control
+description: Read an experiment's params without counting an exposure, so "exposed" means the user actually saw the variant rather than merely being assigned.
 ---
 
 <DocMeta
   status="Production ready"
   read="3 min read"
-  updated="June 19, 2026"
+  updated="July 20, 2026"
   works="@shipeasy/sdk · server + client"
 />
 
-By default, the first `getExperiment` call for a user queues an **exposure** event — the record the daily analysis uses to know who was in the test. Usually that's exactly right. But sometimes you resolve a variant well before the user sees it (a server prefetch, a component that may never mount). Manual exposure lets you decouple _resolving_ the variant from _counting_ the exposure.
+One (deduped) **exposure** — the record the daily analysis uses to know who was in the test — is logged per enrolled unit. Usually the automatic timing is exactly right. But sometimes you resolve a variant well before the user sees it (a server prefetch, a component that may never mount), and you want "exposed" to mean "saw it".
 
-<Callout type="info" title="Configured on the Engine">
-  <code>disableAutoExposure</code> is an <code>Engine</code> construction option. Everyday flag
-  reads use <code>configure</code> + <code>new Client(user)</code>; the per-call{" "}
-  <code>logExposure: false</code> option and <code>logExposure()</code> work on both the bound{" "}
-  <code>Client</code> and the <code>Engine</code> directly.
+<Callout type="info" title="There is no logExposure() call">
+  Reading <em>is</em> the exposure — you never fire one by hand. What you control is whether a given
+  read counts, and every SDK gives you a way to read without logging.
 </Callout>
 
-## Suppress the automatic exposure
+## When the exposure fires
 
-Pass `logExposure: false` in the options to resolve a variant without logging:
-
-```ts
-const result = flags.getExperiment(
-  "checkout_button",
-  { color: "blue" },
-  { logExposure: false }, // resolve only — no exposure yet
-);
-```
-
-To suppress auto-exposure for an entire engine, set `disableAutoExposure: true` at construction:
+**Server** — `assign()` is side-effect free; the exposure fires on the **first `get()` read** of an enrolled assignment. Pass `{ exposure: false }` to peek; the exposure then fires on the next real read.
 
 ```ts
-import { Engine } from "@shipeasy/sdk/server";
+const flags = new Client(user); // construct once per callsite
 
-const engine = new Engine({
-  apiKey: process.env.SHIPEASY_SERVER_KEY!,
-  disableAutoExposure: true,
-});
+const cta = flags.universe("hero_cta").assign();
+
+// Peek the params WITHOUT logging an exposure:
+const preview = cta.get("primary_label", "Sign up", { exposure: false });
+
+// …at the moment you actually render the treatment, read normally to log it:
+render(cta.get("primary_label", "Sign up")); // logs the single exposure (deduped)
 ```
 
-## Log the exposure yourself
-
-Call `logExposure` at the moment the variant is actually rendered:
+**Browser** — the visitor is already resolved, so the exposure fires at `assign()` time. Suppress it with `assign({ logExposure: false })` and re-`assign()` with logging on at render:
 
 ```ts
-flags.logExposure("checkout_button");
+const flags = new Client(visitor); // construct once per callsite
+
+const cta = flags.universe("hero_cta").assign({ logExposure: false });
+render(cta.get("primary_label", "Sign up"));
+
+flags.universe("hero_cta").assign(); // …log the exposure at render (deduped per session)
 ```
 
-```ts
-// bound Client — the user is implicit
-logExposure(name: string): void;
+To make suppression the default for **every** read, set `disableAutoExposure: true` on `configure()` and opt back in per callsite with `assign({ logExposure: true })`.
 
-// Engine — pass the user explicitly
-logExposure(user: string | User, name: string): void;
-```
+Either way the exposure is deduped per session and durably per `(unit, experiment, group)` server-side.
 
-On the bound `Client` (and in the browser, where the visitor is already identified) you pass just the experiment name; on the `Engine` you pass the user too.
+## Other languages
 
-<Callout type="warn" title="Don't double-count">
-  An exposure that fires twice for the same user in the same experiment is deduped by the pipeline,
-  but the cleanest contract is: suppress the auto-exposure, then call <code>logExposure</code>{" "}
-  exactly once, when the user sees the variant.
-</Callout>
+Every SDK resolves a param the same way; only the peek spelling differs.
+
+| SDK                                                  | Read without logging an exposure                                                            |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| [TypeScript](/sdks/reference/typescript/experiments) | `get(field, fallback, { exposure: false })` — browser also `assign({ logExposure: false })` |
+| [Python](/sdks/reference/python/experiments)         | `a.get(field, fallback, exposure=False)`                                                    |
+| [Ruby](/sdks/reference/ruby/experiments)             | `a.get(field, fallback, exposure: false)`                                                   |
+| [PHP](/sdks/reference/php/experiments)               | `$a->get($field, $fb, false)`                                                               |
+| [Go](/sdks/reference/go/experiments)                 | `a.Peek(field, fallback)`                                                                   |
+| [Java](/sdks/reference/java/experiments)             | `a.peek(field, fb)`                                                                         |
+| [Kotlin](/sdks/reference/kotlin/experiments)         | `a.peek(field, fallback)`                                                                   |
+| [Swift](/sdks/reference/swift/experiments)           | `assign(logExposure: false)`                                                                |
 
 ## When to reach for it
 
-- **Server prefetch** — you resolve the variant in a loader but the component may never render.
-- **Lazy UI** — a tab or modal that holds the variant but isn't always opened.
-- **Strict exposure semantics** — you want "exposed" to mean "saw it", not "was assigned".
+- **Server prefetch** — you resolve the variant in a loader but the component may never render
+- **Lazy UI** — a tab or modal that holds the variant but isn't always opened
+- **Strict exposure semantics** — you want "exposed" to mean "saw it", not "was assigned"
 
 <SeeAlso
   links={[
     {
       href: "/flags-experiments/case-studies/exposure-when-seen",
       title: "Use case: count an exposure only when seen",
-      note: "Manual exposure in practice",
+      note: "Exposure control in practice",
     },
     {
       href: "/flags-experiments/experiments",
@@ -89,6 +86,10 @@ On the bound `Client` (and in the browser, where the visitor is already identifi
       title: "Analysis",
       note: "What an exposure means to the stats",
     },
-    { href: "/sdks/node-typescript", title: "Node / TypeScript", note: "getExperiment basics" },
+    {
+      href: "/sdks/reference/typescript/experiments",
+      title: "Experiments reference",
+      note: "universe().assign() basics",
+    },
   ]}
 />

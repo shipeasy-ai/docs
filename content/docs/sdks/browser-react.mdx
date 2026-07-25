@@ -57,10 +57,12 @@ flags.getFlag("new_checkout", true); // default only when not-ready / not-found
 
 const cfg = flags.getConfig<{ max_uploads: number }>("upload_limits");
 
-const { inExperiment, group, params } = flags.getExperiment("hero_cta", {
-  primary_label: "Sign up",
-});
+// experiments are read by UNIVERSE — the visitor lands in at most one of its experiments
+const cta = flags.universe("hero_cta").assign();
+render(cta.get("primary_label", "Sign up")); // variant ?? universe default ?? fallback
 ```
+
+In the browser the exposure beacon fires at `assign()` time. Suppress it with `assign({ logExposure: false })` — see [Exposure control](/sdks/manual-exposure).
 
 ## Track an event
 
@@ -122,15 +124,15 @@ Full guide: [DevTools overlay](/sdks/devtools-overlay).
 
 ## Testing
 
-Test against the `Engine` directly — `forTesting()` does zero network:
+Swap `configure()` for `configureForTesting()` — zero network, no key, and your code keeps reading through the ordinary `new Client(user)`:
 
 ```ts
-import { Engine } from "@shipeasy/sdk/client";
+import { configureForTesting, Client, clearOverrides } from "@shipeasy/sdk/client";
 
-const engine = Engine.forTesting();
-engine.overrideFlag("new_checkout", true);
-engine.getFlag("new_checkout"); // true — no network
-engine.clearOverrides();
+configureForTesting({ flags: { new_checkout: true } });
+
+new Client({ user_id: "u_1" }).getFlag("new_checkout"); // true — no network
+clearOverrides();
 ```
 
 Browser override precedence: programmatic override &gt; URL/devtools override (`?se_gate_…`) &gt; the server's evaluation. See [Testing](/sdks/testing).

@@ -68,9 +68,9 @@ flags.get_killswitch("payments")             # true = killed; optional switch_ke
 
 # Ask the UNIVERSE, not the experiment. Returns an Assignment (never raises):
 #   .name / .group  → nil when not enrolled ·  .enrolled?  → group non-nil
-#   .get(field, fallback = nil) → variant override ?? universe default ?? fallback
-assignment = flags.universe("checkout").assign   # auto-logs one deduped exposure when enrolled
-render_cta(assignment.get("label", "Buy now"))
+#   .get(field, fallback = nil, exposure: true) → variant override ?? universe default ?? fallback
+assignment = flags.universe("checkout").assign   # side-effect free; exposure fires on first get read
+render_cta(assignment.get("label", "Buy now"))    # first read logs one deduped exposure (exposure: false to peek)
 
 flags.track("purchase", { revenue: 49 })     # conversion / metric event
 ```
@@ -134,12 +134,17 @@ rescue => e
 end
 ```
 
+Attach context with `.extras({...})` before `.to`, or inline as
+`.to(outcome, {...})`. To attach it from anywhere without threading it into the
+rescue, buffer it earlier with `Shipeasy.add_extras(order_id: id)` — it merges
+into every see() report later in the same (fiber-local, per-request) scope.
+
 `Shipeasy.see_violation(name)` for non-exception problems;
 `Shipeasy.control_flow_exception(e).because(...)` marks expected control flow
 (reports nothing).
 
 → More: `pages/error-reporting.md` · snippets `snippets/ops/see.md`
-(`.extras`, violations, control-flow exceptions).
+(`.extras`, `add_extras`, violations, control-flow exceptions).
 
 ## i18n (Rails)
 
@@ -158,6 +163,7 @@ the loader tag (public client key).
 - Anon bucketing: `Shipeasy::SDK::RackMiddleware` mints the shared `__se_anon_id`
   cookie (Rails Railtie auto-mounts it); anonymous `get_flag` then just works.
 - `c.private_attributes = ["email"]` strips keys from outbound events.
+- `c.clean_backtrace` (default on) filters `see()` stacks to app frames via `Rails.backtrace_cleaner`; set `false` for raw backtraces.
 - `c.sticky_store = Shipeasy::SDK::InMemoryStickyStore.new` pins experiment assignment.
 - SSR: `Shipeasy.bootstrap_script_tag(user)` + `Shipeasy.i18n_script_tag(client_key, "en:prod")`.
 - `Shipeasy.on_change { ... }` (requires `c.poll = true`) fires after a poll fetches new data.

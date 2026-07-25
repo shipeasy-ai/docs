@@ -9,7 +9,7 @@ description: "A flag (gate) evaluates to a boolean for a given user. After Shipe
 </Callout>
 
 A flag (gate) evaluates to a boolean for a given user. After
-[`Shipeasy.configure`](configuration.md) has run once at boot, bind a user with
+[`Shipeasy.configure`](/sdks/reference/ruby/configuration) has run once at boot, bind a user with
 `Shipeasy::Client.new(user)` and read with **no user argument**.
 
 ```ruby
@@ -44,14 +44,14 @@ detail.value    # => true / false
 detail.reason   # => "RULE_MATCH" / "DEFAULT" / "OFF" / ...
 ```
 
-| reason             | meaning                                                                             |
-| ------------------ | ----------------------------------------------------------------------------------- |
-| `OVERRIDE`         | a [`configure_for_testing`](testing.md) / `override_flag` override forced the value |
-| `CLIENT_NOT_READY` | the first fetch hasn't completed yet → `value` false                                |
-| `FLAG_NOT_FOUND`   | no gate by that name in the blob → `value` false                                    |
-| `OFF`              | the gate exists but is disabled or killswitched → `value` false                     |
-| `RULE_MATCH`       | evaluated **on** (targeting + rollout)                                              |
-| `DEFAULT`          | evaluated **off** (fell through)                                                    |
+| reason             | meaning                                                                                               |
+| ------------------ | ----------------------------------------------------------------------------------------------------- |
+| `OVERRIDE`         | a [`configure_for_testing`](/sdks/reference/ruby/testing) / `override_flag` override forced the value |
+| `CLIENT_NOT_READY` | the first fetch hasn't completed yet → `value` false                                                  |
+| `FLAG_NOT_FOUND`   | no gate by that name in the blob → `value` false                                                      |
+| `OFF`              | the gate exists but is disabled or killswitched → `value` false                                       |
+| `RULE_MATCH`       | evaluated **on** (targeting + rollout)                                                                |
+| `DEFAULT`          | evaluated **off** (fell through)                                                                      |
 
 `get_flag` delegates to `get_flag_detail` and returns `.value`, substituting
 `default` for the `CLIENT_NOT_READY` / `FLAG_NOT_FOUND` cases. The `gate` usage
@@ -74,6 +74,6 @@ unsubscribe.call
 
 A fractional rollout buckets on the unit id:
 `murmur3("#{salt}:#{uid}") % 10000 < rollout_pct`. For logged-out traffic the
-shared `__se_anon_id` cookie supplies a stable unit — see [advanced](advanced.md).
+shared `__se_anon_id` cookie supplies a stable unit — see [advanced](/sdks/reference/ruby/advanced).
 A request with no unit still resolves a fully-rolled (100%) gate as on; only
 fractional gates need an id.

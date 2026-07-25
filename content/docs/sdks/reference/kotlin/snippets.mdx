@@ -10,7 +10,7 @@ Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same 
 ### release / flags
 
 Read a feature gate with a bound `Client`. Assumes `configure()` ran at startup
-— see [Installation](../../pages/installation.md).
+— see [Installation](/sdks/reference/kotlin/installation).
 
 ```kotlin
 import ai.shipeasy.Client
@@ -20,7 +20,7 @@ val flags = Client(currentUser)
 
 // getFlag(name, default = false): default is returned ONLY when the gate can't
 // be evaluated (SDK not ready / flag unknown) — never for a real `false`.
-if (flags.getFlag("{{FLAG_KEY}}", default = false)) {
+if (flags.getFlag("new_checkout", default = false)) {
     // gate is on for this user
 }
 ```
@@ -28,7 +28,7 @@ if (flags.getFlag("{{FLAG_KEY}}", default = false)) {
 ### release / configs
 
 Read a dynamic config value, with a default when the key is absent. Assumes
-`configure()` ran at startup — see [Installation](../../pages/installation.md).
+`configure()` ran at startup — see [Installation](/sdks/reference/kotlin/installation).
 
 ```kotlin
 import ai.shipeasy.Client
@@ -37,13 +37,13 @@ import ai.shipeasy.Client
 val flags = Client(currentUser)
 
 // getConfig(name, default = null): default is returned when the key is absent.
-val value = flags.getConfig("{{CONFIG_KEY}}", default = "Pay now")
+val value = flags.getConfig("billing_copy", default = "Pay now")
 ```
 
 ### release / killswitches
 
 Check a kill switch — `true` means the feature is killed. Assumes `configure()`
-ran at startup — see [Installation](../../pages/installation.md).
+ran at startup — see [Installation](/sdks/reference/kotlin/installation).
 
 ```kotlin
 import ai.shipeasy.Client
@@ -54,7 +54,7 @@ val flags = Client(currentUser)
 // getKillswitch(name, switchKey = null): without switchKey → true when the whole
 // kill switch is killed; with switchKey → true when that named per-key override
 // is on (an unconfigured key falls back to the top-level value).
-if (flags.getKillswitch("{{KILLSWITCH_KEY}}", switchKey = null)) {
+if (flags.getKillswitch("payments", switchKey = null)) {
     return serviceUnavailable()   // killed — short-circuit
 }
 ```
@@ -64,7 +64,7 @@ if (flags.getKillswitch("{{KILLSWITCH_KEY}}", switchKey = null)) {
 Assign a unit within a universe (a mutual-exclusion pool — the unit lands in ≤1
 experiment), read the assigned params, then record the conversion event on the
 same bound `Client`. Assumes `configure()` ran at startup — see
-[Installation](../../pages/installation.md).
+[Installation](/sdks/reference/kotlin/installation).
 
 ```kotlin
 import ai.shipeasy.Client
@@ -77,16 +77,18 @@ val flags = Client(currentUser)
 //   .name     — the experiment the unit landed in, or null when not enrolled
 //   .group    — the assigned variant, or null when not enrolled
 //   .enrolled — == (group != null)
-//   .get(field, fallback) — variant override ?? universe default ?? fallback
-// Server: assign() takes no arg (user bound at construction).
-val exp = flags.universe("{{EXPERIMENT_KEY}}").assign()
+//   .get(field, fallback)  — variant override ?? universe default ?? fallback; logs the exposure on first read
+//   .peek(field, fallback) — same value, read-only (never logs an exposure)
+// Server: assign() takes no arg (user bound at construction). assign() is
+// side-effect free; the first get() read logs one deduped exposure.
+val exp = flags.universe("hero_cta").assign()
 
-render(exp.get("primary_label", "Sign up")) // always safe — falls back when not enrolled
+render(exp.get("primary_label", "Sign up")) // always safe — falls back when not enrolled; first read logs the exposure
 
 // on conversion — same bound Client, no user arg (unit comes from the bound bag)
 // track(event, props = emptyMap()): event = the metric; props = optional event
 // properties (private attributes are stripped).
-flags.track("{{SUCCESS_EVENT}}", mapOf("group" to (exp.group ?: "none")))
+flags.track("purchase", mapOf("group" to (exp.group ?: "none")))
 ```
 
 ## metrics
@@ -95,7 +97,7 @@ flags.track("{{SUCCESS_EVENT}}", mapOf("group" to (exp.group ?: "none")))
 
 Track a metric/conversion event from the bound `Client`. Metrics in the
 dashboard are computed from these events. Assumes `configure()` ran at startup —
-see [Installation](../../pages/installation.md).
+see [Installation](/sdks/reference/kotlin/installation).
 
 ### Track an event
 
@@ -109,7 +111,7 @@ val flags = Client(currentUser)
 //   event — the event your metric is built on (required)
 //   props — optional payload; numeric/string fields you can sum/filter on in a
 //           metric (private attributes are stripped before egress)
-flags.track("{{EVENT_NAME}}", mapOf("amount" to 49, "currency" to "usd"))
+flags.track("checkout_started", mapOf("amount" to 49, "currency" to "usd"))
 ```
 
 Fire-and-forget (never blocks your response) and a no-op under
@@ -124,7 +126,7 @@ import ai.shipeasy.Client
 // construct once per callsite (cheap; binds the user)
 val flags = Client(currentUser)
 
-flags.track("{{EVENT_NAME}}")   // props are optional (default emptyMap())
+flags.track("checkout_started")   // props are optional (default emptyMap())
 ```
 
 ## ops
@@ -134,7 +136,7 @@ flags.track("{{EVENT_NAME}}")   // props are optional (default emptyMap())
 Report a caught, handled error (or a non-exception "violation") to Shipeasy with
 `see()` — fire-and-forget, never re-throws. Package-level, so it reports against
 the SDK configured by `configure()`. Assumes `configure()` ran at startup — see
-[Installation](../../pages/installation.md).
+[Installation](/sdks/reference/kotlin/installation).
 
 ### Report a handled exception
 
@@ -162,6 +164,21 @@ try {
     // .extras(map)          structured fields attached to the report (String /
     //                       finite Number / Boolean only; capped at 20 keys)
     see(e).causesThe("checkout").extras(mapOf("order_id" to oid)).to("use cached prices")
+}
+```
+
+Or pass the extras inline on `.to(outcome, map)` — equivalent to a final
+`.extras(...)` (folds over any earlier `.extras`, later wins), so there is no
+ordering to remember:
+
+```kotlin
+import ai.shipeasy.see
+
+try {
+    charge(order)
+} catch (e: Exception) {
+    // .to(outcome, map)     terminal + extras in one call
+    see(e).causesThe("checkout").to("use cached prices", mapOf("order_id" to oid))
 }
 ```
 

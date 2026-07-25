@@ -9,7 +9,7 @@ Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same 
 
 ### release / flags
 
-Read `{{FLAG_KEY}}` off a user-bound `Client`. Assumes `configure()` ran at
+Read `new_checkout` off a user-bound `Client`. Assumes `configure()` ran at
 startup — see Installation.
 
 ```java
@@ -19,15 +19,15 @@ import java.util.Map;
 // construct once per callsite (cheap; binds the user)
 Client client = new Client(Map.of("user_id", "u_123"));
 
-boolean enabled = client.getFlag("{{FLAG_KEY}}"); // gate name
+boolean enabled = client.getFlag("new_checkout"); // gate name
 // optional default overload — returned ONLY when unresolvable (engine not
 // ready / flag absent), never when the flag legitimately evaluates to false:
-// boolean enabled = client.getFlag("{{FLAG_KEY}}", true /* default */);
+// boolean enabled = client.getFlag("new_checkout", true /* default */);
 ```
 
 ### release / configs
 
-Read the dynamic config `{{CONFIG_KEY}}` (with a fallback when absent).
+Read the dynamic config `billing_copy` (with a fallback when absent).
 Assumes `configure()` ran at startup — see Installation.
 
 ```java
@@ -38,14 +38,14 @@ import java.util.Map;
 Client client = new Client(Map.of("user_id", "u_123"));
 
 Object cfg = client.getConfig(
-    "{{CONFIG_KEY}}",          // config name
+    "billing_copy",          // config name
     Map.of("title", "Default")); // fallback returned when the config is absent
-// one-arg overload returns null when absent: client.getConfig("{{CONFIG_KEY}}")
+// one-arg overload returns null when absent: client.getConfig("billing_copy")
 ```
 
 ### release / killswitches
 
-Check whether the kill switch `{{KILLSWITCH_KEY}}` is killed. Assumes
+Check whether the kill switch `payments` is killed. Assumes
 `configure()` ran at startup — see Installation.
 
 ```java
@@ -55,9 +55,9 @@ import java.util.Map;
 // construct once per callsite (cheap; binds the user)
 Client client = new Client(Map.of("user_id", "u_123"));
 
-boolean killed = client.getKillswitch("{{KILLSWITCH_KEY}}"); // killswitch name
+boolean killed = client.getKillswitch("payments"); // killswitch name
 // optional second arg reads one named per-key switch (null = whole killswitch):
-// boolean off = client.getKillswitch("{{KILLSWITCH_KEY}}", "eu_region" /* switchKey */);
+// boolean off = client.getKillswitch("payments", "eu_region" /* switchKey */);
 
 if (killed) {
     // disable the protected path
@@ -83,9 +83,11 @@ Client client = new Client(Map.of("user_id", "u_123"));
 //   .name()    — the experiment the unit landed in, or null when not enrolled
 //   .group()   — the assigned variant, or null when not enrolled
 //   .enrolled()— == (group() != null)
-//   .get(field, fallback) — variant override ?? universe default ?? fallback
-// assign() takes no arg (user bound at construction) and auto-logs one exposure.
-Assignment exp = client.universe("{{EXPERIMENT_KEY}}").assign();
+//   .get(field, fallback) — variant override ?? universe default ?? fallback (first get() logs one exposure)
+//   .peek(field, fallback) — same read, but NEVER logs an exposure
+// assign() takes no arg (user bound at construction) and is side-effect free;
+// the single deduped exposure fires on the first .get(...) read.
+Assignment exp = client.universe("hero_cta").assign();
 
 String label = (String) exp.get("primary_label", "Sign up"); // always safe — falls back when not enrolled
 
@@ -94,7 +96,7 @@ String label = (String) exp.get("primary_label", "Sign up"); // always safe — 
 //   track(eventName, props?)
 //     eventName — the success event name
 //     props     — optional metric properties (private attrs are stripped)
-client.track("{{SUCCESS_EVENT}}", Map.of("group", String.valueOf(exp.group()))); // props optional
+client.track("purchase", Map.of("group", String.valueOf(exp.group()))); // props optional
 ```
 
 ## metrics
@@ -117,7 +119,7 @@ Client client = new Client(Map.of("user_id", "u_123")); // construct once per ca
 //   eventName — the event your metric is built on (required)
 //   props     — optional payload; numeric/string fields you can sum/filter on in
 //               a metric (private attributes are stripped before egress)
-client.track("{{EVENT_NAME}}", Map.of("amount", 49, "currency", "usd"));
+client.track("checkout_started", Map.of("amount", 49, "currency", "usd"));
 ```
 
 Fire-and-forget (never blocks your response) and a no-op under
@@ -129,7 +131,7 @@ Fire-and-forget (never blocks your response) and a no-op under
 ```java
 Client client = new Client(Map.of("user_id", "u_123")); // construct once per callsite
 
-client.track("{{EVENT_NAME}}", Map.of()); // props are optional (pass an empty map)
+client.track("checkout_started", Map.of()); // props are optional (pass an empty map)
 ```
 
 ## ops
@@ -165,8 +167,36 @@ import static ai.shipeasy.See.see;
 try {
     charge(order);
 } catch (Exception e) {
-    // .extras(map)         structured fields attached to the report
+    // .extras(map)         structured fields attached to the report; call it
+    //                      BEFORE .to, or pass extras inline as .to(outcome, map).
+    //                      (A stray .extras AFTER .to is a no-op — .to returns void.)
     see(e).causesThe("checkout").extras(Map.of("order_id", oid)).to("use cached prices");
+
+    // equivalent — extras folded into the terminal, no ordering to remember:
+    see(e).causesThe("checkout").to("use cached prices", Map.of("order_id", oid));
+}
+```
+
+### Attach context from anywhere with `See.addExtras(...)`
+
+```java
+import static ai.shipeasy.See.see;
+import ai.shipeasy.See;
+
+// Buffer extras earlier in the request — from any layer, not just the catch.
+// Every see() report that fires LATER on the same thread carries them, so you
+// don't have to thread context down into the catch site. Thread-local, so
+// concurrent requests never mix; AnonIdFilter clears it per request (register it
+// like any servlet filter — outside a servlet request call See.clearExtras()).
+See.addExtras(Map.of("order_id", order.id(), "tenant", tenant.slug()));
+
+// ...deep in a service, later in the same request...
+try {
+    charge(order);
+} catch (Exception e) {
+    // report carries order_id + tenant automatically; a chained .extras / inline
+    // .to extra of the same key wins over the ambient one.
+    see(e).causesThe("checkout").to("use cached prices");
 }
 ```
 

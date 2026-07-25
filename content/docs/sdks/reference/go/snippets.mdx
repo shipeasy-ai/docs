@@ -9,7 +9,7 @@ Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same 
 
 ### release / flags
 
-Read the `{{FLAG_KEY}}` gate for the bound user. Assumes `Configure()` ran at startup — see Installation.
+Read the `new_checkout` gate for the bound user. Assumes `Configure()` ran at startup — see Installation.
 
 ### Read a flag
 
@@ -19,7 +19,7 @@ c := shipeasy.NewClient(shipeasy.User{"user_id": "u_123"})
 
 // GetFlag(name) — name is the gate key; returns false if the gate is
 // absent, disabled, or killswitched (never a user argument — it's bound).
-if c.GetFlag("{{FLAG_KEY}}") {
+if c.GetFlag("new_checkout") {
     // new behaviour
 }
 ```
@@ -33,13 +33,13 @@ c := shipeasy.NewClient(shipeasy.User{"user_id": "u_123"})
 // GetFlagOr(name, def) — def is returned ONLY when the flag can't be
 // evaluated (engine not ready, or the gate is absent); a gate that
 // evaluates false returns false.
-on := c.GetFlagOr("{{FLAG_KEY}}", true) // name; def returned only on can't-evaluate
+on := c.GetFlagOr("new_checkout", true) // name; def returned only on can't-evaluate
 _ = on
 ```
 
 ### release / configs
 
-Read the `{{CONFIG_KEY}}` dynamic config (typed JSON value). Assumes `Configure()` ran at startup — see Installation.
+Read the `billing_copy` dynamic config (typed JSON value). Assumes `Configure()` ran at startup — see Installation.
 
 ### Read a config
 
@@ -49,7 +49,7 @@ c := shipeasy.NewClient(shipeasy.User{"user_id": "u_123"})
 
 // GetConfig(name) — name is the config key; returns (value any, ok bool).
 // ok is false when the key is absent. Type-assert value to what you stored.
-if cfg, ok := c.GetConfig("{{CONFIG_KEY}}"); ok {
+if cfg, ok := c.GetConfig("billing_copy"); ok {
     m := cfg.(map[string]any) // configs are arbitrary JSON
     _ = m["cta"]
 }
@@ -62,13 +62,13 @@ if cfg, ok := c.GetConfig("{{CONFIG_KEY}}"); ok {
 c := shipeasy.NewClient(shipeasy.User{"user_id": "u_123"})
 
 // GetConfigOr(name, def) — def is returned when the key is absent.
-v := c.GetConfigOr("{{CONFIG_KEY}}", map[string]any{"cta": "Buy"}) // name; def
+v := c.GetConfigOr("billing_copy", map[string]any{"cta": "Buy"}) // name; def
 _ = v
 ```
 
 ### release / killswitches
 
-Check whether the `{{KILLSWITCH_KEY}}` kill switch is engaged. Assumes `Configure()` ran at startup — see Installation.
+Check whether the `payments` kill switch is engaged. Assumes `Configure()` ran at startup — see Installation.
 
 ### Read a kill switch
 
@@ -78,7 +78,7 @@ c := shipeasy.NewClient(shipeasy.User{"user_id": "u_123"})
 
 // GetKillswitch(name) — name is the kill-switch key; true means engaged
 // (the feature is killed). Returns false if the switch is absent.
-if c.GetKillswitch("{{KILLSWITCH_KEY}}") {
+if c.GetKillswitch("payments") {
     // feature is killed — short-circuit
 }
 ```
@@ -92,14 +92,14 @@ c := shipeasy.NewClient(shipeasy.User{"user_id": "u_123"})
 // GetKillswitch(name, switchKey) — the optional switchKey selects a named
 // per-key override (the dashboard "switches" feature). When that key has no
 // override, it falls back to the kill switch's top-level value.
-if c.GetKillswitch("{{KILLSWITCH_KEY}}", "eu") {
+if c.GetKillswitch("payments", "eu") {
     // killed for the "eu" variant
 }
 ```
 
 ### release / experiments
 
-Assign a unit within the `{{EXPERIMENT_KEY}}` universe (a mutual-exclusion pool — the unit lands in &lt;=1 experiment), read the assigned params, then record the `{{SUCCESS_EVENT}}` conversion on the same bound `Client`. Assumes `Configure()` ran at startup — see Installation.
+Assign a unit within the `hero_cta` universe (a mutual-exclusion pool — the unit lands in &lt;=1 experiment), read the assigned params, then record the `purchase` conversion on the same bound `Client`. Assumes `Configure()` ran at startup — see Installation.
 
 ### Assign within a universe and render the assigned group
 
@@ -112,8 +112,9 @@ c := shipeasy.NewClient(shipeasy.User{"user_id": "u_123"})
 //   a.Name     — the experiment the unit landed in, or "" when not enrolled
 //   a.Group    — the assigned variant, or "" when not enrolled
 //   a.Enrolled — true iff enrolled (Group != "")
-//   a.Get(field, fallback) — variant override ?? universe default ?? fallback
-a := c.Universe("{{EXPERIMENT_KEY}}").Assign()
+//   a.Get(field, fallback)  — variant override ?? universe default ?? fallback; first enrolled read logs one exposure
+//   a.Peek(field, fallback) — same lookup, but logs NO exposure
+a := c.Universe("hero_cta").Assign() // side-effect free; exposure fires on the first Get
 render(a.Get("color", "blue")) // always safe — falls back when not enrolled
 ```
 
@@ -126,7 +127,7 @@ c := shipeasy.NewClient(shipeasy.User{"user_id": "u_123"})
 // Track(event, props) — Client-only; the unit id is derived from the bound
 // attributes (user_id, else anonymous_id). event is the metric event name;
 // props are optional numeric/string fields. Fire-and-forget.
-c.Track("{{SUCCESS_EVENT}}", map[string]any{"amount": 49}) // event; props
+c.Track("purchase", map[string]any{"amount": 49}) // event; props
 ```
 
 ## metrics
@@ -147,7 +148,7 @@ c := shipeasy.NewClient(shipeasy.User{"user_id": "u_123"})
 //   event — the event your metric is built on (required)
 //   props — optional payload; numeric/string fields you can sum/filter on in a
 //           metric (private attributes are stripped before egress)
-c.Track("{{EVENT_NAME}}", map[string]any{"amount": 49, "currency": "usd"})
+c.Track("checkout_started", map[string]any{"amount": 49, "currency": "usd"})
 ```
 
 Fire-and-forget (never blocks your response) and a no-op under
@@ -160,7 +161,7 @@ Fire-and-forget (never blocks your response) and a no-op under
 // construct once per callsite (cheap; binds the user)
 c := shipeasy.NewClient(shipeasy.User{"user_id": "u_123"})
 
-c.Track("{{EVENT_NAME}}", nil) // props are optional — pass nil
+c.Track("checkout_started", nil) // props are optional — pass nil
 ```
 
 ## ops
@@ -193,6 +194,18 @@ if err := charge(order); err != nil {
         CausesThe("checkout").
         Extras(map[string]any{"order_id": order.ID}).
         To("use cached prices")
+}
+```
+
+### Or pass extras inline to `.To(outcome, extras)`
+
+```go
+if err := charge(order); err != nil {
+    // .To(outcome, extras) — the extras map is merged like a final .Extras()
+    // call (later map wins), so there is no ordering to remember.
+    shipeasy.See(err).
+        CausesThe("checkout").
+        To("use cached prices", map[string]any{"order_id": order.ID})
 }
 ```
 

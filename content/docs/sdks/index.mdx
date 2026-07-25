@@ -61,16 +61,16 @@ The heavyweight polling state lives in an `Engine` behind `configure()` — engi
 
 ## What every SDK supports
 
-| Capability        | Bound-client shape                   | Notes                                                               |
-| ----------------- | ------------------------------------ | ------------------------------------------------------------------- |
-| Feature flags     | `getFlag(name[, default])`           | Boolean; default returned only when unevaluable                     |
-| Dynamic configs   | `getConfig(name[, default])`         | Typed JSON value with targeting                                     |
-| Experiments       | `getExperiment(name, defaultParams)` | `{ inExperiment, group, params }`                                   |
-| Evaluation detail | `getFlagDetail(name)`                | `{ value, reason }` — see [Reasons](/sdks/reasons)                  |
-| Event tracking    | `track(event, props)`                | Fire-and-forget metric ingestion                                    |
-| Change listeners  | `Engine.onChange(cb)`                | Fires after a poll brings new data — see [onChange](/sdks/onchange) |
-| Offline snapshot  | `Engine.fromFile` / `fromSnapshot`   | Zero-network eval against a captured blob                           |
-| Test utilities    | `Engine.forTesting()` + `override*`  | No key, no network — see [Testing](/sdks/testing)                   |
+| Capability        | Bound-client shape                    | Notes                                                               |
+| ----------------- | ------------------------------------- | ------------------------------------------------------------------- |
+| Feature flags     | `getFlag(name[, default])`            | Boolean; default returned only when unevaluable                     |
+| Dynamic configs   | `getConfig(name[, default])`          | Typed JSON value with targeting                                     |
+| Experiments       | `universe(name).assign()`             | `Assignment` — `.enrolled`, `.group`, `.get(field, fallback)`       |
+| Evaluation detail | `getFlagDetail(name)`                 | `{ value, reason }` — see [Reasons](/sdks/reasons)                  |
+| Event tracking    | `track(event, props)`                 | Fire-and-forget metric ingestion                                    |
+| Change listeners  | `Engine.onChange(cb)`                 | Fires after a poll brings new data — see [onChange](/sdks/onchange) |
+| Offline snapshot  | `Engine.fromFile` / `fromSnapshot`    | Zero-network eval against a captured blob                           |
+| Test utilities    | `configureForTesting()` + `override*` | No key, no network — see [Testing](/sdks/testing)                   |
 
 Defaults are returned **only when a value can't be evaluated** (client not ready, or the key isn't in the blob). A flag that legitimately evaluates `false` returns `false`, never the default.
 

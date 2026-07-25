@@ -73,5 +73,5 @@ so no id argument is needed. Fire-and-forget; private attributes are stripped
 before egress:
 
 ```swift
-await client.track("{{SUCCESS_EVENT}}", properties: ["amount": 49])
+await client.track("purchase", properties: ["amount": 49])
 ```

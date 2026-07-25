@@ -1,74 +1,96 @@
 ---
 title: Testing
-description: Build a no-network client with forTesting() and seed every entity with overrides — unit-test flag-gated code without touching the network.
+description: Swap configure() for configureForTesting() and seed the values your code should see — unit-test flag-gated code without touching the network.
 ---
 
 <DocMeta
   status="Production ready"
   read="4 min read"
-  updated="June 19, 2026"
+  updated="July 20, 2026"
   works="@shipeasy/sdk · server + client"
 />
 
-Code that reads flags shouldn't need a live connection to test. `forTesting()` builds a **no-network** `Engine` that's already "ready": `init()` / `initOnce()` / `identify()` are no-ops, `track()` is a no-op, telemetry is off, and no SDK key is required. You seed values with `override*`.
+Code that reads flags shouldn't need a live connection to test. Swap the live `configure()` for **`configureForTesting()`** — a drop-in sibling with **no network, ever** and no SDK key required. It seeds the values your code should see, and you read them back through the ordinary `new Client(user)`. In this mode the rules never fetch, `track()` is a no-op, `assign()` logs no exposure, and telemetry is off.
 
-<Callout type="info" title="Test the Engine directly">
-  The test utilities live on the <code>Engine</code> — the heavyweight client. Everyday flag reads
-  use <code>configure</code> + <code>new Client(user)</code>; here you build an isolated{" "}
-  <code>Engine</code> so a unit test never touches the network.
+<Callout type="info" title="Same read path as production">
+  Unlike <code>configure()</code> (first-config-wins), <code>configureForTesting()</code> and{" "}
+  <code>configureForOffline()</code> <em>replace</em> the active configuration — a suite can
+  reconfigure freely between cases. Your code under test keeps calling <code>new Client(user)</code>{" "}
+  exactly as it does in production.
 </Callout>
 
-## Server
+## Seed the values
 
 ```ts
-import { Engine } from "@shipeasy/sdk/server";
+import { configureForTesting, Client, clearOverrides } from "@shipeasy/sdk/server"; // or /client
 
-const engine = Engine.forTesting();
+configureForTesting({
+  flags: { new_checkout: true },
+  configs: { upload_limits: { max_uploads: 50 } },
+});
 
-engine.overrideFlag("new_checkout", true);
-engine.overrideConfig("upload_limits", { max_uploads: 50 });
-engine.overrideExperiment("hero_cta", "treatment", { primary_label: "Buy now" });
+const flags = new Client({ user_id: "u_1" });
+flags.getFlag("new_checkout"); // true
+flags.getConfig("upload_limits"); // { max_uploads: 50 }
 
-engine.getFlag("new_checkout", { user_id: "u1" }); // true
-engine.getConfig("upload_limits"); // { max_uploads: 50 }
-engine.getExperiment("hero_cta", { user_id: "u1" }, { primary_label: "Sign up" });
-// → { inExperiment: true, group: "treatment", params: { primary_label: "Buy now" } }
-
-engine.track("u1", "purchase"); // no-op — never hits the network
-engine.clearOverrides(); // reset every override back to default
+clearOverrides(); // reset every seeded override back to the empty-blob default
 ```
 
-## Browser (vanilla JS — no React)
+`configureForTesting({ flags?, configs?, experiments?, attributes? })`:
+
+| Field         | Shape                         | Effect                                                  |
+| ------------- | ----------------------------- | ------------------------------------------------------- |
+| `flags`       | `{ [name]: boolean }`         | forced `getFlag` results                                |
+| `configs`     | `{ [name]: value }`           | forced `getConfig` results                              |
+| `experiments` | `{ [name]: [group, params] }` | forces the variant of an experiment that exists already |
+| `attributes`  | `(yourUser) => User`          | same transform as `configure()` (default identity)      |
+
+## Asserting an experiment
+
+An experiment seed **refines** an experiment that already lives in a universe — it does not invent one in an empty universe, and it's read **by universe**, not by experiment name. Seed the real universe + experiment with `configureForOffline()`, then read it:
 
 ```ts
-import { Engine } from "@shipeasy/sdk/client";
+const exp = new Client({ user_id: "u_1" }).universe("hero_cta").assign();
 
-const engine = Engine.forTesting();
-engine.overrideFlag("new_checkout", true);
-engine.getFlag("new_checkout"); // true
+exp.enrolled; // true when the seeded experiment enrolled the unit
+exp.group; // the assigned variant, or null
+exp.get("primary_label", "Sign up"); // variant ?? universe default ?? fallback
 ```
 
-## The override API
+On an empty test-mode blob (no snapshot) `universe().assign()` returns not-enrolled regardless of the seed.
+
+## Package-level overrides
+
+Layer a quick override on top of whatever `configureForTesting()` / `configureForOffline()` — or even a live `configure()` — set up. These are package-level; there's no object to hold:
 
 ```ts
-overrideFlag(name: string, value: boolean): void;
-overrideConfig(name: string, value: unknown): void;
-overrideExperiment(name: string, group: string, params: Record<string, unknown>): void;
-clearOverrides(): void;
+import {
+  overrideFlag,
+  overrideConfig,
+  overrideExperiment,
+  clearOverrides,
+} from "@shipeasy/sdk/server"; // or /client
+
+overrideFlag("new_checkout", true);
+overrideConfig("upload_limits", { max_uploads: 50 });
+overrideExperiment("hero_cta", "treatment", { primary_label: "Buy now" });
+// …read through `new Client(user)` …
+clearOverrides(); // drop every on-the-spot override
 ```
 
 ## Overrides on a real client
 
-`override*` also works on a **normal** (non-test) `Engine` — a programmatic override always wins. In the browser the precedence is:
+A programmatic override always wins, including against a live configuration. In the browser the precedence is:
 
 ```
 programmatic override  >  URL / devtools override (?se_gate_… )  >  the server's evaluation
 ```
 
 <Callout type="info" title="Two ways to mock">
-  Use <code>forTesting()</code> + <code>override*</code> to seed individual values; use a{" "}
-  <a href="/sdks/offline-snapshot">snapshot</a> when you want the <em>real</em> rule set evaluated
-  offline. They compose — overrides apply on top of a snapshot too.
+  Use <code>configureForTesting()</code> + <code>override*</code> to seed individual values; use{" "}
+  <code>configureForOffline()</code> with a <a href="/sdks/offline-snapshot">snapshot</a> when you
+  want the <em>real</em> rule set evaluated offline. They compose — overrides apply on top of a
+  snapshot too.
 </Callout>
 
 <SeeAlso

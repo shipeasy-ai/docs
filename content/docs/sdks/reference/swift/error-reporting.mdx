@@ -34,6 +34,14 @@ do {
 }
 ```
 
+You can also fold the extras into the terminal as `to(_:extras:)`, so there is no
+ordering to remember — the inline extras merge like a final `.extras(...)` (later
+wins on a shared key):
+
+```swift
+see(error).causesThe("checkout").to("use cached prices", extras: ["order_id": order.id])
+```
+
 If `see()` is called before `configureClient(...)` has run, the error is dropped
 (with a note to stderr).
 
@@ -71,7 +79,7 @@ do {
 
 Keys listed in `privateAttributes` on `configureClient(...)` are **stripped from
 `.extras()`** before the report leaves the device (as they are from `track()`
-payloads). See [advanced](advanced.md#private-attributes).
+payloads). See [advanced](/sdks/reference/swift/advanced#private-attributes).
 
 ## Limits & spam guard
 

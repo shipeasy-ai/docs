@@ -39,7 +39,7 @@ the first `Client(user).get_flag(...)` resolves against real rules.
 ## Identity default
 
 The attribute map you produce is the **unit of identity** — supply `user_id`
-for logged-in users, or let the [anon-id middleware](advanced.md) inject
+for logged-in users, or let the [anon-id middleware](/sdks/reference/python/advanced) inject
 `anonymous_id` for logged-out traffic. An explicit `user_id`/`anonymous_id`
 always wins.
 
@@ -69,8 +69,8 @@ Any of these pass straight through `configure(...)` as keyword arguments:
 | `is_network_enabled`               | `bool`              | env-derived               | Master switch for **all** outbound requests (blob fetch, `track`, exposure, `see()`, telemetry). Defaults ON in production, OFF elsewhere — see [Environment-derived egress defaults](#environment-derived-egress-defaults). `False` = fully offline. |
 | `disable_telemetry`                | `bool`              | env-derived               | Opt out of per-evaluation usage telemetry. Defaults to OFF-telemetry outside production (on in prod). Evaluation itself is unaffected; forced off whenever `is_network_enabled` is `False`.                                                           |
 | `telemetry_url`                    | `str`               | built-in                  | Override the telemetry endpoint (rarely needed).                                                                                                                                                                                                      |
-| `private_attributes`               | `Sequence[str]`     | `[]`                      | Attribute keys stripped from every outbound event before it leaves the process. They still drive **targeting** locally. See [advanced](advanced.md).                                                                                                  |
-| `sticky_store`                     | `StickyBucketStore` | `None`                    | Pin a user's experiment group across re-buckets. See [advanced](advanced.md).                                                                                                                                                                         |
+| `private_attributes`               | `Sequence[str]`     | `[]`                      | Attribute keys stripped from every outbound event before it leaves the process. They still drive **targeting** locally. See [advanced](/sdks/reference/python/advanced).                                                                              |
+| `sticky_store`                     | `StickyBucketStore` | `None`                    | Pin a user's experiment group across re-buckets. See [advanced](/sdks/reference/python/advanced).                                                                                                                                                     |
 | `log_level`                        | `str`               | `"warn"`                  | Verbosity of the SDK's own internal diagnostics. See below.                                                                                                                                                                                           |
 | `disable_internal_error_reporting` | `bool`              | `False`                   | Opt out of SDK self-monitoring (see below). Your `see()` reporting is unaffected.                                                                                                                                                                     |
 
@@ -169,6 +169,6 @@ shipeasy.configure(api_key="sdk_server_...", is_network_enabled=False)
 ## Tests and offline
 
 For unit tests and offline evaluation, use the drop-in siblings of `configure()`
-— [`configure_for_testing` / `configure_for_offline`](testing.md). They take the
+— [`configure_for_testing` / `configure_for_offline`](/sdks/reference/python/testing). They take the
 same `attributes` transform (and override args), skip the api key, and let
 `shipeasy.Client(user)` read without ever touching the network.

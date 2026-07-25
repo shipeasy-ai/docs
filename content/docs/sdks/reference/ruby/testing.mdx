@@ -9,7 +9,7 @@ description: "Use Shipeasy.configurefortesting — the test-mode sibling of Ship
 </Callout>
 
 Use **`Shipeasy.configure_for_testing`** — the test-mode sibling of
-[`Shipeasy.configure`](configuration.md). It does **zero network**, needs no api
+[`Shipeasy.configure`](/sdks/reference/ruby/configuration). It does **zero network**, needs no api
 key, and seeds the values your code under test should see via override arguments.
 Then read through the ordinary `Shipeasy::Client.new(user)` — the _same_ call
 your production code uses.
@@ -156,3 +156,12 @@ Shipeasy.configure_for_offline(
 
 Both helpers take the same `attributes:` transform as `configure`, so your
 user-object mapping is exercised in tests exactly as in production.
+
+## i18n keys in tests
+
+Assertions on translated copy are brittle — they break when the copy is edited.
+Under `env==test` (`RAILS_ENV` / `RACK_ENV` / `SHIPEASY_ENV` / `APP_ENV`) the
+gem defaults to **`render_keys_only`**, so `i18n_t("checkout.cta")` returns the
+key `"checkout.cta"` and your specs assert against stable data with no setup.
+Force it on/off with `c.render_keys_only = true/false` in `Shipeasy.configure` —
+see i18n → Render keys only.

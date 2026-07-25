@@ -12,7 +12,7 @@ description: "This SDK has see() — a structured error-reporting surface: every
 exception documents its product _consequence_, not just its stack. The report is
 a fire-and-forget POST; it never blocks or raises into the request path. It is
 package-level — it reports against the engine you set up with
-[`Shipeasy.configure`](configuration.md), so there is no object to construct or
+[`Shipeasy.configure`](/sdks/reference/ruby/configuration), so there is no object to construct or
 pass around.
 
 > If you don't know the consequence of an exception, don't catch it.
@@ -32,14 +32,45 @@ end
 ```
 
 `causes_the` and `extras` are chainable setters callable in any order **before**
-`.to`:
+`.to`. You can also fold the extras into the terminal as `.to(outcome, extras)`,
+so there is no ordering to remember:
 
 ```ruby
 Shipeasy.see(e)
   .causes_the("checkout")
   .extras({ order_id: oid })
   .to("use cached prices")
+
+# equivalent, extras inline on the terminal:
+Shipeasy.see(e).causes_the("checkout").to("use cached prices", { order_id: oid })
 ```
+
+A stray `.extras` chained **after** `.to` is ignored with a warning (the report
+already shipped) — it never raises into your rescue block.
+
+### Attach context from anywhere: `Shipeasy.add_extras`
+
+To attach context without threading it into the rescue block, buffer it earlier
+in the request with `Shipeasy.add_extras`. Every `see()` report that fires later
+in the **same request** merges it in:
+
+```ruby
+# from any layer, early in the request
+Shipeasy.add_extras(order_id: order.id, tenant: tenant.slug)
+
+# ...later, deep in a service...
+rescue => e
+  Shipeasy.see(e).causes_the("checkout").to("use cached prices")
+  # report carries order_id + tenant automatically
+end
+```
+
+The buffer is **fiber-local**, so concurrent requests never bleed into each
+other, and it merges into _every_ report in the request (not just the first). A
+chained `.extras` / `.to` extra of the same key overrides an ambient one. The
+Rack middleware clears the buffer at the end of each request (Rails auto-mounts
+it); in a background job or script call `Shipeasy.clear_extras` when a unit of
+work ends.
 
 ## Violations (non-exception problems)
 
@@ -57,6 +88,28 @@ is local-debug only:
 
 ```ruby
 Shipeasy.control_flow_exception(e).because("user cancelled").extras({ id: id })
+```
+
+## Cleaned backtraces (Rails)
+
+On Rails, `see()` stacks are filtered to **your application** frames by default —
+gem and framework noise is stripped so a report reads like the part of the stack
+you can act on. This leverages Rails' own `Rails.backtrace_cleaner`
+(`ActiveSupport::BacktraceCleaner`, the same cleaner Rails uses for its own error
+pages); the SDK does not invent its own frame-filtering rules. Outside Rails it is
+a no-op and the raw backtrace is sent.
+
+If a stack lives entirely in framework/gem code (the cleaner would strip every
+frame), the SDK falls back to the raw backtrace so an error is never left with an
+empty stack.
+
+Turn it off to always report the full, unfiltered backtrace:
+
+```ruby
+Shipeasy.configure do |c|
+  c.api_key         = ENV.fetch("SHIPEASY_SERVER_KEY")
+  c.clean_backtrace = false
+end
 ```
 
 ## Guarantees

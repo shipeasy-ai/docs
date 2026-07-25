@@ -112,7 +112,7 @@ non-`HttpOnly` by design so the browser SDK buckets identically; a request with
 
 Evaluate the **real** rules against a baked blob instead of the network
 (air-gapped / edge hosts, reproducible CI) with `Shipeasy\configureForOffline()`.
-See [Testing](testing.md) for the full snapshot JSON shape.
+See [Testing](/sdks/reference/php/testing) for the full snapshot JSON shape.
 
 ```php
 use function Shipeasy\configureForOffline;
@@ -150,5 +150,5 @@ $unsub();   // stop listening
 
 ## SSR bootstrap
 
-See [i18n](i18n.md) for `Shipeasy\bootstrapScriptTag()` / `Shipeasy\i18nScriptTag()`
+See i18n for `Shipeasy\bootstrapScriptTag()` / `Shipeasy\i18nScriptTag()`
 and wiring the browser SDK from the server-rendered `<head>`.

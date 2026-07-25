@@ -43,30 +43,30 @@ first `identify`, reads return the supplied defaults.
 The **persisted device `anonymous_id`** is the whole point of the client SDK: it
 survives cold starts so a logged-out visitor buckets identically into every
 fractional rollout and experiment on every launch. See
-[configuration](configuration.md) and [advanced](advanced.md#anonymous-id-persistence-anonymousstore).
+[configuration](/sdks/reference/swift/configuration) and [advanced](/sdks/reference/swift/advanced#anonymous-id-persistence-anonymousstore).
 
 ## The things you use
 
-| Function / type                                          | Role                                                                                                                                                                                                             |
-| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `configureClient(...)`                                   | Called **once** at app launch. Wires the client key, HTTP, and the anon-id store; returns the `ShipeasyClient` and registers it globally. First-config-wins (idempotent). See [configuration](configuration.md). |
-| `shipeasyClient()`                                       | Fetch the configured client (`ShipeasyClient?`), or `nil` if `configureClient` hasn't run.                                                                                                                       |
-| `client.identify(_:)`                                    | Bind the device user + refresh assignments over `/sdk/evaluate`. Call at launch, on login, and whenever targeting attributes change.                                                                             |
-| `client.reset()`                                         | Logout: clear `user_id`, keep the device `anonymous_id`, re-evaluate as anonymous.                                                                                                                               |
-| `client.getFlag/getConfig/getExperiment/getKillswitch`   | Cached reads for the current user.                                                                                                                                                                               |
-| `client.track(_:properties:)` / `client.logExposure(_:)` | Conversion + exposure telemetry (fire-and-forget).                                                                                                                                                               |
-| `see(_:)` family                                         | Structured error reporting. See [error-reporting](error-reporting.md).                                                                                                                                           |
+| Function / type                          | Role                                                                                                                                                                                                                                |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `configureClient(...)`                   | Called **once** at app launch. Wires the client key, HTTP, and the anon-id store; returns the `ShipeasyClient` and registers it globally. First-config-wins (idempotent). See [configuration](/sdks/reference/swift/configuration). |
+| `shipeasyClient()`                       | Fetch the configured client (`ShipeasyClient?`), or `nil` if `configureClient` hasn't run.                                                                                                                                          |
+| `client.identify(_:)`                    | Bind the device user + refresh assignments over `/sdk/evaluate`. Call at launch, on login, and whenever targeting attributes change.                                                                                                |
+| `client.reset()`                         | Logout: clear `user_id`, keep the device `anonymous_id`, re-evaluate as anonymous.                                                                                                                                                  |
+| `client.getFlag/getConfig/getKillswitch` | Cached reads for the current user.                                                                                                                                                                                                  |
+| `client.universe(_:).assign()`           | Assign the user within a universe (a mutual-exclusion pool — the user lands in at most one of its experiments) and read the resolved params. Auto-logs one exposure when enrolled.                                                  |
+| `client.track(_:properties:)`            | Conversion telemetry (fire-and-forget).                                                                                                                                                                                             |
+| `see(_:)` family                         | Structured error reporting. See [error-reporting](/sdks/reference/swift/error-reporting).                                                                                                                                           |
 
 ## Pages
 
-- [installation](installation.md) — SwiftPM dependency, platforms, where to call `configureClient`, and custom anon-id stores.
-- [configuration](configuration.md) — `configureClient(...)`, every option, the persisted anon-id, `shipeasyClient()`.
-- [flags](flags.md) — `getFlag`, defaults.
-- [configs](configs.md) — `getConfig`, defaults, typed reads.
-- [killswitches](killswitches.md) — `getKillswitch` + named override switches.
-- [experiments](experiments.md) — `getExperiment`, `ExperimentResult`, `track`, `logExposure`.
-- [i18n](i18n.md) — not part of the native client SDK.
-- [error-reporting](error-reporting.md) — `see()` structured error reporting.
-- [testing](testing.md) — hermetic tests with an in-memory store + a stub transport.
-- [openfeature](openfeature.md) — provider status (not shipped).
-- [advanced](advanced.md) — private attributes, custom `AnonymousStore`, `anonymousId`, `refreshAssignments`.
+- [installation](/sdks/reference/swift/installation) — SwiftPM dependency, platforms, where to call `configureClient`, and custom anon-id stores.
+- [configuration](/sdks/reference/swift/configuration) — `configureClient(...)`, every option, the persisted anon-id, `shipeasyClient()`.
+- [flags](/sdks/reference/swift/flags) — `getFlag`, defaults.
+- [configs](/sdks/reference/swift/configs) — `getConfig`, defaults, typed reads.
+- [killswitches](/sdks/reference/swift/killswitches) — `getKillswitch` + named override switches.
+- [experiments](/sdks/reference/swift/experiments) — `universe(_:).assign()`, `Assignment`, `track`.
+- [error-reporting](/sdks/reference/swift/error-reporting) — `see()` structured error reporting.
+- [testing](/sdks/reference/swift/testing) — hermetic tests with an in-memory store + a stub transport.
+- [openfeature](/sdks/reference/swift/openfeature) — provider status (not shipped).
+- [advanced](/sdks/reference/swift/advanced) — private attributes, custom `AnonymousStore`, `anonymousId`, `refreshAssignments`.

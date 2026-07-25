@@ -41,10 +41,10 @@ implementation 'ai.shipeasy:shipeasy:0.10.0'
 
 These are **not** pulled into your deployment unless you already supply them:
 
-- `jakarta.servlet-api` — only needed for the [`AnonIdFilter`](advanced.md)
+- `jakarta.servlet-api` — only needed for the [`AnonIdFilter`](/sdks/reference/java/advanced)
   servlet filter that mints the shared `__se_anon_id` cookie. Your container
   already supplies it.
-- `dev.openfeature:sdk` — only needed for the [OpenFeature provider](openfeature.md).
+- `dev.openfeature:sdk` — only needed for the [OpenFeature provider](/sdks/reference/java/openfeature).
 
 ## Imports
 
@@ -106,7 +106,7 @@ The default transform is **identity** — pass a `Map<String, Object>` to
 The bound attribute map should carry a stable unit: `user_id` for logged-in
 users, or `anonymous_id` for logged-out traffic. If neither is present, the
 engine falls back to the request-scoped `__se_anon_id` cookie resolved by
-[`AnonIdFilter`](advanced.md). An explicit `user_id`/`anonymous_id` always wins.
+[`AnonIdFilter`](/sdks/reference/java/advanced). An explicit `user_id`/`anonymous_id` always wins.
 
 ### One-shot vs background poll
 
@@ -125,15 +125,15 @@ Shipeasy.configure(Shipeasy.options(System.getenv("SHIPEASY_SERVER_KEY"))
 Build options with `Shipeasy.options(apiKey)` and chain the setters, then pass
 the result to `Shipeasy.configure(...)`:
 
-| Method                            | Default                   | Meaning                                                                                             |
-| --------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------- |
-| `.baseUrl(String)`                | `https://api.shipeasy.ai` | Override the edge API base URL.                                                                     |
-| `.env(String)`                    | `"prod"`                  | Deployment env tagged on usage telemetry and `see()` events.                                        |
-| `.disableTelemetry(boolean)`      | `false`                   | Turn off per-evaluation usage beacons.                                                              |
-| `.poll(boolean)`                  | `false`                   | Start the background poll (initial fetch + periodic refresh) instead of a one-shot fetch.           |
-| `.privateAttributes(List)`        | empty                     | Attribute keys usable for targeting but stripped from outbound events. See [Advanced](advanced.md). |
-| `.stickyStore(StickyBucketStore)` | none                      | Pluggable sticky-bucketing store. See [Advanced](advanced.md).                                      |
-| `.attributes(Function)`           | identity                  | Map your user object to the attribute map.                                                          |
+| Method                            | Default                   | Meaning                                                                                                               |
+| --------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `.baseUrl(String)`                | `https://api.shipeasy.ai` | Override the edge API base URL.                                                                                       |
+| `.env(String)`                    | `"prod"`                  | Deployment env tagged on usage telemetry and `see()` events.                                                          |
+| `.disableTelemetry(boolean)`      | `false`                   | Turn off per-evaluation usage beacons.                                                                                |
+| `.poll(boolean)`                  | `false`                   | Start the background poll (initial fetch + periodic refresh) instead of a one-shot fetch.                             |
+| `.privateAttributes(List)`        | empty                     | Attribute keys usable for targeting but stripped from outbound events. See [Advanced](/sdks/reference/java/advanced). |
+| `.stickyStore(StickyBucketStore)` | none                      | Pluggable sticky-bucketing store. See [Advanced](/sdks/reference/java/advanced).                                      |
+| `.attributes(Function)`           | identity                  | Map your user object to the attribute map.                                                                            |
 
 ```java
 Shipeasy.configure(Shipeasy.options(System.getenv("SHIPEASY_SERVER_KEY"))

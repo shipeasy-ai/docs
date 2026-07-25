@@ -1,137 +1,205 @@
 ---
-title: Swift
-description: The Shipeasy Swift server SDK — async/await, SwiftPM, local evaluation, configs, experiments, and tracking.
+title: "Swift"
+description: "The Shipeasy Swift SDK — a native client SDK on SwiftPM, authenticating with the public client key, for flags, configs, experiments, and tracking."
 ---
 
 <DocMeta
   status="Production ready"
-  read="4 min read"
-  updated="June 18, 2026"
-  works="Swift · SwiftPM · iOS 15+ · macOS 12+"
+  read="5 min read"
+  updated="July 25, 2026"
+  works="iOS 15+ · macOS 12+ · tvOS 15+ · watchOS 8+ · SwiftPM"
 />
 
-Server-side flags, configs, experiments, and tracking for Swift, async/await throughout. Evaluates locally against a background-polled blob — see the [shared evaluation model](/sdks).
-
-<Callout type="warn" title="Server key only">
-  This SDK is server-key only — never embed it in an iOS app bundle. A future
-  <code>ShipeasyClient</code> package will cover client-key, mobile use.
+<Callout type="info">
+  Generated from the Swift SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk
+  swift overview` returns, served raw at
+  [`https://shipeasy-ai.github.io/sdk-swift`](https://shipeasy-ai.github.io/sdk-swift). Edit it in
+  the SDK repo, not here.
 </Callout>
+
+`Shipeasy` is the **native client** Swift SDK for [Shipeasy](https://shipeasy.ai) —
+feature flags, dynamic configs, kill switches, and A/B experiments for an
+iOS / macOS / tvOS / watchOS app. It uses a **public client key** (`pk_…`, safe
+to embed in a shipped app), evaluates one device user server-side over
+`POST /sdk/evaluate`, and serves cheap local reads from the cached response.
 
 ## Install
 
-```swift
-dependencies: [
-    .package(url: "https://github.com/shipeasy-ai/sdk-swift.git", from: "0.1.0"),
-]
+```bash
+.package(url: "https://github.com/shipeasy-ai/sdk-swift.git", from: "1.0.0")
 ```
 
-## Configure
+Full wiring — frameworks, options, env vars — is in [Installation](/sdks/reference/swift/installation).
 
-Call `configure()` once at startup with the **server** key, plus an optional `attributes` transform that maps your user object onto the Shipeasy attribute map.
+## Mental model: `configureClient()` once, then `identify` + read
+
+You call `configureClient(clientKey:)` **once** at app launch. It returns a
+`ShipeasyClient` and registers it as the process-global one (fetch it later with
+`shipeasyClient()`). Then you `identify(...)` the device user (which evaluates and
+caches assignments) and read flags/configs/experiments from the cache:
 
 ```swift
 import Shipeasy
 
-try await configure(
-    apiKey: ProcessInfo.processInfo.environment["SHIPEASY_SERVER_KEY"]!,
-    attributes: { u in ["user_id": u.id, "plan": u.plan] }
-)
+// Once, at app launch — PUBLIC client key (pk_…), safe to embed:
+let client = configureClient(clientKey: "pk_live_…")
+
+// Bind the user (pass [:] for a logged-out visitor). Awaiting the first identify
+// guarantees the first reads see assignments:
+await client.identify(["user_id": "u_123", "plan": "pro"])
+
+// Reads serve the cached /sdk/evaluate response (no per-call network):
+let enabled = await client.getFlag("new_checkout")
 ```
 
-## Bind a client to the user
+`ShipeasyClient` is a Swift `actor`, so its methods are `async` — you `await`
+them. Reads are served from a **local cache** of the last `/sdk/evaluate`
+response, so they never hit the network and are safe from any thread. Before the
+first `identify`, reads return the supplied defaults.
 
-Construct a `Client` from your user object — the `attributes` transform turns it into the evaluation context, so the getters take **no** user argument. The methods are `async` because the underlying `Engine` is an actor.
+The **persisted device `anonymous_id`** is the whole point of the client SDK: it
+survives cold starts so a logged-out visitor buckets identically into every
+fractional rollout and experiment on every launch. See
+[configuration](/sdks/reference/swift/configuration) and [advanced](/sdks/reference/swift/advanced#anonymous-id-persistence-anonymousstore).
+
+## The things you use
+
+| Function / type                          | Role                                                                                                                                                                                                                                |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `configureClient(...)`                   | Called **once** at app launch. Wires the client key, HTTP, and the anon-id store; returns the `ShipeasyClient` and registers it globally. First-config-wins (idempotent). See [configuration](/sdks/reference/swift/configuration). |
+| `shipeasyClient()`                       | Fetch the configured client (`ShipeasyClient?`), or `nil` if `configureClient` hasn't run.                                                                                                                                          |
+| `client.identify(_:)`                    | Bind the device user + refresh assignments over `/sdk/evaluate`. Call at launch, on login, and whenever targeting attributes change.                                                                                                |
+| `client.reset()`                         | Logout: clear `user_id`, keep the device `anonymous_id`, re-evaluate as anonymous.                                                                                                                                                  |
+| `client.getFlag/getConfig/getKillswitch` | Cached reads for the current user.                                                                                                                                                                                                  |
+| `client.universe(_:).assign()`           | Assign the user within a universe (a mutual-exclusion pool — the user lands in at most one of its experiments) and read the resolved params. Auto-logs one exposure when enrolled.                                                  |
+| `client.track(_:properties:)`            | Conversion telemetry (fire-and-forget).                                                                                                                                                                                             |
+| `see(_:)` family                         | Structured error reporting. See [error-reporting](/sdks/reference/swift/error-reporting).                                                                                                                                           |
+
+## Pages
+
+- [installation](/sdks/reference/swift/installation) — SwiftPM dependency, platforms, where to call `configureClient`, and custom anon-id stores.
+- [configuration](/sdks/reference/swift/configuration) — `configureClient(...)`, every option, the persisted anon-id, `shipeasyClient()`.
+- [flags](/sdks/reference/swift/flags) — `getFlag`, defaults.
+- [configs](/sdks/reference/swift/configs) — `getConfig`, defaults, typed reads.
+- [killswitches](/sdks/reference/swift/killswitches) — `getKillswitch` + named override switches.
+- [experiments](/sdks/reference/swift/experiments) — `universe(_:).assign()`, `Assignment`, `track`.
+- [error-reporting](/sdks/reference/swift/error-reporting) — `see()` structured error reporting.
+- [testing](/sdks/reference/swift/testing) — hermetic tests with an in-memory store + a stub transport.
+- [openfeature](/sdks/reference/swift/openfeature) — provider status (not shipped).
+- [advanced](/sdks/reference/swift/advanced) — private attributes, custom `AnonymousStore`, `anonymousId`, `refreshAssignments`.
+
+The blocks below are the SDK repo's own snippets — the same ones `shipeasy docs get --sdk swift release/flags` returns, with a worked example baked in.
+
+## Feature flags
+
+Evaluate the feature gate `new_checkout` from the configured `ShipeasyClient`
+(cached `/sdk/evaluate` read). Assumes `configureClient(...)` ran at startup — see
+Installation.
 
 ```swift
-let flags = try Client(currentUser)
+// name; getFlag returns the default when assignments aren't loaded or the flag is absent
+let enabled = await shipeasyClient()?.getFlag("new_checkout") ?? false
+
+// optional `default:` — returned ONLY when the flag can't be evaluated
+// (assignments not loaded / flag not found), never when it evaluates to false
+let safe = await shipeasyClient()?.getFlag("new_checkout", default: false) ?? false
 ```
 
-## Evaluate a feature flag
+## Dynamic configs
+
+Read the dynamic config `billing_copy` from the configured `ShipeasyClient`
+(returns `Any?`). Assumes `configureClient(...)` ran at startup — see Installation.
 
 ```swift
-let enabled = await flags.getFlag("new_checkout")
+// name; returns nil when the key is absent (or assignments aren't loaded)
+let value = await shipeasyClient()?.getConfig("billing_copy")
+
+// optional `default:` — returned when the config key is absent
+let copy = await shipeasyClient()?.getConfig("billing_copy", default: ["headline": "Welcome"])
+
+// the value is Any? — cast to the shape your config defines
+let headline = (copy as? [String: Any])?["headline"] as? String
 ```
 
-An optional `default` is returned **only** when the gate can't be evaluated (client not ready or gate absent) — a gate that evaluates `false` returns `false`:
+## Kill switches
+
+Check whether the kill switch `payments` is engaged (`true` = killed)
+from the configured `ShipeasyClient`. Assumes `configureClient(...)` ran at startup
+— see Installation.
+
+### Top-level switch
 
 ```swift
-let on = await flags.getFlag("new_checkout", default: true)
+// name; getKillswitch returns true when the switch is on (the guarded path is killed)
+let killed = await shipeasyClient()?.getKillswitch("payments") ?? false
 ```
 
-For the value plus the reason, use `getFlagDetail` — see [Evaluation reasons](/sdks/reasons):
+### Named per-key override switch
 
 ```swift
-let d = await flags.getFlagDetail("new_checkout")
-// d.value  -> Bool
-// d.reason -> one of the FlagReason raw values
+// switchKey: read one named override (e.g. per region); an unset key falls back
+// to the kill switch's top-level value
+let killedEu = await shipeasyClient()?.getKillswitch("payments", switchKey: "eu_region") ?? false
 ```
 
-## Read a dynamic config
+## Experiments
+
+Assign the device user within the `hero_cta` universe (a mutual-exclusion
+pool → ≤1 experiment), branch on the group, and track the conversion event — all
+from the configured `ShipeasyClient`. Assumes `configureClient(...)` ran at startup
+— see Installation.
 
 ```swift
-let cfg = await flags.getConfig("billing_copy", default: ["headline": "Welcome"])
-```
+let client = shipeasyClient()!   // configured once at app launch
 
-## Resolve an experiment
+// universe name; assign() auto-logs one exposure when enrolled
+let a = await client.universe("hero_cta").assign()
 
-```swift
-let r = await flags.getExperiment("checkout_button", defaultParams: ["color": "blue"])
-if r.inExperiment {
-    r.group   // "treatment"
-    r.params  // ["color": ...]
+if a.enrolled, a.group == "treatment" {
+    // get(field, fallback): variant override ?? universe default ?? fallback
+    let color = a.get("button_color", "blue")
+    // render the treatment variant
 }
+
+// conversion event — the unit is the identified user (no id argument);
+// event name; optional `properties:` bag (default [:])
+await client.track("purchase", properties: ["amount": 49])
 ```
 
-## Track an event
+## Track a conversion
+
+Track a metric/conversion event from the configured `ShipeasyClient`. Metrics in
+the dashboard are computed from these events. Assumes `configureClient(...)` ran at
+startup — see Installation.
+
+### Track an event
 
 ```swift
-await flags.track(eventName: "purchase", properties: ["amount": 49])
+// track(event, properties:)
+//   event       — the event your metric is built on (required)
+//   properties: — optional payload; numeric/string fields you can sum/filter on
+//                 in a metric (private attributes are stripped before egress)
+await shipeasyClient()?.track("checkout_started", properties: ["amount": 49, "currency": "usd"])
 ```
 
-## Anonymous visitors
+Fire-and-forget (never blocks). The unit is the identified user (`user_id`, else
+the persisted `anonymous_id`), attached automatically.
 
-The SDK is framework-agnostic, so it ships `AnonId` primitives rather than a middleware. Resolve the shared `__se_anon_id` cookie off the request and echo it back so logged-out traffic buckets like the browser:
+### Track without properties
 
 ```swift
-let resolved = AnonId.resolve(cookieHeader: req.headers["cookie"].first)
-let on = await Engine.shared.getFlag("new_checkout", user: ["anonymous_id": resolved.id])
-if resolved.minted {
-    res.headers.add(name: "set-cookie", value: AnonId.setCookieHeader(resolved.id, secure: true))
-}
+await shipeasyClient()?.track("checkout_started")   // properties default to [:]
 ```
-
-## Testing
-
-`Engine.forTesting()` does zero network — no key, `initialize`/`track` are no-ops. Seed with `override*` and reset with `clearOverrides`. See [Testing](/sdks/testing).
-
-```swift
-let engine = Engine.forTesting()
-await engine.overrideFlag("new_checkout", true)
-let enabled = await engine.getFlag("new_checkout", user: ["user_id": "u_123"]) // true
-await engine.clearOverrides()
-```
-
-## Errors & feedback
-
-Report a handled exception with `see()` so it folds into the [errors primitive](/feedback/errors) with a one-sentence **consequence** — what feature broke and how it degraded. `see()` rides the same `configure()` boot (server key); there is no separate error SDK or second key.
-
-```swift
-do {
-    try await chargeCard(order, prices)
-} catch {
-    see(error).causesThe("checkout").to("use cached prices").extras(["order_id": order.id])
-}
-```
-
-Use `seeViolation("large query")` for a non-exception problem. Full grammar — consequence phrasing, control-flow exceptions, anti-patterns — is in [Error reporting with see()](/feedback/error-reporting).
-
-The in-app **bug & feature report overlay** is a standalone `<script>` tag you drop into your frontend — platform-agnostic, no server SDK required. See [The devtools overlay](/feedback/devtools).
 
 <SeeAlso
   links={[
+    { href: "/sdks/reference/swift", title: "Swift full reference", note: "Every feature page" },
     { href: "/sdks", title: "Shared evaluation model", note: "How every SDK buckets" },
-    { href: "/sdks/reasons", title: "Evaluation reasons", note: "getFlagDetail" },
-    { href: "/sdks/testing", title: "Testing", note: "forTesting" },
-    { href: "/flags-experiments/gates", title: "Feature gates" },
+    { href: "/sdks/reference/swift/testing", title: "Testing", note: "Seed values, zero network" },
+    {
+      href: "/sdks/reference/swift/error-reporting",
+      title: "Error reporting",
+      note: "The see() surface",
+    },
   ]}
 />

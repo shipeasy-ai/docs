@@ -36,7 +36,7 @@ client = shipeasy.Client(current_user)
 if client.get_flag("new_checkout"):
     ...
 config = client.get_config("billing_copy")
-a = client.universe("checkout").assign()  # ≤1 experiment; auto-logs exposure
+a = client.universe("checkout").assign()  # ≤1 experiment; exposure logs on first get()
 if a.get("button_color") == "green":
     ...
 client.track("purchase", {"amount": 49})  # on conversion
@@ -51,7 +51,8 @@ call:
 - `get_config(name, decode=None, default=None)`
 - `get_killswitch(name, switch_key=None)`
 - `universe(name).assign()` → `Assignment` (`.name` / `.group` / `.enrolled` /
-  `.get(field, fallback=None)`); auto-logs one exposure when enrolled
+  `.get(field, fallback=None, *, exposure=True)`); the first `get()` on an
+  enrolled assignment logs one exposure (`exposure=False` peeks without logging)
 - `track(event, properties=None)`
 
 So an experiment is **end-to-end Client-only**. Constructing a `Client(user)`
@@ -59,24 +60,23 @@ before `configure()` raises `RuntimeError`.
 
 ## The configure family
 
-| call                                         | when                                       |
-| -------------------------------------------- | ------------------------------------------ |
-| [`configure(api_key=...)`](configuration.md) | production — your server key               |
-| [`configure_for_testing(...)`](testing.md)   | unit tests — no network, seed overrides    |
-| [`configure_for_offline(...)`](testing.md)   | evaluate real rules from a snapshot / file |
+| call                                                             | when                                       |
+| ---------------------------------------------------------------- | ------------------------------------------ |
+| [`configure(api_key=...)`](/sdks/reference/python/configuration) | production — your server key               |
+| [`configure_for_testing(...)`](/sdks/reference/python/testing)   | unit tests — no network, seed overrides    |
+| [`configure_for_offline(...)`](/sdks/reference/python/testing)   | evaluate real rules from a snapshot / file |
 
 After any of them, you read the same way: `shipeasy.Client(user)`.
 
 ## Feature pages
 
-- [installation](installation.md) — `pip install shipeasy`, frameworks, `configure()`
-- [configuration](configuration.md) — `configure()`, keys, `attributes`, one-shot vs poll, options
-- [flags](flags.md) — `get_flag`, `get_flag_detail`, defaults
-- [configs](configs.md) — `get_config`, typed decode, defaults
-- [killswitches](killswitches.md) — `get_killswitch`
-- [experiments](experiments.md) — `universe(name).assign()`, `Assignment`, auto-exposure, `track`
-- [i18n](i18n.md) — cross-SDK loader story (server SDK has no `t()`)
-- [error-reporting](error-reporting.md) — `see()` structured reporting
-- [testing](testing.md) — `configure_for_testing`, `configure_for_offline`, overrides
-- [openfeature](openfeature.md) — `ShipeasyProvider`
-- [advanced](advanced.md) — anon-id middleware, private attrs, sticky bucketing, manual exposure, SSR
+- [installation](/sdks/reference/python/installation) — `pip install shipeasy`, frameworks, `configure()`
+- [configuration](/sdks/reference/python/configuration) — `configure()`, keys, `attributes`, one-shot vs poll, options
+- [flags](/sdks/reference/python/flags) — `get_flag`, `get_flag_detail`, defaults
+- [configs](/sdks/reference/python/configs) — `get_config`, typed decode, defaults
+- [killswitches](/sdks/reference/python/killswitches) — `get_killswitch`
+- [experiments](/sdks/reference/python/experiments) — `universe(name).assign()`, `Assignment`, auto-exposure, `track`
+- [error-reporting](/sdks/reference/python/error-reporting) — `see()` structured reporting
+- [testing](/sdks/reference/python/testing) — `configure_for_testing`, `configure_for_offline`, overrides
+- [openfeature](/sdks/reference/python/openfeature) — `ShipeasyProvider`
+- [advanced](/sdks/reference/python/advanced) — anon-id middleware, private attrs, sticky bucketing, manual exposure, SSR

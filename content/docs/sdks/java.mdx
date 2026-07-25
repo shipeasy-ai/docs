@@ -1,16 +1,27 @@
 ---
-title: Java
-description: The Shipeasy Java server SDK — AutoCloseable client, servlet anon filter, local evaluation, configs, experiments, and tracking.
+title: "Java"
+description: "The Shipeasy Java server SDK — configure once, bind a Client per request, servlet anon filter, local evaluation, configs, experiments, and tracking."
 ---
 
 <DocMeta
   status="Production ready"
-  read="4 min read"
-  updated="June 18, 2026"
-  works="Java 11+ · Spring Boot · servlet containers"
+  read="5 min read"
+  updated="July 20, 2026"
+  works="Java 17+ · Maven · Gradle"
 />
 
-Server-side flags, configs, experiments, and tracking for the JVM. Evaluates locally against a background-polled blob — see the [shared evaluation model](/sdks).
+<Callout type="info">
+  Generated from the Java SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk java
+  overview` returns, served raw at
+  [`https://shipeasy-ai.github.io/sdk-java`](https://shipeasy-ai.github.io/sdk-java). Edit it in the
+  SDK repo, not here.
+</Callout>
+
+`shipeasy` (`ai.shipeasy:shipeasy`) is the **server-side Java SDK** for
+[Shipeasy](https://shipeasy.ai) — feature flags, dynamic configs, kill switches,
+A/B experiments, metric tracking, and `see()` error reporting. Rules are
+evaluated **locally** against a cached blob fetched from the edge, so there is no
+network call per evaluation.
 
 ## Install
 
@@ -18,127 +29,195 @@ Server-side flags, configs, experiments, and tracking for the JVM. Evaluates loc
 <dependency>
   <groupId>ai.shipeasy</groupId>
   <artifactId>shipeasy</artifactId>
-  <version>0.1.0</version>
+  <version>0.10.0</version>
 </dependency>
 ```
 
-## Configure
+Full wiring — frameworks, options, env vars — is in [Installation](/sdks/reference/java/installation).
 
-Call `Shipeasy.configure()` once at startup with the **server** key, plus an optional `attributes` transform that maps your user object onto the Shipeasy attribute map. A simple `Shipeasy.configure(apiKey)` form is also available when you don't need a transform.
+## The mental model: `configure()` once, `new Client(user)` per request
+
+You learn exactly two things. **First**, configure the SDK once at startup. This
+authenticates with your server key and kicks off the initial rules fetch:
 
 ```java
 import ai.shipeasy.Shipeasy;
 import ai.shipeasy.Client;
-import ai.shipeasy.ExperimentResult;
 import java.util.Map;
 
-Shipeasy.configure(
-    Shipeasy.options(System.getenv("SHIPEASY_SERVER_KEY"))
-        .attributes(u -> Map.of("user_id", u.id(), "plan", u.plan())));
+// Once, at startup (main(), an @PostConstruct bean, a static initializer):
+Shipeasy.configure(System.getenv("SHIPEASY_SERVER_KEY"));
+
+// Per user / per request, anywhere downstream. The user is bound at
+// construction, so every read takes NO user argument:
+Client c = new Client(Map.of("user_id", "u_123", "plan", "pro"));
+
+boolean enabled = c.getFlag("new_checkout");
+Object  cfg     = c.getConfig("billing_copy");
+boolean killed  = c.getKillswitch("panic_button");
+
+Assignment cta = c.universe("hero_cta").assign(); // <=1 experiment; auto-logs exposure
+c.track("purchase", Map.of("amount", 49));  // record the conversion
 ```
 
-## Bind a client to the user
+`new Client(user)` is **cheap** — it owns no HTTP connection, blob cache, or poll
+timer. It runs the configured `attributes` transform on your user object once,
+binds the resulting attribute map, and forwards every call to the single
+process-wide engine that `configure()` built. Construct one per request and
+throw it away.
 
-Construct a lightweight `Client` from your user object — the `attributes` transform turns it into the evaluation context, so the getters take **no** user argument:
+Constructing a `Client` before `configure()` has run throws
+`IllegalStateException`.
+
+## Pages
+
+- [Installation](/sdks/reference/java/installation) — Maven/Gradle coordinates, per-framework wiring, and the canonical `configure()` setup with its options table.
+- [Configuration](/sdks/reference/java/configuration) — `configure()`, the `attributes` transform, one-shot vs background poll, env vars.
+- [Flags](/sdks/reference/java/flags) — `getFlag`, defaults, `getFlagDetail`.
+- [Configs](/sdks/reference/java/configs) — `getConfig`, typed values, defaults.
+- [Kill switches](/sdks/reference/java/killswitches) — `getKillswitch` and named per-key switches.
+- [Experiments](/sdks/reference/java/experiments) — `universe().assign()`, `Assignment`, `track`.
+- [Error reporting](/sdks/reference/java/error-reporting) — `see()` structured error reporting.
+- [Testing](/sdks/reference/java/testing) — `configureForTesting()` / `configureForOffline()` + the override statics.
+- [OpenFeature](/sdks/reference/java/openfeature) — the `ShipeasyProvider` server provider.
+- [Advanced](/sdks/reference/java/advanced) — auto-exposure, private attributes, sticky bucketing, anon-id middleware, change listeners, SSR.
+
+The blocks below are the SDK repo's own snippets — the same ones `shipeasy docs get --sdk java release/flags` returns, with a worked example baked in.
+
+## Feature flags
+
+Read `new_checkout` off a user-bound `Client`. Assumes `configure()` ran at
+startup — see Installation.
 
 ```java
-Client flags = new Client(currentUser);
+import ai.shipeasy.Client;
+import java.util.Map;
+
+// construct once per callsite (cheap; binds the user)
+Client client = new Client(Map.of("user_id", "u_123"));
+
+boolean enabled = client.getFlag("new_checkout"); // gate name
+// optional default overload — returned ONLY when unresolvable (engine not
+// ready / flag absent), never when the flag legitimately evaluates to false:
+// boolean enabled = client.getFlag("new_checkout", true /* default */);
 ```
 
-## Evaluate a feature flag
+## Dynamic configs
+
+Read the dynamic config `billing_copy` (with a fallback when absent).
+Assumes `configure()` ran at startup — see Installation.
 
 ```java
-boolean enabled = flags.getFlag("new_checkout");
+import ai.shipeasy.Client;
+import java.util.Map;
+
+// construct once per callsite (cheap; binds the user)
+Client client = new Client(Map.of("user_id", "u_123"));
+
+Object cfg = client.getConfig(
+    "billing_copy",          // config name
+    Map.of("title", "Default")); // fallback returned when the config is absent
+// one-arg overload returns null when absent: client.getConfig("billing_copy")
 ```
 
-A default overload returns the fallback **only** when the value can't be resolved (client not ready or gate absent) — a gate that evaluates `false` returns `false`:
+## Kill switches
+
+Check whether the kill switch `payments` is killed. Assumes
+`configure()` ran at startup — see Installation.
 
 ```java
-boolean enabled = flags.getFlag("new_checkout", true);
-```
+import ai.shipeasy.Client;
+import java.util.Map;
 
-For the value plus the reason, use `getFlagDetail` — see [Evaluation reasons](/sdks/reasons):
+// construct once per callsite (cheap; binds the user)
+Client client = new Client(Map.of("user_id", "u_123"));
 
-```java
-FlagDetail d = flags.getFlagDetail("new_checkout");
-d.value();   // boolean
-d.reason();  // one of the FlagDetail.* constants
-```
+boolean killed = client.getKillswitch("payments"); // killswitch name
+// optional second arg reads one named per-key switch (null = whole killswitch):
+// boolean off = client.getKillswitch("payments", "eu_region" /* switchKey */);
 
-## Read a dynamic config
-
-```java
-Object cfg  = flags.getConfig("billing_copy");
-Object copy = flags.getConfig("billing_copy", Map.of("title", "Default"));
-```
-
-## Resolve an experiment
-
-```java
-ExperimentResult r = flags.getExperiment("checkout_button", Map.of("color", "blue"));
-if (r.inExperiment) {
-    r.group();  // "treatment"
-    r.params(); // {color=...}
+if (killed) {
+    // disable the protected path
 }
 ```
 
-## Track an event
+## Experiments
+
+Assign a unit within a universe (a mutual-exclusion pool — the unit lands in &lt;=1
+experiment), read the assigned params, then record the conversion event on the
+same bound `Client`. Assumes `configure()` ran at startup — see Installation.
 
 ```java
-flags.track("purchase", Map.of("amount", 49));
+import ai.shipeasy.Client;
+import ai.shipeasy.Assignment;
+import java.util.Map;
+
+// construct once per callsite (cheap; binds the user + runs the attributes transform)
+Client client = new Client(Map.of("user_id", "u_123"));
+
+// universe(name).assign() -> Assignment
+//   name       — the UNIVERSE name (not an experiment); the unit lands in <=1 experiment
+//   .name()    — the experiment the unit landed in, or null when not enrolled
+//   .group()   — the assigned variant, or null when not enrolled
+//   .enrolled()— == (group() != null)
+//   .get(field, fallback) — variant override ?? universe default ?? fallback (first get() logs one exposure)
+//   .peek(field, fallback) — same read, but NEVER logs an exposure
+// assign() takes no arg (user bound at construction) and is side-effect free;
+// the single deduped exposure fires on the first .get(...) read.
+Assignment exp = client.universe("hero_cta").assign();
+
+String label = (String) exp.get("primary_label", "Sign up"); // always safe — falls back when not enrolled
+
+// On conversion — Client-only track (NOT the Engine); the unit is inferred
+// from the bound user (user_id, else anonymous_id):
+//   track(eventName, props?)
+//     eventName — the success event name
+//     props     — optional metric properties (private attrs are stripped)
+client.track("purchase", Map.of("group", String.valueOf(exp.group()))); // props optional
 ```
 
-## Anonymous visitors
+## Track a conversion
 
-`AnonIdFilter` is a servlet `Filter` that mints the shared `__se_anon_id` cookie so logged-out traffic buckets like the browser:
+Track a metric/conversion event from the bound `Client`. Metrics in the dashboard
+are computed from these events. Assumes `Shipeasy.configure(...)` ran at startup —
+see Installation.
+
+### Track an event
 
 ```java
-@Bean
-FilterRegistrationBean<AnonIdFilter> shipeasyAnonId() {
-    var reg = new FilterRegistrationBean<>(new AnonIdFilter());
-    reg.addUrlPatterns("/*");
-    return reg;
-}
+import ai.shipeasy.Client;
+import java.util.Map;
 
-new Client(anonUser).getFlag("new_checkout"); // buckets on the cookie
+Client client = new Client(Map.of("user_id", "u_123")); // construct once per callsite
+
+// track(eventName, props)
+//   eventName — the event your metric is built on (required)
+//   props     — optional payload; numeric/string fields you can sum/filter on in
+//               a metric (private attributes are stripped before egress)
+client.track("checkout_started", Map.of("amount", 49, "currency", "usd"));
 ```
 
-`jakarta.servlet-api` is a `provided` dependency. Non-servlet stacks (Ktor, Javalin) use the `AnonId` primitives directly.
+Fire-and-forget (never blocks your response) and a no-op under
+`Shipeasy.configureForTesting` / `configureForOffline`. The unit is the bound user
+(`user_id`, else `anonymous_id`); with no unit the call is a no-op.
 
-## Testing
-
-`Engine.forTesting()` does zero network — no key, `init`/`track` are no-ops. Seed with `override*` and reset with `clearOverrides`. `Engine` is `AutoCloseable`, so a try-with-resources block stops the poll on close. See [Testing](/sdks/testing).
+### Track without properties
 
 ```java
-try (Engine engine = Engine.forTesting()) {
-    engine.overrideFlag("new_checkout", true);
-    engine.getFlag("new_checkout", Map.of()); // true
-    engine.clearOverrides();
-}
+Client client = new Client(Map.of("user_id", "u_123")); // construct once per callsite
+
+client.track("checkout_started", Map.of()); // props are optional (pass an empty map)
 ```
-
-## Errors & feedback
-
-Report a handled exception with `see()` so it folds into the [errors primitive](/feedback/errors) with a one-sentence **consequence** — what feature broke and how it degraded. `see()` rides the same `Shipeasy.configure()` boot (server key); there is no separate error SDK or second key.
-
-```java
-try {
-    chargeCard(order, prices);
-} catch (Exception e) {
-    Shipeasy.see(e).causesThe("checkout").to("use cached prices")
-        .extras(Map.of("order_id", order.id));
-}
-```
-
-Use `Shipeasy.seeViolation("large query")` for a non-exception problem. Full grammar — consequence phrasing, control-flow exceptions, anti-patterns — is in [Error reporting with see()](/feedback/error-reporting).
-
-The in-app **bug & feature report overlay** is a standalone `<script>` tag you drop into your frontend — platform-agnostic, no server SDK required. See [The devtools overlay](/feedback/devtools).
 
 <SeeAlso
   links={[
+    { href: "/sdks/reference/java", title: "Java full reference", note: "Every feature page" },
     { href: "/sdks", title: "Shared evaluation model", note: "How every SDK buckets" },
-    { href: "/sdks/reasons", title: "Evaluation reasons", note: "getFlagDetail" },
-    { href: "/sdks/testing", title: "Testing", note: "forTesting" },
-    { href: "/flags-experiments/gates", title: "Feature gates" },
+    { href: "/sdks/reference/java/testing", title: "Testing", note: "Seed values, zero network" },
+    {
+      href: "/sdks/reference/java/error-reporting",
+      title: "Error reporting",
+      note: "The see() surface",
+    },
   ]}
 />

@@ -25,7 +25,7 @@ configure({
 
 // the experiment is configured with bucketBy: "company_id"
 const flags = new Client(currentUser);
-flags.getExperiment("pricing_test", { price: 9.99 });
+flags.universe("pricing").assign().get("price", 9.99);
 ```
 
 Every teammate in `acme_corp` now hashes to the **same** group — the rollout splits at the account boundary, not the user boundary. The hash is still deterministic and sticky: same company, same answer, every time.

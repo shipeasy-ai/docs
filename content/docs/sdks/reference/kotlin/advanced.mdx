@@ -70,7 +70,7 @@ see `18-identity-bucketing.md`.
 ### Anonymous id in a mobile app (`AnonStore`)
 
 `AnonIdFilter` is for a **server** request. A shipped Android/JVM client app has
-no request cookie — `ShipeasyClient` (see [Installation](installation.md#native-mobile-client--android-shipeasyclient))
+no request cookie — `ShipeasyClient` (see [Installation](/sdks/reference/kotlin/installation#native-mobile-client--android-shipeasyclient))
 instead **persists** the device's `__se_anon_id` so bucketing is stable across
 app launches. Without persistence a fresh UUID every cold start silently
 re-buckets every fractional rollout and experiment.
@@ -97,19 +97,27 @@ An `InMemoryAnonStore` ships for tests. The stable id is readable as
 
 ## Exposure logging
 
-`universe(name).assign()` auto-logs a single, deduped exposure when the unit is
-enrolled — you don't call anything separately. The unit is derived from the bound
+`universe(name).assign()` is side-effect free. The exposure fires on the **first
+`get()` read** of a param when the unit is enrolled — reading _is_ the exposure,
+so you don't call anything separately. The unit is derived from the bound
 `Client` (its `user_id`, else `anonymous_id`):
 
 ```kotlin
 val flags = Client(currentUser)
-flags.universe("hero_cta").assign() // enrolled → one deduped exposure fires
+val cta = flags.universe("hero_cta").assign() // no exposure yet
+cta.get("primary_label", "Sign up")           // enrolled → one deduped exposure fires here
 ```
 
-Repeated `assign()` calls for the same `(unit, experiment, group)` collapse to a
-single exposure per process. On the server, `assign()` always auto-logs on
-enrolment — there is no read-without-exposure form. See
-[Experiments](experiments.md).
+Repeated `get()` reads for the same `(unit, experiment, group)` collapse to a
+single exposure: deduped per process and durably per `(unit, experiment, group)`
+server-side. To read a param **without** logging an exposure — e.g. inspecting a
+value you aren't presenting — use `peek(field, fallback)`:
+
+```kotlin
+cta.peek("primary_label", "Sign up") // read-only — never logs an exposure
+```
+
+See [Experiments](/sdks/reference/kotlin/experiments).
 
 ## Change listeners — `onChange`
 
@@ -154,3 +162,12 @@ val head = bootstrapScriptTag(user, anonId = anonId) +
 
 `bootstrapScriptTag` also accepts `i18nProfile` and `baseUrl` (default
 `https://cdn.shipeasy.ai`).
+
+### Identity coherence (no anon→identified flip)
+
+When you pass an **identified** `user`, the tag also carries that identity as a
+`data-user` attribute (the user's traits, minus `anonymous_id`, as escaped JSON).
+The browser SDK adopts it on first paint, so a Kotlin-backend + JS-frontend app
+renders as the identified user immediately — no anonymous-then-identified flip.
+An anonymous request (only `anonymous_id`, or an empty user) emits **no**
+`data-user`. See `experiment-platform/18-identity-bucketing.md`.

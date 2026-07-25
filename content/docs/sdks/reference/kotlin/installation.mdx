@@ -105,23 +105,23 @@ call. For a long-running server that should also **poll** for updates, pass
 
 ### `configure(...)` options
 
-| Parameter           | Type                 | Default                   | What it does                                                                                                                                                             |
-| ------------------- | -------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `apiKey`            | `String`             | —                         | **SERVER** key — authenticates flags/experiments/SSR. Never reaches the browser.                                                                                         |
-| `attributes`        | `(Any?) -> Map<…>`   | identity                  | Maps YOUR user object → the targeting bag (`user_id`, `anonymous_id`, attrs). Runs once per `Client(user)`.                                                              |
-| `baseUrl`           | `String?`            | `https://api.shipeasy.ai` | Edge API origin override.                                                                                                                                                |
-| `env`               | `String`             | `"prod"`                  | Tags telemetry + `see()` events; also the fallback env for the egress defaults below.                                                                                    |
-| `isNetworkEnabled`  | `Boolean?`           | `null` (env-derived)      | Master switch on **all** outbound requests. `null` ⇒ on in production, off elsewhere. See [Configuration](configuration.md#network--telemetry-quiet-outside-production). |
-| `isTrackingEnabled` | `Boolean?`           | `null` (env-derived)      | Usage-telemetry switch. `null` ⇒ on in production, off elsewhere; forced off when the network is off.                                                                    |
-| `disableTelemetry`  | `Boolean`            | `false`                   | Legacy hard opt-out of per-eval usage telemetry (same as `isTrackingEnabled = false`).                                                                                   |
-| `telemetryUrl`      | `String?`            | `null`                    | Override the telemetry beacon origin.                                                                                                                                    |
-| `privateAttributes` | `List<String>`       | `[]`                      | Attrs usable for targeting but stripped from outbound `track()` / `see()` extras.                                                                                        |
-| `stickyStore`       | `StickyBucketStore?` | `null`                    | Lock a unit to its first-assigned variant (see [Advanced](advanced.md)).                                                                                                 |
-| `poll`              | `Boolean`            | `false`                   | `true` → fetch once **and** keep polling in the background; `false` → one-shot fetch only.                                                                               |
+| Parameter           | Type                 | Default                   | What it does                                                                                                                                                                                 |
+| ------------------- | -------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apiKey`            | `String`             | —                         | **SERVER** key — authenticates flags/experiments/SSR. Never reaches the browser.                                                                                                             |
+| `attributes`        | `(Any?) -> Map<…>`   | identity                  | Maps YOUR user object → the targeting bag (`user_id`, `anonymous_id`, attrs). Runs once per `Client(user)`.                                                                                  |
+| `baseUrl`           | `String?`            | `https://api.shipeasy.ai` | Edge API origin override.                                                                                                                                                                    |
+| `env`               | `String`             | `"prod"`                  | Tags telemetry + `see()` events; also the fallback env for the egress defaults below.                                                                                                        |
+| `isNetworkEnabled`  | `Boolean?`           | `null` (env-derived)      | Master switch on **all** outbound requests. `null` ⇒ on in production, off elsewhere. See [Configuration](/sdks/reference/kotlin/configuration#network--telemetry-quiet-outside-production). |
+| `isTrackingEnabled` | `Boolean?`           | `null` (env-derived)      | Usage-telemetry switch. `null` ⇒ on in production, off elsewhere; forced off when the network is off.                                                                                        |
+| `disableTelemetry`  | `Boolean`            | `false`                   | Legacy hard opt-out of per-eval usage telemetry (same as `isTrackingEnabled = false`).                                                                                                       |
+| `telemetryUrl`      | `String?`            | `null`                    | Override the telemetry beacon origin.                                                                                                                                                        |
+| `privateAttributes` | `List<String>`       | `[]`                      | Attrs usable for targeting but stripped from outbound `track()` / `see()` extras.                                                                                                            |
+| `stickyStore`       | `StickyBucketStore?` | `null`                    | Lock a unit to its first-assigned variant (see [Advanced](/sdks/reference/kotlin/advanced)).                                                                                                 |
+| `poll`              | `Boolean`            | `false`                   | `true` → fetch once **and** keep polling in the background; `false` → one-shot fetch only.                                                                                                   |
 
 > **Use the SERVER key.** It authenticates flag, experiment and SSR evaluation
 > and must never reach the browser. The public _client_ key is only used by the
-> i18n loader / bootstrap script tags (see [i18n](i18n.md)).
+> i18n loader / bootstrap script tags (see i18n).
 
 ### The `attributes` transform
 
@@ -148,7 +148,7 @@ Client(mapOf("user_id" to "u_123", "plan" to "pro")).getFlag("new_checkout")
 
 When the bound attributes carry neither `user_id` nor `anonymous_id`, the SDK
 defaults `anonymous_id` to the request-scoped `__se_anon_id` cookie (resolved by
-`AnonIdFilter`, see [Advanced](advanced.md)). An explicit unit always wins.
+`AnonIdFilter`, see [Advanced](/sdks/reference/kotlin/advanced)). An explicit unit always wins.
 
 ### Background polling
 
@@ -162,7 +162,7 @@ configure(apiKey = System.getenv("SHIPEASY_SERVER_KEY"), poll = true)
 
 With `poll = true` the SDK does the first fetch then refreshes in the background
 (interval driven by the server's `X-Poll-Interval` header, default 30s). Register
-an [`onChange`](advanced.md) listener to react to each refresh.
+an [`onChange`](/sdks/reference/kotlin/advanced) listener to react to each refresh.
 
 ### Environment variables
 
@@ -329,4 +329,4 @@ configureClient(clientKey = "pk_live_…", store = store)
 ```
 
 The stable device id is readable as `shipeasyClient()?.anonymousId`. See
-[Advanced](advanced.md) for the anon-id persistence contract.
+[Advanced](/sdks/reference/kotlin/advanced) for the anon-id persistence contract.

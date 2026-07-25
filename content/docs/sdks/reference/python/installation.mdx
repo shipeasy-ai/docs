@@ -48,7 +48,7 @@ pip install "shipeasy[openfeature]"      # poetry add "shipeasy[openfeature]" / 
 ```
 
 Importing the base `shipeasy` package never requires `openfeature-sdk`; only
-importing `shipeasy.openfeature` does. See [openfeature](openfeature.md).
+importing `shipeasy.openfeature` does. See [openfeature](/sdks/reference/python/openfeature).
 
 ## `configure()` — once per process
 
@@ -97,14 +97,14 @@ shipeasy.configure(
 **`configure()` options.** Beyond `api_key`, `attributes`, `init` and `poll`,
 `configure()` accepts the following advanced keywords:
 
-| keyword              | type                | default                   | what it does                                                                                                                                                                                                                                        |
-| -------------------- | ------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `base_url`           | `str`               | `https://api.shipeasy.ai` | API base URL for the flag/experiment blobs. Override for a self-hosted edge or in tests; a trailing slash is stripped.                                                                                                                              |
-| `env`                | `str`               | `"prod"`                  | Deployment environment tag, attached to `see()` error events and usage telemetry so the dashboard can split by environment.                                                                                                                         |
-| `disable_telemetry`  | `bool`              | `False`                   | Opt out of per-evaluation usage telemetry (the fire-and-forget beacon). Evaluation itself is unaffected.                                                                                                                                            |
-| `telemetry_url`      | `str`               | built-in                  | Override the telemetry endpoint. Rarely needed; pair with a self-hosted collector.                                                                                                                                                                  |
-| `private_attributes` | `Sequence[str]`     | `[]`                      | Attribute keys stripped from every outbound event `properties` bag before it leaves the process (LaunchDarkly/Statsig `privateAttributes`). They still drive **targeting** locally — they just never reach `/collect`. See [advanced](advanced.md). |
-| `sticky_store`       | `StickyBucketStore` | `None`                    | Pluggable store that pins a user's experiment group across re-buckets (doc 20 §2). Absent ⇒ purely deterministic hashing. See [advanced](advanced.md).                                                                                              |
+| keyword              | type                | default                   | what it does                                                                                                                                                                                                                                                            |
+| -------------------- | ------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `base_url`           | `str`               | `https://api.shipeasy.ai` | API base URL for the flag/experiment blobs. Override for a self-hosted edge or in tests; a trailing slash is stripped.                                                                                                                                                  |
+| `env`                | `str`               | `"prod"`                  | Deployment environment tag, attached to `see()` error events and usage telemetry so the dashboard can split by environment.                                                                                                                                             |
+| `disable_telemetry`  | `bool`              | `False`                   | Opt out of per-evaluation usage telemetry (the fire-and-forget beacon). Evaluation itself is unaffected.                                                                                                                                                                |
+| `telemetry_url`      | `str`               | built-in                  | Override the telemetry endpoint. Rarely needed; pair with a self-hosted collector.                                                                                                                                                                                      |
+| `private_attributes` | `Sequence[str]`     | `[]`                      | Attribute keys stripped from every outbound event `properties` bag before it leaves the process (LaunchDarkly/Statsig `privateAttributes`). They still drive **targeting** locally — they just never reach `/collect`. See [advanced](/sdks/reference/python/advanced). |
+| `sticky_store`       | `StickyBucketStore` | `None`                    | Pluggable store that pins a user's experiment group across re-buckets (doc 20 §2). Absent ⇒ purely deterministic hashing. See [advanced](/sdks/reference/python/advanced).                                                                                              |
 
 ```python
 import shipeasy
@@ -327,4 +327,4 @@ shipeasy.configure_for_testing(flags={"new_checkout": True})
 shipeasy.configure_for_offline(path="shipeasy-snapshot.json")
 ```
 
-See [testing](testing.md) for the full override args.
+See [testing](/sdks/reference/python/testing) for the full override args.

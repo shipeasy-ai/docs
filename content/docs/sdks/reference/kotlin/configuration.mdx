@@ -46,12 +46,12 @@ exactly once.
 | `logLevel`                      | `LogLevel.WARN`           | SDK log verbosity (`SILENT`, `ERROR`, `WARN`, `INFO`, `DEBUG`).                                       |
 | `disableInternalErrorReporting` | `false`                   | Opt out of self-reporting SDK-internal errors to Shipeasy.                                            |
 
-The full options table with types lives on the [Installation](installation.md)
+The full options table with types lives on the [Installation](/sdks/reference/kotlin/installation)
 page — that page is the canonical home for `configure()`.
 
 > **Use the SERVER key.** It authenticates flag, experiment and SSR evaluation
 > and must never reach the browser. The public _client_ key is only used by the
-> i18n loader / bootstrap script tags (see [Advanced](advanced.md) / [i18n](i18n.md)).
+> i18n loader / bootstrap script tags (see [Advanced](/sdks/reference/kotlin/advanced) / i18n).
 
 ## The `attributes` transform
 
@@ -71,7 +71,7 @@ Client(mapOf("user_id" to "u_123", "plan" to "pro")).getFlag("new_checkout")
 
 When the bound attributes carry neither `user_id` nor `anonymous_id`, the SDK
 defaults `anonymous_id` to the request-scoped `__se_anon_id` cookie (resolved by
-`AnonIdFilter`, see [Advanced](advanced.md)). An explicit unit always wins.
+`AnonIdFilter`, see [Advanced](/sdks/reference/kotlin/advanced)). An explicit unit always wins.
 
 ## One-shot vs polling
 
@@ -86,7 +86,7 @@ configure(apiKey = System.getenv("SHIPEASY_SERVER_KEY"), poll = true)
 
 With `poll = true` the SDK does the first fetch then refreshes in the background
 (interval driven by the server's `X-Poll-Interval` header, default 30s).
-Register an [`onChange`](advanced.md) listener to react to each refresh.
+Register an [`onChange`](/sdks/reference/kotlin/advanced) listener to react to each refresh.
 
 ## Fail-safe reads & the `logLevel` option
 

@@ -21,7 +21,7 @@ const flags = new Client(currentUser);
 //   name         — the flag/gate name
 //   defaultValue — returned ONLY when the flag can't be evaluated
 //                  (client not ready / flag not found); defaults to false
-if (flags.getFlag("{{FLAG_KEY}}", false)) {
+if (flags.getFlag("new_checkout", false)) {
   // ship it
 }
 ```
@@ -40,7 +40,7 @@ const flags = new Client(currentUser);
 //   name             — the config name
 //   opts.defaultValue — returned when the config key is absent
 //   opts.decode       — optional (raw) => T to validate/shape the stored value
-const cfg = flags.getConfig<{ max: number }>("{{CONFIG_KEY}}", {
+const cfg = flags.getConfig<{ max: number }>("billing_copy", {
   defaultValue: { max: 50 }, // used when the key isn't published
   decode: (raw) => raw as { max: number }, // optional — typed decode / zod parse
 });
@@ -62,7 +62,7 @@ const flags = new Client(currentUser);
 //   name      — the kill switch name
 //   switchKey — optional; reads a single named override switch instead of
 //               the whole-killswitch "killed" flag
-if (flags.getKillswitch("{{KILLSWITCH_KEY}}")) {
+if (flags.getKillswitch("payments")) {
   // killed — short-circuit the feature
 }
 ```
@@ -75,7 +75,7 @@ const flags = new Client(currentUser); // construct once per callsite
 // Pass the variable to gate as the switchKey. A CONFIGURED switch returns its
 // own value; an UNCONFIGURED switch falls back to the whole-killswitch "killed"
 // value — so this is always safe to call before any per-key override exists.
-if (flags.getKillswitch("{{KILLSWITCH_KEY}}", "apple_pay")) {
+if (flags.getKillswitch("payments", "apple_pay")) {
   // the "apple_pay" switch is on (or the whole kill switch is killed)
 }
 ```
@@ -95,10 +95,11 @@ const flags = new Client(currentUser);
 //   .name     — the experiment the unit landed in, or null when not enrolled
 //   .group    — the assigned variant, or null when not enrolled
 //   .enrolled — === (group !== null)
-//   .get(field, fallback) — variant override ?? universe default ?? fallback
-// Server: assign() takes no arg (user bound at construction).
-// Browser: assign(opts?) — opts.logExposure to force/suppress the exposure beacon.
-const exp = flags.universe("{{EXPERIMENT_KEY}}").assign();
+//   .get(field, fallback, opts?) — variant override ?? universe default ?? fallback
+// Server: assign() takes no arg (user bound at construction); the exposure fires
+//   on the first get() read. Peek without logging: get(field, fallback, { exposure: false }).
+// Browser: assign(opts?) — opts.logExposure to force/suppress the exposure beacon at assign.
+const exp = flags.universe("hero_cta").assign();
 
 render(exp.get("primary_label", "Sign up")); // always safe — falls back when not enrolled
 
@@ -107,7 +108,7 @@ render(exp.get("primary_label", "Sign up")); // always safe — falls back when 
 //   track(eventName, props?)
 //     eventName — the success event name
 //     props     — optional metric properties (private attrs are stripped)
-flags.track("{{SUCCESS_EVENT}}", { group: exp.group }); // props optional
+flags.track("purchase", { group: exp.group }); // props optional
 ```
 
 ## metrics
@@ -130,7 +131,7 @@ const flags = new Client(currentUser);
 //   eventName — the event your metric is built on (required)
 //   props     — optional payload; numeric/string fields you can sum/filter on
 //               in a metric (private attributes are stripped before egress)
-flags.track("{{EVENT_NAME}}", { amount: 49, currency: "usd" });
+flags.track("checkout_started", { amount: 49, currency: "usd" });
 ```
 
 Fire-and-forget (never blocks your response) and a no-op under
@@ -142,7 +143,7 @@ Fire-and-forget (never blocks your response) and a no-op under
 ```ts
 const flags = new Client(currentUser); // construct once per callsite
 
-flags.track("{{EVENT_NAME}}"); // props are optional
+flags.track("checkout_started"); // props are optional
 ```
 
 ## ops
@@ -175,9 +176,38 @@ try {
 try {
   await charge(order);
 } catch (e) {
-  // .extras(obj)           structured fields attached to the report
+  // .extras(obj)           structured fields attached to the report; call it
+  //                        before .to, or pass extras inline as .to(outcome, obj).
   see(e).causes_the("checkout").extras({ order_id: order.id }).to("use cached prices");
+
+  // equivalent — extras folded into the terminal, no ordering to remember:
+  see(e).causes_the("checkout").to("use cached prices", { order_id: order.id });
 }
+```
+
+### Attach context from anywhere with `addExtras(...)`
+
+```ts
+import { see, addExtras, clearExtras, runWithExtras } from "@shipeasy/sdk/server";
+// or: import { see, addExtras, clearExtras } from "@shipeasy/sdk/client";
+
+// Buffer extras earlier — from any layer, not just the catch. Every see() report
+// that fires LATER in the same scope carries them, so you don't thread context
+// down into the catch site. A chained .extras / .to extra of the same key wins.
+runWithExtras(async () => {
+  // server: per-request AsyncLocalStorage scope
+  addExtras({ order_id: order.id, tenant: tenant.slug });
+
+  // ...deep in a service, later in the same request...
+  try {
+    await charge(order);
+  } catch (e) {
+    // report carries order_id + tenant automatically
+    see(e).causes_the("checkout").to("use cached prices");
+  }
+});
+// In the browser there is one user per page — call addExtras() directly (no
+// runWithExtras) and clearExtras() on a route change.
 ```
 
 ### Report a non-exception violation

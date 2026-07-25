@@ -19,7 +19,7 @@ use Shipeasy\Client;
 $client = new Client($currentUser);
 
 $enabled = $client->getFlag(
-    '{{FLAG_KEY}}',   // gate name
+    'new_checkout',   // gate name
     false,            // optional $default — returned ONLY when unevaluable
 );                    //   (SDK not ready / flag not in blob), NOT when the gate is off
 ```
@@ -36,7 +36,7 @@ use Shipeasy\Client;
 $client = new Client($currentUser);
 
 $value = $client->getConfig(
-    '{{CONFIG_KEY}}',                // config name
+    'billing_copy',                // config name
     ['headline' => 'Welcome'],       // optional $default — returned when the config key is absent
 );
 ```
@@ -53,7 +53,7 @@ use Shipeasy\Client;
 $client = new Client($currentUser);
 
 $panic = $client->getKillswitch(
-    '{{KILLSWITCH_KEY}}',   // kill switch name
+    'payments',   // kill switch name
     null,                   // optional $switchKey — read a named per-key override
 );                          //   (null = top-level value; unconfigured key falls back to it too)
 ```
@@ -76,10 +76,14 @@ $client = new Client($currentUser);
 //   ->name       — the experiment the unit landed in, or null when not enrolled
 //   ->group      — the assigned variant, or null when not enrolled
 //   ->enrolled() — bool (=== group !== null)
-//   ->get($field, $fallback) — variant override ?? universe default ?? $fallback
-$exp = $client->universe('{{EXPERIMENT_KEY}}')->assign();
+//   ->get($field, $fallback, $exposure = true) — variant override ?? universe default ?? $fallback
+$exp = $client->universe('hero_cta')->assign(); // side-effect free (no exposure yet)
 
+// The FIRST get() logs one deduped exposure for the enrolled unit:
 echo $exp->get('primary_label', 'Sign up'); // always safe — falls back when not enrolled
+
+// Peek without logging an exposure — pass exposure: false:
+$peek = $exp->get('primary_label', 'Sign up', false);
 
 // On conversion — track() is on the same bound Client; the unit is inferred from
 // the bound user (user_id, else anonymous_id), so there is no userId argument:
@@ -87,7 +91,7 @@ echo $exp->get('primary_label', 'Sign up'); // always safe — falls back when n
 //     $eventName — the success event name
 //     $props     — optional metric properties (private attrs are stripped)
 $client->track(
-    '{{SUCCESS_EVENT}}',     // event name (the experiment's success metric)
+    'purchase',     // event name (the experiment's success metric)
     ['group' => $exp->group],// optional $props (default [])
 );
 ```
@@ -112,7 +116,7 @@ $client = new Client($currentUser);
 //   $event — the event your metric is built on (required)
 //   $props — optional payload; numeric/string fields you can sum/filter on
 //            in a metric (private attributes are stripped before egress)
-$client->track('{{EVENT_NAME}}', ['amount' => 49, 'currency' => 'usd']);
+$client->track('checkout_started', ['amount' => 49, 'currency' => 'usd']);
 ```
 
 Fire-and-forget (never blocks your response) and a no-op under
@@ -127,7 +131,7 @@ use Shipeasy\Client;
 // construct once per callsite
 $client = new Client($currentUser);
 
-$client->track('{{EVENT_NAME}}');   // $props are optional
+$client->track('checkout_started');   // $props are optional
 ```
 
 ## ops
@@ -162,9 +166,40 @@ use function Shipeasy\see;
 try {
     charge($order);
 } catch (\Throwable $e) {
-    // ->extras($array)        structured fields attached to the report (local-only debug)
+    // ->extras($array)        structured fields attached to the report; call it
+    //                         BEFORE ->to, or pass extras inline as ->to($outcome, $array).
+    //                         (A stray ->extras AFTER ->to is ignored with a warning —
+    //                         it never throws into the catch block.)
     see($e)->causesThe('checkout')->extras(['order_id' => $oid])->to('use cached prices');
+
+    // equivalent — extras folded into the terminal, no ordering to remember:
+    see($e)->causesThe('checkout')->to('use cached prices', ['order_id' => $oid]);
 }
+```
+
+### Attach context from anywhere with `Shipeasy\addExtras(...)`
+
+```php
+use function Shipeasy\addExtras;
+use function Shipeasy\see;
+
+// Buffer extras earlier in the request — from any layer, not just the catch.
+// Every see() report that fires LATER in the same request carries them, so you
+// don't have to thread context down into the catch site. A chained ->extras /
+// ->to extra of the same key wins over the ambient one.
+addExtras(['order_id' => $order->id, 'tenant' => $tenant->slug]);
+
+// ...deep in a service, later in the same request...
+try {
+    charge($order);
+} catch (\Throwable $e) {
+    // report carries order_id + tenant automatically.
+    see($e)->causesThe('checkout')->to('use cached prices');
+}
+
+// PHP is share-nothing per request: under PHP-FPM / mod_php the buffer resets
+// per request automatically. Under a long-running runtime (Swoole / RoadRunner /
+// a resident worker loop) call Shipeasy\clearExtras() at request end.
 ```
 
 ### Report a non-exception violation

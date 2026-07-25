@@ -68,7 +68,8 @@ snippets <https://shipeasy-ai.github.io/sdk-ts/snippets/release/flags.md> ·
 const flags = new Client(currentUser); // construct once per callsite
 
 // Read experiments by UNIVERSE (a mutual-exclusion pool — the unit lands in ≤1
-// experiment). assign() auto-logs one deduped exposure when enrolled.
+// experiment). Server: the first get() read auto-logs one deduped exposure
+// (peek with get(field, fallback, { exposure: false })). Browser: assign() logs it.
 const exp = flags.universe("hero_cta").assign();
 render(exp.get("primary_label", "Sign up")); // variant ?? universe default ?? fallback
 
@@ -101,16 +102,28 @@ Full reference: <https://shipeasy-ai.github.io/sdk-ts/pages/i18n.md> · snippets
 ## Error reporting (see)
 
 ```ts
-import { see } from "@shipeasy/sdk/server"; // or /client
+import { see, addExtras, runWithExtras } from "@shipeasy/sdk/server"; // or /client
 
 try {
   await submitOrder(order);
 } catch (e) {
-  see(e).causes_the("checkout").to("use cached prices").extras({ order_id: order.id });
+  see(e).causes_the("checkout").to("use cached prices", { order_id: order.id });
 }
+// extras inline on .to (no ordering to remember), or chained: .extras({...}).to(...)
 
 see.Violation("large query").causes_the("results").to("be trimmed").extras({ rows });
 see.ControlFlowException(e).because("because it wasn't an encoded Foo"); // expected — reports nothing
+
+// Ambient per-scope extras — buffer from any layer; every later see() merges them in.
+runWithExtras(async () => {
+  // server: per-request ALS scope
+  addExtras({ order_id: order.id, tenant }); // browser: call addExtras() directly, one user/page
+  try {
+    await charge(order);
+  } catch (e) {
+    see(e).causes_the("checkout").to("use cached prices");
+  }
+});
 ```
 
 Fire-and-forget on the next microtask (no `.send()`). Don't catch what you can't
@@ -170,4 +183,28 @@ Full reference: <https://shipeasy-ai.github.io/sdk-ts/pages/openfeature.md>
 `onChange(cb)` (requires `configure({ poll: true })`) / browser `subscribe()`.
 Devtools overlay: `Shift+Alt+S` or `?se=1`. Full reference:
 <https://shipeasy-ai.github.io/sdk-ts/pages/advanced.md>
+
+## React Native devtools
+
+Shake-to-open on-device devtools for RN/Expo apps — mount once at the root:
+
+```tsx
+import { ShipeasyDevtools } from "@shipeasy/sdk/react-native-devtools";
+
+// scheme = YOUR app's registered deep-link scheme; clientKey enables the
+// public "Report a bug" path (project must enable Allow public tickets).
+<ShipeasyDevtools scheme="myapp://se-auth" clientKey={CLIENT_KEY} />;
+```
+
+Shake several times fast to open (expo-sensors; or `ref.open()`). Login runs
+device-auth via the app's own scheme (PKCE — the deep link never carries the
+token) and unlocks User / Gates / Configs / Experiments / Feedback / I18n /
+Events panels, with live value forcing through the SDK's programmatic
+overrides. The bug/feature forms need `react-hook-form` + `@hookform/resolvers`.
+Full reference: <https://shipeasy-ai.github.io/sdk-ts/pages/react-native-devtools.md>
+
+The browser overlay ships from the same package — script-tag `se-devtools.js`
+or `import { loadOnTrigger } from "@shipeasy/sdk/browser-devtools"` (URL-param
+overrides, `Shift+Alt+S`). Reference:
+<https://shipeasy-ai.github.io/sdk-ts/pages/browser-devtools.md>
 ````

@@ -53,7 +53,7 @@ The default transform is **identity** — if you pass a `Map<String, Object>` to
 The bound attribute map should carry a stable unit: `user_id` for logged-in
 users, or `anonymous_id` for logged-out traffic. If neither is present, the
 engine falls back to the request-scoped `__se_anon_id` cookie resolved by
-[`AnonIdFilter`](advanced.md). An explicit `user_id`/`anonymous_id` always wins.
+[`AnonIdFilter`](/sdks/reference/java/advanced). An explicit `user_id`/`anonymous_id` always wins.
 
 ## `configure()` options
 
@@ -69,8 +69,8 @@ them to `Shipeasy.configure(...)`:
 | `.disableTelemetry(boolean)`              | env-derived (see below)   | Back-compat alias for `isTrackingEnabled(!x)`.                                                                       |
 | `.disableInternalErrorReporting(boolean)` | `false`                   | Turn off SDK self-monitoring (internal errors reported to Shipeasy's own project). See below.                        |
 | `.poll(boolean)`                          | `false`                   | Start the background poll instead of a one-shot fetch.                                                               |
-| `.privateAttributes(List)`                | empty                     | Targeting-only keys stripped from outbound events. See [Advanced](advanced.md).                                      |
-| `.stickyStore(StickyBucketStore)`         | none                      | Pluggable sticky-bucketing store. See [Advanced](advanced.md).                                                       |
+| `.privateAttributes(List)`                | empty                     | Targeting-only keys stripped from outbound events. See [Advanced](/sdks/reference/java/advanced).                    |
+| `.stickyStore(StickyBucketStore)`         | none                      | Pluggable sticky-bucketing store. See [Advanced](/sdks/reference/java/advanced).                                     |
 | `.logLevel(LogLevel)`                     | `WARN`                    | Verbosity of the SDK's own diagnostics. See below.                                                                   |
 | `.attributes(Function)`                   | identity                  | Map your user object to the attribute map.                                                                           |
 
@@ -94,7 +94,7 @@ Shipeasy.configure(Shipeasy.options(System.getenv("SHIPEASY_SERVER_KEY"))
 ```
 
 To react when a poll applies new data, register a change listener with
-`Shipeasy.onChange(...)` — see [Advanced](advanced.md).
+`Shipeasy.onChange(...)` — see [Advanced](/sdks/reference/java/advanced).
 
 ## Environment-derived egress defaults
 

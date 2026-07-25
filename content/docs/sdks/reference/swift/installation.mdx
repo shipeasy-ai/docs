@@ -108,7 +108,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 ```
 
 Call `identify` again on login (with `user_id` and any targeting attributes), and
-`reset()` on logout — see [configuration](configuration.md).
+`reset()` on logout — see [configuration](/sdks/reference/swift/configuration).
 
 ---
 
@@ -134,11 +134,11 @@ configureClient(clientKey: "pk_live_…", store: KeychainAnonStore())
 
 `get`/`set` are synchronous and best-effort — a throwing or slow backing store
 degrades gracefully and never crashes a read. See
-[advanced](advanced.md#anonymous-id-persistence-anonymousstore) for the full detail.
+[advanced](/sdks/reference/swift/advanced#anonymous-id-persistence-anonymousstore) for the full detail.
 
 ---
 
 ## Next
 
-Head to [configuration](configuration.md) for every `configureClient` option, or
-straight to [flags](flags.md) / [experiments](experiments.md) to start reading.
+Head to [configuration](/sdks/reference/swift/configuration) for every `configureClient` option, or
+straight to [flags](/sdks/reference/swift/flags) / [experiments](/sdks/reference/swift/experiments) to start reading.

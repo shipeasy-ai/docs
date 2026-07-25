@@ -55,18 +55,17 @@ For an Android app, use `configureAndroid(context, clientKey)` +
 `POST /sdk/evaluate`, and a **persisted device `anonymous_id`** so logged-out
 users bucket identically across launches. It ships in the companion artifact
 `ai.shipeasy:shipeasy-kotlin-android`; the core jar stays pure-JVM (Ktor / Spring
-/ http4k servers are unaffected). See [Installation](installation.md#native-mobile-client--android-shipeasyclient).
+/ http4k servers are unaffected). See [Installation](/sdks/reference/kotlin/installation#native-mobile-client--android-shipeasyclient).
 
 ## Feature reference
 
-- [Installation](installation.md) — Gradle/Maven dependency, runtime, imports, and the canonical `configure()` reference.
-- [Configuration](configuration.md) — `configure()` in full, the `attributes` transform, init/poll.
-- [Flags](flags.md) — `getFlag` / `getFlagDetail`.
-- [Configs](configs.md) — `getConfig`.
-- [Kill switches](killswitches.md) — `getKillswitch`.
-- [Experiments](experiments.md) — `universe(name).assign()`, `Assignment`, `track`.
-- [i18n](i18n.md) — SSR bootstrap + the client-side translation story.
-- [Error reporting](error-reporting.md) — `see()` structured error reporting.
-- [Testing](testing.md) — `configureForTesting()` / `configureForOffline()` + the override helpers.
-- [OpenFeature](openfeature.md) — provider availability.
-- [Advanced](advanced.md) — private attributes, sticky bucketing, anon-id, manual exposure, SSR.
+- [Installation](/sdks/reference/kotlin/installation) — Gradle/Maven dependency, runtime, imports, and the canonical `configure()` reference.
+- [Configuration](/sdks/reference/kotlin/configuration) — `configure()` in full, the `attributes` transform, init/poll.
+- [Flags](/sdks/reference/kotlin/flags) — `getFlag` / `getFlagDetail`.
+- [Configs](/sdks/reference/kotlin/configs) — `getConfig`.
+- [Kill switches](/sdks/reference/kotlin/killswitches) — `getKillswitch`.
+- [Experiments](/sdks/reference/kotlin/experiments) — `universe(name).assign()`, `Assignment`, `track`.
+- [Error reporting](/sdks/reference/kotlin/error-reporting) — `see()` structured error reporting.
+- [Testing](/sdks/reference/kotlin/testing) — `configureForTesting()` / `configureForOffline()` + the override helpers.
+- [OpenFeature](/sdks/reference/kotlin/openfeature) — provider availability.
+- [Advanced](/sdks/reference/kotlin/advanced) — private attributes, sticky bucketing, anon-id, manual exposure, SSR.

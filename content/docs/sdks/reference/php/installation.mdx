@@ -39,7 +39,7 @@ use Shipeasy\Client;               // lightweight, user-bound handle
 ### Optional: OpenFeature
 
 `open-feature/sdk` (`^2.0`) is an optional dependency. Install it only if you
-use `Shipeasy\OpenFeature\ShipeasyProvider` — see [OpenFeature](openfeature.md):
+use `Shipeasy\OpenFeature\ShipeasyProvider` — see [OpenFeature](/sdks/reference/php/openfeature):
 
 ```bash
 composer require open-feature/sdk
@@ -92,19 +92,19 @@ $enabled = $client->getFlag('new_checkout');
 
 ### `$opts` keys
 
-| Key                 | Default                   | Meaning                                                                                                                                                                                 |
-| ------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `env`               | `'prod'`                  | The read environment for the blob.                                                                                                                                                      |
-| `baseUrl`           | `https://api.shipeasy.ai` | Edge API base.                                                                                                                                                                          |
-| `isNetworkEnabled`  | env-derived               | Master switch for **all** outbound requests. `null` ⇒ on in production, off everywhere else. See [Configuration](configuration.md).                                                     |
-| `disableTelemetry`  | env-derived               | Opt out of the usage-telemetry beacon. `null` ⇒ on in production, off everywhere else.                                                                                                  |
-| `telemetryUrl`      | (built-in)                | Override the telemetry endpoint.                                                                                                                                                        |
-| `privateAttributes` | `[]`                      | Attribute names stripped from outbound event payloads (LD/Statsig `privateAttributes`). See [Advanced](advanced.md).                                                                    |
-| `stickyStore`       | `null`                    | A `Shipeasy\StickyBucketStore` for durable experiment bucketing. See [Advanced](advanced.md).                                                                                           |
-| `logLevel`          | `'warn'`                  | SDK diagnostic verbosity: `'silent'`, `'error'`, `'warn'`, `'info'`, `'debug'`. Runtime reads are fail-safe (never throw) and log at this level. See [Configuration](configuration.md). |
+| Key                 | Default                   | Meaning                                                                                                                                                                                                  |
+| ------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `env`               | `'prod'`                  | The read environment for the blob.                                                                                                                                                                       |
+| `baseUrl`           | `https://api.shipeasy.ai` | Edge API base.                                                                                                                                                                                           |
+| `isNetworkEnabled`  | env-derived               | Master switch for **all** outbound requests. `null` ⇒ on in production, off everywhere else. See [Configuration](/sdks/reference/php/configuration).                                                     |
+| `disableTelemetry`  | env-derived               | Opt out of the usage-telemetry beacon. `null` ⇒ on in production, off everywhere else.                                                                                                                   |
+| `telemetryUrl`      | (built-in)                | Override the telemetry endpoint.                                                                                                                                                                         |
+| `privateAttributes` | `[]`                      | Attribute names stripped from outbound event payloads (LD/Statsig `privateAttributes`). See [Advanced](/sdks/reference/php/advanced).                                                                    |
+| `stickyStore`       | `null`                    | A `Shipeasy\StickyBucketStore` for durable experiment bucketing. See [Advanced](/sdks/reference/php/advanced).                                                                                           |
+| `logLevel`          | `'warn'`                  | SDK diagnostic verbosity: `'silent'`, `'error'`, `'warn'`, `'info'`, `'debug'`. Runtime reads are fail-safe (never throw) and log at this level. See [Configuration](/sdks/reference/php/configuration). |
 
 The **public client key** (a separate value) is _not_ passed to `configure()`.
-It is only used for the i18n loader `<script>` tag — see [i18n](i18n.md).
+It is only used for the i18n loader `<script>` tag — see i18n.
 
 ### Identity default
 
@@ -207,7 +207,7 @@ final class ShipeasyAttributes
 ```
 
 Bind `__se_anon_id` for logged-out traffic by calling `Shipeasy\Identity::ensure()`
-from a middleware — see [Advanced](advanced.md).
+from a middleware — see [Advanced](/sdks/reference/php/advanced).
 
 #### Manual fallback (no auto-discovery)
 

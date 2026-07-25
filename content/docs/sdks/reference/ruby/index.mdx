@@ -59,24 +59,23 @@ So an experiment is **end-to-end Client-only**. Constructing a
 
 ## The configure family
 
-| call                                                | when                                       |
-| --------------------------------------------------- | ------------------------------------------ |
-| [`Shipeasy.configure { ... }`](configuration.md)    | production — your server key               |
-| [`Shipeasy.configure_for_testing(...)`](testing.md) | unit tests — no network, seed overrides    |
-| [`Shipeasy.configure_for_offline(...)`](testing.md) | evaluate real rules from a snapshot / file |
+| call                                                                  | when                                       |
+| --------------------------------------------------------------------- | ------------------------------------------ |
+| [`Shipeasy.configure { ... }`](/sdks/reference/ruby/configuration)    | production — your server key               |
+| [`Shipeasy.configure_for_testing(...)`](/sdks/reference/ruby/testing) | unit tests — no network, seed overrides    |
+| [`Shipeasy.configure_for_offline(...)`](/sdks/reference/ruby/testing) | evaluate real rules from a snapshot / file |
 
 After any of them, you read the same way: `Shipeasy::Client.new(user)`.
 
 ## Pages
 
-- [installation](installation.md) — gem, frameworks (Rails / Sinatra / serverless), `configure`
-- [configuration](configuration.md) — `Shipeasy.configure`, keys, attributes, one-shot vs poll, options
-- [flags](flags.md) — `get_flag` + `get_flag_detail`
-- [configs](configs.md) — `get_config`
-- [killswitches](killswitches.md) — `get_killswitch`, named switches
-- [experiments](experiments.md) — `universe(name).assign`, `track`
-- [i18n](i18n.md) — Rails view helpers + the SSR loader tag
-- [error-reporting](error-reporting.md) — `see()` structured reporting
-- [testing](testing.md) — `configure_for_testing`, `configure_for_offline`, overrides
-- [openfeature](openfeature.md) — `Shipeasy::OpenFeature::Provider`
-- [advanced](advanced.md) — anon-id middleware, private attributes, sticky bucketing, manual exposure, SSR
+- [installation](/sdks/reference/ruby/installation) — gem, frameworks (Rails / Sinatra / serverless), `configure`
+- [configuration](/sdks/reference/ruby/configuration) — `Shipeasy.configure`, keys, attributes, one-shot vs poll, options
+- [flags](/sdks/reference/ruby/flags) — `get_flag` + `get_flag_detail`
+- [configs](/sdks/reference/ruby/configs) — `get_config`
+- [killswitches](/sdks/reference/ruby/killswitches) — `get_killswitch`, named switches
+- [experiments](/sdks/reference/ruby/experiments) — `universe(name).assign`, `track`
+- [error-reporting](/sdks/reference/ruby/error-reporting) — `see()` structured reporting
+- [testing](/sdks/reference/ruby/testing) — `configure_for_testing`, `configure_for_offline`, overrides
+- [openfeature](/sdks/reference/ruby/openfeature) — `Shipeasy::OpenFeature::Provider`
+- [advanced](/sdks/reference/ruby/advanced) — anon-id middleware, private attributes, sticky bucketing, manual exposure, SSR

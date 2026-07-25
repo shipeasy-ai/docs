@@ -9,7 +9,7 @@ description: "A flag (gate) evaluates to a boolean for a given user. After confi
 </Callout>
 
 A flag (gate) evaluates to a boolean for a given user. After
-[`configure()`](configuration.md) has run once at startup, bind a user with
+[`configure()`](/sdks/reference/python/configuration) has run once at startup, bind a user with
 `shipeasy.Client(user)` and read with **no user argument**.
 
 ```python
@@ -45,14 +45,14 @@ d = client.get_flag_detail("new_checkout")
 print(d.value, d.reason)   # e.g. True RULE_MATCH
 ```
 
-| reason             | meaning                                                           |
-| ------------------ | ----------------------------------------------------------------- |
-| `OVERRIDE`         | a [`configure_for_testing`](testing.md) override forced the value |
-| `CLIENT_NOT_READY` | the first fetch hasn't completed yet → `value=False`              |
-| `FLAG_NOT_FOUND`   | no gate by that name in the blob → `value=False`                  |
-| `OFF`              | the gate exists but is disabled → `value=False`                   |
-| `RULE_MATCH`       | evaluated **on** (targeting + rollout)                            |
-| `DEFAULT`          | evaluated **off** (fell through)                                  |
+| reason             | meaning                                                                               |
+| ------------------ | ------------------------------------------------------------------------------------- |
+| `OVERRIDE`         | a [`configure_for_testing`](/sdks/reference/python/testing) override forced the value |
+| `CLIENT_NOT_READY` | the first fetch hasn't completed yet → `value=False`                                  |
+| `FLAG_NOT_FOUND`   | no gate by that name in the blob → `value=False`                                      |
+| `OFF`              | the gate exists but is disabled → `value=False`                                       |
+| `RULE_MATCH`       | evaluated **on** (targeting + rollout)                                                |
+| `DEFAULT`          | evaluated **off** (fell through)                                                      |
 
 `get_flag` delegates to `get_flag_detail` and returns `.value`, substituting
 `default` for the `CLIENT_NOT_READY` / `FLAG_NOT_FOUND` cases.

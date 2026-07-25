@@ -10,7 +10,7 @@ description: "A kill switch is an admin resource that ships in the flags blob al
 
 A kill switch is an admin resource that ships in the flags blob alongside gates
 and configs. `get_killswitch` reads it and returns a boolean. No telemetry is
-emitted for a kill-switch read. After [`configure()`](configuration.md), read it
+emitted for a kill-switch read. After [`configure()`](/sdks/reference/python/configuration), read it
 through the bound `shipeasy.Client(user)`.
 
 ```python
@@ -62,7 +62,7 @@ switch's overall state.
 ### Configuring switches for a test
 
 In production these are set in the dashboard. To exercise them in a test, put a
-`switches` map on the kill switch in an [offline snapshot](testing.md):
+`switches` map on the kill switch in an [offline snapshot](/sdks/reference/python/testing):
 
 ```python
 shipeasy.configure_for_offline(snapshot={

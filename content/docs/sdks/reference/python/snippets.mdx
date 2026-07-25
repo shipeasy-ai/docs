@@ -24,7 +24,7 @@ client = shipeasy.Client(current_user)
 # default=False                 returned ONLY when the flag can't be evaluated
 #                               (client not ready / flag absent) — never when it
 #                               simply resolves off
-if client.get_flag("{{FLAG_KEY}}", default=False):
+if client.get_flag("new_checkout", default=False):
     ...
 ```
 
@@ -37,8 +37,8 @@ client = shipeasy.Client(current_user)
 
 # returns FlagDetail(value, reason); reason ∈ RULE_MATCH / DEFAULT / OFF /
 # OVERRIDE / FLAG_NOT_FOUND / CLIENT_NOT_READY
-detail = client.get_flag_detail("{{FLAG_KEY}}")
-log.info("flag=%s value=%s reason=%s", "{{FLAG_KEY}}", detail.value, detail.reason)
+detail = client.get_flag_detail("new_checkout")
+log.info("flag=%s value=%s reason=%s", "new_checkout", detail.value, detail.reason)
 ```
 
 ### React to flag changes (long-running server)
@@ -66,7 +66,7 @@ client = shipeasy.Client(current_user)
 
 # name                          config name (required)
 # default={}                    returned when the key is absent (or decode raises)
-config = client.get_config("{{CONFIG_KEY}}", default={})
+config = client.get_config("billing_copy", default={})
 ```
 
 ### Typed decode
@@ -78,7 +78,7 @@ client = shipeasy.Client(current_user)
 
 # decode=lambda v: ...          transform the raw JSON value into the shape you want;
 #                               applied on top of overrides — if it raises, default is returned
-max_items = client.get_config("{{CONFIG_KEY}}", decode=lambda v: v["max"], default=0)
+max_items = client.get_config("billing_copy", decode=lambda v: v["max"], default=0)
 ```
 
 ### release / killswitches
@@ -95,7 +95,7 @@ import shipeasy
 client = shipeasy.Client(current_user)
 
 # name                          kill switch name (required)
-if client.get_killswitch("{{KILLSWITCH_KEY}}"):  # True == engaged (feature killed)
+if client.get_killswitch("payments"):  # True == engaged (feature killed)
     return fallback()
 ```
 
@@ -111,15 +111,15 @@ client = shipeasy.Client(current_user)
 #                               if that key isn't configured, falls back to the
 #                               top-level value above
 provider = "stripe"
-if client.get_killswitch("{{KILLSWITCH_KEY}}", provider):
+if client.get_killswitch("payments", provider):
     return use_backup_processor()   # the "stripe" switch is engaged
 ```
 
 ### release / experiments
 
-Ask a universe for an assignment (a unit lands in ≤1 experiment; exposure is
-auto-logged on an enrolled assign), then track its success event. Assumes
-`configure()` ran at startup — see Installation.
+Ask a universe for an assignment (a unit lands in ≤1 experiment; exposure logs on
+the first `get()` of an enrolled assignment), then track its success event.
+Assumes `configure()` ran at startup — see Installation.
 
 ```python
 import shipeasy
@@ -128,20 +128,22 @@ import shipeasy
 client = shipeasy.Client(current_user)
 
 # universe name (required) — a mutual-exclusion pool of experiments.
-# assign() takes NO user arg: it uses the bound user and auto-logs one exposure.
-a = client.universe("{{EXPERIMENT_KEY}}").assign()
+# assign() takes NO user arg (uses the bound user) and is side-effect free.
+a = client.universe("hero_cta").assign()
 
 # a.name      -> the experiment the unit landed in, or None
 # a.group     -> the assigned variant, or None
 # a.enrolled  -> bool (group is not None)
-# a.get(field, fallback) -> variant override -> universe default -> fallback
+# a.get(field, fallback, *, exposure=True) -> variant override -> universe
+#   default -> fallback. The first get() on an enrolled assignment logs one
+#   exposure (deduped); pass exposure=False to peek without logging one.
 if a.get("color") == "green":
     ...
 
 # track the conversion on the same bound client; unit is the bound user
 # event_name                    success event (required)
 # properties={...}              optional event properties bag
-client.track("{{SUCCESS_EVENT}}", {"amount": 49})
+client.track("purchase", {"amount": 49})
 ```
 
 ## metrics
@@ -164,7 +166,7 @@ client = shipeasy.Client(current_user)
 # properties={...}              optional payload; numeric/string fields you can
 #                               sum/filter on in a metric (private attributes are
 #                               stripped before the event leaves the process)
-client.track("{{EVENT_NAME}}", {"amount": 49, "currency": "usd"})
+client.track("checkout_started", {"amount": 49, "currency": "usd"})
 ```
 
 Fire-and-forget (never blocks your response) and a no-op under
@@ -178,7 +180,7 @@ import shipeasy
 
 client = shipeasy.Client(current_user)
 
-client.track("{{EVENT_NAME}}")   # properties are optional
+client.track("checkout_started")   # properties are optional
 ```
 
 ## ops
@@ -212,8 +214,37 @@ from shipeasy import see
 try:
     charge(order)
 except PaymentError as e:
-    # .extras(mapping)            structured fields attached to the report
+    # .extras(mapping)            structured fields attached to the report; call
+    #                             it BEFORE .to, or pass extras inline as
+    #                             .to(outcome, mapping). (A stray .extras AFTER
+    #                             .to is ignored with a warning — it never raises
+    #                             into the except block.)
     see(e).causes_the("checkout").extras({"order_id": oid}).to("use cached prices")
+
+    # equivalent — extras folded into the terminal, no ordering to remember:
+    see(e).causes_the("checkout").to("use cached prices", {"order_id": oid})
+```
+
+### Attach context from anywhere with `add_extras(...)`
+
+```python
+import shipeasy
+
+# Buffer extras earlier in the request — from any layer, not just the except.
+# Every see() report that fires LATER in the same request carries them, so you
+# don't have to thread context down into the catch site. Backed by a ContextVar
+# (concurrent requests / async tasks never mix); the WSGI/ASGI/Django middleware
+# clears it per request (outside a request, call shipeasy.clear_extras yourself).
+# Accepts a mapping and/or keyword args.
+shipeasy.add_extras(order_id=order.id, tenant=tenant.slug)
+
+# ...deep in a service, later in the same request...
+try:
+    charge(order)
+except PaymentError as e:
+    # report carries order_id + tenant automatically; a chained .extras / .to
+    # extra of the same key wins over the ambient one.
+    shipeasy.see(e).causes_the("checkout").to("use cached prices")
 ```
 
 ### Report a non-exception violation

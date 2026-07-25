@@ -9,30 +9,30 @@ Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same 
 
 ### release / flags
 
-Evaluate the feature gate `{{FLAG_KEY}}` from the configured `ShipeasyClient`
+Evaluate the feature gate `new_checkout` from the configured `ShipeasyClient`
 (cached `/sdk/evaluate` read). Assumes `configureClient(...)` ran at startup — see
 Installation.
 
 ```swift
 // name; getFlag returns the default when assignments aren't loaded or the flag is absent
-let enabled = await shipeasyClient()?.getFlag("{{FLAG_KEY}}") ?? false
+let enabled = await shipeasyClient()?.getFlag("new_checkout") ?? false
 
 // optional `default:` — returned ONLY when the flag can't be evaluated
 // (assignments not loaded / flag not found), never when it evaluates to false
-let safe = await shipeasyClient()?.getFlag("{{FLAG_KEY}}", default: false) ?? false
+let safe = await shipeasyClient()?.getFlag("new_checkout", default: false) ?? false
 ```
 
 ### release / configs
 
-Read the dynamic config `{{CONFIG_KEY}}` from the configured `ShipeasyClient`
+Read the dynamic config `billing_copy` from the configured `ShipeasyClient`
 (returns `Any?`). Assumes `configureClient(...)` ran at startup — see Installation.
 
 ```swift
 // name; returns nil when the key is absent (or assignments aren't loaded)
-let value = await shipeasyClient()?.getConfig("{{CONFIG_KEY}}")
+let value = await shipeasyClient()?.getConfig("billing_copy")
 
 // optional `default:` — returned when the config key is absent
-let copy = await shipeasyClient()?.getConfig("{{CONFIG_KEY}}", default: ["headline": "Welcome"])
+let copy = await shipeasyClient()?.getConfig("billing_copy", default: ["headline": "Welcome"])
 
 // the value is Any? — cast to the shape your config defines
 let headline = (copy as? [String: Any])?["headline"] as? String
@@ -40,7 +40,7 @@ let headline = (copy as? [String: Any])?["headline"] as? String
 
 ### release / killswitches
 
-Check whether the kill switch `{{KILLSWITCH_KEY}}` is engaged (`true` = killed)
+Check whether the kill switch `payments` is engaged (`true` = killed)
 from the configured `ShipeasyClient`. Assumes `configureClient(...)` ran at startup
 — see Installation.
 
@@ -48,7 +48,7 @@ from the configured `ShipeasyClient`. Assumes `configureClient(...)` ran at star
 
 ```swift
 // name; getKillswitch returns true when the switch is on (the guarded path is killed)
-let killed = await shipeasyClient()?.getKillswitch("{{KILLSWITCH_KEY}}") ?? false
+let killed = await shipeasyClient()?.getKillswitch("payments") ?? false
 ```
 
 ### Named per-key override switch
@@ -56,12 +56,12 @@ let killed = await shipeasyClient()?.getKillswitch("{{KILLSWITCH_KEY}}") ?? fals
 ```swift
 // switchKey: read one named override (e.g. per region); an unset key falls back
 // to the kill switch's top-level value
-let killedEu = await shipeasyClient()?.getKillswitch("{{KILLSWITCH_KEY}}", switchKey: "eu_region") ?? false
+let killedEu = await shipeasyClient()?.getKillswitch("payments", switchKey: "eu_region") ?? false
 ```
 
 ### release / experiments
 
-Assign the device user within the `{{EXPERIMENT_KEY}}` universe (a mutual-exclusion
+Assign the device user within the `hero_cta` universe (a mutual-exclusion
 pool → ≤1 experiment), branch on the group, and track the conversion event — all
 from the configured `ShipeasyClient`. Assumes `configureClient(...)` ran at startup
 — see Installation.
@@ -70,7 +70,7 @@ from the configured `ShipeasyClient`. Assumes `configureClient(...)` ran at star
 let client = shipeasyClient()!   // configured once at app launch
 
 // universe name; assign() auto-logs one exposure when enrolled
-let a = await client.universe("{{EXPERIMENT_KEY}}").assign()
+let a = await client.universe("hero_cta").assign()
 
 if a.enrolled, a.group == "treatment" {
     // get(field, fallback): variant override ?? universe default ?? fallback
@@ -80,7 +80,7 @@ if a.enrolled, a.group == "treatment" {
 
 // conversion event — the unit is the identified user (no id argument);
 // event name; optional `properties:` bag (default [:])
-await client.track("{{SUCCESS_EVENT}}", properties: ["amount": 49])
+await client.track("purchase", properties: ["amount": 49])
 ```
 
 ## metrics
@@ -98,7 +98,7 @@ startup — see Installation.
 //   event       — the event your metric is built on (required)
 //   properties: — optional payload; numeric/string fields you can sum/filter on
 //                 in a metric (private attributes are stripped before egress)
-await shipeasyClient()?.track("{{EVENT_NAME}}", properties: ["amount": 49, "currency": "usd"])
+await shipeasyClient()?.track("checkout_started", properties: ["amount": 49, "currency": "usd"])
 ```
 
 Fire-and-forget (never blocks). The unit is the identified user (`user_id`, else
@@ -107,7 +107,7 @@ the persisted `anonymous_id`), attached automatically.
 ### Track without properties
 
 ```swift
-await shipeasyClient()?.track("{{EVENT_NAME}}")   // properties default to [:]
+await shipeasyClient()?.track("checkout_started")   // properties default to [:]
 ```
 
 ## ops
@@ -138,9 +138,13 @@ do {
 do {
     try charge(order)
 } catch {
-    // .extras(dict)         structured fields attached to the report
+    // .extras(dict)         structured fields attached to the report; call it
+    //                       BEFORE .to, or pass inline as .to(outcome, extras:).
     //                       (private attributes are stripped before egress)
     see(error).causesThe("checkout").extras(["order_id": orderId]).to("use cached prices")
+
+    // equivalent — extras folded into the terminal, no ordering to remember:
+    see(error).causesThe("checkout").to("use cached prices", extras: ["order_id": orderId])
 }
 ```
 

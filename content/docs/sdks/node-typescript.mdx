@@ -1,203 +1,255 @@
 ---
-title: Node / TypeScript
-description: The canonical Shipeasy SDK — one package with a server and a browser build, local evaluation, configs, experiments, and tracking.
+title: "Node / TypeScript"
+description: "The canonical Shipeasy SDK — one package with a server and a browser build, local evaluation, configs, experiments, and tracking."
 ---
 
 <DocMeta
   status="Production ready"
-  read="8 min read"
-  updated="June 18, 2026"
-  works="Node · Cloudflare Workers · Bun · Deno · Next.js"
+  read="6 min read"
+  updated="July 19, 2026"
+  works="Node 18+ · Cloudflare Workers · Deno · Next.js · Browsers"
 />
 
-`@shipeasy/sdk` is the reference implementation. It ships conditional exports — `@shipeasy/sdk/server` (Node, Workers, Bun, Deno, Next.js Server Components) and `@shipeasy/sdk/client` (browser). This page covers the **server** build; for the browser see [Browser & React](/sdks/browser-react).
+<Callout type="info">
+  Generated from the TypeScript / JavaScript SDK repo's own `/docs/` — the same Markdown `shipeasy
+  docs get --sdk typescript overview` returns, served raw at
+  [`https://shipeasy-ai.github.io/sdk-ts`](https://shipeasy-ai.github.io/sdk-ts). Edit it in the SDK
+  repo, not here.
+</Callout>
+
+`@shipeasy/sdk` is the TypeScript / JavaScript SDK for the [Shipeasy](https://shipeasy.ai)
+hosted platform — feature gates, runtime configs, kill switches, A/B
+experiments, metrics, and i18n. It ships **two entrypoints** from one package:
+
+- `@shipeasy/sdk/server` — Node, Cloudflare Workers, Deno (authenticates with
+  the **server** key).
+- `@shipeasy/sdk/client` — the browser (authenticates with the public
+  **client** key).
+
+The APIs are framework-agnostic: everything works from vanilla JS. React
+conveniences live in the separate `@shipeasy/sdk-react` wrapper.
 
 ## Install
 
-<InstallTabs npm="npm install @shipeasy/sdk" />
+```bash
+npm install @shipeasy/sdk
+# or
+pnpm add @shipeasy/sdk
+# or
+yarn add @shipeasy/sdk
+```
 
-## Configure
+Full wiring — frameworks, options, env vars — is in [Installation](/sdks/reference/typescript/installation).
 
-Initialise once, with the **server** key, at the entry point that runs per cold start — the Next.js root `layout.tsx`, an Express initialiser, or your Worker `fetch` handler. `configure()` is idempotent.
+## Mental model: `configure()` once, then `new Client(user)`
 
-Pass an optional `attributes` transform that maps **your** user object onto the Shipeasy attribute map — declare it once and every bound client reuses it.
+Configure the SDK **once** at app startup with your key and an optional
+`attributes` transform from your own user object to Shipeasy targeting
+attributes. Then evaluate **per user** with `new Client(user)`. The bound
+`Client` takes no user argument on its methods — the user is bound at
+construction.
 
 ```ts
-import { configure, Client } from "@shipeasy/sdk/server";
+import { configure, Client } from "@shipeasy/sdk/server"; // or /client
 
 configure({
-  apiKey: process.env.SHIPEASY_SERVER_KEY ?? "",
-  attributes: (u) => ({ user_id: u.id, plan: u.plan, country: u.country }),
+  apiKey: process.env.SHIPEASY_SERVER_KEY!,
+  attributes: (u: MyUser) => ({ user_id: u.id, plan: u.plan }),
 });
-```
 
-<Callout type="warn" title="Server key, server only">
-  Never pass <code>clientKey</code> to <code>/server</code> or <code>serverKey</code> to{" "}
-  <code>/client</code>. The server key reads full payloads and writes events — it must not land in a
-  browser bundle. See <a href="/get-started/keys-and-environments">Keys &amp; environments</a>.
-</Callout>
-
-After `configure()`, reads are **synchronous** — the rule set lives in process memory and is refreshed by a background poll.
-
-## Bind a client to the user
-
-Construct a lightweight `Client` from your user object — the `attributes` transform turns it into the evaluation context, so the getters take **no** user argument:
-
-```ts
 const flags = new Client(currentUser);
-```
-
-The `Client` is cheap to construct per request; the heavy polling state lives in the shared engine behind `configure()`.
-
-## Evaluate a feature flag
-
-```ts
-const enabled = flags.getFlag("new_checkout");
-```
-
-A caller-supplied default is returned **only** when the value can't be evaluated — the client isn't ready or the gate isn't in the blob. A gate that evaluates `false` (disabled, denied, or rolled out to 0%) returns `false`, not the default.
-
-```ts
-flags.getFlag("new_checkout"); // false for a missing flag
-flags.getFlag("new_checkout", true); // true only if not-ready / not-found
-```
-
-For the resolved value **and the reason**, use `getFlagDetail` — see [Evaluation reasons](/sdks/reasons):
-
-```ts
-import type { FlagReason } from "@shipeasy/sdk/server";
-
-const d = flags.getFlagDetail("new_checkout");
-// → { value: true, reason: "RULE_MATCH" }
-```
-
-## Read a dynamic config
-
-```ts
-const pricing = flags.getConfig<{ base: number; currency: string }>("pricing", {
-  base: 9.99,
-  currency: "USD",
-});
-const base = pricing?.base ?? 9.99;
-```
-
-Configs are typed via the optional generic. The default is returned when the key is absent.
-
-## Resolve an experiment
-
-```ts
-const result = flags.getExperiment<{ color: "blue" | "green" }>(
-  "checkout_button",
-  { color: "blue" }, // defaultParams when not in experiment
-);
-
-if (result.inExperiment) {
-  // result.group       e.g. "control" | "treatment"
-  // result.params.color
+if (flags.getFlag("new_checkout")) {
+  /* ship it */
 }
 ```
 
-Assignment is deterministic by `user_id` (resolved from the bound user). The first call for a user queues an exposure event for the daily analysis pipeline.
+## What `configure()` and `Client` do
 
-## Track an event
+- **`configure({ apiKey })`** is the one-time setup call. It owns the key, the
+  HTTP transport, the blob cache, and the poll lifecycle for the whole process —
+  the first call wins, later calls are no-ops. Test/offline siblings:
+  `configureForTesting()` and `configureForOffline()` (see [Testing](/sdks/reference/typescript/testing)).
+- **`new Client(user)`** is a cheap, user-bound handle. It opens no connection
+  and runs no poller — it just binds the resolved attribute bag once at
+  construction. Construct one per user / per request. It exposes `getFlag`,
+  `getFlagDetail`, `getConfig`, `universe(name).assign()`, `getKillswitch`, plus
+  `track(event, props?)` — so reading an experiment (which auto-logs its
+  exposure) **and** recording its conversion are end-to-end `Client`-only.
 
-```ts
-flags.track("purchase", { value: 49.99, sku: "SHIRT-L-BLUE" });
-```
+That is the entire surface you wire up: configure once, then `new Client(user)`
+everywhere you evaluate.
 
-`track()` is fire-and-forget — events are batched and sent to `/collect` on the Shipeasy edge.
+## Where to go next
 
-## The low-level per-call API
+| Page                                                          | What it covers                                           |
+| ------------------------------------------------------------- | -------------------------------------------------------- |
+| [Installation](/sdks/reference/typescript/installation)       | install command, runtime versions, import lines          |
+| [Configuration](/sdks/reference/typescript/configuration)     | `configure()`, `attributes`, env vars, SSR bootstrap     |
+| [Flags](/sdks/reference/typescript/flags)                     | `getFlag`, `getFlagDetail`, defaults                     |
+| [Configs](/sdks/reference/typescript/configs)                 | `getConfig` typed values + defaults                      |
+| [Kill switches](/sdks/reference/typescript/killswitches)      | `getKillswitch` semantics                                |
+| [Experiments](/sdks/reference/typescript/experiments)         | `universe().assign()`, `Assignment`, `track`             |
+| [Error reporting](/sdks/reference/typescript/error-reporting) | `see()` grammar                                          |
+| [Testing](/sdks/reference/typescript/testing)                 | `configureForTesting`/`configureForOffline`, `override*` |
+| [OpenFeature](/sdks/reference/typescript/openfeature)         | server + web providers                                   |
+| [Advanced](/sdks/reference/typescript/advanced)               | manual exposure, private attrs, bucketBy, sticky         |
 
-The old per-call style still works for back-compat — you can construct an `Engine` directly and pass the user on every call (`getFlag(name, user)`). This is what `new Client(user)` is built on; reach for it only when you need the engine itself (see [init vs initOnce](#init-vs-initonce-serverless) below):
+The blocks below are the SDK repo's own snippets — the same ones `shipeasy docs get --sdk typescript release/flags` returns, with a worked example baked in.
 
-```ts
-import { Engine } from "@shipeasy/sdk/server";
+## Feature flags
 
-const engine = new Engine({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
-await engine.init();
-engine.getFlag("new_checkout", { user_id: "u1", plan: "pro" });
-```
-
-## init vs initOnce (serverless)
-
-`configure()` starts a background poll thread, which is what you want in a long-running process. In a short-lived function (Lambda, Cloud Run cold start) you don't want a poll loop — construct an `Engine` directly and do a single synchronous fetch with `initOnce()`:
-
-```ts
-import { Engine } from "@shipeasy/sdk/server";
-
-const engine = new Engine({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
-await engine.initOnce(); // one fetch, no background thread
-engine.getFlag("new_checkout", { user_id: "u1" });
-```
-
-| Method       | Polls in background | Use when                               |
-| ------------ | ------------------- | -------------------------------------- |
-| `init()`     | yes                 | Long-running server, Worker, container |
-| `initOnce()` | no — one fetch      | Lambda / serverless / scripts          |
-
-## React to rule changes
-
-The engine fires registered listeners after a background poll returns **new** data (HTTP 200, not 304). Returns an unsubscribe function; never fires in test/offline mode. See [onChange](/sdks/onchange).
+Read a feature flag per user with a bound `Client`. Assumes `configure()` ran at startup — see Installation.
 
 ```ts
-import { Engine } from "@shipeasy/sdk/server";
+import { Client } from "@shipeasy/sdk/server"; // or "@shipeasy/sdk/client"
 
-const engine = new Engine({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
-await engine.init();
+// construct once per callsite (cheap; binds the user + runs the attributes transform)
+const flags = new Client(currentUser);
 
-const unsubscribe = engine.onChange(() => {
-  console.log("flag rules changed — re-evaluating");
-});
-// later…
-unsubscribe();
-```
-
-## Shut down cleanly
-
-In a long-running worker you control, stop the poll thread on shutdown:
-
-```ts
-engine.destroy(); // stops polling, flushes pending events
-```
-
-## Testing
-
-Build a no-network `Engine` with `forTesting()` and seed overrides — no key, no network, telemetry off, `init`/`track` are no-ops. See [Testing](/sdks/testing).
-
-```ts
-import { Engine } from "@shipeasy/sdk/server";
-
-const engine = Engine.forTesting();
-engine.overrideFlag("new_checkout", true);
-engine.getFlag("new_checkout", { user_id: "u1" }); // true
-engine.clearOverrides();
-```
-
-## Errors & feedback
-
-Report a handled exception with `see()` so it folds into the [errors primitive](/feedback/errors) with a one-sentence **consequence** — what feature broke and how it degraded. `see()` rides the same `configure()` boot (server key); there is no separate error SDK or second key.
-
-```ts
-import { see } from "@shipeasy/sdk/server";
-
-try {
-  await chargeCard(order, prices);
-} catch (e) {
-  see(e).causes_the("checkout").to("use cached prices").extras({ order_id: order.id });
+// getFlag(name, defaultValue?)
+//   name         — the flag/gate name
+//   defaultValue — returned ONLY when the flag can't be evaluated
+//                  (client not ready / flag not found); defaults to false
+if (flags.getFlag("new_checkout", false)) {
+  // ship it
 }
 ```
 
-Use `see.Violation("large query")` for a non-exception problem, and `see.ControlFlowException(e).because("…")` for expected control flow that should report nothing. Full grammar — consequence phrasing, control-flow exceptions, anti-patterns — is in [Error reporting with see()](/feedback/error-reporting).
+## Dynamic configs
 
-The in-app **bug & feature report overlay** is a standalone `<script>` tag you drop into your frontend — platform-agnostic, no server SDK required. See [The devtools overlay](/feedback/devtools).
+Read a typed dynamic config (with a default when the key is absent). Assumes `configure()` ran at startup — see Installation.
+
+```ts
+import { Client } from "@shipeasy/sdk/server"; // or "@shipeasy/sdk/client"
+
+// construct once per callsite (cheap; binds the user)
+const flags = new Client(currentUser);
+
+// getConfig<T>(name, opts?)
+//   name             — the config name
+//   opts.defaultValue — returned when the config key is absent
+//   opts.decode       — optional (raw) => T to validate/shape the stored value
+const cfg = flags.getConfig<{ max: number }>("billing_copy", {
+  defaultValue: { max: 50 }, // used when the key isn't published
+  decode: (raw) => raw as { max: number }, // optional — typed decode / zod parse
+});
+```
+
+## Kill switches
+
+Read a kill switch (not user-bound — global on/off, optionally per-switch). Assumes `configure()` ran at startup — see Installation.
+
+### Whole kill switch
+
+```ts
+import { Client } from "@shipeasy/sdk/server"; // or "@shipeasy/sdk/client"
+
+// construct once per callsite (cheap; binds the user)
+const flags = new Client(currentUser);
+
+// getKillswitch(name, switchKey?)
+//   name      — the kill switch name
+//   switchKey — optional; reads a single named override switch instead of
+//               the whole-killswitch "killed" flag
+if (flags.getKillswitch("payments")) {
+  // killed — short-circuit the feature
+}
+```
+
+### Named switch (with fallback)
+
+```ts
+const flags = new Client(currentUser); // construct once per callsite
+
+// Pass the variable to gate as the switchKey. A CONFIGURED switch returns its
+// own value; an UNCONFIGURED switch falls back to the whole-killswitch "killed"
+// value — so this is always safe to call before any per-key override exists.
+if (flags.getKillswitch("payments", "apple_pay")) {
+  // the "apple_pay" switch is on (or the whole kill switch is killed)
+}
+```
+
+## Experiments
+
+Assign a unit within a universe (a mutual-exclusion pool — the unit lands in ≤1 experiment), read the assigned params, then record the conversion event on the same bound `Client`. Assumes `configure()` ran at startup — see Installation.
+
+```ts
+import { Client } from "@shipeasy/sdk/server"; // or "@shipeasy/sdk/client"
+
+// construct once per callsite (cheap; binds the user + runs the attributes transform)
+const flags = new Client(currentUser);
+
+// universe(name).assign() → Assignment
+//   name  — the UNIVERSE name (not an experiment); the unit lands in ≤1 experiment
+//   .name     — the experiment the unit landed in, or null when not enrolled
+//   .group    — the assigned variant, or null when not enrolled
+//   .enrolled — === (group !== null)
+//   .get(field, fallback, opts?) — variant override ?? universe default ?? fallback
+// Server: assign() takes no arg (user bound at construction); the exposure fires
+//   on the first get() read. Peek without logging: get(field, fallback, { exposure: false }).
+// Browser: assign(opts?) — opts.logExposure to force/suppress the exposure beacon at assign.
+const exp = flags.universe("hero_cta").assign();
+
+render(exp.get("primary_label", "Sign up")); // always safe — falls back when not enrolled
+
+// On conversion — Client-only track (NOT the Engine); the unit is inferred
+// from the bound user (user_id, else anonymous_id):
+//   track(eventName, props?)
+//     eventName — the success event name
+//     props     — optional metric properties (private attrs are stripped)
+flags.track("purchase", { group: exp.group }); // props optional
+```
+
+## Track a conversion
+
+Track a metric/conversion event from the bound `Client`. Metrics in the
+dashboard are computed from these events. Assumes `configure()` ran at startup —
+see Installation.
+
+### Track an event
+
+```ts
+import { Client } from "@shipeasy/sdk/server"; // or "@shipeasy/sdk/client"
+
+// construct once per callsite (cheap; binds the user)
+const flags = new Client(currentUser);
+
+// track(eventName, props?)
+//   eventName — the event your metric is built on (required)
+//   props     — optional payload; numeric/string fields you can sum/filter on
+//               in a metric (private attributes are stripped before egress)
+flags.track("checkout_started", { amount: 49, currency: "usd" });
+```
+
+Fire-and-forget (never blocks your response) and a no-op under
+`configureForTesting()` / `configureForOffline()`. The unit is the bound user
+(`user_id`, else `anonymous_id`); with no unit the call is a no-op.
+
+### Track without properties
+
+```ts
+const flags = new Client(currentUser); // construct once per callsite
+
+flags.track("checkout_started"); // props are optional
+```
 
 <SeeAlso
   links={[
+    {
+      href: "/sdks/reference/typescript",
+      title: "TypeScript / JavaScript full reference",
+      note: "Every feature page",
+    },
     { href: "/sdks", title: "Shared evaluation model", note: "How every SDK buckets" },
-    { href: "/sdks/browser-react", title: "Browser & React", note: "The client build" },
-    { href: "/sdks/reasons", title: "Evaluation reasons", note: "getFlagDetail" },
-    { href: "/sdks/testing", title: "Testing", note: "forTesting + override*" },
-    { href: "/get-started/keys-and-environments", title: "Keys & environments" },
+    {
+      href: "/sdks/reference/typescript/testing",
+      title: "Testing",
+      note: "Seed values, zero network",
+    },
+    {
+      href: "/sdks/reference/typescript/error-reporting",
+      title: "Error reporting",
+      note: "The see() surface",
+    },
   ]}
 />
