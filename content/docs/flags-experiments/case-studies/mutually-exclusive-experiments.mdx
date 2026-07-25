@@ -12,24 +12,31 @@ description: Put two experiments that touch the same surface in the same univers
 
 Two teams want to experiment on the checkout page at the same time — one on button copy, one on the layout. Run them independently and a user can land in _both_, so the layout change quietly inflates or masks the copy result and vice-versa. Now neither experiment can be trusted: the lift you measure on one is partly the other.
 
-The fix is a [universe](/flags-experiments/experiments/universes) with **mutual exclusion**: put both experiments in the same universe and a user is assigned to at most one of them. They can't confound each other because no user is ever in both.
+The fix is a [universe](/flags-experiments/experiments/universes): put both experiments in the same one and a user is assigned to at most one of them. They can't confound each other because no user is ever in both.
 
-**The primitive.** A universe is the world an experiment lives in; every experiment belongs to exactly one. A universe with mutual exclusion guarantees at most one experiment in it assigns each user — so two experiments touching the same surface can't overlap.
+**The primitive.** A universe is the world an experiment lives in; every experiment belongs to exactly one. Mutual exclusion isn't a switch you flip — it's what a universe _is_. That's why the SDK asks a **universe** and gets back a single `Assignment`, rather than asking each experiment in turn.
 
 ## Put both experiments in one universe
 
 Create a universe for the surface, then create both experiments inside it:
 
+Declare the params both experiments will vary on the universe, then create both experiments inside it:
+
 ```bash
 # one universe for the checkout surface, 5% global holdout
-shipeasy universes create checkout --holdout 0,499
+shipeasy release experiments universes create checkout \
+  --holdout-range '[0,499]' \
+  --param-schema '[
+    {"name":"cta_label","type":"string","default":"Pay"},
+    {"name":"layout","type":"string","default":"stacked"}
+  ]'
 
 # both experiments live in it — a user gets at most one
-shipeasy experiments create checkout-copy --universe checkout
-shipeasy experiments create checkout-layout --universe checkout
+shipeasy release experiments create checkout-copy --universe checkout
+shipeasy release experiments create checkout-layout --universe checkout
 ```
 
-Bucketing is deterministic per universe — `hash(universe_salt, user_id)` — so the assignment is stable across processes and deploys. In code you read each experiment as usual; the universe handles the "at most one" guarantee:
+Bucketing is deterministic per universe — `hash("checkout:<unit>") % 10000` — so the assignment is stable across processes and deploys. In code you assign **once**, against the universe, and read whichever params you need:
 
 ```ts
 import { configure, Client } from "@shipeasy/sdk/server";
@@ -37,20 +44,27 @@ import { configure, Client } from "@shipeasy/sdk/server";
 configure({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
 
 const flags = new Client({ user_id });
-const copy = flags.getExperiment("checkout-copy", { variant: "control" });
-const layout = flags.getExperiment("checkout-layout", { variant: "control" });
-// a given user is enrolled in at most one of these
+
+// one assignment for the surface — the user is in at most one of its experiments
+const checkout = flags.universe("checkout").assign();
+
+const label = checkout.get("cta_label", "Pay");
+const layout = checkout.get("layout", "stacked");
+
+// checkout.name tells you WHICH experiment they landed in (null when not enrolled)
 ```
 
+Whichever experiment the user landed in, the params it doesn't override fall back to the universe's declared defaults — so a user in `checkout-layout` still reads a sensible `cta_label`, and you never branch on which experiment won the slot.
+
 <Callout type="info" title="Mutual exclusion has a cost">
-  Splitting one population across two experiments means each gets a slice, not the whole. Use mutual
-  exclusion when the experiments genuinely interact on the same surface — not as a default.
-  Independent surfaces can run concurrently without it.
+  Splitting one population across two experiments means each gets a slice, not the whole. That makes
+  universe <em>granularity</em> the lever: group experiments that genuinely interact on the same
+  surface, and keep independent surfaces in separate universes so each keeps full traffic.
 </Callout>
 
 ## Rollout & measurement plan
 
-- **One universe per interacting surface.** Group experiments that touch the same UI/flow; leave unrelated experiments in the `default` universe so they keep full traffic.
+- **One universe per interacting surface.** Group experiments that touch the same UI/flow; put unrelated experiments in their own universe so they keep full traffic.
 - **Mind the sample split.** Each experiment now draws from a fraction of the population — budget for a longer run or a larger effect to reach significance.
 - **The holdout measures the program.** A universe holdout is a clean global control: compare holdout vs non-holdout to estimate the net effect of _all_ the experimentation on that surface.
 

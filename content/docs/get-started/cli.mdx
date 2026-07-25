@@ -37,7 +37,7 @@ See [Authenticate](/get-started/authenticate) for the login flow.
 ```bash
 shipeasy flags list
 shipeasy configs list
-shipeasy experiments list
+shipeasy release experiments list
 shipeasy keys list
 shipeasy mcp install
 ```
@@ -139,20 +139,25 @@ shipeasy configs update pricing --value '{"base":9.99,"currency":"USD"}'
 
 ## Experiments
 
-| Command                              | Description                                                                                              |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| `shipeasy experiments list`          | All experiments + status.                                                                                |
-| `shipeasy experiments create <name>` | Create an experiment. Options: `--universe`, `--allocation`, `--groups`, `--params`, `--targeting-gate`. |
-| `shipeasy experiments start <name>`  | Move from `draft` → `running`.                                                                           |
-| `shipeasy experiments stop <name>`   | Move to `stopped`.                                                                                       |
-| `shipeasy experiments status <name>` | Show config + latest analysis (lift, p-value, CI per metric per group).                                  |
+| Command                                                | Description                                                                                         |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| `shipeasy release experiments list`                    | All experiments + status                                                                            |
+| `shipeasy release experiments create <name>`           | Create an experiment. Options: `--universe`, `--allocation-percent`, `--groups`, `--targeting-gate` |
+| `shipeasy release experiments start <name>`            | Move from `draft` → `running`                                                                       |
+| `shipeasy release experiments stop <name>`             | Move to `stopped`                                                                                   |
+| `shipeasy release experiments results <name>`          | Latest analysis — lift, p-value, CI per metric per group                                            |
+| `shipeasy release experiments universes create <name>` | Create the universe the experiments live in. Options: `--param-schema`, `--holdout-range`           |
 
-`--groups` is a JSON array of `{ name, weight, params }`:
+Params are declared once on the **universe**; an experiment's `--groups` carries only per-variant **overrides** of those keys:
 
 ```bash
-shipeasy experiments create checkout-cta \
-  --allocation 100 \
-  --groups '[{"name":"control","weight":50,"params":{"label":"Pay"}},{"name":"v1","weight":50,"params":{"label":"Buy now"}}]'
+shipeasy release experiments universes create checkout \
+  --param-schema '[{"name":"label","type":"string","default":"Pay"}]'
+
+shipeasy release experiments create checkout-cta \
+  --universe checkout \
+  --allocation-percent 100 \
+  --groups '[{"name":"control","weight":50,"params":{}},{"name":"v1","weight":50,"params":{"label":"Buy now"}}]'
 ```
 
 ## Metrics

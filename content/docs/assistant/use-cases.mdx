@@ -30,7 +30,7 @@ The assistant scopes the whole thing and surfaces it as [confirmation cards](/as
     split or rename a group before confirming.
   </Step>
   <Step title="It files the instrumentation">
-    The one thing it can't do from a chat — wiring <code>flags.getExperiment(...)</code> and the{" "}
+    The one thing it can't do from a chat — wiring <code>flags.universe(...).assign()</code> and the{" "}
     <code>track</code> call into your code — is filed as a ticket for an agent.
   </Step>
 </Steps>
@@ -45,7 +45,7 @@ You shipped a change and want to know if it worked, but the instrumentation isn'
 
 > **You:** "Did the new onboarding flow improve activation? Set up whatever we need to measure it."
 
-The assistant produces a [measurement plan](/assistant/measurement-plans): it creates the activation metric directly, proposes the experiment or flag as cards, and files precise `measure_plan` tickets for the code it can't write — "fire `activated` on the first project created", "wrap step 3 in `getExperiment`".
+The assistant produces a [measurement plan](/assistant/measurement-plans): it creates the activation metric directly, proposes the experiment or flag as cards, and files precise `measure_plan` tickets for the code it can't write — "fire `activated` on the first project created", "read step 3's label off `universe('onboarding').assign()`".
 
 <AssistantPlanScene />
 

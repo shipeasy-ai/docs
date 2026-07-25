@@ -18,13 +18,13 @@ This walks through a complete experiment end to end: a button-label test on the 
     num={2}
     label="EXPERIMENT"
     title="Two groups, equal weight"
-    cmd="shipeasy experiments create checkout-cta"
+    cmd="shipeasy release experiments create checkout-cta"
   />
   <QuickstartStep
     num={3}
     label="WIRE"
     title="assign + track"
-    cmd="shipeasy experiments start checkout-cta"
+    cmd="shipeasy release experiments start checkout-cta"
   />
 </Quickstart>
 
@@ -51,20 +51,32 @@ This walks through a complete experiment end to end: a button-label test on the 
 
   </Step>
 
-  <Step title="Create the experiment">
-    Two groups, equal weight, one parameter (`label`):
+  <Step title="Declare the param on the universe">
+    Params live on the **universe**, not the experiment — it is the single source of truth for a param across every experiment in it, and it carries the default every unenrolled user reads:
 
     ```bash
-    shipeasy experiments create checkout-cta \
-      --allocation 100 \
-      --groups '[
-        {"name":"control","weight":50,"params":{"label":"Pay"}},
-        {"name":"v1","weight":50,"params":{"label":"Buy now"}}
-      ]' \
-      --params '{"label":"string"}'
+    shipeasy release experiments universes create checkout \
+      --param-schema '[{"name":"label","type":"string","default":"Pay"}]'
     ```
 
-    `--allocation 100` means 100% of eligible users are in the experiment, split 50/50. Drop `allocation` to e.g. 20 if you want only a 20% sample of traffic to see _any_ variant — the rest get neither, useful for a soft launch.
+    Or in the dashboard: **Experiments → Universes → New universe**.
+
+  </Step>
+
+  <Step title="Create the experiment">
+    Two groups, equal weight. Each variant's `params` is an **override map** — a subset of the universe's schema keys. `control` overrides nothing, so it inherits the universe default; a key the universe hasn't declared is rejected:
+
+    ```bash
+    shipeasy release experiments create checkout-cta \
+      --universe checkout \
+      --allocation-percent 100 \
+      --groups '[
+        {"name":"control","weight":50,"params":{}},
+        {"name":"v1","weight":50,"params":{"label":"Buy now"}}
+      ]'
+    ```
+
+    `--allocation-percent 100` means 100% of eligible users are in the experiment, split 50/50. Drop it to e.g. 20 if you want only a 20% sample of traffic to see _any_ variant — the rest get neither, useful for a soft launch.
 
     Attach `purchase_conversion` as the primary metric in the dashboard.
 
@@ -80,19 +92,16 @@ This walks through a complete experiment end to end: a button-label test on the 
     });
     ```
 
-    Then on the request path, bind a `Client` to the user:
+    Then on the request path, bind a `Client` to the user and assign within the **universe** — not the experiment. A universe is a mutual-exclusion pool, so the user lands in at most one of its experiments, and `get(field, fallback)` resolves the variant's override, else the universe's default, else your fallback:
 
     <Tabs items={["TypeScript", "Python", "Go", "Ruby", "Java", "Kotlin", "PHP", "Swift"]}>
       <Tab value="TypeScript">
 
       ```ts
       const flags = new Client(currentUser);
-      const result = flags.getExperiment<{ label: string }>(
-        "checkout-cta",
-        { label: "Pay" }, // defaultParams
-      );
+      const cta = flags.universe("checkout").assign();
 
-      const label = result.params.label; // "Pay" or whatever the variant assigns
+      const label = cta.get("label", "Pay"); // "Pay" or whatever the variant assigns
       ```
 
       </Tab>
@@ -100,11 +109,9 @@ This walks through a complete experiment end to end: a button-label test on the 
 
       ```python
       flags = shipeasy.Client(current_user)
-      result = flags.get_experiment(
-          "checkout-cta",
-          default_params={"label": "Pay"},
-      )
-      label = result.params["label"]
+      cta = flags.universe("checkout").assign()
+
+      label = cta.get("label", "Pay")
       ```
 
       </Tab>
@@ -112,10 +119,9 @@ This walks through a complete experiment end to end: a button-label test on the 
 
       ```go
       flags := shipeasy.NewClient(currentUser)
-      r := flags.GetExperiment("checkout-cta",
-          map[string]any{"label": "Pay"})
+      cta := flags.Universe("checkout").Assign()
 
-      label := r.Params["label"]
+      label := cta.Get("label", "Pay")
       ```
 
       </Tab>
@@ -123,8 +129,9 @@ This walks through a complete experiment end to end: a button-label test on the 
 
       ```ruby
       flags = Shipeasy::Client.new(current_user)
-      result = flags.get_experiment("checkout-cta", { label: "Pay" })
-      label  = result.params[:label]
+      cta   = flags.universe("checkout").assign
+
+      label = cta.get("label", "Pay")
       ```
 
       </Tab>
@@ -132,9 +139,9 @@ This walks through a complete experiment end to end: a button-label test on the 
 
       ```java
       Client flags = new Client(currentUser);
-      ExperimentResult r = flags.getExperiment("checkout-cta",
-          Map.of("label", "Pay"));
-      Object label = r.params().get("label");
+      Assignment cta = flags.universe("checkout").assign();
+
+      String label = (String) cta.get("label", "Pay");
       ```
 
       </Tab>
@@ -142,11 +149,9 @@ This walks through a complete experiment end to end: a button-label test on the 
 
       ```kotlin
       val flags = Client(currentUser)
-      val r = flags.getExperiment(
-          "checkout-cta",
-          mapOf("label" to "Pay"),
-      )
-      val label = r.params["label"]
+      val cta = flags.universe("checkout").assign()
+
+      val label = cta.get("label", "Pay")
       ```
 
       </Tab>
@@ -154,8 +159,9 @@ This walks through a complete experiment end to end: a button-label test on the 
 
       ```php
       $flags = new Shipeasy\Client($currentUser);
-      $r = $flags->getExperiment('checkout-cta', ['label' => 'Pay']);
-      $label = $r->params['label'];
+      $cta = $flags->universe('checkout')->assign();
+
+      $label = $cta->get('label', 'Pay');
       ```
 
       </Tab>
@@ -163,27 +169,25 @@ This walks through a complete experiment end to end: a button-label test on the 
 
       ```swift
       let flags = try Client(currentUser)
-      let r = await flags.getExperiment(
-          "checkout-cta",
-          defaultParams: ["label": "Pay"],
-      )
-      let label = r.params["label"]
+      let cta = await flags.universe("checkout").assign()
+
+      let label = cta.get("label", "Pay")
       ```
 
       </Tab>
     </Tabs>
 
-    The first call to `flags.getExperiment(...)` for a given user logs an
-    **exposure** event automatically. Subsequent calls in the same process
-    don't re-log — exposures are deduplicated.
+    `assign()` is side-effect free. The first `get()` read of an **enrolled**
+    assignment logs the **exposure** event; later reads don't re-log — exposures
+    are deduplicated per unit, experiment and group.
 
   </Step>
 
   <Step title="Track the conversion">
-    Wherever the purchase succeeds:
+    Wherever the purchase succeeds — the unit comes from the bound user, so there's no id argument:
 
     ```ts
-    flags.track(user_id, "purchase", { value: orderTotal });
+    flags.track("purchase", { value: orderTotal });
     ```
 
     The event lands in events store. The daily analysis job scans events and joins them against exposures by `user_id`.
@@ -191,10 +195,10 @@ This walks through a complete experiment end to end: a button-label test on the 
   </Step>
 
   <Step title="Start the experiment">
-    Until you start it, `assign()` returns `inExperiment: false` and the **control** params for everyone — safe.
+    Until you start it, `assign()` returns a not-enrolled `Assignment` for everyone, so every `get()` falls back to the **universe default** — safe.
 
     ```bash
-    shipeasy experiments start checkout-cta
+    shipeasy release experiments start checkout-cta
     ```
 
     Or click **Start** in the dashboard.
@@ -205,7 +209,7 @@ This walks through a complete experiment end to end: a button-label test on the 
     Daily, the analysis cron computes per-metric, per-group results — **lift**, **p-value**, **95% CI** — and writes them back to your project. Read them in the dashboard, or:
 
     ```bash
-    shipeasy experiments status checkout-cta
+    shipeasy release experiments results checkout-cta
     ```
 
     A typical result row:
@@ -222,7 +226,7 @@ This walks through a complete experiment end to end: a button-label test on the 
 
   <Step title="Stop & clean up">
     ```bash
-    shipeasy experiments stop checkout-cta
+    shipeasy release experiments stop checkout-cta
     ```
 
     Stopping is safe at any time. Stopped experiments keep their config and results; they just stop assigning.
@@ -245,14 +249,14 @@ This walks through a complete experiment end to end: a button-label test on the 
 
 <Callout type="warn" title="Don't run too many experiments on the same surface">
   Two experiments touching the same checkout flow can confound each other. That's what
-  [universes](/experiments/universes) and **mutual exclusion** are for.
+  [universes](/flags-experiments/experiments/universes) and **mutual exclusion** are for.
 </Callout>
 
 ## Where to next
 
 <TileGrid>
   <Tile
-    href="/experiments/universes"
+    href="/flags-experiments/experiments/universes"
     icon="◇"
     title="Universes & holdouts"
     meta={
@@ -266,7 +270,7 @@ This walks through a complete experiment end to end: a button-label test on the 
     When you have more than one experiment in flight on the same surface.
   </Tile>
   <Tile
-    href="/experiments/metrics"
+    href="/metrics"
     icon="∑"
     title="Metrics, deeper"
     meta={
@@ -280,7 +284,7 @@ This walks through a complete experiment end to end: a button-label test on the 
     Counts, means, ratios. Primary vs guardrail. Outlier handling.
   </Tile>
   <Tile
-    href="/experiments/analysis"
+    href="/flags-experiments/experiments/analysis"
     icon="∫"
     title="How analysis works"
     meta={
@@ -294,7 +298,7 @@ This walks through a complete experiment end to end: a button-label test on the 
     What the platform actually does to those numbers.
   </Tile>
   <Tile
-    href="/experiments/events"
+    href="/flags-experiments/experiments/events"
     icon="✎"
     title="Events"
     meta={
@@ -324,11 +328,11 @@ This walks through a complete experiment end to end: a button-label test on the 
   cmds={[
     {
       label: "Create an experiment",
-      cmd: "shipeasy experiments create checkout-v2 --targeting-gate checkout-v2",
+      cmd: "shipeasy release experiments create checkout-v2 --targeting-gate checkout-v2",
     },
     {
       label: "Then start it",
-      cmd: "shipeasy experiments start checkout-v2",
+      cmd: "shipeasy release experiments start checkout-v2",
     },
   ]}
 />

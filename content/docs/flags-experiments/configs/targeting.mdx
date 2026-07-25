@@ -112,7 +112,7 @@ Rules are checked **before** rollout. Two practical implications:
    <em>&quot;5% of everyone, then keep only pros&quot;</em>. The bucket is computed against the
    pre-filtered population.
 
-This is what you almost always want. If you ever need <em>&quot;this proportion of the entire user base, but only if they&apos;re pro&quot;</em> — that&apos;s an [experiment](/experiments) and we have purpose-built tools for it.
+This is what you almost always want. If you ever need <em>&quot;this proportion of the entire user base, but only if they&apos;re pro&quot;</em> — that&apos;s an [experiment](/flags-experiments/experiments) and we have purpose-built tools for it.
 
 ## Bucketing by something other than `user_id`
 
@@ -160,7 +160,7 @@ The order matters. If a user is both internal and pro, the first matching group 
 
 Use **rules** for cohorts you can describe — <em>&quot;all internal users&quot;</em>, <em>&quot;all pro accounts&quot;</em>. They scale.
 
-Use **[overrides](/configs/gates#overrides)** for individual user IDs — QA accounts, customers reporting a specific bug, demos. They&apos;re the trump card and bypass everything else.
+Use **[overrides](/flags-experiments/gates#overrides)** for individual user IDs — QA accounts, customers reporting a specific bug, demos. They&apos;re the trump card and bypass everything else.
 
 If you find yourself adding many overrides, that&apos;s a smell — promote them to a rule keyed on a `internal: true` or `early_access: true` attribute and you&apos;ll thank yourself when the QA team turns over.
 
@@ -168,9 +168,9 @@ If you find yourself adding many overrides, that&apos;s a smell — promote them
 
 Whatever attributes you bind onto the `Client` (via the `configure()` `attributes` transform) are also available to:
 
-- [Experiments](/experiments) (for assignment and segmentation)
-- [Dynamic values](/configs/values) decoders
-- The [analysis pipeline](/experiments/stats) (as exposure dimensions)
+- [Experiments](/flags-experiments/experiments) (for assignment and segmentation)
+- [Dynamic values](/flags-experiments/configs/values) decoders
+- The [analysis pipeline](/flags-experiments/experiments/analysis) (as exposure dimensions)
 
 So define attributes once at the request boundary and pass the same `user` shape everywhere:
 

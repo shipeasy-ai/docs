@@ -82,7 +82,7 @@ const cfg = flags.getConfig<{ tier: string; limit: number }>("plan-defaults");
 
 <Callout type="info" title="getConfig() is synchronous, like getFlag()">
   Same plumbing as{" "}
-  <a href="/flags-experiments/configs/gates">
+  <a href="/flags-experiments/gates">
     <code>getFlag()</code>
   </a>{" "}
   — the bundle is in memory after `configure()` resolves, so reads are a hash table lookup. There is

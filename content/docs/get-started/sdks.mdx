@@ -60,20 +60,21 @@ flags.track("u_4f2a", "purchase", { value: 49.99, sku: "SHIRT-L-BLUE" });
 
 ### Resolving an experiment
 
-```ts
-const result = flags.getExperiment<{ color: "blue" | "green" }>(
-  "checkout-button-color",
-  { color: "blue" }, // defaultParams returned when not in experiment
-);
+Experiments are read by **universe** — a mutual-exclusion pool the user lands in at most one experiment of. The universe declares each param and its default, so a read is always safe:
 
-if (result.inExperiment) {
-  // result.group       e.g. "control" | "variant_a"
-  // result.params.color
+```ts
+const cta = flags.universe("checkout").assign();
+
+// variant override ?? universe default ?? your fallback
+const color = cta.get<"blue" | "green">("button_color", "blue");
+
+if (cta.enrolled) {
+  // cta.name   the experiment they landed in
+  // cta.group  e.g. "control" | "variant_a"
 }
 ```
 
-Assignment is deterministic by `user_id`. The first call for a user
-queues an exposure event that the daily analysis pipeline reads.
+Assignment is deterministic by `user_id`. `assign()` itself logs nothing; the first `get()` read of an enrolled assignment queues the exposure event the daily analysis pipeline reads.
 
 ### Translating a label
 
@@ -132,7 +133,7 @@ first read.
 
 ## Framework usage [#frameworks]
 
-Shipeasy ships a single SDK — `@shipeasy/sdk` — that works from plain JavaScript. Every API (`getFlag`, `getConfig`, `getExperiment`, `i18n.t`, `track`) is callable directly from React, Vue, Svelte, Angular, or vanilla JS without any framework-specific wrapper.
+Shipeasy ships a single SDK — `@shipeasy/sdk` — that works from plain JavaScript. Every API (`getFlag`, `getConfig`, `universe().assign()`, `track`) is callable directly from React, Vue, Svelte, Angular, or vanilla JS without any framework-specific wrapper.
 
 ```tsx title="React"
 import { useEffect, useState } from "react";
@@ -176,7 +177,7 @@ import { configure, Client } from "@shipeasy/sdk/server";
 
 Provide a stable `anonymous_id` — for example a UUID stored in `AsyncStorage`. The SDK has zero DOM dependencies in this build and works fine in the Hermes engine.
 
-For native iOS and Android, use the JS SDK from the React Native bridge or call the same `/sdk/*` endpoints directly from Swift/Kotlin — the wire format is documented at [Reference → SDK protocol](/configs/protocol).
+For native iOS and Android there are first-class SDKs — [Swift](/sdks/swift) and [Kotlin](/sdks/kotlin) — so you don't need the React Native bridge or hand-rolled `/sdk/*` calls.
 
 ## Ruby [#ruby]
 

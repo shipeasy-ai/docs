@@ -117,20 +117,27 @@ The cleanest pattern: in test environments, run the SDK in **bundle-mock mode** 
 set to whatever the test scenario needs:
 
 ```ts title="test/setup.ts"
-import { Engine } from "@shipeasy/sdk/server";
+import { configureForOffline } from "@shipeasy/sdk/server";
 
-const engine = Engine.forTesting({
-  flags: {
-    "emails-enabled": { kind: "killswitch", on: true },
-    "payments-enabled": { kind: "killswitch", on: false },
+configureForOffline({
+  snapshot: {
+    flags: {
+      version: "test",
+      plan: "free",
+      gates: {},
+      configs: {},
+      // `killed: 1` = the switch is thrown, so getKillswitch() returns true
+      killswitches: { emails: { killed: 1 }, payments: { killed: 0 } },
+    },
+    experiments: { version: "test", universes: {}, experiments: {} },
   },
 });
 ```
 
 The SDK never hits the network in this mode, the killswitch values are deterministic, and your
-test wraps the same `getKillswitch()` read your production code does — no special-case bypass.
-`forTesting` is an engine-level helper; bind a `Client` to the engine when you need to read for a
-specific user.
+test reads through the same `new Client(user).getKillswitch()` call your production code does — no
+special-case bypass. `configureForOffline()` replaces the active configuration, so a suite can
+re-seed between cases.
 
 ## The dashboard view
 

@@ -64,13 +64,8 @@ specific metric. Use the Shipeasy power calculator (below) for those.
 Every experiment page has a power-analysis tab that does the math against your _actual_ metric
 distribution:
 
-```bash
-shipeasy experiments power paywall-v2 \
-  --metric purchase_conversion \
-  --min-detectable-effect 0.05    # detect a 5% relative lift
-```
-
-Output:
+Open **Experiments → your experiment → Power** and set the metric and the effect you want to
+detect (e.g. a 5% relative lift). It reports:
 
 ```
 metric:            purchase_conversion
@@ -172,7 +167,7 @@ Two ways to handle this honestly:
    valid p-values _at any time_, including continuous peeking. Enable per experiment:
 
    ```bash
-   shipeasy experiments update paywall-v2 --analysis-mode sequential
+   shipeasy release experiments update paywall-v2 --sequential-testing true
    ```
 
    The trade-off: sequential tests are less powerful at the planned horizon than fixed-horizon
@@ -196,7 +191,7 @@ Stopping early because "we already know it's going to win" is the same as peekin
 1. **Define the primary metric.** One. Two if tightly related.
 2. **Define guardrails.** At least error rate and performance. See
    [Guardrails](/metrics/guardrails).
-3. **Compute MDE.** `shipeasy experiments power <name> --metric <primary>`.
+3. **Compute MDE.** Use the experiment's **Power** tab against your primary metric.
 4. **Decide duration.** Read the "expected duration" output, round up to the nearest whole week.
 5. **Decide α and analysis mode.** 0.05 fixed-horizon is the default. Switch to sequential only
    if you genuinely need to peek.

@@ -12,7 +12,7 @@ description: Boolean feature flags with targeting rules, percentage rollouts, ki
 
 A **feature flag** is a single boolean answer for a single user. It is the unit of <em>&quot;should I do the new thing?&quot;</em> in your code. Feature flags are evaluated locally — the SDK keeps the bundle in process and the call is a hash table lookup, not a network round trip.
 
-Use a feature flag when the answer is yes/no. For typed payloads (strings, numbers, JSON), reach for a [dynamic value](/configs/values). For yes/no with measurement attached, reach for an [experiment](/experiments).
+Use a feature flag when the answer is yes/no. For typed payloads (strings, numbers, JSON), reach for a [dynamic value](/flags-experiments/configs/values). For yes/no with measurement attached, reach for an [experiment](/flags-experiments/experiments).
 
 ## Anatomy of a feature flag
 
@@ -248,7 +248,7 @@ In the dashboard, expand a feature flag and add user IDs under **Overrides &rarr
 }
 ```
 
-If you need a percentage-based &quot;always-on for cohort X&quot;, use a [targeting rule](/configs/targeting) on a custom attribute (`internal: true`) instead. Overrides scale linearly per-row in KV; rules are O(1).
+If you need a percentage-based &quot;always-on for cohort X&quot;, use a [targeting rule](/flags-experiments/gates/targeting) on a custom attribute (`internal: true`) instead. Overrides scale linearly per-row in KV; rules are O(1).
 
 ## Naming [#enabled]
 

@@ -81,13 +81,13 @@ Stable, low-cardinality event names. Snake_case. Past tense for things that happ
 
 Some event names are populated automatically and should not be logged manually. They start with `$` to make accidental collisions obvious:
 
-| Event        | Source                                                                        |
-| ------------ | ----------------------------------------------------------------------------- |
-| `$exposure`  | Logged by `flags.getExperiment()` the first time a user enters an experiment. |
-| `$page_view` | Browser SDK auto-tracks unless disabled.                                      |
-| `$identify`  | Logged by `flags.identify()` (server or browser SDK).                         |
-| `$alias`     | Logged when stitching anon → user.                                            |
-| `$session`   | Browser SDK rolls a new session id every 30 min of inactivity.                |
+| Event        | Source                                                                 |
+| ------------ | ---------------------------------------------------------------------- |
+| `$exposure`  | Logged by the first `get()` read of an enrolled `universe().assign()`. |
+| `$page_view` | Browser SDK auto-tracks unless disabled.                               |
+| `$identify`  | Logged by `flags.identify()` (server or browser SDK).                  |
+| `$alias`     | Logged when stitching anon → user.                                     |
+| `$session`   | Browser SDK rolls a new session id every 30 min of inactivity.         |
 
 You can opt out of auto-tracking in the SDK options:
 

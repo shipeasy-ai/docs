@@ -42,9 +42,9 @@ configure({
 });
 
 const flags = new Client(session);
-const { group } = flags.getExperiment("settings-redesign", { variant: "control" });
+const exp = flags.universe("settings").assign();
 
-if (group === "treatment") renderRedesign();
+if (exp.get("variant", "control") === "treatment") renderRedesign();
 else renderControl();
 
 // fire the goal metric event on the action you care about

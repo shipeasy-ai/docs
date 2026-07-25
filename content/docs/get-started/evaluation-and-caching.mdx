@@ -14,7 +14,7 @@ Evaluation is **local, deterministic, and sub-second to update**. Your code neve
 
 ## The rule set lives in memory
 
-When you call `configure()` on the server, the SDK fetches your rule set once and holds it in memory. Every `getFlag` / `getConfig` / `getExperiment` call evaluates against that in-memory snapshot — no I/O on the hot path.
+When you call `configure()` on the server, the SDK fetches your rule set once and holds it in memory. Every `getFlag` / `getConfig` / `universe().assign()` call evaluates against that in-memory snapshot — no I/O on the hot path.
 
 ```ts
 import { Client } from "@shipeasy/sdk/server";

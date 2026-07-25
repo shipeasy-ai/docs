@@ -27,7 +27,7 @@ You define what you want to measure (a **metric**), set up variant payloads (the
 
 <TileGrid>
   <Tile
-    href="/experiments/universes"
+    href="/flags-experiments/experiments/universes"
     icon="◇"
     title="Universe"
     meta={
@@ -44,7 +44,7 @@ You define what you want to measure (a **metric**), set up variant payloads (the
     universe) and an optional mutual-exclusion rule.
   </Tile>
   <Tile
-    href="/experiments/quickstart"
+    href="/flags-experiments/experiments/quickstart"
     icon="◈"
     title="Experiment"
     meta={
@@ -59,7 +59,7 @@ You define what you want to measure (a **metric**), set up variant payloads (the
     targeting feature flag.
   </Tile>
   <Tile
-    href="/experiments/metrics"
+    href="/metrics"
     icon="∑"
     title="Metrics"
     meta={
@@ -76,7 +76,7 @@ You define what you want to measure (a **metric**), set up variant payloads (the
     event type. Pick a primary, and a couple of guardrails.
   </Tile>
   <Tile
-    href="/experiments/events"
+    href="/flags-experiments/experiments/events"
     icon="✎"
     title="Events"
     meta={
@@ -90,7 +90,7 @@ You define what you want to measure (a **metric**), set up variant payloads (the
     Anything you <code>track()</code>. Stored in events store, aggregated into metric values daily.
   </Tile>
   <Tile
-    href="/experiments/analysis"
+    href="/flags-experiments/experiments/analysis"
     icon="∫"
     title="Analysis"
     meta={
@@ -112,15 +112,15 @@ Here is how the five pieces connect — assignment happens live in the SDK, the 
 
 <Mermaid
   chart={`flowchart LR
-  uni["Universe<br/><small>holdout · mutual-excl</small>"]:::sink
-  exp["Experiment<br/><small>groups + params</small>"]:::exp
+  uni["Universe<br/><small>holdout · param schema</small>"]:::sink
+  exp["Experiment<br/><small>groups override values</small>"]:::exp
   met["Metric<br/><small>primary + guardrails</small>"]:::metric
   evt["Events<br/><small>$exposure + track()</small>"]:::event
   ana["Analysis<br/><small>Welch t-test</small>"]:::metric
   res["Result<br/><small>lift · p · 95% CI</small>"]:::exp
 
 uni --> exp
-exp -- "getExperiment() → assign" --> evt
+exp -- "universe().assign() → get" --> evt
 evt -- "aggregated daily" --> met
 met -- "goal / guardrail" --> exp
 evt -- "join on exposure" --> ana
@@ -167,18 +167,19 @@ A practical workflow is to use a feature flag first (so the rollout is safe), th
     num={2}
     label="EXPERIMENT"
     title="Two groups, equal weight"
-    cmd="shipeasy experiments create checkout-cta"
+    cmd="shipeasy release experiments create checkout-cta --universe checkout"
   >
-    100% allocation, 50/50 split, two label variants. Targeting via a feature flag is optional.
+    100% allocation, 50/50 split, two label variants. The variants override the <code>label</code>{" "}
+    param the <b>universe</b> declares. Targeting via a feature flag is optional.
   </QuickstartStep>
   <QuickstartStep
     num={3}
     label="WIRE"
     title="assign + track"
-    cmd="new Client(user).getExperiment('checkout-cta', { label: 'Pay' })"
+    cmd="new Client(user).universe('checkout').assign().get('label', 'Pay')"
   >
-    First call logs an exposure. <code>flags.track()</code> on conversion. Daily aggregation does
-    the math.
+    Ask the <b>universe</b>, not the experiment. First <code>get()</code> logs an exposure.{" "}
+    <code>flags.track()</code> on conversion. Daily aggregation does the math.
   </QuickstartStep>
 </Quickstart>
 
@@ -195,32 +196,36 @@ configure({
 });
 
 const flags = new Client(currentUser);
-const result = flags.getExperiment<{ label: string }>(
-  "checkout-cta",
-  { label: "Pay" }, // defaultParams
-);
-const label = result.params.label; // "Pay" or whatever the variant assigns
+
+// Ask the UNIVERSE, not the experiment — the user lands in at most one of its experiments
+const cta = flags.universe("checkout").assign();
+
+// Read a param: the variant's override ?? the universe's default ?? your fallback
+const label = cta.get("label", "Pay");
 ```
 
 ```ts
-// Wherever the purchase succeeds:
-flags.track(user_id, "purchase", { value: orderTotal });
+// Wherever the purchase succeeds — the unit comes from the bound user:
+flags.track("purchase", { value: orderTotal });
 ```
 
-The first call to `flags.getExperiment(...)` for a given user logs an
-**exposure** event automatically. Subsequent calls in the same process
-don't re-log — exposures are deduplicated.
+`assign()` is side-effect free. The first `get()` read of an **enrolled** assignment logs the **exposure** event; later reads don't re-log — exposures are deduplicated per unit, experiment and group.
 
-## API · `Client#getExperiment`
+## API · `Client#universe(name).assign()`
 
-The user is bound on the `Client` (`new Client(user)`); `getExperiment` itself takes only the name and default params.
+The user is bound on the `Client` (`new Client(user)`), so `assign()` takes no argument. You name the **universe** — never an experiment — because a universe is a mutual-exclusion pool: the user lands in at most one of its experiments.
 
 <TypeTable
   type={{
     name: {
       type: "string",
       required: true,
-      description: "The experiment name. Stable identifier, used in URLs and result rows.",
+      description: (
+        <>
+          The <b>universe</b> name — the mutual-exclusion pool to assign within. Not an experiment
+          name.
+        </>
+      ),
     },
     "user (on the Client)": {
       type: "EvalContext",
@@ -233,24 +238,31 @@ The user is bound on the `Client` (`new Client(user)`); `getExperiment` itself t
         </>
       ),
     },
-    defaultParams: {
-      type: "T",
-      description:
-        "Returned when the experiment is stopped, the user is in the holdout, or assignment fails. Defaults to the control group's params.",
-    },
   }}
 />
 
-The return shape:
+`assign()` returns an `Assignment`, which never throws — an unenrolled user still resolves every param:
 
 ```ts
-{
-  inExperiment: boolean,   // false if stopped, holdout, or excluded
-  group: string,           // "control" | "v1" | …
-  params: T,               // typed payload from the assigned group
-  reason: AssignmentReason // "assigned" | "holdout" | "stopped" | "excluded"
+interface Assignment {
+  name: string | null; // the experiment the user landed in, or null when not enrolled
+  group: string | null; // the assigned variant, or null when not enrolled
+  enrolled: boolean; // === (group !== null)
+
+  // variant override ?? universe default ?? fallback. First enrolled read logs the exposure.
+  get<T>(field: string, fallback?: T): T | undefined;
 }
 ```
+
+Reading `name` / `group` / `enrolled` never logs an exposure — only `get()` does.
+
+<Callout type="info" title="Params are declared on the universe">
+  The universe owns the param schema — an ordered list of <code>{"{ name, type, default }"}</code>.
+  An experiment's variants may only <b>override the value</b> of a param the universe already
+  declares; they can't add fields. That's why <code>get(field, fallback)</code> is always safe: when
+  the user isn't enrolled there's no variant, so the value falls back to the universe's default, and
+  only then to your fallback.
+</Callout>
 
 ## What the daily analysis does
 
@@ -300,6 +312,6 @@ The return shape:
       label: "Create the metric",
       cmd: "shipeasy metrics create purchase_conversion --event purchase --query 'count_users(purchase)'",
     },
-    { label: "Create the experiment", cmd: "shipeasy experiments create checkout-cta" },
+    { label: "Create the experiment", cmd: "shipeasy release experiments create checkout-cta" },
   ]}
 />

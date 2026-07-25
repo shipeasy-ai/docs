@@ -158,15 +158,13 @@ import { configure, Client } from "@shipeasy/sdk/server";
 configure({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
 
 const flags = new Client({ user_id: userId });
-const { group, params } = flags.getExperiment("paywall-v2", {
-  variant: "control" as "control" | "treatment",
-});
+const exp = flags.universe("paywall").assign();
 
-flags.track(userId, "paywall_viewed", { group });
-const paywall = params.variant === "treatment" ? <PaywallV2 /> : <PaywallV1 />;
+flags.track("paywall_viewed", { group: exp.group });
+const paywall = exp.get("variant", "control") === "treatment" ? <PaywallV2 /> : <PaywallV1 />;
 
 // elsewhere, in the checkout success handler
-flags.track(userId, "paywall_converted", { revenueCents: order.totalCents });
+flags.track("paywall_converted", { revenueCents: order.totalCents });
 ```
 
 Set the **primary metric** to `paywall_converted` and the universe split to 50/50. Let it run
@@ -225,11 +223,11 @@ type Weights = { recency: number; relevance: number; popularity: number };
 const DEFAULTS: Weights = { recency: 0.2, relevance: 0.6, popularity: 0.2 };
 
 const flags = new Client({ user_id: userId });
-const { group } = flags.getExperiment("search-weights-v3", { variant: "control" });
-const weights = flags.getConfig<Weights>(`search.weights.${group}`) ?? DEFAULTS;
+const exp = flags.universe("search-ranking").assign();
+const weights = flags.getConfig<Weights>(`search.weights.${exp.group ?? "control"}`) ?? DEFAULTS;
 
 const results = ranked(query, weights);
-flags.track(userId, "search_results_shown", { group, hasResults: results.length > 0 });
+flags.track("search_results_shown", { group: exp.group, hasResults: results.length > 0 });
 ```
 
 Create three configs (`search.weights.control`, `search.weights.a`, `search.weights.b`) with three
@@ -466,7 +464,7 @@ Compare them to the other 90% to get the cumulative lift of _everything_ you shi
 ```bash
 # Holdout range is in basis points (0-9999). 0,999 = first 10% of buckets
 # in this universe are held out for the entire quarter.
-shipeasy universes update product-decisions --holdout 0,999
+shipeasy release experiments universes update product-decisions --holdout 0,999
 ```
 
 Assign the experiment to the universe in the dashboard (or via the Admin API) — the SDK reads the
@@ -478,11 +476,9 @@ import { configure, Client } from "@shipeasy/sdk/server";
 configure({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
 
 const flags = new Client({ user_id: userId });
-const { group } = flags.getExperiment("paywall-v2", {
-  variant: "control" as "control" | "treatment",
-});
+const exp = flags.universe("paywall").assign();
 
-flags.track(userId, "conversion", { group });
+flags.track("conversion", { group: exp.group });
 ```
 
 At the end of the quarter, the universe page shows:
