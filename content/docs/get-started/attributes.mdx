@@ -377,7 +377,10 @@ You can set per-attribute retention in **Project → Privacy** (default 90 days 
   secondaryHref="/experiments/quickstart"
   secondaryLabel="Or run an experiment"
   cmds={[
-    { label: "Create a feature flag", cmd: "shipeasy gate create new-checkout" },
-    { label: "Roll out to 5%", cmd: "shipeasy gate rollout new-checkout --percent 5" },
+    { label: "Create a feature flag", cmd: "shipeasy release flags create new-checkout" },
+    {
+      label: "Roll out to 5%",
+      cmd: "shipeasy release flags update new-checkout --rollout-percent 5",
+    },
   ]}
 />

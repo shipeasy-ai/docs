@@ -218,7 +218,7 @@ The return is a plain `boolean`. There is no async, no Promise, no fetch — the
 The killswitch is a separate field from `enabled` so you can keep targeting and rollout intact while turning the feature off. Three places to flip it:
 
 - **Dashboard**: red **Killswitch** chip on the feature flag row.
-- **CLI**: `shipeasy flags disable <name> --killswitch` (without `--killswitch` it toggles `enabled` instead).
+- **CLI**: `shipeasy release flags disable <name> --killswitch` (without `--killswitch` it toggles `enabled` instead).
 - **API**: `PATCH /api/flags/<name>` with `{ "killswitch": true }`.
 
 A killed feature flag returns `false` everywhere within the SDK&apos;s next poll. Re-enabling restores the full prior state — overrides, rules, rollout %, salt, all of it. Treat the killswitch as your incident lever; treat `enabled` as your &quot;feature is shipped, deactivated cleanly&quot; lever.
@@ -263,11 +263,11 @@ Stale flags are technical debt — once a feature is fully launched, delete the 
 
 ```bash
 # Every gate currently at enabled: true, rollout: 100%
-shipeasy flags list --json \
+shipeasy release flags list \
   | jq '.[] | select(.enabled == 1 and .rolloutPct == 10000) | .name'
 ```
 
-These are candidates for removal. Run a `shipeasy flags validate ./src` after the deletion to catch any code references that need to be ripped out.
+These are candidates for removal. Grep your source for each name after archiving it, to catch code references that need to be ripped out.
 
 The dashboard also surfaces a **Cleanup** view that lists feature flags which have been at 100% (or 0%) for more than 30 days, with a one-click PR-creation button if you&apos;ve connected a GitHub app.
 
@@ -276,7 +276,7 @@ The dashboard also surfaces a **Cleanup** view that lists feature flags which ha
 Each feature flag has its own salt. If you ever want to **re-shuffle** the rollout buckets without changing the percentage (say, to avoid the same 5% always being chosen for every feature flag), bump the salt:
 
 ```bash
-shipeasy flags update my-feature --salt v2
+shipeasy release flags update my-feature
 ```
 
 That&apos;s rare. The default salt is fine for almost every case. The salt is also why two feature flags at 50% don&apos;t serve the same 50% of users — different salts, different buckets, independently distributed.
@@ -310,8 +310,8 @@ If you hit a limit, audit for stale flags first; those numbers are very generous
   cmds={[
     {
       label: "Create with a rule",
-      cmd: "shipeasy flags create dark-mode --rule plan=pro --rollout 100",
+      cmd: "shipeasy release flags create dark-mode --rules plan=pro --rollout-percent 100",
     },
-    { label: "Re-shuffle buckets", cmd: "shipeasy flags update dark-mode --salt v2" },
+    { label: "Re-shuffle buckets", cmd: "shipeasy release flags update dark-mode" },
   ]}
 />

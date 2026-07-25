@@ -96,20 +96,20 @@ Dashboard: **Configs &rarr; Dynamic values &rarr; click &rarr; edit value &rarr;
 CLI:
 
 ```bash
-shipeasy configs update rate-limit --value 200
-shipeasy configs update default-theme --value '"dark"'
-shipeasy configs update plan-defaults --value '{"tier":"pro","limit":50}'
+shipeasy release configs update rate-limit --value 200
+shipeasy release configs update default-theme --value '"dark"'
+shipeasy release configs update plan-defaults --value '{"tier":"pro","limit":50}'
 ```
 
 A new value creates a **revision**; you can roll back from the dashboard at any time. Every revision records the author, source (dashboard / CLI / API), and a diff against the previous value.
 
 ```bash
-# View revision history
-shipeasy configs activity rate-limit
-
-# Roll back to a specific revision — currently dashboard-only.
-# Open the config detail view and pick "Restore" on the revision you want.
+# Read the current value + schema
+shipeasy release configs get rate-limit
 ```
+
+Revision history and rollback are dashboard-only — open the config detail view
+and pick **Restore** on the revision you want.
 
 ## Structured configs [#structured-configs]
 
@@ -196,7 +196,7 @@ Validate every value reference in your code resolves on the project:
 
 ```bash title=".github/workflows/ci.yml"
 - name: List configured values
-  run: shipeasy configs list --json | jq '.data[].name'
+  run: shipeasy release configs list | jq '.data[].name'
 ```
 
 Pair that with a grep across your source so a CI step fails when the code references a value that no longer exists on the project.
@@ -224,7 +224,7 @@ If your JSON is approaching the limit, you&apos;re probably storing data that be
   secondaryHref="/flags-experiments/decision"
   secondaryLabel="Pick the right primitive"
   cmds={[
-    { label: "Set a value", cmd: "shipeasy configs update rate-limit --value 200" },
-    { label: "Audit changes", cmd: "shipeasy configs activity rate-limit" },
+    { label: "Set a value", cmd: "shipeasy release configs update rate-limit --value 200" },
+    { label: "Read the current value", cmd: "shipeasy release configs get rate-limit" },
   ]}
 />

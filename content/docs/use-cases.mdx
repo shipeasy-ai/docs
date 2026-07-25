@@ -83,7 +83,7 @@ export async function handler(tenantId: string) {
 
 ```bash
 # your onboarding job runs this as each tenant is provisioned
-shipeasy killswitch toggle new-checkout --switch tenant:acme --on --env prod
+shipeasy release killswitch set new-checkout --switch-key tenant:acme --value true --env prod
 ```
 
 **Combines:** killswitch switches + the Admin API driven from your own provisioning code.

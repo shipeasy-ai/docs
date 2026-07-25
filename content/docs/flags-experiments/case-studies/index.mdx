@@ -64,13 +64,13 @@ return renderCheckoutV1();
 ```bash
 # Day 1 — rules edited in the dashboard or via the Admin API
 #         (CLI's `flags create --rules` only sets them at creation time)
-shipeasy flags rollout checkout-v2 5
+shipeasy release flags update checkout-v2 --rollout-percent 5
 
 # Day 3
-shipeasy flags rollout checkout-v2 25
+shipeasy release flags update checkout-v2 --rollout-percent 25
 
 # Day 5
-shipeasy flags rollout checkout-v2 100
+shipeasy release flags update checkout-v2 --rollout-percent 100
 ```
 
 ## Change homepage hero copy [#hero-copy]
@@ -133,7 +133,7 @@ export async function sendOrderEmail(order: Order) {
 }
 ```
 
-Killswitches are a dedicated primitive — created via `shipeasy killswitches create` in the CLI and
+Killswitches are a dedicated primitive — created via `shipeasy release killswitch create` in the CLI and
 read with `getKillswitch(name)` from the server SDK. Unlike feature flags, they don't bucket:
 every caller sees the same answer the instant the flip propagates (within the
 next SDK poll). The default is fail-open: until you flip the switch, every read returns `false`
@@ -464,7 +464,7 @@ Compare them to the other 90% to get the cumulative lift of _everything_ you shi
 ```bash
 # Holdout range is in basis points (0-9999). 0,999 = first 10% of buckets
 # in this universe are held out for the entire quarter.
-shipeasy release experiments universes update product-decisions --holdout 0,999
+shipeasy release experiments universes update product-decisions --holdout-range 0,999
 ```
 
 Assign the experiment to the universe in the dashboard (or via the Admin API) — the SDK reads the

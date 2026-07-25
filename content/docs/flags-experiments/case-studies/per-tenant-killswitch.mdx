@@ -20,7 +20,7 @@ That's the killswitch [per-key **switches**](/flags-experiments/killswitches) fe
 
 ```bash
 # pause exports for just this tenant, in prod only
-shipeasy killswitch toggle exports.pipeline --switch tenant:acme --on --env prod
+shipeasy release killswitch set exports.pipeline --switch-key tenant:acme --value true --env prod
 ```
 
 In code the killswitch read names the switch so the SDK can apply the right per-key override:
@@ -44,7 +44,7 @@ export async function runExport(tenantId: string) {
 When the tenant recovers, unset the one switch — every other tenant was never affected:
 
 ```bash
-shipeasy killswitch toggle exports.pipeline --switch tenant:acme --off --env prod
+shipeasy release killswitch set exports.pipeline --switch-key tenant:acme --value false --env prod
 ```
 
 <Callout type="info" title="Scoped blast radius, full audit trail">

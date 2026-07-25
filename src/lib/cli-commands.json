@@ -1,0 +1,2102 @@
+{
+  "generator": "marketplace/cli/scripts/gen-cli-docs.ts",
+  "commands": [
+    {
+      "path": "shipeasy bind",
+      "aliases": [],
+      "args": [
+        {
+          "name": "project_id",
+          "required": false,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--name"
+      ]
+    },
+    {
+      "path": "shipeasy detect",
+      "aliases": [],
+      "args": [
+        {
+          "name": "paths",
+          "required": false,
+          "variadic": true
+        }
+      ],
+      "options": [
+        "--json"
+      ]
+    },
+    {
+      "path": "shipeasy docs",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy docs get",
+      "aliases": [],
+      "args": [
+        {
+          "name": "path",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--framework",
+        "--name",
+        "--sdk"
+      ]
+    },
+    {
+      "path": "shipeasy docs list",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--sdk"
+      ]
+    },
+    {
+      "path": "shipeasy docs skill",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--agent",
+        "--dir",
+        "--global",
+        "--install",
+        "--sdk"
+      ]
+    },
+    {
+      "path": "shipeasy i18n",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy i18n codemod",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy i18n codemod i18n",
+      "aliases": [],
+      "args": [
+        {
+          "name": "target",
+          "required": false,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--config",
+        "--dry-run",
+        "--migrate",
+        "--type",
+        "--verbose"
+      ]
+    },
+    {
+      "path": "shipeasy i18n extract",
+      "aliases": [],
+      "args": [
+        {
+          "name": "target",
+          "required": false,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--chunk",
+        "--dry-run",
+        "--no-publish",
+        "--profile",
+        "--project"
+      ]
+    },
+    {
+      "path": "shipeasy i18n install-loader",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data-key",
+        "--path",
+        "--print",
+        "--profile",
+        "--project"
+      ]
+    },
+    {
+      "path": "shipeasy i18n migrate",
+      "aliases": [],
+      "args": [
+        {
+          "name": "library",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--chunk",
+        "--dry-run",
+        "--no-publish",
+        "--profile",
+        "--project"
+      ]
+    },
+    {
+      "path": "shipeasy i18n profiles",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy i18n profiles create",
+      "aliases": [],
+      "args": [
+        {
+          "name": "name",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--default-locale",
+        "--json",
+        "--locales",
+        "--project"
+      ]
+    },
+    {
+      "path": "shipeasy i18n profiles list",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--json",
+        "--project"
+      ]
+    },
+    {
+      "path": "shipeasy i18n publish",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--chunk",
+        "--json",
+        "--profile",
+        "--project"
+      ]
+    },
+    {
+      "path": "shipeasy i18n push",
+      "aliases": [],
+      "args": [
+        {
+          "name": "file",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--chunk",
+        "--json",
+        "--profile",
+        "--project"
+      ]
+    },
+    {
+      "path": "shipeasy i18n scan",
+      "aliases": [],
+      "args": [
+        {
+          "name": "paths",
+          "required": false,
+          "variadic": true
+        }
+      ],
+      "options": [
+        "--json",
+        "--keys-only"
+      ]
+    },
+    {
+      "path": "shipeasy i18n update",
+      "aliases": [],
+      "args": [
+        {
+          "name": "key",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "value",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--description",
+        "--json",
+        "--profile",
+        "--project"
+      ]
+    },
+    {
+      "path": "shipeasy i18n validate",
+      "aliases": [],
+      "args": [
+        {
+          "name": "paths",
+          "required": false,
+          "variadic": true
+        }
+      ],
+      "options": [
+        "--json",
+        "--profile",
+        "--project"
+      ]
+    },
+    {
+      "path": "shipeasy install",
+      "aliases": [],
+      "args": [
+        {
+          "name": "module",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--json",
+        "--profile",
+        "--project"
+      ]
+    },
+    {
+      "path": "shipeasy login",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--force",
+        "--project"
+      ]
+    },
+    {
+      "path": "shipeasy logout",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy mcp",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy mcp install",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--client",
+        "--dry-run",
+        "--force",
+        "--scope"
+      ]
+    },
+    {
+      "path": "shipeasy mcp status",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy mcp uninstall",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--client",
+        "--scope"
+      ]
+    },
+    {
+      "path": "shipeasy metrics",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy metrics archive",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy metrics create",
+      "aliases": [],
+      "args": [
+        {
+          "name": "name",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--default-min-effect-of-interest",
+        "--direction",
+        "--event-name",
+        "--folder",
+        "--query",
+        "--query-ir",
+        "--unit",
+        "--winsorize-pct"
+      ]
+    },
+    {
+      "path": "shipeasy metrics events",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy metrics events approve",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--description",
+        "--folder",
+        "--properties"
+      ]
+    },
+    {
+      "path": "shipeasy metrics events archive",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy metrics events create",
+      "aliases": [],
+      "args": [
+        {
+          "name": "name",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--description",
+        "--folder",
+        "--properties"
+      ]
+    },
+    {
+      "path": "shipeasy metrics events get",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy metrics events list",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data",
+        "--q"
+      ]
+    },
+    {
+      "path": "shipeasy metrics events update",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--description",
+        "--folder",
+        "--properties"
+      ]
+    },
+    {
+      "path": "shipeasy metrics experiments",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy metrics grammar",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy metrics list",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data",
+        "--q"
+      ]
+    },
+    {
+      "path": "shipeasy metrics series",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--bucket",
+        "--from",
+        "--to"
+      ]
+    },
+    {
+      "path": "shipeasy metrics show",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy metrics unarchive",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy metrics update",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--default-min-effect-of-interest",
+        "--direction",
+        "--event-name",
+        "--folder",
+        "--query",
+        "--query-ir",
+        "--unit",
+        "--winsorize-pct"
+      ]
+    },
+    {
+      "path": "shipeasy ops",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy ops ack",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--agent",
+        "--session-id"
+      ]
+    },
+    {
+      "path": "shipeasy ops agents",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy ops agents list",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy ops alerts",
+      "aliases": [
+        "ar"
+      ],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy ops alerts archive",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy ops alerts channels",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy ops alerts create",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--comparator",
+        "--enabled",
+        "--metric-id",
+        "--name",
+        "--notify",
+        "--severity",
+        "--threshold",
+        "--window-hours"
+      ]
+    },
+    {
+      "path": "shipeasy ops alerts list",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data",
+        "--q"
+      ]
+    },
+    {
+      "path": "shipeasy ops alerts update",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--comparator",
+        "--enabled",
+        "--name",
+        "--notify",
+        "--severity",
+        "--threshold",
+        "--window-hours"
+      ]
+    },
+    {
+      "path": "shipeasy ops bug",
+      "aliases": [],
+      "args": [
+        {
+          "name": "title",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--actual-result",
+        "--assignee-id",
+        "--context",
+        "--expected-result",
+        "--notify",
+        "--page-url",
+        "--priority",
+        "--reporter-email",
+        "--status",
+        "--steps-to-reproduce",
+        "--subscribers",
+        "--tags",
+        "--user-agent",
+        "--viewport"
+      ]
+    },
+    {
+      "path": "shipeasy ops comments",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy ops comments create",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--body",
+        "--parent-id"
+      ]
+    },
+    {
+      "path": "shipeasy ops comments list",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy ops create",
+      "aliases": [],
+      "args": [
+        {
+          "name": "title",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--actual-result",
+        "--assignee-id",
+        "--context",
+        "--description",
+        "--expected-result",
+        "--notify",
+        "--page-url",
+        "--priority",
+        "--reporter-email",
+        "--status",
+        "--steps-to-reproduce",
+        "--subscribers",
+        "--tags",
+        "--type",
+        "--use-case",
+        "--user-agent",
+        "--viewport"
+      ]
+    },
+    {
+      "path": "shipeasy ops feature",
+      "aliases": [],
+      "args": [
+        {
+          "name": "title",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--assignee-id",
+        "--context",
+        "--description",
+        "--notify",
+        "--page-url",
+        "--priority",
+        "--reporter-email",
+        "--status",
+        "--subscribers",
+        "--tags",
+        "--use-case",
+        "--user-agent"
+      ]
+    },
+    {
+      "path": "shipeasy ops fired-alerts",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy ops fired-alerts list",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data",
+        "--status"
+      ]
+    },
+    {
+      "path": "shipeasy ops fired-alerts update",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--agent",
+        "--assignee-id",
+        "--status"
+      ]
+    },
+    {
+      "path": "shipeasy ops get",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy ops investigations",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy ops investigations create",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--agent",
+        "--completed-at",
+        "--confidence",
+        "--connector-id",
+        "--duration-ms",
+        "--findings",
+        "--kind",
+        "--model",
+        "--pr-number",
+        "--pr-url",
+        "--qa-notes",
+        "--question",
+        "--session-id",
+        "--sources",
+        "--started-at",
+        "--summary",
+        "--tokens-used",
+        "--visibility"
+      ]
+    },
+    {
+      "path": "shipeasy ops investigations list",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy ops investigations update",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "investigationId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--completed-at",
+        "--confidence",
+        "--duration-ms",
+        "--findings",
+        "--kind",
+        "--model",
+        "--pr-number",
+        "--pr-url",
+        "--qa-notes",
+        "--question",
+        "--session-id",
+        "--sources",
+        "--summary",
+        "--tokens-used",
+        "--visibility"
+      ]
+    },
+    {
+      "path": "shipeasy ops link-pr",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--pr-number",
+        "--pr-url"
+      ]
+    },
+    {
+      "path": "shipeasy ops list",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data",
+        "--limit",
+        "--owner",
+        "--status",
+        "--type"
+      ]
+    },
+    {
+      "path": "shipeasy ops notify",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--dedupe-key",
+        "--href",
+        "--steps",
+        "--summary",
+        "--title"
+      ]
+    },
+    {
+      "path": "shipeasy ops trigger",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy ops trigger create",
+      "aliases": [],
+      "args": [
+        {
+          "name": "provider",
+          "required": false,
+          "variadic": false
+        }
+      ],
+      "options": []
+    },
+    {
+      "path": "shipeasy ops trigger create claude",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--config",
+        "--enabled",
+        "--events",
+        "--name",
+        "--token"
+      ]
+    },
+    {
+      "path": "shipeasy ops trigger create copilot",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--config",
+        "--enabled",
+        "--events",
+        "--name",
+        "--token"
+      ]
+    },
+    {
+      "path": "shipeasy ops trigger create cursor",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--api-key",
+        "--config",
+        "--enabled",
+        "--events",
+        "--name",
+        "--ops-key"
+      ]
+    },
+    {
+      "path": "shipeasy ops trigger create jules",
+      "aliases": [
+        "gemini"
+      ],
+      "args": [],
+      "options": [
+        "--api-key",
+        "--config",
+        "--enabled",
+        "--events",
+        "--name",
+        "--ops-key"
+      ]
+    },
+    {
+      "path": "shipeasy ops trigger prep",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--dry-run",
+        "--frequency",
+        "--json",
+        "--model",
+        "--name",
+        "--project",
+        "--repo"
+      ]
+    },
+    {
+      "path": "shipeasy ops update",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--actual-result",
+        "--description",
+        "--expected-result",
+        "--github-pr-number",
+        "--notify",
+        "--priority",
+        "--status",
+        "--steps-to-reproduce",
+        "--title",
+        "--use-case"
+      ]
+    },
+    {
+      "path": "shipeasy projects",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy projects current",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy projects update",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--auto-rollback",
+        "--ci-confidence",
+        "--cuped-baseline-days",
+        "--cuped-min-baseline-users",
+        "--cuped-min-overlap",
+        "--default-allocation-pct",
+        "--default-env",
+        "--default-holdout",
+        "--default-mei",
+        "--default-power",
+        "--default-winsorize-pct",
+        "--domain",
+        "--min-runtime-days",
+        "--min-sample-days",
+        "--min-sample-size",
+        "--module-configs",
+        "--module-events",
+        "--module-experiments",
+        "--module-feedback",
+        "--module-gates",
+        "--module-translations",
+        "--module-user",
+        "--msprt-tau-mei-factor",
+        "--msprt-tau-sd-factor",
+        "--name",
+        "--sig-threshold",
+        "--slug",
+        "--srm-threshold",
+        "--stat-method",
+        "--timezone"
+      ]
+    },
+    {
+      "path": "shipeasy projects upsert",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--domain",
+        "--name"
+      ]
+    },
+    {
+      "path": "shipeasy release",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy release configs",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy release configs archive",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy release configs create",
+      "aliases": [],
+      "args": [
+        {
+          "name": "name",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--description",
+        "--dev",
+        "--folder",
+        "--prod",
+        "--schema",
+        "--staging",
+        "--value"
+      ]
+    },
+    {
+      "path": "shipeasy release configs get",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy release configs list",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--cursor",
+        "--data",
+        "--limit",
+        "--q"
+      ]
+    },
+    {
+      "path": "shipeasy release configs update",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--dev",
+        "--folder",
+        "--prod",
+        "--schema",
+        "--staging",
+        "--value"
+      ]
+    },
+    {
+      "path": "shipeasy release configs update-schema",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--schema"
+      ]
+    },
+    {
+      "path": "shipeasy release experiments",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy release experiments archive",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy release experiments create",
+      "aliases": [],
+      "args": [
+        {
+          "name": "name",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--allocation-pct",
+        "--allocation-percent",
+        "--audience",
+        "--bucket-by",
+        "--description",
+        "--folder",
+        "--goal-metric",
+        "--groups",
+        "--guardrail-metrics",
+        "--holdout-gate",
+        "--hypothesis",
+        "--min-runtime-days",
+        "--min-sample-size",
+        "--owner-email",
+        "--params",
+        "--reserved-headroom",
+        "--salt",
+        "--sequential-testing",
+        "--significance-threshold",
+        "--tag",
+        "--targeting-gate",
+        "--universe"
+      ]
+    },
+    {
+      "path": "shipeasy release experiments get",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy release experiments list",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--cursor",
+        "--data",
+        "--limit",
+        "--q",
+        "--status"
+      ]
+    },
+    {
+      "path": "shipeasy release experiments readout-create",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--acknowledged-caveat-ids",
+        "--kind",
+        "--require-all-acknowledged"
+      ]
+    },
+    {
+      "path": "shipeasy release experiments readout-get",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "readoutId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy release experiments reanalyze",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy release experiments restore",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": []
+    },
+    {
+      "path": "shipeasy release experiments results",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy release experiments set-metrics",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--metrics"
+      ]
+    },
+    {
+      "path": "shipeasy release experiments start",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": []
+    },
+    {
+      "path": "shipeasy release experiments stop",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": []
+    },
+    {
+      "path": "shipeasy release experiments timeseries",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data",
+        "--metric"
+      ]
+    },
+    {
+      "path": "shipeasy release experiments universes",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy release experiments universes archive",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy release experiments universes create",
+      "aliases": [],
+      "args": [
+        {
+          "name": "name",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--description",
+        "--folder",
+        "--holdout-range",
+        "--param-schema",
+        "--recommended-headroom",
+        "--unit-type"
+      ]
+    },
+    {
+      "path": "shipeasy release experiments universes list",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--cursor",
+        "--data",
+        "--limit",
+        "--q"
+      ]
+    },
+    {
+      "path": "shipeasy release experiments universes update",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--description",
+        "--folder",
+        "--holdout-range",
+        "--param-schema",
+        "--recommended-headroom"
+      ]
+    },
+    {
+      "path": "shipeasy release experiments update",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--allocation-pct",
+        "--allocation-percent",
+        "--audience",
+        "--bucket-by",
+        "--description",
+        "--folder",
+        "--goal-metric",
+        "--groups",
+        "--guardrail-metrics",
+        "--holdout-gate",
+        "--hypothesis",
+        "--min-runtime-days",
+        "--min-sample-size",
+        "--name",
+        "--owner-email",
+        "--params",
+        "--reserved-headroom",
+        "--salt",
+        "--sequential-testing",
+        "--significance-threshold",
+        "--tag",
+        "--targeting-gate",
+        "--universe"
+      ]
+    },
+    {
+      "path": "shipeasy release flags",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy release flags activity",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data",
+        "--limit"
+      ]
+    },
+    {
+      "path": "shipeasy release flags archive",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy release flags attributes",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy release flags attributes archive",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy release flags attributes create",
+      "aliases": [],
+      "args": [
+        {
+          "name": "name",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--description",
+        "--enum-values",
+        "--required",
+        "--sdk-path",
+        "--type"
+      ]
+    },
+    {
+      "path": "shipeasy release flags attributes get",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy release flags attributes list",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data",
+        "--q"
+      ]
+    },
+    {
+      "path": "shipeasy release flags attributes update",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--description",
+        "--enum-values",
+        "--required",
+        "--sdk-path",
+        "--type"
+      ]
+    },
+    {
+      "path": "shipeasy release flags create",
+      "aliases": [],
+      "args": [
+        {
+          "name": "name",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--description",
+        "--enabled",
+        "--folder",
+        "--group",
+        "--owner-email",
+        "--rollout-pct",
+        "--rollout-percent",
+        "--rules",
+        "--salt",
+        "--stack",
+        "--title",
+        "--type"
+      ]
+    },
+    {
+      "path": "shipeasy release flags disable",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy release flags enable",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy release flags get",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy release flags list",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--cursor",
+        "--data",
+        "--limit",
+        "--q"
+      ]
+    },
+    {
+      "path": "shipeasy release flags templates",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy release flags templates archive",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy release flags templates create",
+      "aliases": [],
+      "args": [
+        {
+          "name": "name",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--auto",
+        "--category",
+        "--description",
+        "--icon-key",
+        "--rules"
+      ]
+    },
+    {
+      "path": "shipeasy release flags templates get",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy release flags templates list",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data",
+        "--q",
+        "--query"
+      ]
+    },
+    {
+      "path": "shipeasy release flags templates update",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--auto",
+        "--category",
+        "--description",
+        "--icon-key",
+        "--name",
+        "--rules"
+      ]
+    },
+    {
+      "path": "shipeasy release flags update",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--description",
+        "--enabled",
+        "--folder",
+        "--group",
+        "--owner-email",
+        "--rollout-pct",
+        "--rollout-percent",
+        "--rules",
+        "--stack",
+        "--title",
+        "--type"
+      ]
+    },
+    {
+      "path": "shipeasy release killswitch",
+      "aliases": [
+        "ks"
+      ],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy release killswitch archive",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy release killswitch create",
+      "aliases": [],
+      "args": [
+        {
+          "name": "name",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--description",
+        "--folder",
+        "--switches",
+        "--value"
+      ]
+    },
+    {
+      "path": "shipeasy release killswitch get",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy release killswitch list",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--cursor",
+        "--data",
+        "--limit",
+        "--q"
+      ]
+    },
+    {
+      "path": "shipeasy release killswitch set",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--env",
+        "--switch-key",
+        "--value"
+      ]
+    },
+    {
+      "path": "shipeasy release killswitch set-value",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--env",
+        "--value"
+      ]
+    },
+    {
+      "path": "shipeasy release killswitch unset",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--env",
+        "--switch-key"
+      ]
+    },
+    {
+      "path": "shipeasy release killswitch update",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--description",
+        "--folder",
+        "--switches",
+        "--value"
+      ]
+    },
+    {
+      "path": "shipeasy report-issue",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--consent",
+        "--description",
+        "--error",
+        "--frameworks",
+        "--json",
+        "--language",
+        "--project",
+        "--reporter-email",
+        "--step",
+        "--title"
+      ]
+    },
+    {
+      "path": "shipeasy root",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--json"
+      ]
+    },
+    {
+      "path": "shipeasy sdk",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy sdk keys",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy sdk keys create",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--env",
+        "--json",
+        "--name",
+        "--project",
+        "--scopes",
+        "--type"
+      ]
+    },
+    {
+      "path": "shipeasy sdk keys list",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--json",
+        "--project"
+      ]
+    },
+    {
+      "path": "shipeasy sdk keys revoke",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--json",
+        "--project"
+      ]
+    },
+    {
+      "path": "shipeasy setup",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--agents",
+        "--devtools",
+        "--domain",
+        "--dry-run",
+        "--env",
+        "--features",
+        "--no-agent-run",
+        "--no-claude-run",
+        "--no-devtools",
+        "--no-triggers",
+        "--scope",
+        "--skip-install",
+        "--trigger-platform",
+        "--triggers",
+        "--yes"
+      ]
+    },
+    {
+      "path": "shipeasy setup triggers",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--dry-run",
+        "--platform"
+      ]
+    },
+    {
+      "path": "shipeasy upgrade",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--agents",
+        "--dry-run",
+        "--pm",
+        "--scope",
+        "--skip-cli",
+        "--skip-sdk",
+        "--yes"
+      ]
+    },
+    {
+      "path": "shipeasy upgrade skills",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--agents",
+        "--dry-run",
+        "--pm",
+        "--scope",
+        "--skip-cli"
+      ]
+    },
+    {
+      "path": "shipeasy whoami",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data"
+      ]
+    }
+  ]
+}

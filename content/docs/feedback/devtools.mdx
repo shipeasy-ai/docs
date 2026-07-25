@@ -198,10 +198,10 @@ initDevtools({
 ## Verify the install
 
 ```bash
-shipeasy modules enable feedback   # the overlay needs the feedback module on
-shipeasy modules list              # expect: feedback ✓
+# The overlay needs the Feedback module enabled — toggle it in
+# Settings → Modules in the dashboard, then verify from the CLI:
+shipeasy ops list --type bug   # expect [] or rows, never 403
 # then load any page with ?se=1 and confirm the rail appears
-shipeasy feedback bugs list        # CLI mirror — expect [] or rows, never 403
 ```
 
 `/shipeasy:ops:install` runs these checks for you and drops the project pointer

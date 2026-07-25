@@ -204,7 +204,7 @@ The dashboard&apos;s **Test evaluator** panel takes a JSON context and shows the
   secondaryHref="/flags-experiments/decision"
   secondaryLabel="Pick the right primitive"
   cmds={[
-    { label: "Set a rollout", cmd: "shipeasy flags rollout my-flag 25" },
-    { label: "List flags", cmd: "shipeasy flags list" },
+    { label: "Set a rollout", cmd: "shipeasy release flags update my-flag --rollout-percent 25" },
+    { label: "List flags", cmd: "shipeasy release flags list" },
   ]}
 />

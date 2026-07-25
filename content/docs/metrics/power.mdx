@@ -136,7 +136,7 @@ sometimes reduce variance via stratification or CUPED. Shipeasy supports the lat
 
 ```bash
 shipeasy metrics create purchase_conversion \
-  --event purchase \
+  --event-name purchase \
   --query 'count_users(purchase)'
 # Then enable CUPED + pick the covariate on the metric's "Variance
 # reduction" tab in the dashboard (Team plan and above).

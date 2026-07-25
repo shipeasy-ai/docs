@@ -51,13 +51,13 @@ return enabled ? <AdminPanelV2 /> : <AdminPanelV1 />;
 
 ```bash
 # 5% of companies — internal + a few design partners
-shipeasy flags rollout admin-panel-v2 5
+shipeasy release flags update admin-panel-v2 --rollout-percent 5
 
 # 25% of companies once support is quiet
-shipeasy flags rollout admin-panel-v2 25
+shipeasy release flags update admin-panel-v2 --rollout-percent 25
 
 # everyone
-shipeasy flags rollout admin-panel-v2 100
+shipeasy release flags update admin-panel-v2 --rollout-percent 100
 ```
 
 Each step adds whole accounts. A company is either fully on or fully off — never split.

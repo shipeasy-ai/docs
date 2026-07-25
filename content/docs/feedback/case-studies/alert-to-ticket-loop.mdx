@@ -35,7 +35,7 @@ An [alert](/metrics/alerts) reads a _metric_, not raw events. Create a metric ov
 
 ```bash
 shipeasy metrics create checkout-errors \
-  --event checkout_error --agg count --window 1h
+  --event-name checkout_error --query 'count(checkout_error)'
 ```
 
 ## 3. Raise the threshold alert
@@ -43,10 +43,12 @@ shipeasy metrics create checkout-errors \
 The rule watches the metric and fires when it crosses the line over the window:
 
 ```bash
-shipeasy alerts create \
-  --metric checkout-errors \
-  --condition "> 50" \
-  --window 1h \
+shipeasy ops alerts create \
+  --name "Checkout errors" \
+  --metric-id checkout-errors \
+  --comparator gt \
+  --threshold 50 \
+  --window-hours 1 \
   --severity high
 ```
 

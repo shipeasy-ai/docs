@@ -93,20 +93,20 @@ classDef sink fill:#131318,stroke:#2e2c38,color:#cbc9d6;
 ```bash
 # 1. a metric over the event (DSL grammar: /shipeasy:metrics:grammar)
 shipeasy metrics create checkout-errors \
-  --event checkout_error --query 'count(checkout_error)'
+  --event-name checkout_error --query 'count(checkout_error)'
 
 # 2. a threshold rule on that metric
-shipeasy alert-rules create "Checkout errors spiking" \
+shipeasy ops alerts create "Checkout errors spiking" \
   --metric checkout-errors --comparator gt --threshold 50 --window 1 --severity danger
 
 # 3. confirm it landed
-shipeasy alert-rules list
+shipeasy ops alerts list
 ```
 
 <Callout type="info">
   The same three steps are available over MCP (`exp_create_alert_rule`) and as the
   `/shipeasy:alerts:create` skill, which surveys your project and proposes rules worth adding. The
-  CLI command is `shipeasy alert-rules` — `shipeasy alerts` is the read-only view of what has
+  CLI command is `shipeasy ops alerts` — `shipeasy ops alerts` is the read-only view of what has
   already fired.
 </Callout>
 
@@ -184,7 +184,7 @@ A fired alert does three things at once:
 
 <TileGrid>
   <Tile icon="🔔" title="An alert record">
-    Shows in the read-only alerts view (`shipeasy alerts list`, danger first), with the observed
+    Shows in the read-only alerts view (`shipeasy ops alerts list`, danger first), with the observed
     value, the rule, and a deep link to the metric. One active alert per rule — re-breaches update
     it rather than piling up.
   </Tile>
@@ -218,16 +218,16 @@ connected Slack connector; the email target works with no connector.
 
 ```bash
 # list the channels the bot can post to
-shipeasy alert-rules channels
+shipeasy ops alerts channels
 
 # create a rule that posts to #incidents and emails on-call
-shipeasy alert-rules create "Checkout errors spiking" \
+shipeasy ops alerts create "Checkout errors spiking" \
   --metric checkout-errors --comparator gt --threshold 50 \
   --slack-channel '#incidents' --email oncall@acme.com
 
 # move an existing rule's target, or clear it back to the project default
-shipeasy alert-rules update "Checkout errors spiking" --slack-channel '#billing'
-shipeasy alert-rules update "Checkout errors spiking" --clear-target
+shipeasy ops alerts update "Checkout errors spiking" --slack-channel '#billing'
+shipeasy ops alerts update "Checkout errors spiking" --clear-target
 ```
 
 Over MCP the same control is the `notify` argument on `exp_create_alert_rule` /
@@ -253,9 +253,9 @@ comparator, widen the window, change severity, or toggle it off without recreati
 it:
 
 ```bash
-shipeasy alert-rules update "Checkout errors spiking" \
+shipeasy ops alerts update "Checkout errors spiking" \
   --threshold 80 --window 2 --severity warn
-shipeasy alert-rules update "Checkout errors spiking" --enabled false
+shipeasy ops alerts update "Checkout errors spiking" --enabled false
 ```
 
 To repoint a rule at a different metric, delete it and create a new one — the

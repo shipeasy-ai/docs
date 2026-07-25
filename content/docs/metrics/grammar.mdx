@@ -58,7 +58,7 @@ avg(req_dur{tier!="free"}, ms) without (region)
 The `--query` flag on `metrics create` takes a DSL string directly:
 
 ```bash
-shipeasy metrics create checkout_rate --event checkout_completed \
+shipeasy metrics create checkout_rate --event-name checkout_completed \
   --query 'count_users(checkout_completed)'
 ```
 

@@ -25,13 +25,13 @@ If you&apos;d rather hand this to an AI agent, the [LLM guide](/llms) describes 
     num={2}
     label="CREATE"
     title="Create a feature flag at 0%"
-    cmd="shipeasy flags create new-checkout-flow --rollout 0"
+    cmd="shipeasy release flags create new-checkout-flow --rollout-percent 0"
   />
   <QuickstartStep
     num={3}
     label="ROLL OUT"
     title="Bump it to 5%, then 100%"
-    cmd="shipeasy flags rollout new-checkout-flow 5"
+    cmd="shipeasy release flags update new-checkout-flow --rollout-percent 5"
   />
 </Quickstart>
 
@@ -41,7 +41,7 @@ If you&apos;d rather hand this to an AI agent, the [LLM guide](/llms) describes 
 - A **server SDK key** scoped to your environment. Find it in **Project &rarr; SDK keys &rarr; Create &rarr; server**, or generate one from the CLI:
 
 ```bash
-shipeasy keys create --kind server
+shipeasy sdk keys create --type server
 ```
 
 - The SDK installed in your project:
@@ -73,7 +73,7 @@ shipeasy keys create --kind server
     From the CLI:
 
     ```bash
-    shipeasy flags create new-checkout-flow --rollout 0
+    shipeasy release flags create new-checkout-flow --rollout-percent 0
     ```
 
     Or in the dashboard: **Configs &rarr; Feature flags &rarr; New feature flag**, name `new-checkout-flow`, leave the rollout at `0%`. The default value is `false` — nobody sees the new path yet.
@@ -213,9 +213,9 @@ shipeasy keys create --kind server
     Bump the rollout from `0%` &rarr; `5%` &rarr; `25%` &rarr; `100%` over a few hours, watching your error rate and p95.
 
     ```bash
-    shipeasy flags rollout new-checkout-flow 5
-    shipeasy flags rollout new-checkout-flow 25
-    shipeasy flags rollout new-checkout-flow 100
+    shipeasy release flags update new-checkout-flow --rollout-percent 5
+    shipeasy release flags update new-checkout-flow --rollout-percent 25
+    shipeasy release flags update new-checkout-flow --rollout-percent 100
     ```
 
     Bucketing is deterministic by `user_id`, so the same 5% always sees the new path. You won&apos;t see flicker as you bump the percentage — you only ever **add** users to the bucket, never reshuffle.
@@ -237,10 +237,10 @@ shipeasy keys create --kind server
     If something goes wrong, flip the killswitch. It overrides every targeting rule and serves `false` everywhere within the SDK&apos;s next poll (default 30s, faster on Pro).
 
     ```bash
-    shipeasy flags disable new-checkout-flow
+    shipeasy release flags disable new-checkout-flow
     ```
 
-    `flags disable` is the feature-flag-level off switch. `enabled` is a separate field from the feature flag's `rolloutPct` + targeting rules, so flipping it preserves them — `shipeasy flags enable new-checkout-flow` restores the full prior state. For incident-grade flips on a different control surface, use a [killswitch](/flags-experiments/killswitches).
+    `flags disable` is the feature-flag-level off switch. `enabled` is a separate field from the feature flag's `rolloutPct` + targeting rules, so flipping it preserves them — `shipeasy release flags enable new-checkout-flow` restores the full prior state. For incident-grade flips on a different control surface, use a [killswitch](/flags-experiments/killswitches).
 
   </Step>
 
@@ -251,7 +251,7 @@ shipeasy keys create --kind server
     ```bash title=".github/workflows/ci.yml"
     - name: List flags + grep stale references
       run: |
-        shipeasy flags list --json | jq -r '.data[].name' > /tmp/known-flags.txt
+        shipeasy release flags list | jq -r '.data[].name' > /tmp/known-flags.txt
         # fail if a getFlag("…") call references a name not in the file
         git grep -hoE 'getFlag\("[^"]+"' src | sed -E 's/.*"([^"]+)".*/\1/' | sort -u > /tmp/used-flags.txt
         comm -23 /tmp/used-flags.txt /tmp/known-flags.txt | tee /tmp/stale.txt

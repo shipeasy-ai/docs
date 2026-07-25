@@ -159,7 +159,7 @@ A practical workflow is to use a feature flag first (so the rollout is safe), th
     num={1}
     label="METRIC"
     title="Define what success looks like"
-    cmd="shipeasy metrics create purchase_conversion --event purchase --query 'count_users(purchase)'"
+    cmd="shipeasy metrics create purchase_conversion --event-name purchase --query 'count_users(purchase)'"
   >
     One number. A primary, plus a couple of guardrails (latency, error rate).
   </QuickstartStep>
@@ -310,7 +310,7 @@ Reading `name` / `group` / `enrolled` never logs an exposure — only `get()` do
   cmds={[
     {
       label: "Create the metric",
-      cmd: "shipeasy metrics create purchase_conversion --event purchase --query 'count_users(purchase)'",
+      cmd: "shipeasy metrics create purchase_conversion --event-name purchase --query 'count_users(purchase)'",
     },
     { label: "Create the experiment", cmd: "shipeasy release experiments create checkout-cta" },
   ]}

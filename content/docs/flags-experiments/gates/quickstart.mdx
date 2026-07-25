@@ -25,7 +25,7 @@ redeploys between ramp steps.
     num={2}
     label="CREATE"
     title="Create a feature flag at 0%"
-    cmd="shipeasy flags create checkout-v2 --rollout 0"
+    cmd="shipeasy release flags create checkout-v2 --rollout-percent 0"
   />
   <QuickstartStep
     num={3}
@@ -38,7 +38,7 @@ if (flags.getFlag('checkout-v2')) { ... }"
     num={4}
     label="RAMP"
     title="Bump to 5%, then 25%, then 100%"
-    cmd="shipeasy flags rollout checkout-v2 100"
+    cmd="shipeasy release flags update checkout-v2 --rollout-percent 100"
   />
 </Quickstart>
 
@@ -48,7 +48,7 @@ if (flags.getFlag('checkout-v2')) { ... }"
 - A **server SDK key** for the environment you're deploying to:
 
 ```bash
-shipeasy keys create --type server
+shipeasy sdk keys create --type server
 ```
 
 - The SDK in your project:
@@ -77,10 +77,10 @@ every bound `Client` you construct evaluates against the right context.
 ## 2. Create the feature flag
 
 ```bash
-shipeasy flags create checkout-v2 --rollout 0
+shipeasy release flags create checkout-v2 --rollout-percent 0
 ```
 
-`--rollout 0` means "no one sees it yet." The feature flag exists, the SDK
+`--rollout-percent 0` means "no one sees it yet." The feature flag exists, the SDK
 knows about it, but every call returns `false`. Safe to deploy. (A
 description field exists on the feature flag row but the CLI's `flags create`
 doesn't accept a `--description` flag today — add the description from
@@ -195,7 +195,7 @@ Two things to note:
   bundle — no network round-trip per read. (In Swift the getters are `async` because the engine is
   an actor.)
 
-Deploy this. With `--rollout 0`, every user sees `CheckoutV1`. The new path is shipped but dark.
+Deploy this. With `--rollout-percent 0`, every user sees `CheckoutV1`. The new path is shipped but dark.
 
 ## 4. Ramp gradually
 
@@ -203,13 +203,13 @@ When you're ready to start exposing real users:
 
 ```bash
 # Day 1 — 5% of all users
-shipeasy flags rollout checkout-v2 5
+shipeasy release flags update checkout-v2 --rollout-percent 5
 
 # Day 3 — 25%, after metrics look fine
-shipeasy flags rollout checkout-v2 25
+shipeasy release flags update checkout-v2 --rollout-percent 25
 
 # Day 5 — full launch
-shipeasy flags rollout checkout-v2 100
+shipeasy release flags update checkout-v2 --rollout-percent 100
 ```
 
 Each ramp step propagates to every SDK in under a second. No redeploy, no env var change.
@@ -234,12 +234,12 @@ curl -X PATCH "https://shipeasy.ai/api/admin/gates/$GATE_ID" \
 If the new path breaks at 25%, flip the killswitch:
 
 ```bash
-shipeasy flags disable checkout-v2
+shipeasy release flags disable checkout-v2
 ```
 
 Every SDK serves `false` within the next poll (default 30s on Free, 60s
 on Team). Targeting rules and the rollout percentage are preserved on
-the feature flag — when you fix the bug, `shipeasy flags enable checkout-v2`
+the feature flag — when you fix the bug, `shipeasy release flags enable checkout-v2`
 restores the previous state exactly.
 
 For incident-grade flips that propagate faster and are a dedicated

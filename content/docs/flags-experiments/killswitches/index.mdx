@@ -17,7 +17,7 @@ percentage, and defaults to the _safe_ position so on-call doesn't have to think
 ## Why a separate primitive?
 
 Feature flags have targeting rules, ramps, and dozens of them per project. Killswitches have one switch and
-a name. Mixing them is dangerous — at 3am you do not want to fat-finger a `--rollout 100` instead of
+a name. Mixing them is dangerous — at 3am you do not want to fat-finger a `--rollout-percent 100` instead of
 `--off`.
 
 <Callout type="warn" title="Rule of thumb">
@@ -48,7 +48,7 @@ a name. Mixing them is dangerous — at 3am you do not want to fat-finger a `--r
 
 ## Lifecycle
 
-1. **Create.** `shipeasy killswitch create transactional.email-sender --description "Disables outbound email" --value false` (killswitch names must be `folder.name`; `--value false` means "not killed by default").
+1. **Create.** `shipeasy release killswitch create transactional.email-sender --description "Disables outbound email" --value false` (killswitch names must be `folder.name`; `--value false` means "not killed by default").
 2. **Wire it in.** Wrap the call in your code:
    ```ts
    if (!(await gate("email-sender"))) return; // killed
@@ -56,7 +56,7 @@ a name. Mixing them is dangerous — at 3am you do not want to fat-finger a `--r
    ```
 3. **Page-time.** Flip it instantly:
    ```bash
-   shipeasy killswitch update transactional.email-sender --value true
+   shipeasy release killswitch update transactional.email-sender --value true
    ```
 4. **Recover.** Once the incident is closed, flip it back and post-mortem the audit log.
 
@@ -75,4 +75,4 @@ a name. Mixing them is dangerous — at 3am you do not want to fat-finger a `--r
 - [Feature flags](/flags-experiments/gates) — the everyday rollout primitive
 - [Decision tree](/flags-experiments/decision) — pick the right primitive for the change you're shipping
 - [API reference](/flags-experiments/api) — `POST /api/admin/killswitches` etc.
-- [CLI](/get-started/cli) — `shipeasy killswitch …` commands
+- [CLI](/get-started/cli) — `shipeasy release killswitch …` commands

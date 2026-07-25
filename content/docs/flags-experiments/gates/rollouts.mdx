@@ -94,7 +94,7 @@ You almost never bump the salt manually. The two cases where you would:
    salt so the second experiment's 50/50 split is independent of the first one's.
 
 ```bash
-shipeasy flags update checkout-v2 --salt v2
+shipeasy release flags update checkout-v2
 ```
 
 That's it. The whole rollout reshuffles. Use sparingly — every salt bump invalidates any analysis
@@ -116,7 +116,7 @@ API/CLI). Sub-percent resolution is sometimes useful:
 
 ```bash
 # 0.5% — useful for cautious initial exposure on a high-traffic feature
-shipeasy flags update payments-v2 --rollout-bps 50
+shipeasy release flags update payments-v2 --rollout-pct 50
 ```
 
 Internally, every rollout is a basis point. The UI rounds for display.

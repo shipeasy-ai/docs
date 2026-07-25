@@ -36,19 +36,19 @@ most common shapes:
 ```bash
 # binary conversion on `purchase`
 shipeasy metrics create purchase_conversion \
-  --event purchase --query 'count_users(purchase)'
+  --event-name purchase --query 'count_users(purchase)'
 
 # revenue per user (includes non-buyers as $0)
 shipeasy metrics create revenue_per_user \
-  --event purchase --query 'sum(purchase, value)'
+  --event-name purchase --query 'sum(purchase, value)'
 
 # average order value (averaged across buyers only)
 shipeasy metrics create avg_order_value \
-  --event purchase --query 'avg(purchase, value)'
+  --event-name purchase --query 'avg(purchase, value)'
 
 # sessions per user
 shipeasy metrics create sessions \
-  --event session_start --query 'count(session_start)'
+  --event-name session_start --query 'count(session_start)'
 ```
 
 Or in the dashboard: **Experiments → Metrics → New metric**.
@@ -61,7 +61,7 @@ the event's `properties` payload _before_ the aggregation:
 
 ```bash
 shipeasy metrics create organic_purchase \
-  --event purchase \
+  --event-name purchase \
   --query 'count_users(purchase{channel="organic"})'
 ```
 
@@ -111,12 +111,12 @@ For `sum` and `mean`, a single $50,000 enterprise purchase can swing the mean fo
 ```bash
 # Winsorise at p99 (this is the CLI default; --winsorize 99 is implicit)
 shipeasy metrics create revenue_per_user \
-  --event purchase --query 'sum(purchase, value)' \
+  --event-name purchase --query 'sum(purchase, value)' \
   --winsorize 99
 
 # Cap at p95 instead
 shipeasy metrics create revenue_per_user \
-  --event purchase --query 'sum(purchase, value)' \
+  --event-name purchase --query 'sum(purchase, value)' \
   --winsorize 95
 ```
 
@@ -136,7 +136,7 @@ two selector arms in the DSL:
 
 ```bash
 shipeasy metrics create click_through_rate \
-  --event click \
+  --event-name click \
   --query 'ratio(count(click), count(impression))'
 ```
 
@@ -323,11 +323,11 @@ The flip side of "how many users do I need" is "given the users I have, what's t
   cmds={[
     {
       label: "Create a primary metric",
-      cmd: "shipeasy metrics create purchase_conversion --event purchase --query 'count_users(purchase)'",
+      cmd: "shipeasy metrics create purchase_conversion --event-name purchase --query 'count_users(purchase)'",
     },
     {
       label: "Add a guardrail",
-      cmd: "shipeasy metrics create error_rate --event client_error --query 'count_users(client_error)'",
+      cmd: "shipeasy metrics create error_rate --event-name client_error --query 'count_users(client_error)'",
     },
   ]}
 />

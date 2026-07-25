@@ -35,7 +35,7 @@ This is the universal path. Every product — gates, configs, experiments, and i
     Opens your browser, confirms, and writes a credential file to `~/.shipeasy/credentials` (mode `0600`). Then bind the working directory to a project so every command knows where it points:
 
     ```bash
-    shipeasy use my-project   # or run inside a repo that already has a binding
+    shipeasy bind my-project   # or run inside a repo that already has a binding
     ```
 
     Full flow, including CI tokens, lives in [Authenticate](/get-started/authenticate).
@@ -58,7 +58,7 @@ This is the universal path. Every product — gates, configs, experiments, and i
   num={4}
   label="CREATE"
   title="Create a flag at 0%"
-  cmd="shipeasy flags create checkout-v2 --rollout 0"
+  cmd="shipeasy release flags create checkout-v2 --rollout-percent 0"
 >
   A flag at 0% is **off for everyone** but live in your rule set worldwide. You ship the code dark,
   then ramp when you're ready. Changes propagate in under a second (see [Evaluation &
@@ -76,8 +76,8 @@ This is the universal path. Every product — gates, configs, experiments, and i
   Client(user)`, then `flags.getFlag("checkout-v2")`.
 </QuickstartStep>
 
-  <QuickstartStep num={6} label="RAMP" title="Ramp it up" cmd="shipeasy flags update checkout-v2 --rollout 25">
-    Bump the rollout from your terminal (or the dashboard). The same deterministic bucketing means anyone in the first 25% stays in as you climb — nobody flickers out. Take it to `--rollout 100` when you're confident.
+  <QuickstartStep num={6} label="RAMP" title="Ramp it up" cmd="shipeasy release flags update checkout-v2 --rollout-percent 25">
+    Bump the rollout from your terminal (or the dashboard). The same deterministic bucketing means anyone in the first 25% stays in as you climb — nobody flickers out. Take it to `--rollout-percent 100` when you're confident.
   </QuickstartStep>
 </Quickstart>
 

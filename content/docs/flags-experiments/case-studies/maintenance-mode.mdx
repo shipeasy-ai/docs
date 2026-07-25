@@ -19,7 +19,7 @@ That switch is a [killswitch](/flags-experiments/killswitches), not a feature fl
 ## 1. Create the switch, default off
 
 ```bash
-shipeasy ks create checkout-maintenance --default false
+shipeasy release ks create checkout-maintenance --value false
 ```
 
 Default `false` means "normal operation." The subsystem reads the switch and only enters maintenance mode when someone deliberately flips it on. Safe to ship — it does nothing until an incident.
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
 When the pager fires:
 
 ```bash
-shipeasy ks toggle checkout-maintenance --on
+shipeasy release ks set-value checkout-maintenance --value true
 ```
 
 Every SDK serves the maintenance branch within the next poll (30s on Free, 60s on Team). No deploy, no env var, no code change. The flip is recorded in the audit log with who and when — so the incident timeline writes itself.
@@ -63,7 +63,7 @@ Every SDK serves the maintenance branch within the next poll (30s on Free, 60s o
 When the provider recovers:
 
 ```bash
-shipeasy ks toggle checkout-maintenance --off
+shipeasy release ks set-value checkout-maintenance --value false
 ```
 
 ## Rollout & measurement plan

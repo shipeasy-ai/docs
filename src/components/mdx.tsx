@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { InstallTabsClient } from "./install-tabs-client";
+import { parseInvocation, referenceHref } from "@/lib/cli-commands";
 
 type Tone = "info" | "success" | "warn" | "danger";
 
@@ -9,6 +10,54 @@ const ICONS: Record<Tone, string> = {
   warn: "!",
   danger: "×",
 };
+
+/* ──────────────────────────────────────────────────────────────
+   CLI command reference — validated against the real command tree.
+   ────────────────────────────────────────────────────────────── */
+
+/**
+ * Cite a `shipeasy` CLI command in prose. Renders it as inline code linked to
+ * its entry on the generated CLI reference, and — the point of the component —
+ * **validates it at build time** against `src/lib/cli-commands.json`, the
+ * projection of the CLI's own Commander tree.
+ *
+ * A command path or `--flag` the CLI doesn't ship throws during `next build`,
+ * so a published page can't cite a command the binary doesn't have.
+ *
+ *   <Cmd cmd="shipeasy release flags create <name>" />
+ *   <Cmd cmd="shipeasy release flags update <id> --rollout-percent 25" />
+ *
+ * Prefer the `cmd` prop: usage strings routinely contain `<name>` placeholders,
+ * which MDX would otherwise parse as a JSX tag. Children work for
+ * placeholder-free commands. Args and values are free-form — only the command
+ * path and long flags are checked. `link={false}` drops the link where it would
+ * be noise (in a heading, or on the reference page itself).
+ */
+export function Cmd({
+  cmd,
+  children,
+  link = true,
+}: {
+  cmd?: string;
+  children?: ReactNode;
+  link?: boolean;
+}) {
+  const source = cmd ?? children;
+  if (typeof source !== "string") {
+    throw new Error(
+      '<Cmd> needs a plain string, e.g. <Cmd cmd="shipeasy release flags list" /> ' +
+        `(got ${typeof source})`,
+    );
+  }
+  const { written, command } = parseInvocation(source);
+  const code = <code className="se-cmd">{written}</code>;
+  if (!link) return code;
+  return (
+    <a className="se-cmd-link" href={referenceHref(command)}>
+      {code}
+    </a>
+  );
+}
 
 export function Callout({
   type = "info",

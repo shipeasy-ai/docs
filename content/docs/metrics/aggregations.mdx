@@ -27,7 +27,7 @@ during the analysis window?
 
 ```bash
 shipeasy metrics create purchase_conversion \
-  --event purchase \
+  --event-name purchase \
   --query 'count_users(purchase)'
 ```
 
@@ -43,7 +43,7 @@ Per user: how many of the event happened?
 
 ```bash
 shipeasy metrics create sessions_per_user \
-  --event session_start \
+  --event-name session_start \
   --query 'count(session_start)'
 ```
 
@@ -63,7 +63,7 @@ Per user: sum a numeric property across all matching events.
 
 ```bash
 shipeasy metrics create revenue_per_user \
-  --event purchase \
+  --event-name purchase \
   --query 'sum(purchase, revenueCents)'
 ```
 
@@ -80,7 +80,7 @@ Per user: average a numeric property across their events.
 
 ```bash
 shipeasy metrics create avg_order_value \
-  --event purchase \
+  --event-name purchase \
   --query 'avg(purchase, revenueCents)'
 ```
 
@@ -99,7 +99,7 @@ Express it with `ratio(...)` between two count arms — `count` or
 
 ```bash
 shipeasy metrics create click_through_rate \
-  --event click \
+  --event-name click \
   --query 'ratio(count(click), count(impression))'
 ```
 
@@ -124,7 +124,7 @@ at that percentile.
 
 ```bash
 shipeasy metrics create revenue_per_user \
-  --event purchase \
+  --event-name purchase \
   --query 'sum(purchase, revenueCents)' \
   --winsorize 99
 ```
@@ -154,7 +154,7 @@ applied to the event's `properties` payload before aggregation:
 
 ```bash
 shipeasy metrics create organic_purchase \
-  --event purchase \
+  --event-name purchase \
   --query 'count_users(purchase{channel="organic"})'
 ```
 
@@ -203,14 +203,12 @@ against events from before the experiment started. Analysis runs forward from at
 
 ```bash
 # What does the metric definition look like?
-shipeasy metrics get purchase_conversion
+shipeasy metrics show purchase_conversion
 
-# What's the historical baseline distribution? (Powers the MDE calculator.)
-shipeasy metrics baseline purchase_conversion --window 30d
-
-# Dry-run aggregation against a recent sample
-shipeasy metrics preview purchase_conversion --sample 1000
+# What's the historical baseline? (Powers the MDE calculator.)
+shipeasy metrics series purchase_conversion --from 2026-06-01 --to 2026-06-30 --bucket day
 ```
 
-The `baseline` command is the one to run before launching an experiment — it tells you the
-metric's variance, which feeds the power calculation directly.
+Run `shipeasy metrics series` before launching an experiment — the daily buckets
+give you the baseline rate and its spread, which feed the power calculation
+directly. The experiment's **Power** tab does the same math against live data.

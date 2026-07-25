@@ -20,11 +20,11 @@ That's what [guardrail metrics](/metrics/guardrails) are for. The primary is the
 
 ```bash
 # the metric the experiment is trying to move
-shipeasy release experiments update checkout-v2 --primary conversion_rate
+shipeasy release experiments update checkout-v2 --goal-metric conversion_rate
 
 # the metrics that must NOT regress for the win to count
-shipeasy release experiments update checkout-v2 --guardrail p95_latency
-shipeasy release experiments update checkout-v2 --guardrail error_rate
+shipeasy release experiments update checkout-v2 --guardrail-metrics p95_latency
+shipeasy release experiments update checkout-v2 --guardrail-metrics error_rate
 ```
 
 The default guardrails for almost any product experiment are latency, error rate, and whatever your primary could secretly cannibalise (a `clicks` primary should guard `bounce_rate`; a `signup` primary should guard `signup_quality`).

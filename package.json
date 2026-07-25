@@ -7,11 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "type-check": "fumadocs-mdx && tsc --noEmit",
+    "type-check": "fumadocs-mdx && tsc --noEmit && pnpm check-cli",
     "gen-api-reference": "tsx scripts/generate-api-reference.ts",
     "gen-sdk-reference": "tsx scripts/generate-sdk-reference.ts",
     "deploy": "next build && wrangler deploy",
-    "preview": "next build && wrangler dev"
+    "preview": "next build && wrangler dev",
+    "check-cli": "tsx scripts/check-cli-mentions.ts"
   },
   "dependencies": {
     "@shipeasy/openapi": "workspace:*",

@@ -69,7 +69,7 @@ shipeasy login --project <project_id>  # re-auth scoped to a different project
 For one-off overrides on a single command, every CLI subcommand accepts a `--project <id>` flag:
 
 ```bash
-shipeasy flags list --project acme
+shipeasy release flags list
 ```
 
 The order of precedence is: `--project` flag &gt; `.shipeasy` file in the cwd &gt; the project bound during `shipeasy login`.
@@ -86,7 +86,7 @@ shipeasy logout
 
 This wipes `~/.shipeasy/credentials`. You&apos;ll need to `login` again before the next CLI or MCP call.
 
-To revoke the **server-side** session (e.g. you suspect the credential file leaked), use `shipeasy logout --revoke`. This calls the admin API to invalidate the refresh token before deleting the local file. After this, even an attacker with the credential file can&apos;t obtain new access tokens.
+To revoke the **server-side** session (e.g. you suspect the credential file leaked), use `shipeasy logout`. This calls the admin API to invalidate the refresh token before deleting the local file. After this, even an attacker with the credential file can&apos;t obtain new access tokens.
 
 ## Token rotation
 
@@ -115,7 +115,8 @@ API tokens skip the device-auth flow entirely. They&apos;re scoped to one projec
 <Callout type="warn" title="Scope and rotate your CI tokens">
   Read-write API tokens can change anything in the project. Treat them like any other production
   secret: store in your CI vault, rotate on a schedule, scope to the smallest project that works,
-  and never commit them. The `shipeasy tokens` commands let you list and revoke at any time.
+  and never commit them. `shipeasy sdk keys list` and `shipeasy sdk keys revoke` let you audit and
+  revoke at any time.
 </Callout>
 
 ## SDK keys vs API tokens — pick the right one

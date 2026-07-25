@@ -14,7 +14,7 @@ sending in under five seconds without touching code.
     num={1}
     label="CREATE"
     title="Create the killswitch (default OFF)"
-    cmd="shipeasy killswitch create transactional.emails-enabled --value false"
+    cmd="shipeasy release killswitch create transactional.emails-enabled --value false"
   />
   <QuickstartStep
     num={2}
@@ -26,7 +26,7 @@ sending in under five seconds without touching code.
     num={3}
     label="REHEARSE"
     title="Flip it, watch it stop"
-    cmd="shipeasy killswitch update transactional.emails-enabled --value true"
+    cmd="shipeasy release killswitch update transactional.emails-enabled --value true"
   />
   <QuickstartStep
     num={4}
@@ -39,7 +39,7 @@ sending in under five seconds without touching code.
 ## 1. Create the killswitch
 
 ```bash
-shipeasy killswitch create transactional.emails-enabled \
+shipeasy release killswitch create transactional.emails-enabled \
   --description "Disables outbound transactional email" \
   --value false
 ```
@@ -128,7 +128,7 @@ flipped it before. Rehearse in staging:
 
 ```bash
 # Flip the killswitch to true ("kill the path") — single-value form
-shipeasy killswitch update transactional.emails-enabled --value true
+shipeasy release killswitch update transactional.emails-enabled --value true
 
 # Confirm via the SDK eval endpoint
 curl "https://api.shipeasy.ai/sdk/evaluate" \
@@ -142,7 +142,7 @@ curl "https://api.shipeasy.ai/sdk/evaluate" \
 # … run your normal email test path …
 
 # Re-enable (flip back to false = "not killed")
-shipeasy killswitch update transactional.emails-enabled --value false
+shipeasy release killswitch update transactional.emails-enabled --value false
 ```
 
 Time how long it takes from "decide to flip" to "next email is suppressed."

@@ -272,7 +272,7 @@ Automate step 1 with the CLI:
 ```bash
 # Every gate at 100% rollout (filter to long-stable ones using the
 # created_at field + your own threshold)
-shipeasy flags list --json | jq -r '.[] | select(.rolloutPct == 10000) | .name'
+shipeasy release flags list | jq -r '.[] | select(.rolloutPct == 10000) | .name'
 
 # Sanity-check the codebase no longer references each candidate before
 # deleting — grep is the simplest correct tool:
@@ -280,9 +280,9 @@ git grep -nE "flags\\.get\\(['\"](dark-mode|checkout-v2|new-search)['\"]"
 
 # Once nothing matches, delete them one at a time (the CLI's `delete`
 # takes one name per invocation):
-shipeasy flags delete dark-mode
-shipeasy flags delete checkout-v2
-shipeasy flags delete new-search
+shipeasy release flags archive dark-mode
+shipeasy release flags archive checkout-v2
+shipeasy release flags archive new-search
 ```
 
 The grep step is non-negotiable. Deleting a feature flag that's still referenced in code is fine
@@ -374,13 +374,13 @@ The fix is rehearsal. Once a quarter, run a drill in staging:
 
 ```bash
 # Flip the killswitch ON (kill = true) for the drill
-shipeasy killswitch update transactional.emails-enabled --value true
+shipeasy release killswitch update transactional.emails-enabled --value true
 
 # Run the canonical test that exercises every email-sending code path
 pnpm test:integration --grep email
 
 # Confirm zero emails went out, then restore
-shipeasy killswitch update transactional.emails-enabled --value false
+shipeasy release killswitch update transactional.emails-enabled --value false
 ```
 
 If any test sent an email while the killswitch was off, you've found a naked code path. Fix
@@ -481,7 +481,7 @@ variance — equivalent to 10–30% more users.
 
 ```bash
 shipeasy metrics create purchase_conversion \
-  --event purchase \
+  --event-name purchase \
   --query 'count_users(purchase)'
 # Enable CUPED + pick the pre-experiment covariate on the metric's
 # Variance reduction tab in the dashboard (Team plan and above).
@@ -517,8 +517,8 @@ and pin the SDK to the matching name based on which env's SDK key it's
 booted with:
 
 ```bash
-shipeasy flags rollout checkout-v2.staging 100
-shipeasy flags rollout checkout-v2.prod 25
+shipeasy release flags update checkout-v2.staging --rollout-percent 100
+shipeasy release flags update checkout-v2.prod --rollout-percent 25
 ```
 
 Per-env values on a single feature flag is on the roadmap — until then, the
@@ -527,13 +527,13 @@ naming convention is what enforces the boundary.
 ### 2. Diff env state by hand
 
 A first-class env-diff tool isn't shipped today. Until it lands, the
-practical pattern is to dump `shipeasy flags list --json` from each env
+practical pattern is to dump `shipeasy release flags list` from each env
 (by re-binding to the appropriate project / SDK key) and `jq` the
 delta:
 
 ```bash
-shipeasy flags list --json > staging.json
-shipeasy flags list --json --project prod-project-id > prod.json
+shipeasy release flags list > staging.json
+shipeasy release flags list > prod.json
 diff <(jq -S . staging.json) <(jq -S . prod.json)
 ```
 
@@ -542,11 +542,18 @@ diff <(jq -S . staging.json) <(jq -S . prod.json)
 For new flags, create in staging, qualify, then _promote_ to prod rather than re-creating:
 
 ```bash
-shipeasy flags promote checkout-v2 --from staging --to production
+# Read the qualified definition out of one project and create it in the other
+shipeasy release flags get checkout-v2 > checkout-v2.json
+
+shipeasy release flags create checkout-v2 \
+  --rules "$(jq -c .rules checkout-v2.json)" \
+  --rollout-pct "$(jq -r .rolloutPct checkout-v2.json)" \
+  --salt "$(jq -r .salt checkout-v2.json)"
 ```
 
-Copies the full config (rules, rollout, overrides, salt) atomically. The two envs match exactly
-after the promote; subsequent edits drift again unless you mirror.
+Carrying the `--salt` across is what makes the two match: bucketing is
+`hash(salt:unit)`, so the same salt puts the same users in the same slice.
+Subsequent edits drift again unless you mirror them.
 
 The trade-off you're navigating: dev velocity (different states per env) vs. release safety
 (same behaviour everywhere). The right balance depends on whether your bugs tend to come from

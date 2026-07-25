@@ -255,6 +255,18 @@ article h2 {
    Custom MDX components.
    ────────────────────────────────────────────────────────────── */
 
+/* CLI command reference — inline code that links into the CLI reference */
+.se-cmd-link {
+  text-decoration: none;
+  border-bottom: 1px dashed var(--se-line);
+}
+.se-cmd-link:hover {
+  border-bottom-color: var(--se-accent);
+}
+article :not(pre) > .se-cmd-link > code.se-cmd {
+  white-space: nowrap;
+}
+
 /* Callout — info / success / warn / danger */
 .se-callout {
   display: flex;
