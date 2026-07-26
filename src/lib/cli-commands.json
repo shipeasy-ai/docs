@@ -2042,6 +2042,7 @@
         "--env",
         "--features",
         "--no-agent-run",
+        "--no-bootstrap",
         "--no-claude-run",
         "--no-devtools",
         "--no-triggers",
