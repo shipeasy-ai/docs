@@ -67,6 +67,9 @@ Every field is optional except `APIKey`.
 | `PrivateAttributes` | `[]string` | — | Event-property keys stripped from every outbound `/collect` payload (`Track`, exposure, `See` extras). |
 | `StickyStore` | `StickyBucketStore` | `nil` | Lock in experiment assignments per bucketing unit. See [Advanced](/sdks/reference/go/advanced). |
 | `LogLevel` | `string` | `"warn"` | SDK log verbosity: `silent`, `error`, `warn`, `info`, `debug`. Gates the `[shipeasy] ` background-failure logs. See [Configuration](/sdks/reference/go/configuration#fail-safe-reads--the-loglevel-option). |
+| `ClientKey` | `string` | — | **Public** client key (`sdk_client_…`) — the default the SSR i18n / devtools tags carry. Never the server key. See [Advanced](/sdks/reference/go/advanced#ssr-bootstrap). |
+| `ProjectID` | `string` | — | Your project id (`proj_…`) — read by `DevtoolsScriptTag`. See [Advanced](/sdks/reference/go/advanced#devtools-overlay-tag). |
+| `CDNBaseURL` | `string` | `https://cdn.shipeasy.ai` | CDN origin the SSR tags are built against. |
 
 The full init/poll vs one-shot semantics and change listeners live on the
 [Configuration](/sdks/reference/go/configuration) page.

@@ -3,7 +3,7 @@ title: "Node / TypeScript"
 description: "The canonical Shipeasy SDK — one package with a server and a browser build, local evaluation, configs, experiments, and tracking."
 ---
 
-<DocMeta status="Production ready" read="6 min read" updated="July 19, 2026" works="Node 18+ · Cloudflare Workers · Deno · Next.js · Browsers" />
+<DocMeta status="Production ready" read="6 min read" updated="July 26, 2026" works="Node 18+ · Cloudflare Workers · Deno · Next.js · Browsers" />
 
 <Callout type="info">Generated from the TypeScript / JavaScript SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk typescript overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-ts`](https://shipeasy-ai.github.io/sdk-ts). Edit it in the SDK repo, not here.</Callout>
 
@@ -171,6 +171,8 @@ const flags = new Client(currentUser);
 //   .group    — the assigned variant, or null when not enrolled
 //   .enrolled — === (group !== null)
 //   .get(field, fallback, opts?) — variant override ?? universe default ?? fallback
+// universe<P>(name) — optional: P declares the universe's param shape, which
+//   types .get() (autocompleted field names, typed value instead of unknown).
 // Server: assign() takes no arg (user bound at construction); the exposure fires
 //   on the first get() read. Peek without logging: get(field, fallback, { exposure: false }).
 // Browser: assign(opts?) — opts.logExposure to force/suppress the exposure beacon at assign.
