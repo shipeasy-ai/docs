@@ -160,10 +160,10 @@ description: Localized labels and AI-assisted translations — discovered from y
     Create a target profile (`fr`). Run `i18n translate --ai` to draft missing values. Claude reads your tone and glossary on every call. Review side-by-side in the dashboard.
   </Step>
   <Step title="Publish">
-    `i18n publish --profile fr` ships the merged label set worldwide. Single-key edits don't invalidate the whole bundle — only the relevant chunk is updated.
+    `i18n publish --profile fr` ships the merged label set worldwide as one atomic snapshot.
   </Step>
   <Step title="Loader fetches the active locale">
-    A small `<script>` in your HTML fetches the right chunks for the active locale. Zero JS dependencies. Sub-millisecond from anywhere.
+    A small `<script>` in your HTML fetches the bundle for the active locale. Zero JS dependencies. Sub-millisecond from anywhere.
   </Step>
 </Steps>
 
@@ -260,7 +260,7 @@ profile is the authoritative configuration surface.
 Shipeasy Translations ships through the same client SDK as flags and
 experiments. Call `i18n.t(key, fallback)` anywhere — the active locale is
 picked from your loader script (or the cookie / URL param you configure),
-and translations come from the chunked bundle the loader fetches.
+and translations come from the bundle the loader fetches.
 
 ```tsx
 // app/(marketing)/page.tsx (Server Component or "use client" — both work)
@@ -279,8 +279,8 @@ export default function Page() {
 The English fallback string is the SOURCE OF TRUTH — `shipeasy i18n scan`
 picks it up and pushes it to the en profile, and the AI draft uses it as
 the prompt to translate from. The key (`landing.hero.title`) is what the
-runtime looks up in the published chunk. Pre-launch you can ship without
-ever opening the dashboard — fallbacks render until the chunk is up.
+runtime looks up in the published bundle. Pre-launch you can ship without
+ever opening the dashboard — fallbacks render until the bundle is up.
 
 <Callout type="warn" title="Don't translate user-generated content this way">
   This is for static UI strings the scanner can extract at build time. For UGC (chat messages,
@@ -295,7 +295,7 @@ You could store labels as a [dynamic JSON config](/configs/values) — and for t
 - **Volume**: tens of thousands of keys. One JSON blob is unworkable.
 - **Workflow**: translators are not engineers and shouldn&apos;t need access to flag tooling.
 - **Discovery**: keys come and go with code; manual sync drifts immediately.
-- **Performance**: chunking + lazy loading by route is critical at the upper end.
+- **Performance**: keep a profile's bundle lean; split copy across profiles at the upper end.
 - **Stats**: you want to know which keys are unused, which translations are stale, which locales lag behind.
 
 Shipeasy Translations handles all of that and exposes a dead-simple SDK for the runtime side.

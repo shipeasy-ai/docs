@@ -85,7 +85,7 @@ For each key being translated, the prompt assembled by the worker includes:
 - **System prompt**: target locale, region, brand tone (global + per-locale), instructions for ICU plural categories, length-budget rule.
 - **Glossary**: only entries relevant to the current batch (matched by substring), to keep the prompt small.
 - **Per-key block**: key path, source value, description (if any), max-length hint (if any), placeholders allowlist.
-- **Sibling context**: up to 8 neighbouring keys from the same chunk or namespace, with their already-translated values in the target profile (when present). This is what keeps terminology consistent across a UI surface.
+- **Sibling context**: up to 8 neighbouring keys from the same namespace, with their already-translated values in the target profile (when present). This is what keeps terminology consistent across a UI surface.
 - **Pre-existing translation**: only when running with `--reflow`.
 
 A representative prompt structure:
@@ -122,7 +122,7 @@ agents). The Drafts panel exposes the run-time toggles:
 | Missing only    | Default — translate only keys present in source but absent / empty in target.   |
 | Stale only      | Re-translate only keys whose source value changed since the last translation.   |
 | Reflow existing | Revisit existing values for tone/glossary consistency. Generates a lot of diff. |
-| Limit to chunk  | Run on a single chunk. Faster and cheaper.                                      |
+| Limit to keys   | Run on an explicit key list. Faster and cheaper.                                |
 | Key pattern     | Glob filter (e.g. `checkout.*`).                                                |
 | Model override  | One-shot model override per run.                                                |
 | Estimate only   | Build the prompts and show the projected cost; don't call the API.              |
@@ -206,7 +206,7 @@ For high-stakes copy (legal disclaimers, paid plans, anything regulated) — don
 <Callout type="warn" title="Rate limits live in the upstream API">
   Anthropic enforces tier-based rate limits. Hosted plans pool a high-tier key; BYOK runs at your
   own tier. The CLI handles 429s with exponential backoff, but a 10,000-key run on a tier-1 key will
-  queue. Upgrade your Anthropic tier or chunk the run.
+  queue. Upgrade your Anthropic tier or split the run into smaller key batches.
 </Callout>
 
 ## Bring-your-own-translator workflows
@@ -259,9 +259,8 @@ If you have an in-house or contracted human translation team, you can still use 
       required: true,
       description: (
         <>
-          Start a translation job. Body:{" "}
-          <code>{`{ profile, mode, chunk?, keys?, model?, reflow? }`}</code>. Returns{" "}
-          <code>job_id</code>.
+          Start a translation job. Body: <code>{`{ profile, mode, keys?, model?, reflow? }`}</code>.
+          Returns <code>job_id</code>.
         </>
       ),
     },

@@ -66,10 +66,10 @@ The most common path. The CLI calls Anthropic Claude (using your project's API k
 shipeasy i18n translate --profile fr --ai
 ```
 
-Existing values are not overwritten unless you pass `--reflow`. Filter by chunk for a smaller, faster run:
+Existing values are not overwritten unless you pass `--reflow`. Filter by key prefix for a smaller, faster run:
 
 ```bash
-shipeasy i18n translate --profile fr --ai --chunk checkout
+shipeasy i18n translate --profile fr --ai --prefix checkout
 ```
 
 The dashboard streams progress live — keys translated, keys remaining, current cost, ETA.
@@ -122,7 +122,7 @@ Most drafts are reviewable in under twenty minutes because the bulk actions hand
 
 - **Approve all unchanged** — every row whose proposal matches the current value.
 - **Approve all high-confidence** — every AI proposal above a confidence threshold (default 0.85).
-- **Approve chunk** — every row in a single chunk after a quick scroll.
+- **Approve prefix** — every row under one key prefix after a quick scroll.
 - **Filter to "needs attention"** — rows with low confidence, length-budget warnings, or unresolved comments.
 
 Keyboard shortcuts: `j`/`k` next/prev row, `a` approve, `r` reject, `e` edit, `c` comment, `?` show all.

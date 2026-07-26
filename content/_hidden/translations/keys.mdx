@@ -1,6 +1,6 @@
 ---
 title: Label keys
-description: How Shipeasy Translations names, hashes, chunks, describes, and deletes the strings your code references.
+description: How Shipeasy Translations names, hashes, describes, and deletes the strings your code references.
 ---
 
 <DocMeta
@@ -53,10 +53,6 @@ Shipeasy Translations's job is to make keys feel invisible: you write English in
           English changes, the hash changes, target translations are marked stale.
         </>
       ),
-    },
-    chunk: {
-      type: "string",
-      description: "Grouping for lazy loading by route or feature. One chunk per HTTP fetch.",
     },
     namespace: {
       type: "string",
@@ -249,7 +245,7 @@ When the AI translates a key, it sees:
 - The key (`checkout.cta_label`).
 - The source value (`Pay`).
 - The description, if you've added one (`CTA on the checkout summary page; verb, must be short`).
-- Up to 8 "context keys" — neighbouring keys from the same chunk or namespace.
+- Up to 8 "context keys" — neighbouring keys from the same namespace.
 - Project-level tone and glossary.
 
 A good description doubles translation quality on ambiguous strings. Add one for any key whose meaning is not obvious from its source value. Common cases that need a description:
@@ -274,50 +270,24 @@ You can also set descriptions inline in code with a comment that the codemod pic
 <button>{t("checkout.cta_label", "Pay")}</button>;
 ```
 
-## Chunking for performance
+## Bundle size
 
-By default every key in a profile is served in one bundle. For large apps (≥5k keys), split into chunks so the loader fetches only what each route needs.
-
-```ts
-const labels = await loadLabels({ profile: "en", chunk: "checkout" });
-```
-
-You define a chunk via:
-
-- The `chunk` field on each key (set when pushing).
-- Or by directory in the codemod config:
-
-```json title="shipeasy.config.json"
-{
-  "i18n": {
-    "chunks": {
-      "checkout": ["src/checkout/**"],
-      "settings": ["src/settings/**"],
-      "marketing": ["src/(marketing)/**"],
-      "shared": ["src/components/**"]
-    }
-  }
-}
-```
-
-The loader fetches chunks active for the current page; navigations fetch additional chunks lazily. This keeps the initial bundle tiny and warm.
-
-KV storage layout per published version:
+Every key in a profile is published and served as ONE bundle: a single KV blob
+per profile, fetched in a single request and cached at the edge.
 
 ```
-i18n/v1/{project}/{profile}/v{n}/index.json     — chunk → hash manifest, ~2 KB
-i18n/v1/{project}/{profile}/v{n}/shared.json    — chunk bundle
-i18n/v1/{project}/{profile}/v{n}/checkout.json
-i18n/v1/{project}/{profile}/v{n}/settings.json
-i18n/v1/{project}/{profile}/v{n}/marketing.json
+FLAGS_KV  {project_id}:i18n:{profile_name}  →  { strings, locale, version }
 ```
 
-The index is cached aggressively at the edge; chunk URLs are content-hashed in the index, so a single-key edit in `checkout` purges only `checkout.json` for the new version. Other chunks stay warm.
+A publish rewrites that blob and purges the profile's edge URL, so a single-key
+edit ships the whole profile at the new `version`. There is no per-route or
+per-feature split — one profile, one artifact, one fetch.
 
-<Callout type="info" title="Don't chunk too early">
-  Under ~5,000 keys, a single bundle is usually faster end-to-end (one request, smaller HTTP
-  overhead). Chunk when the bundle exceeds ~80 KB gzipped or when route-level lazy loading actually
-  pays off.
+<Callout type="info" title="How big is too big?">
+  A profile of a few thousand keys is comfortably under the size where a single bundle stops being
+  the fastest option end-to-end (one request, minimal HTTP overhead). If a profile grows past
+  roughly 80 KB gzipped, split the copy across separate profiles rather than reaching for a
+  sub-profile grouping — profiles are the only unit publishing understands.
 </Callout>
 
 ## Stale keys and re-translation

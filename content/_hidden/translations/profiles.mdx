@@ -87,7 +87,7 @@ with long TTL and explicitly purged on every publish.
     shipeasy i18n publish --profile fr
     ```
 
-    Publishing is two writes and one purge: write the chunked bundle to KV, write a new row to `i18n_profile_versions`, purge the CDN URL for the locale's `index.json`. End-to-end latency is typically under three seconds globally.
+    Publishing is one write and one purge: snapshot the whole profile into its KV blob, then purge the locale's CDN URL. End-to-end latency is typically under three seconds globally.
 
   </Step>
 

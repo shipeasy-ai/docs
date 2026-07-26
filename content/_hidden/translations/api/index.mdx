@@ -25,7 +25,7 @@ curl https://shipeasy.ai/api/admin/translations/keys \
     Per-locale tone, glossary, voice. Applied to every AI draft.
   </Tile>
   <Tile href="#publish" icon="↗" title="Publish">
-    Promote approved drafts to live. Triggers chunked CDN propagation.
+    Promote approved drafts to live. Triggers CDN propagation.
   </Tile>
 </TileGrid>
 
@@ -39,7 +39,8 @@ curl https://shipeasy.ai/api/admin/translations/keys \
 
 **Locales** are BCP-47 codes (`en`, `pt-BR`, `zh-Hant`).
 
-**Chunking.** Published label sets are sharded by namespace prefix to keep CDN payloads small.
-Pass `?chunk=<prefix>` to read a specific chunk.
+**Granularity.** A profile is the unit of publishing: the whole profile is
+snapshotted into one artifact and served in one fetch. There is no sub-profile
+read parameter.
 
 **Errors** follow the same envelope as the rest of the Admin API.

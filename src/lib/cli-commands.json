@@ -112,7 +112,6 @@
         }
       ],
       "options": [
-        "--chunk",
         "--dry-run",
         "--no-publish",
         "--profile",
@@ -142,7 +141,6 @@
         }
       ],
       "options": [
-        "--chunk",
         "--dry-run",
         "--no-publish",
         "--profile",
@@ -186,7 +184,6 @@
       "aliases": [],
       "args": [],
       "options": [
-        "--chunk",
         "--json",
         "--profile",
         "--project"
@@ -203,7 +200,7 @@
         }
       ],
       "options": [
-        "--chunk",
+        "--force",
         "--json",
         "--profile",
         "--project"

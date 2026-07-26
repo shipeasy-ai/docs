@@ -147,7 +147,7 @@ shipeasy login
     shipeasy i18n publish --profile de
     ```
 
-    Each publish writes the chunked label bundle to KV and purges the relevant CDN URLs. New copy is live worldwide in seconds.
+    Each publish writes the profile's label bundle to KV and purges its CDN URL. New copy is live worldwide in seconds.
 
   </Step>
 
@@ -204,7 +204,7 @@ Add this to your pre-merge checks and you'll never ship an "untranslated string"
       <>
         <span>auto-discovered</span>
         <span>·</span>
-        <span>chunked</span>
+        <span>bundled</span>
       </>
     }
   >

@@ -319,7 +319,7 @@ The branch here depends on what Step 2 told you about codemod capability.
     The tool refuses without `confirm: true`. After it runs, `i18n-codemod-review.json` is written at the project root listing every string that was skipped (dynamic interpolations, rich HTML, plurals, conditional fragments). Read it; surface anything non-trivial to the human.
 
   </Step>
-  <Step title="Chunk large codebases">
+  <Step title="Split large codebases">
     If the source root has more than ~300 source files, run preview/apply one subdirectory at a time (`src/app/`, then `src/components/`, then `src/lib/`). Diffs stay reviewable, failures stay isolated.
   </Step>
 </Steps>
@@ -459,7 +459,7 @@ Translation quality drops sharply without context. For every key the codemod cre
     }
     ```
 
-    Response: `{ published_at, chunks, purge_urls }`. Strings are live in seconds.
+    Response: `{ published_at, version, key_count, purged }`. Strings are live in seconds.
 
   </Step>
   <Step title="Verify in the wild">
