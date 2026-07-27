@@ -288,7 +288,9 @@
       "path": "shipeasy logout",
       "aliases": [],
       "args": [],
-      "options": []
+      "options": [
+        "--force"
+      ]
     },
     {
       "path": "shipeasy mcp",
