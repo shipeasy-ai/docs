@@ -1832,6 +1832,64 @@
       ]
     },
     {
+      "path": "shipeasy release flags whitelist",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy release flags whitelist-add",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--attr",
+        "--entries"
+      ]
+    },
+    {
+      "path": "shipeasy release flags whitelist-remove",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--entries"
+      ]
+    },
+    {
+      "path": "shipeasy release flags whitelist-set",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--attr",
+        "--entries"
+      ]
+    },
+    {
       "path": "shipeasy release killswitch",
       "aliases": [
         "ks"
@@ -1923,6 +1981,22 @@
       ],
       "options": [
         "--env",
+        "--value"
+      ]
+    },
+    {
+      "path": "shipeasy release killswitch toggle",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--env",
+        "--switch-key",
         "--value"
       ]
     },
