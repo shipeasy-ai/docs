@@ -102,7 +102,7 @@ export function DocFeedback({ page, editHref }: { page: string; editHref?: strin
         )}
 
         {editHref ? (
-          <a className="se-feedback-edit" href={editHref} target="_blank" rel="noreferrer">
+          <a className="se-feedback-edit" href={editHref} target="_blank" rel="noopener">
             ✎ Edit this page
           </a>
         ) : null}
