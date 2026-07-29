@@ -1088,6 +1088,8 @@
         "--default-power",
         "--default-winsorize-pct",
         "--domain",
+        "--error-autoclose-days",
+        "--error-ticket-min-occurrences",
         "--min-runtime-days",
         "--min-sample-days",
         "--min-sample-size",
