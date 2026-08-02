@@ -562,8 +562,8 @@ export function AssistantPlanScene({ resolved = false }: { resolved?: boolean })
         </div>
         {resolved ? (
           <div className="se-asst-plan-done">
-            <span className="se-asst-tick">✓</span> Created 2 resources; filed measure-plan ticket
-            #42 for 1 item to implement.
+            <span className="se-asst-tick">✓</span> Created 2 resources and filed ticket #42 with 1
+            item to implement
           </div>
         ) : (
           <div className="se-asst-card-actions">
