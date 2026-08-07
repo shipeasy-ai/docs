@@ -1,57 +1,275 @@
 ---
 title: Query DSL grammar
-description: The full grammar for the Shipeasy metric query DSL — aggregation functions, event selectors, label filters, and group-by — with worked examples.
+description: The complete formal grammar for the Shipeasy metric query DSL — aggregates, expressions, selectors, filters, group-by, and the full function set, with the limits and the deliberate refusals.
 ---
 
-<DocMeta status="Production ready" read="5 min read" updated="June 14, 2026" works="Server SDK" />
+<DocMeta status="Production ready" read="9 min read" updated="August 7, 2026" works="Server SDK" />
 
-Every metric is backed by a small query in the **metric query DSL**: one aggregation function over
-one event selector, with optional label filters and a group-by. This page is the complete grammar.
-It mirrors `shipeasy metrics grammar` exactly — that command prints the same reference in your
-terminal.
+Every metric is backed by a query in the **metric query DSL**. A query is an _expression_:
+aggregates are the leaves, arithmetic composes them, and functions transform the resulting series.
+This page is the complete grammar, written the way a SQL reference is written, plus the limits and
+the things the language refuses on purpose.
 
-## Grammar
+<Callout type="info" title="This page describes the expression grammar">
+  Earlier metrics were a single aggregation with a special-cased `ratio(...)` form. Those still work
+  and still render — every one of them is also a valid expression. What is new is that arithmetic,
+  `by ()` on any query, and the function set below are now part of the language.
+</Callout>
+
+## Notation
+
+`[ ]` optional. `{ a | b }` choose one. `[ ,...n ]` the item repeats, comma-separated.
+`[ ...n ]` the preceding group repeats. Literal `{ }` inside a selector is written `'{' '}'` so it
+does not collide with the notation.
+
+Every keyword is **lower-case and case-sensitive**, and bare — never quoted. `MAD` is the one
+upper-case keyword in the language.
+
+## The grammar
 
 ```text
-Query         := AggFunc "(" Selector ("," Identifier)? ")" GroupBy?
-AggFunc       := count_users | count | sum | avg | min | max | unique |
-                 p50 | p75 | p90 | p95 | p99 | p999 |
-                 retention_<N>d            (N in 1..90)
-Selector      := Identifier ("{" Filter ("," Filter)* ","? "}")?
-Filter        := Identifier MatchOp StringLiteral
-MatchOp       := "=" | "!=" | "=~" | "!~"
-StringLiteral := double-quoted, supports \" and \\
-GroupBy       := ("by" | "without") "(" Identifier ("," Identifier)* ","? ")"
+<metric> ::=
+    <expression> [ <group_by> ]
+
+<group_by> ::=
+    { by | without } ( <label> [ ,...n ] [ , ] )
+
+<expression> ::=
+    <term> [ { + | - } <term> [ ...n ] ]
+
+<term> ::=
+    <factor> [ { * | / } <factor> [ ...n ] ]
+
+<factor> ::=
+    [ - ] <primary>
+
+<primary> ::=
+    {   <number>
+      | ( <expression> )
+      | <aggregate>
+      | <function>
+    }
+
+<aggregate> ::=
+    {   count ( <selector> )
+      | { sum | avg | min | max | stddev } ( <selector> [ , <value_label> ] )
+      | p ( <percentile> , <selector> [ , <value_label> ] )
+      | { p50 | p75 | p90 | p95 | p99 | p999 } ( <selector> [ , <value_label> ] )
+      | ratio ( <expression> , <expression> )
+    }
+
+<selector> ::=
+    <event_name> [ '{' <disjunction> [ ,...n ] [ , ] '}' ]
+
+<disjunction> ::=
+    <conjunction> [ or <conjunction> [ ...n ] ]
+
+<conjunction> ::=
+    <negation> [ and <negation> [ ...n ] ]
+
+<negation> ::=
+    [ not ] <predicate>
+
+<predicate> ::=
+    {   <label> { = | =~ } <string>
+      | <label> [ not ] in ( <string> [ ,...n ] [ , ] )
+      | <label> : *
+      | ( <disjunction> )
+    }
+
+<function> ::=
+    {   <value_function>
+      | <rate_function>
+      | <time_function>
+      | <series_function>
+      | <smoothing_function>
+      | <rank_function>
+      | <detection_function>
+    }
+
+<argument> ::=
+    <expression> [ <group_by> ]
+
+<value_function> ::=
+    {   { abs | log | log2 | log10 } ( <argument> )
+      | round ( <argument> , <digits> )
+      | pow ( <argument> , <exponent> )
+      | { clamp_min | clamp_max } ( <argument> , <bound> )
+    }
+
+<rate_function> ::=
+    { per_second | per_minute | per_hour } ( <argument> )
+
+<time_function> ::=
+    {   timeshift ( <argument> , <offset_seconds> )
+      | { hour_before | day_before | week_before } ( <argument> )
+      | { derivative | diff | monotonic_diff | cumsum | integral } ( <argument> )
+      | rollup ( <argument> , { avg | sum | min | max } , <bucket_seconds> )
+    }
+
+<series_function> ::=
+    {   fill ( <argument> , { zero | last | linear | null } )
+      | default_zero ( <argument> )
+      | { count_nonzero | count_not_null | exclude_null } ( <argument> )
+    }
+
+<smoothing_function> ::=
+    {   { ewma_3 | ewma_5 | ewma_10 | ewma_20 } ( <argument> )
+      | { median_3 | median_5 | median_7 | median_9 } ( <argument> )
+      | autosmooth ( <argument> )
+      | { trend_line | robust_trend } ( <argument> )
+    }
+
+<rank_function> ::=
+    {   { top | bottom } ( <argument> , <k> , <rank_key> , <order> )
+      | { top_offset | bottom_offset }
+            ( <argument> , <k> , <rank_key> , <order> , <skip> )
+    }
+
+<rank_key> ::= { mean | max | min | sum | last }
+<order>    ::= { asc | desc }
+
+<detection_function> ::=
+    {   outliers ( <argument> , MAD , <tolerance> )
+      | { deviation | expected } ( <argument> [ , seasonal ] )
+      | forecast ( <argument> [ , { linear | seasonal } [ , <horizon> ] ] )
+    }
+
+<event_name>  ::= <identifier>
+<label>       ::= <identifier>
+<value_label> ::= <identifier>
+<identifier>  ::= [ A-Za-z_ ] [ A-Za-z0-9_ ] [ ...n ]
+<string>      ::= " [ <char> | \" | \\ ] [ ...n ] "
+<number>      ::= <digit> [ ...n ] [ . <digit> [ ...n ] ]
 ```
 
-## Pieces
+## Value constraints
 
-| Piece            | What it is                                                                                       |
-| ---------------- | ------------------------------------------------------------------------------------------------ |
-| **AggFunc**      | The per-user reducer. `count_users` is uniq-by-user; `count` is per-row count (`count_events`).  |
-| **Selector**     | The source event, optionally narrowed by `{ ... }` label filters.                                |
-| **Filter**       | `label OP "value"` — values are always quoted strings, even numeric ones (they are coerced).     |
-| **MatchOp**      | `=` equals · `!=` not-equals · `=~` regex match · `!~` regex not-match.                          |
-| **GroupBy**      | `by (...)` keeps only those labels; `without (...)` drops them. Ignored for experiment analysis. |
-| **retention_Nd** | Returns `true` for users active again `N` days after the selector event (`N` in 1–90).           |
+| Placeholder        | Accepts                               |
+| ------------------ | ------------------------------------- |
+| `<percentile>`     | number, strictly between 0 and 100    |
+| `<value_label>`    | a numeric label declared on the event |
+| `<offset_seconds>` | integer, strictly negative            |
+| `<bucket_seconds>` | integer >= 1                          |
+| `<digits>`         | integer 0–15                          |
+| `<k>`              | integer >= 1                          |
+| `<skip>`           | integer >= 0                          |
+| `<horizon>`        | integer 1–500                         |
+| `<tolerance>`      | number                                |
+| `<exponent>`       | number                                |
+| `<bound>`          | number                                |
+
+## Reading the grammar
+
+**Aggregates are leaves.** An aggregate reads an _event_, never another expression. `count(x)` is a
+leaf; `fill(count(x), zero)` wraps it. The inversion — `count(fill(x))` — is an error, and so is
+nesting two aggregates: each reads one event, and two of them combine with arithmetic.
+
+**The value label is optional except on `count`, where it is forbidden.** Omitted, the aggregate
+reads the event's default numeric column. `count` counts rows, so there is nothing to reduce.
+
+**A metric has one group-by, wherever it is written.** It can trail the whole query, or sit inside
+any function argument — `top(avg(latency, ms) by (host), 5, mean, desc)` is the spelling most
+people reach for, since `top` is what operates over the groups. Both produce the same metric.
+Writing it twice with _different_ labels is an error rather than a silent winner.
+
+**Every query must contain at least one aggregate**, and all its leaves must resolve to the same
+dataset. There is no join.
+
+## Sugar
+
+These parse to something else and never render back — the stored form and the canonical text are
+always the general one:
+
+| You write            | It means                |
+| -------------------- | ----------------------- |
+| `ratio(a, b)`        | `a / b`                 |
+| `p95(x)`             | `p(95, x)`              |
+| `week_before(x)`     | `timeshift(x, -604800)` |
+| `day_before(x)`      | `timeshift(x, -86400)`  |
+| `hour_before(x)`     | `timeshift(x, -3600)`   |
+| `default_zero(x)`    | `fill(x, zero)`         |
+| `top(x by (r), ...)` | `top(x, ...) by (r)`    |
+
+## Filters
+
+Filters narrow which events an aggregate reads. Values are always double-quoted strings, even for
+numeric labels — they are coerced server-side.
+
+```text
+count(checkout{country="US"})                       equals
+count(checkout{not country="US"})                   negation, in front of the term
+count(checkout{country in ("US", "CA")})            a value set
+count(checkout{not country in ("US")})              a negated set
+count(latency{route=~"/api*"})                      glob
+count(latency{route:*})                             the label is set at all
+count(checkout{country="US" or status="ok"})        boolean group
+count(checkout{country="US", tier="pro"})           a comma is one more AND
+```
+
+`and` binds tighter than `or`, and a top-level comma is another `and`, so
+`{a="1", b="2" or c="3"}` is `a AND (b OR c)`.
+
+<Callout type="warn" title="`=~` takes a glob, not a regex">
+  Two wildcards — `*` for any characters, `?` for exactly one — and the pattern matches the
+  **whole** value, so there is nothing to anchor. Every other character is a literal, dots included,
+  which makes `host=~"*.acme.com"` work as written. Regex syntax is **rejected at save time** rather
+  than reinterpreted: `/api/.*` is a perfectly valid glob that means something else, so accepting it
+  would silently change what your metric measures. Write `/api*`.
+</Callout>
 
 ## Examples
 
 ```bash
-count_users(checkout_completed)
+count(checkout_completed)
 sum(purchase{country="US"}, amount)
-p99(req_dur{route=~"/api/.*"}, ms) by (route, status)
-retention_7d(session_start)
-avg(req_dur{tier!="free"}, ms) without (region)
+p(99, req_dur{route=~"/api*"}, ms) by (route, status)
+
+count(checkout_completed) / count(checkout_started) * 100        conversion %
+count(app_error) / count(page_load)                              error rate
+per_hour(count(app_error))                                       rate per hour
+stddev(req_dur, ms) / avg(req_dur, ms)                           coefficient of variation
+
+(count(x) - week_before(count(x))) / week_before(count(x))       week-over-week change
+derivative(cumsum(count(signup)))                                growth rate
+ewma_5(count(app_error))                                         smoothed
+fill(count(app_error), zero)                                     empty bucket means zero
+
+top(p(95, req_dur, ms) by (route), 5, mean, desc)                the 5 slowest routes
+outliers(count(app_error) by (host), MAD, 3)                     hosts straying from the pack
+abs(deviation(count(checkout), seasonal))                        surprise, in sigmas
+forecast(count(disk_used))                                       where it is heading
 ```
 
-## Notes
+There is no comparison operator in the DSL, and that is the point: a query produces a series, and
+"is it too high" belongs to the alert rule that thresholds it. So `abs(deviation(...))` is the
+metric, and `> 3` is the rule you build on it.
 
-- One event selector per query — no formulas or cross-event math.
-- `count` maps to `count_events` (per-row count); `count_users` is uniq-by-user.
-- For experiments, `by (label)` is ignored — the per-user reducer is applied instead.
-- Filter values must be quoted strings, even for numeric labels (they are coerced).
-- Filter labels and value labels must be declared on the source event.
+## Limits
+
+| Limit                    | Value       |
+| ------------------------ | ----------- |
+| Query string length      | 4096        |
+| Expression nesting depth | 32          |
+| Filter nesting depth     | 3           |
+| Values in one `in (...)` | 50          |
+| `forecast` horizon       | 500 buckets |
+
+## Deliberate refusals
+
+These are not gaps. Each one is refused by name, with a message saying what to write instead.
+
+| Refused                          | Why, and what to write                                                                                                                        |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `!=` and `!~`                    | There is one negation and it goes in front of the whole term: `not status="ok"`.                                                              |
+| Regex in `=~`                    | Globs only. Anchors, character classes, alternation and quantifiers are rejected rather than reinterpreted.                                   |
+| `count_users`, `unique`          | Both are `count(DISTINCT ...)`, which sampling biases by per-user activity rather than blurring. Use `count`.                                 |
+| `retention_Nd`                   | No time-series form. Retention lives in the experiment analyzer.                                                                              |
+| `anomalies`                      | It would hide its own threshold. Write `abs(deviation(q, seasonal))` and threshold it in an alert rule, which you can chart and reason about. |
+| Single-quoted keywords           | Keywords are bare: `top(q, 5, mean, desc)`, not `'mean'`.                                                                                     |
+| Scientific notation (`1e9`)      | Analytics Engine rejects it. Write the digits.                                                                                                |
+| Two datasets in one query        | There is no join and no subquery across datasets.                                                                                             |
+| A quantile that cannot be pinned | Quantiles do not merge across groups, so a percentile leaf must select exactly one — otherwise it is refused rather than silently averaged.   |
 
 ## Use it from the CLI
 
@@ -59,7 +277,8 @@ The `--query` flag on `metrics create` takes a DSL string directly:
 
 ```bash
 shipeasy metrics create checkout_rate --event-name checkout_completed \
-  --query 'count_users(checkout_completed)'
+  --query 'count(checkout_completed) / count(checkout_started)'
 ```
 
-Run `shipeasy metrics grammar` any time to print this grammar locally.
+`shipeasy metrics grammar` prints a reference in your terminal, and the same text is available to
+agents over MCP as `metrics_grammar`.
