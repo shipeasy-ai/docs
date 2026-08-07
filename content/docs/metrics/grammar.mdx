@@ -271,6 +271,13 @@ Drawing the baseline is separate from firing on it: turn the metric's **band** o
 of it shades the region an anomaly rule would stay quiet in, at the same sigma, whether or not such
 a rule exists. A **forecast** method and horizon on the metric project it forward the same way.
 
+A metric that **counts** things — `count`, or a sum of counts — carries a floor under how narrow
+its baseline can get. Counting 4 events an hour will routinely produce 2 or 7, so a band tighter
+than the square root of the level would be describing arithmetic rather than behaviour: four quiet
+weeks that happen to hold exactly 3 signups each Tuesday do not make a fourth signup an incident.
+The floor only ever widens a band, so a metric noisier than counting alone explains keeps its own
+measured spread. An average, a ratio or a percentile has a different noise model and gets no floor
+
 ## Limits
 
 {/* generated:limits — rendered from FN_SPEC by packages/query-dsl/src/grammar-doc.ts; run `pnpm --filter @shipeasy/query-dsl gen:grammar` */}
