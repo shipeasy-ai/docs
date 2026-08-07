@@ -22,8 +22,7 @@ the things the language refuses on purpose.
 `[ ...n ]` the preceding group repeats. Literal `{ }` inside a selector is written `'{' '}'` so it
 does not collide with the notation.
 
-Every keyword is **lower-case and case-sensitive**, and bare — never quoted. `MAD` is the one
-upper-case keyword in the language.
+Every keyword is **lower-case and case-sensitive**, and bare — never quoted.
 
 ## The grammar
 
@@ -84,7 +83,6 @@ upper-case keyword in the language.
       | <series_function>
       | <smoothing_function>
       | <rank_function>
-      | <detection_function>
     }
 
 <argument> ::=
@@ -127,12 +125,6 @@ upper-case keyword in the language.
     {   { top | bottom } ( <argument> , <k> , { mean | max | min | sum | last } , { asc | desc } )
       | { top_offset | bottom_offset } ( <argument> , <k> , { mean | max | min | sum | last } , { asc | desc } , <offset> )
     }
-
-<detection_function> ::=
-    {   outliers ( <argument> , MAD , <tolerance> )
-      | { deviation | expected } ( <argument> [ , seasonal ] )
-      | forecast ( <argument> [ , { linear | seasonal } [ , <horizon> ] ] )
-    }
 ```
 
 {/* /generated */}
@@ -173,12 +165,6 @@ upper-case keyword in the language.
 | `bottom_offset` | `by` (2 of 4) | one of mean, max, min, sum, last |
 | `bottom_offset` | `order` (3 of 4) | one of asc, desc |
 | `bottom_offset` | `offset` (4 of 4) | integer >= 0 |
-| `outliers` | `method` (1 of 2) | one of MAD |
-| `outliers` | `tolerance` (2 of 2) | number |
-| `deviation` | `method` | one of seasonal, optional |
-| `expected` | `method` | one of seasonal, optional |
-| `forecast` | `method` (1 of 2) | one of linear, seasonal, optional |
-| `forecast` | `horizon` (2 of 2) | integer 1–500, optional |
 {/* /generated */}
 
 Four more constraints are enforced by the parser rather than declared on a parameter, so they are
@@ -189,12 +175,8 @@ not in the table above:
 - `p` takes a **percentile strictly between 0 and 100**. Any value in that range works — the
   `p50 … p999` tokens are sugar, not the whole set.
 - A `<value_label>` must be a **numeric label declared on the event** the aggregate reads.
-- `MAD` is matched **case-sensitively**, and is the only keyword in the language that is not
-  lower-case.
-
-Optional parameters are **positional and trailing**: `forecast(q)` and `forecast(q, linear)` are
-both valid, but a parameter cannot be skipped past — `forecast(q, 24)` reads `24` as the method and
-is refused.
+  Optional parameters are **positional and trailing**: a parameter can be left off entirely, but not
+  skipped past — the one after it would be read as the one before.
 
 ## Reading the grammar
 
@@ -275,14 +257,19 @@ ewma_5(count(app_error))                                         smoothed
 fill(count(app_error), zero)                                     empty bucket means zero
 
 top(p(95, req_dur, ms) by (route), 5, mean, desc)                the 5 slowest routes
-outliers(count(app_error) by (host), MAD, 3)                     hosts straying from the pack
-abs(deviation(count(checkout), seasonal))                        surprise, in sigmas
-forecast(count(disk_used))                                       where it is heading
+count(app_error) by (host)                                       one series per host
 ```
 
 There is no comparison operator in the DSL, and that is the point: a query produces a series, and
-"is it too high" belongs to the alert rule that thresholds it. So `abs(deviation(...))` is the
-metric, and `> 3` is the rule you build on it.
+"is it too high" belongs to the alert rule built on it. That extends to every form of "too high" —
+a plain threshold, a range, a departure from the metric's own seasonal baseline (`anomaly`), or a
+group straying from its peers (`outliers`) are all **alert kinds**, configured on the rule with
+their own sigma and direction. None of them is a function here, so one metric backs as many rules,
+at as many sensitivities, as you want.
+
+Drawing the baseline is separate from firing on it: turn the metric's **band** on and every chart
+of it shades the region an anomaly rule would stay quiet in, at the same sigma, whether or not such
+a rule exists. A **forecast** method and horizon on the metric project it forward the same way.
 
 ## Limits
 
@@ -299,17 +286,18 @@ metric, and `> 3` is the rule you build on it.
 
 These are not gaps. Each one is refused by name, with a message saying what to write instead.
 
-| Refused                          | Why, and what to write                                                                                                                        |
-| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `!=` and `!~`                    | There is one negation and it goes in front of the whole term: `not status="ok"`.                                                              |
-| Regex in `=~`                    | Globs only. Anchors, character classes, alternation and quantifiers are rejected rather than reinterpreted.                                   |
-| `count_users`, `unique`          | Both are `count(DISTINCT ...)`, which sampling biases by per-user activity rather than blurring. Use `count`.                                 |
-| `retention_Nd`                   | No time-series form. Retention lives in the experiment analyzer.                                                                              |
-| `anomalies`                      | It would hide its own threshold. Write `abs(deviation(q, seasonal))` and threshold it in an alert rule, which you can chart and reason about. |
-| Single-quoted keywords           | Keywords are bare: `top(q, 5, mean, desc)`, not `'mean'`.                                                                                     |
-| Scientific notation (`1e9`)      | Analytics Engine rejects it. Write the digits.                                                                                                |
-| Two datasets in one query        | There is no join and no subquery across datasets.                                                                                             |
-| A quantile that cannot be pinned | Quantiles do not merge across groups, so a percentile leaf must select exactly one — otherwise it is refused rather than silently averaged.   |
+| Refused                              | Why, and what to write                                                                                                                                                                                     |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `!=` and `!~`                        | There is one negation and it goes in front of the whole term: `not status="ok"`.                                                                                                                           |
+| Regex in `=~`                        | Globs only. Anchors, character classes, alternation and quantifiers are rejected rather than reinterpreted.                                                                                                |
+| `count_users`, `unique`              | Both are `count(DISTINCT ...)`, which sampling biases by per-user activity rather than blurring. Use `count`.                                                                                              |
+| `retention_Nd`                       | No time-series form. Retention lives in the experiment analyzer.                                                                                                                                           |
+| `anomalies`, `deviation`, `outliers` | Detection is a property of the alert rule, not of the metric — a function would store its own sensitivity inside the thing it measures. Create an alert of kind `anomaly` or `outliers` and set its sigma. |
+| `expected`, `forecast`               | The band and the projection are display properties of the metric, so turning one on does not mint a second metric that no longer matches the first.                                                        |
+| Single-quoted keywords               | Keywords are bare: `top(q, 5, mean, desc)`, not `'mean'`.                                                                                                                                                  |
+| Scientific notation (`1e9`)          | Analytics Engine rejects it. Write the digits.                                                                                                                                                             |
+| Two datasets in one query            | There is no join and no subquery across datasets.                                                                                                                                                          |
+| A quantile that cannot be pinned     | Quantiles do not merge across groups, so a percentile leaf must select exactly one — otherwise it is refused rather than silently averaged.                                                                |
 
 ## Use it from the CLI
 

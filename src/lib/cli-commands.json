@@ -358,6 +358,7 @@
       "options": [
         "--default-min-effect-of-interest",
         "--direction",
+        "--display",
         "--event-name",
         "--folder",
         "--query",
@@ -543,6 +544,7 @@
       "options": [
         "--default-min-effect-of-interest",
         "--direction",
+        "--display",
         "--event-name",
         "--folder",
         "--query",
@@ -621,12 +623,19 @@
       "aliases": [],
       "args": [],
       "options": [
+        "--bucket-minutes",
         "--comparator",
+        "--direction",
         "--enabled",
+        "--kind",
         "--metric-id",
         "--name",
         "--notify",
+        "--range-max",
+        "--range-min",
+        "--required-buckets",
         "--severity",
+        "--sigma",
         "--threshold",
         "--window-hours"
       ]
@@ -651,11 +660,18 @@
         }
       ],
       "options": [
+        "--bucket-minutes",
         "--comparator",
+        "--direction",
         "--enabled",
+        "--kind",
         "--name",
         "--notify",
+        "--range-max",
+        "--range-min",
+        "--required-buckets",
         "--severity",
+        "--sigma",
         "--threshold",
         "--window-hours"
       ]
