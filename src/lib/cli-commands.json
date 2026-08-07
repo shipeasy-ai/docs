@@ -271,6 +271,7 @@
       ],
       "options": [
         "--json",
+        "--no-skills",
         "--profile",
         "--project"
       ]
@@ -2144,11 +2145,14 @@
     },
     {
       "path": "shipeasy upgrade",
-      "aliases": [],
+      "aliases": [
+        "update"
+      ],
       "args": [],
       "options": [
         "--agents",
         "--dry-run",
+        "--only-installed",
         "--pm",
         "--scope",
         "--skip-cli",
@@ -2163,6 +2167,7 @@
       "options": [
         "--agents",
         "--dry-run",
+        "--only-installed",
         "--pm",
         "--scope",
         "--skip-cli"
