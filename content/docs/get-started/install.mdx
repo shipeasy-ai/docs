@@ -46,7 +46,7 @@ Shipeasy ships as a small set of npm packages — install only the ones you need
       </>
     }
   >
-    The <code>shipeasy</code> command. Login, manage flags and experiments, scan code for i18n keys,
+    The <code>shipeasy</code> command. Login, manage flags, configs and kill switches, work the ops queue,
     install the MCP server.
   </Tile>
   <Tile
@@ -176,7 +176,7 @@ That&apos;s the whole runway from zero to working. Everything below is detail.
     });
     ```
 
-    The single `configure()` call boots flags, experiments, **and** i18n. The optional `attributes` transform maps your user object onto the Shipeasy attribute map, so every bound `Client` you construct evaluates against the right context. The server SDK polls `/sdk/flags` and `/sdk/experiments` in the background. Evaluation happens **locally** — there is no per-request network call from your code. Env (dev / staging / prod) is **derived from the key**: each key is bound to exactly one environment when you mint it, so you deploy the prod key to prod and the staging key to staging — there is nothing to set in code. (A server key may still override per request with `?env=` for local debugging; client keys cannot — see below.)
+    The single `configure()` call boots flags, configs **and** kill switches. The optional `attributes` transform maps your user object onto the Shipeasy attribute map, so every bound `Client` you construct evaluates against the right context. The server SDK polls `/sdk/flags` and `/sdk/experiments` in the background. Evaluation happens **locally** — there is no per-request network call from your code. Env (dev / staging / prod) is **derived from the key**: each key is bound to exactly one environment when you mint it, so you deploy the prod key to prod and the staging key to staging — there is nothing to set in code. (A server key may still override per request with `?env=` for local debugging; client keys cannot — see below.)
 
   </Step>
 
@@ -201,7 +201,7 @@ That&apos;s the whole runway from zero to working. Everything below is detail.
   </Step>
 
   <Step title="One key, one configure call">
-    Flags, experiments, and i18n share a single key per side (`apiKey` on the server, `clientKey` in the browser). There is no separate `i18n.init()`, no second configure step. The single `configure()` call boots all three.
+    Flags, configs, and kill switches share a single key per side (`apiKey` on the server, `clientKey` in the browser). There is no second configure step — the single `configure()` call boots all of them.
 
     Don&apos;t wrap this in a custom helper file. The SDK owns its own initialisation.
 

@@ -3,10 +3,11 @@
   "pages": [
     "get-started",
     "sdks",
-    "flags-experiments",
+    "flags",
     "metrics",
     "feedback",
     "assistant",
+    "api",
     "use-cases"
   ],
   "root": true

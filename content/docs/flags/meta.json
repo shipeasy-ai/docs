@@ -1,0 +1,19 @@
+{
+  "title": "Flags & Configs",
+  "description": "Feature flags, typed configs & kill switches",
+  "root": true,
+  "defaultOpen": true,
+  "pages": [
+    "index",
+    "getting-started",
+    "decision",
+    "flow",
+    "---",
+    "gates",
+    "configs",
+    "killswitches",
+    "---",
+    "case-studies",
+    "edge-cases"
+  ]
+}

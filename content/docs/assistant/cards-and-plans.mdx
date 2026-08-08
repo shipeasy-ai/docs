@@ -30,25 +30,21 @@ A confirmation card is a form pre-filled with the assistant's proposal. Every wr
       type: "card",
       description: "Name and default. Confirm to add the break-glass switch.",
     },
-    Experiment: {
-      type: "card",
-      description: "Groups, weights, allocation, success + guardrail metrics.",
-    },
-    Universe: {
-      type: "card",
-      description: "Holdout %, mutual-exclusion scope, unit of analysis.",
-    },
     "Metric / alert rule": {
       type: "card",
       description:
-        "Event, aggregation, threshold, severity — from exp_create_metric and the alert tools.",
+        "Event, aggregation, threshold, severity — from metrics_create and ops_alerts_create.",
+    },
+    "Queue item": {
+      type: "card",
+      description: "Title, kind, priority, owner — from ops_create, before anything is filed.",
     },
   }}
 />
 
 The fields are the real resource schema — what you edit in the card is exactly what gets written. Nothing is hidden behind the assistant.
 
-<AssistantCardScene kind="experiment" />
+<AssistantCardScene kind="gate" />
 
 <Steps>
   <Step title="The assistant proposes">
@@ -86,7 +82,7 @@ For anything bigger than a single resource, the `suggest_plan` tool renders a **
 
 <AssistantPlanScene />
 
-This is why the assistant can scope an entire experiment — metric, variants, instrumentation — even though it only writes the parts that are safe to write from a chat.
+This is why the assistant can scope an entire rollout — the flag, the metric that watches it, the alert that pages — even though it only writes the parts that are safe to write from a chat.
 
 <SeeAlso
   links={[
@@ -97,9 +93,9 @@ This is why the assistant can scope an entire experiment — metric, variants, i
       note: "Plans that file tickets",
     },
     {
-      href: "/flags-experiments/experiments",
-      title: "Experiments",
-      note: "What an experiment card builds",
+      href: "/flags",
+      title: "Flags & configs",
+      note: "What a release card builds",
     },
   ]}
 />

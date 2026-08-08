@@ -6,7 +6,7 @@ description: Conversion, count, sum, mean, ratio — pick the right aggregation,
 <DocMeta status="Production ready" read="7 min read" updated="May 15, 2026" works="Server SDK" />
 
 A **metric** is "events aggregated per user." The aggregation function turns each user's event
-stream into a single number that the analysis pipeline averages across the experiment arms. Pick
+stream into a single number the platform charts over time and alert rules compare. Pick
 the right one and your power calculations are honest; pick the wrong one and a single outlier can
 swing your result.
 
@@ -67,7 +67,7 @@ shipeasy metrics create revenue_per_user \
   --query 'sum(purchase, revenueCents)'
 ```
 
-The classic "did this experiment make us more money per user." Each
+The classic "did this change make us more money per user." Each
 user contributes their total revenue. Non-purchasers contribute `0`.
 
 Sums are **heavy-tailed**. One $50,000 enterprise purchase can swing
@@ -108,12 +108,12 @@ per request. **Don't** compute the ratio yourself and store it as a `mean` — t
 different.
 
 Why it matters: the naive ratio-of-means (mean of numerators divided by mean of denominators)
-under-states the variance. Shipeasy uses the **delta method** to compute the variance correctly
-— which means the p-values and confidence intervals you read on the dashboard are honest. If you
-had computed `clicks/impressions` yourself per user, then taken the mean, you'd be calculating
-the wrong thing.
+under-states the variance. Shipeasy uses the **delta method** to compute it correctly — which is
+what makes the confidence band the dashboard draws, and any anomaly rule armed on the series,
+trustworthy rather than jumpy. If you had computed `clicks/impressions` yourself per user, then
+taken the mean, you'd be calculating the wrong thing.
 
-The dashboard shows numerator and denominator means alongside the ratio so the math is auditable.
+The dashboard shows numerator and denominator alongside the ratio so the math is auditable.
 
 ## Outlier handling
 
@@ -182,22 +182,20 @@ to log the same purchase twice with different names.
 
 ## Direction
 
-The dashboard infers each metric's "good" direction from its name + the
-metric type when you attach it to an experiment as primary or guardrail.
-Words like `error`, `fail`, `latency`, `crash`, `churn`, `bounce` are
-flagged as lower-is-better (see
-`apps/ui/src/app/dashboard/[projectId]/metrics/metrics-list-view.tsx` for
-the exact heuristic). Override on the experiment-metric attachment in the
-dashboard when the heuristic gets it wrong.
+The dashboard infers each metric's "good" direction from its name and its
+aggregation type. Words like `error`, `fail`, `latency`, `crash`, `churn`,
+`bounce` are read as lower-is-better; that decides which way a trend cell is
+coloured and which side a directional alert rule watches. Set `direction`
+explicitly on the metric when the heuristic gets it wrong.
 
 ## When you don't have the event yet
 
 A metric definition can be created before any matching events exist. The pipeline picks them up
-once they start arriving. Use this to define metrics for an upcoming experiment ahead of time,
-then deploy the `track()` call as part of the same release.
+once they start arriving, so you can define the metric for an upcoming change ahead of time and
+deploy the `track()` call as part of the same release.
 
-What you _can't_ do: create a metric, attach it to a running experiment, and have it back-fill
-against events from before the experiment started. Analysis runs forward from attachment time.
+The series only ever covers events that were actually logged — creating the metric does not
+back-fill a period during which nothing emitted the event.
 
 ## Inspecting a metric
 
@@ -205,10 +203,10 @@ against events from before the experiment started. Analysis runs forward from at
 # What does the metric definition look like?
 shipeasy metrics show purchase_conversion
 
-# What's the historical baseline? (Powers the MDE calculator.)
+# What's the historical baseline?
 shipeasy metrics series purchase_conversion --from 2026-06-01 --to 2026-06-30 --bucket day
 ```
 
-Run `shipeasy metrics series` before launching an experiment — the daily buckets
-give you the baseline rate and its spread, which feed the power calculation
-directly. The experiment's **Power** tab does the same math against live data.
+Run `shipeasy metrics series` before you put a rule on a metric — the daily buckets show you the
+baseline rate and how much it already wanders, which is what a sane threshold has to sit outside
+of.

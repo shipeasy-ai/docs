@@ -1,0 +1,24 @@
+node_modules/
+.next/
+.source/
+.wrangler/
+out/
+pnpm-lock.yaml
+*.tsbuildinfo
+
+# Machine output. Prettier must not reformat it, or `pnpm verify:generated`
+# reports drift on every run against a generator that emits different bytes.
+generated/
+content/docs/api/operations/
+content/docs/sdks/reference/
+content/docs/sdks/node-typescript.mdx
+content/docs/sdks/python.mdx
+content/docs/sdks/go.mdx
+content/docs/sdks/java.mdx
+content/docs/sdks/kotlin.mdx
+content/docs/sdks/php.mdx
+content/docs/sdks/swift.mdx
+content/docs/sdks/ruby.mdx
+content/docs/get-started/cli-reference.mdx
+content/docs/get-started/mcp-reference.mdx
+src/lib/cli-commands.json

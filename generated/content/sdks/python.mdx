@@ -1,0 +1,249 @@
+---
+title: "Python"
+description: "The Shipeasy Python server SDK — local evaluation, configs, WSGI/ASGI anon middleware, and metric tracking."
+---
+
+<DocMeta status="Production ready" read="5 min read" updated="July 27, 2026" works="Python 3.8+ · Django · Flask · FastAPI" />
+
+<Callout type="info">Generated from the Python SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk python overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-python`](https://shipeasy-ai.github.io/sdk-python). Edit it in the SDK repo, not here.</Callout>
+
+`shipeasy` is the **server** SDK for Shipeasy — feature flags, remote configs,
+kill switches, A/B experiments, and metric tracking. It uses your **server key**
+and must never be embedded in a browser.
+
+## Install
+
+```bash
+# pip
+pip install shipeasy
+
+# poetry
+poetry add shipeasy
+
+# uv
+uv add shipeasy
+```
+
+Full wiring — frameworks, options, env vars — is in [Installation](/sdks/reference/python/installation).
+
+## Mental model: `configure()` once, then `Client(user)` per request
+
+There are exactly two things to learn:
+
+1. **`configure()`** — call it **once** at process start with your server key and
+   an optional `attributes` transform (your user object → the Shipeasy attribute
+   map). This is the whole setup story.
+2. **`shipeasy.Client(user)`** — construct a cheap, **user-bound** handle per
+   request and read with **no user argument** (the user is bound at construction).
+
+```python
+import shipeasy
+
+shipeasy.configure(
+    api_key="sdk_server_...",
+    attributes=lambda u: {"user_id": u.id, "country": u.country, "plan": u.plan},
+)
+
+# construct once per callsite (cheap; binds the user)
+client = shipeasy.Client(current_user)
+
+if client.get_flag("new_checkout"):
+    ...
+config = client.get_config("billing_copy")
+a = client.universe("checkout").assign()  # ≤1 experiment; exposure logs on first get()
+if a.get("button_color") == "green":
+    ...
+client.track("purchase", {"amount": 49})  # on conversion
+```
+
+## What the bound `Client` does
+
+Everything you need per request is on `Client(user)` — no user argument on any
+call:
+
+- `get_flag(name, default=False)` · `get_flag_detail(name)`
+- `get_config(name, decode=None, default=None)`
+- `get_killswitch(name, switch_key=None)`
+- `universe(name).assign()` → `Assignment` (`.name` / `.group` / `.enrolled` /
+  `.get(field, fallback=None, *, exposure=True)`); the first `get()` on an
+  enrolled assignment logs one exposure (`exposure=False` peeks without logging)
+- `track(event, properties=None)`
+
+So an experiment is **end-to-end Client-only**. Constructing a `Client(user)`
+before `configure()` raises `RuntimeError`.
+
+## The configure family
+
+| call | when |
+| --- | --- |
+| [`configure(api_key=...)`](/sdks/reference/python/configuration) | production — your server key |
+| [`configure_for_testing(...)`](/sdks/reference/python/testing) | unit tests — no network, seed overrides |
+| [`configure_for_offline(...)`](/sdks/reference/python/testing) | evaluate real rules from a snapshot / file |
+
+After any of them, you read the same way: `shipeasy.Client(user)`.
+
+## Feature pages
+
+- [installation](/sdks/reference/python/installation) — `pip install shipeasy`, frameworks, `configure()`
+- [configuration](/sdks/reference/python/configuration) — `configure()`, keys, `attributes`, one-shot vs poll, options
+- [flags](/sdks/reference/python/flags) — `get_flag`, `get_flag_detail`, defaults
+- [configs](/sdks/reference/python/configs) — `get_config`, typed decode, defaults
+- [killswitches](/sdks/reference/python/killswitches) — `get_killswitch`
+- [error-reporting](/sdks/reference/python/error-reporting) — `see()` structured reporting
+- [testing](/sdks/reference/python/testing) — `configure_for_testing`, `configure_for_offline`, overrides
+- [openfeature](/sdks/reference/python/openfeature) — `ShipeasyProvider`
+- [advanced](/sdks/reference/python/advanced) — anon-id middleware, private attrs, sticky bucketing, manual exposure, SSR
+
+The blocks below are the SDK repo's own snippets — the same ones `shipeasy docs get --sdk python release/flags` returns, with a worked example baked in.
+
+## Feature flags
+
+Read a feature flag on a user-bound client. Assumes `configure()` ran at
+startup — see Installation.
+
+### Basic check
+
+```python
+import shipeasy
+
+# construct once per callsite (cheap; binds the user)
+client = shipeasy.Client(current_user)
+
+# name                          flag name (required)
+# default=False                 returned ONLY when the flag can't be evaluated
+#                               (client not ready / flag absent) — never when it
+#                               simply resolves off
+if client.get_flag("new_checkout", default=False):
+    ...
+```
+
+### Why it resolved that way — `get_flag_detail`
+
+```python
+import shipeasy
+
+client = shipeasy.Client(current_user)
+
+# returns FlagDetail(value, reason); reason ∈ RULE_MATCH / DEFAULT / OFF /
+# OVERRIDE / FLAG_NOT_FOUND / CLIENT_NOT_READY
+detail = client.get_flag_detail("new_checkout")
+log.info("flag=%s value=%s reason=%s", "new_checkout", detail.value, detail.reason)
+```
+
+### React to flag changes (long-running server)
+
+```python
+import shipeasy
+
+# requires configure(poll=True); fires after a poll fetches NEW data (200, not 304)
+unsubscribe = shipeasy.on_change(lambda: rebuild_local_cache())
+# ... later: unsubscribe()
+```
+
+## Dynamic configs
+
+Read a dynamic config on a user-bound client. Assumes `configure()` ran at
+startup — see Installation.
+
+### Raw value
+
+```python
+import shipeasy
+
+# construct once per callsite (cheap; binds the user)
+client = shipeasy.Client(current_user)
+
+# name                          config name (required)
+# default={}                    returned when the key is absent (or decode raises)
+config = client.get_config("billing_copy", default={})
+```
+
+### Typed decode
+
+```python
+import shipeasy
+
+client = shipeasy.Client(current_user)
+
+# decode=lambda v: ...          transform the raw JSON value into the shape you want;
+#                               applied on top of overrides — if it raises, default is returned
+max_items = client.get_config("billing_copy", decode=lambda v: v["max"], default=0)
+```
+
+## Kill switches
+
+Check a kill switch on a user-bound client. Assumes `configure()` ran at
+startup — see Installation.
+
+### Top-level guard
+
+```python
+import shipeasy
+
+# construct once per callsite (cheap; binds the user)
+client = shipeasy.Client(current_user)
+
+# name                          kill switch name (required)
+if client.get_killswitch("payments"):  # True == engaged (feature killed)
+    return fallback()
+```
+
+### Named switch — check one configured per-key switch
+
+```python
+import shipeasy
+
+client = shipeasy.Client(current_user)
+
+# switch_key                    the variable you check against the switches
+#                               CONFIGURED on the kill switch (dashboard "switches");
+#                               if that key isn't configured, falls back to the
+#                               top-level value above
+provider = "stripe"
+if client.get_killswitch("payments", provider):
+    return use_backup_processor()   # the "stripe" switch is engaged
+```
+
+## Track a conversion
+
+Track a metric/conversion event from the bound client. Metrics in the dashboard
+are computed from these events. Assumes `configure()` ran at startup — see
+Installation.
+
+### Track an event
+
+```python
+import shipeasy
+
+# construct once per callsite (cheap; binds the user)
+client = shipeasy.Client(current_user)
+
+# event_name                    the event your metric is built on (required)
+# properties={...}              optional payload; numeric/string fields you can
+#                               sum/filter on in a metric (private attributes are
+#                               stripped before the event leaves the process)
+client.track("checkout_started", {"amount": 49, "currency": "usd"})
+```
+
+Fire-and-forget (never blocks your response) and a no-op under
+`configure_for_testing` / `configure_for_offline`. The unit is the bound user
+(`user_id`, else `anonymous_id`); with no unit the call is a no-op.
+
+### Track without properties
+
+```python
+import shipeasy
+
+client = shipeasy.Client(current_user)
+
+client.track("checkout_started")   # properties are optional
+```
+
+<SeeAlso
+  links={[
+    { href: "/sdks/reference/python", title: "Python full reference", note: "Every feature page" },
+    { href: "/sdks", title: "Shared evaluation model", note: "How every SDK buckets" },
+    { href: "/sdks/reference/python/testing", title: "Testing", note: "Seed values, zero network" },
+    { href: "/sdks/reference/python/error-reporting", title: "Error reporting", note: "The see() surface" },
+  ]}
+/>

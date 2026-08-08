@@ -19,7 +19,7 @@ Shipeasy has exactly two kinds of SDK key. One per entrypoint, one configure cal
 | Import     | `@shipeasy/sdk/server`                                | `@shipeasy/sdk/client`                 |
 | Field      | `apiKey`                                              | `clientKey`                            |
 | Visibility | **Secret** — never ships to a browser                 | **Public** — ships in your bundle      |
-| Reads      | Full rule set (gates, configs, experiments, SSR i18n) | Only client-readable flags and configs |
+| Reads      | Full rule set (gates, configs, kill switches)         | Only client-readable flags and configs |
 | Writes     | Events                                                | Events, rate-limited by domain         |
 | Env        | Bound to one env; may override per request            | **Locked** to its env                  |
 

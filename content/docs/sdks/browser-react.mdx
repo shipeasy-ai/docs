@@ -45,7 +45,7 @@ const flags = new Client(user);
 await flags.ready();
 ```
 
-## Read flags, configs, experiments
+## Read flags and configs
 
 The bound getters take **no** user argument — the bound context is implicit:
 
@@ -56,13 +56,7 @@ if (flags.getFlag("new_checkout")) {
 flags.getFlag("new_checkout", true); // default only when not-ready / not-found
 
 const cfg = flags.getConfig<{ max_uploads: number }>("upload_limits");
-
-// experiments are read by UNIVERSE — the visitor lands in at most one of its experiments
-const cta = flags.universe("hero_cta").assign();
-render(cta.get("primary_label", "Sign up")); // variant ?? universe default ?? fallback
 ```
-
-In the browser the exposure beacon fires at `assign()` time. Suppress it with `assign({ logExposure: false })` — see [Exposure control](/sdks/manual-exposure).
 
 ## Track an event
 
@@ -112,7 +106,7 @@ Logged-out visitors bucket on a shared first-party `__se_anon_id` cookie, minted
 
 ## DevTools overlay
 
-Press `Shift+Alt+S` on any page running the SDK (or append `?se=1`). The panel mounts in a Shadow DOM overlay and flips every gate / config / experiment / translation **for the current session only** — for QA, demos, and bug repro.
+Press `Shift+Alt+S` on any page running the SDK (or append `?se=1`). The panel mounts in a Shadow DOM overlay and flips every gate / config / kill switch **for the current session only** — for QA, demos, and bug repro.
 
 ```ts
 import { loadDevtools } from "@shipeasy/sdk/client";

@@ -24,14 +24,14 @@ description: One package for JavaScript (server + browser) plus seven native ser
   works="TS · JS · React · Go · Python · Ruby · Java · Kotlin · PHP · Swift"
 />
 
-Every Shipeasy SDK is a thin client over two cached blobs — `:flags` (gates + configs + kill switches) and `:experiments` (universes + experiments). The SDK polls them in the background and **evaluates locally**: there is no per-call network round-trip on your hot path.
+Every Shipeasy SDK is a thin client over two cached blobs — `:flags` (gates + configs + kill switches) and `:experiments`, the longer-lived half of the rule set. The SDK polls them in the background and **evaluates locally**: there is no per-call network round-trip on your hot path.
 
 ## The shared evaluation model
 
 All SDKs implement the same contract, so a flag buckets identically whether the call runs in Node, Go, or Swift:
 
 - **Deterministic bucketing.** The rollout bucket is `murmur3("salt:unit") % 10000`. The hash is the cross-language MurmurHash3 x86_32 variant (seed 0), verified against shared test vectors — the same `user_id` lands in the same bucket in every language.
-- **Local evaluation.** Targeting rules, rollout, holdouts, and experiment allocation all run in-process against the polled blob. See [Feature gates](/flags-experiments/gates) for the rule model.
+- **Local evaluation.** Targeting rules and rollout all run in-process against the polled blob. See [Feature gates](/flags/gates) for the rule model.
 - **One unit, server + browser.** Logged-out traffic buckets on a shared first-party `__se_anon_id` cookie, so the server and the browser bucket a visitor the same way.
 - **ETag polling.** Each poll sends `If-None-Match`; a `304` skips the parse. The poll interval is plan-driven and pushed via the `X-Poll-Interval` header.
 
@@ -65,7 +65,6 @@ The heavyweight polling state lives in an `Engine` behind `configure()` — engi
 | ----------------- | ------------------------------------- | ------------------------------------------------------------------- |
 | Feature flags     | `getFlag(name[, default])`            | Boolean; default returned only when unevaluable                     |
 | Dynamic configs   | `getConfig(name[, default])`          | Typed JSON value with targeting                                     |
-| Experiments       | `universe(name).assign()`             | `Assignment` — `.enrolled`, `.group`, `.get(field, fallback)`       |
 | Evaluation detail | `getFlagDetail(name)`                 | `{ value, reason }` — see [Reasons](/sdks/reasons)                  |
 | Event tracking    | `track(event, props)`                 | Fire-and-forget metric ingestion                                    |
 | Change listeners  | `Engine.onChange(cb)`                 | Fires after a poll brings new data — see [onChange](/sdks/onchange) |
@@ -192,7 +191,7 @@ Defaults are returned **only when a value can't be evaluated** (client not ready
       note: "Server vs client keys",
     },
     {
-      href: "/flags-experiments/gates",
+      href: "/flags/gates",
       title: "Feature gates",
       note: "The rule model SDKs evaluate",
     },

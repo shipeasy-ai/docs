@@ -7,10 +7,10 @@ description: The in-dashboard AI assistant — what it is, how read and write mo
   eyebrow="Shipeasy · Assistant"
   title={
     <>
-      Describe the outcome. <em>It</em> wires up the flags, experiments, and metrics.
+      Describe the outcome. <em>It</em> wires up the flags, metrics, and alerts.
     </>
   }
-  subtitle="A chat assistant built into the dashboard. It reads your project to answer questions, and proposes every change as a card you confirm — feature flags, configs, kill switches, experiments, universes, metrics, and alert rules. Nothing happens until you approve it."
+  subtitle="A chat assistant built into the dashboard. It reads your project to answer questions, and proposes every change as a card you confirm — feature flags, configs, kill switches, metrics, and alert rules. Nothing happens until you approve it."
   primaryHref="/assistant/read-vs-write"
   primaryLabel="Read vs write mode"
   secondaryHref="/assistant/measurement-plans"
@@ -40,7 +40,7 @@ It works in two modes and picks the right one for you. The split is the whole sa
 <TileGrid>
   <Tile href="/assistant/read-vs-write" icon="◎" title="Read — answer from your project">
     Read-only tools auto-execute and stream as a **thinking trace** ("✓ Reading your project", "✓
-    Checking experiment status"). It never changes anything to answer.
+    Checking the metric series"). It never changes anything to answer.
   </Tile>
   <Tile href="/assistant/read-vs-write" icon="✦" title="Write — propose a change">
     Mutations never auto-run. Each surfaces as an **editable confirmation card** — it applies only
@@ -66,7 +66,7 @@ whole "measure this" ask, that's an approvable plan that creates what it can and
     numbered list — optionally with a free-text "Something else…" field.
   </Card>
   <Card href="/assistant/cards-and-plans" eyebrow="Confirm" title="Confirmation cards">
-    Feature flags, configs, kill switches, experiments, universes, metrics, and alert rules — each
+    Feature flags, configs, kill switches, metrics, and alert rules — each
     an editable card you tweak, then **Confirm** to apply.
   </Card>
   <Card href="/assistant/cards-and-plans" eyebrow="Approve" title="Plan cards">
@@ -103,6 +103,6 @@ you run out mid-turn, the chat shows an add-credits prompt and pauses until you 
       title: "MCP server",
       note: "The same surface for external coding agents",
     },
-    { href: "/flags-experiments", title: "Flags & experiments", note: "What the cards produce" },
+    { href: "/flags", title: "Flags & configs", note: "What the cards produce" },
   ]}
 />

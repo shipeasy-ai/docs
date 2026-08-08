@@ -1,6 +1,6 @@
 ---
 title: Shipeasy
-description: Flags & experiments, metrics & alerts, and feedback — one SDK, one API key, for everything you ship.
+description: Feature flags & configs, metrics & alerts, and bug + error capture — one SDK, one API key, for everything you ship.
 ---
 
 <Hero
@@ -10,7 +10,7 @@ description: Flags & experiments, metrics & alerts, and feedback — one SDK, on
       Everything you ship, <em>behind one SDK</em>.
     </>
   }
-  subtitle="Feature flags, A/B experiments with managed statistics, metrics & threshold alerts, and bug + error capture — one SDK, one API key. Drive it by hand, by CLI, or by an AI agent."
+  subtitle="Feature flags, typed runtime configs, kill switches, metrics & threshold alerts, and bug + error capture — one SDK, one API key. Drive it by hand, by CLI, or by an AI agent."
   primaryHref="/get-started/quickstart"
   primaryLabel="Quickstart"
   secondaryHref="/get-started/overview"
@@ -20,7 +20,7 @@ description: Flags & experiments, metrics & alerts, and feedback — one SDK, on
 <DocMeta
   status="Production ready"
   read="3 min read"
-  updated="June 19, 2026"
+  updated="August 8, 2026"
   works="Next · Vite · Remix · Expo · Workers · 8 server languages"
 />
 
@@ -44,17 +44,17 @@ description: Flags & experiments, metrics & alerts, and feedback — one SDK, on
 
 <TileGrid>
   <Tile
-    href="/flags-experiments"
+    href="/flags"
     icon="⌗"
-    title="Flags & Experiments"
+    title="Flags & Configs"
     meta={
       <>
-        <span>flags · configs · killswitches · A/B</span>
+        <span>flags · configs · killswitches</span>
       </>
     }
   >
-    Feature flags for ramps, configs for typed values, killswitches for break-glass, and experiments
-    with automated statistics.
+    Feature flags for ramps, typed configs for values you change without a deploy, and killswitches
+    for break-glass.
   </Tile>
   <Tile
     href="/metrics"
@@ -68,7 +68,7 @@ description: Flags & experiments, metrics & alerts, and feedback — one SDK, on
       </>
     }
   >
-    Turn events into metrics with a small DSL, attach them to experiments, and raise threshold
+    Turn events into metrics with a small DSL, watch them move as you ramp, and raise threshold
     alerts that file their own tickets.
   </Tile>
   <Tile
@@ -111,8 +111,8 @@ description: Flags & experiments, metrics & alerts, and feedback — one SDK, on
       </>
     }
   >
-    Ask questions about your project, and let the assistant draft flags, configs, experiments, and
-    measurement plans as editable cards.
+    Ask questions about your project, and let the assistant draft flags, configs, and measurement
+    plans as editable cards.
   </Tile>
   <Tile
     href="/get-started/overview"
@@ -141,30 +141,22 @@ install to shipped.
   steps={[
     { href: "/get-started/install", label: "Install", title: "Add the SDK & CLI" },
     {
-      href: "/flags-experiments/gates/quickstart",
+      href: "/flags/gates/quickstart",
       label: "Create",
       title: "Your first feature flag",
     },
-    { href: "/flags-experiments/gates/targeting", label: "Target", title: "Rules & audiences" },
-    { href: "/flags-experiments/gates/rollouts", label: "Ramp", title: "Gradual rollout" },
+    { href: "/flags/gates/targeting", label: "Target", title: "Rules & audiences" },
+    { href: "/flags/gates/rollouts", label: "Ramp", title: "Gradual rollout" },
   ]}
 />
 
 <JourneyPath
-  title="Run an A/B test"
-  goal="Measure whether a change actually moves the needle, with managed p-values and confidence intervals."
+  title="Know whether the ramp is safe"
+  goal="Turn your own events into a metric, watch it while the flag ramps, and get paged when it moves the wrong way."
   steps={[
     { href: "/metrics/quickstart", label: "Measure", title: "Define a metric" },
-    {
-      href: "/flags-experiments/experiments/quickstart",
-      label: "Launch",
-      title: "Create the experiment",
-    },
-    {
-      href: "/flags-experiments/experiments/analysis",
-      label: "Read",
-      title: "Interpret the results",
-    },
+    { href: "/metrics/grammar", label: "Refine", title: "The metric DSL" },
+    { href: "/metrics/alerts", label: "Alert", title: "Threshold alerts" },
   ]}
 />
 
@@ -181,30 +173,30 @@ install to shipped.
 
 <JourneyPath
   title="Let an AI agent run it all"
-  goal="Hand setup, flags, experiments, and metrics to a coding assistant via the CLI and MCP server."
+  goal="Hand setup, flags, configs, and metrics to a coding assistant via the CLI and MCP server."
   steps={[
     { href: "/get-started/mcp", label: "Connect", title: "Install the MCP server" },
     { href: "/get-started/agents", label: "Wire", title: "Set up your agent" },
-    { href: "/llms", label: "Run", title: "AI-agent runbooks" },
+    { href: "/get-started/cli", label: "Run", title: "Drive it from the CLI" },
   ]}
 />
 
 ## Not sure which primitive?
 
-Inside **Flags & Experiments** there are four primitives. This picker maps "I want to do X" to the
+Inside **Flags & Configs** there are three primitives. This picker maps "I want to do X" to the
 right one.
 
 <DecisionPicker />
 
-Full breakdown → [decision guide](/flags-experiments/decision).
+Full breakdown → [decision guide](/flags/decision).
 
 ## Why Shipeasy
 
-- **One SDK** for feature flags, configs, experiments, metrics, and feedback. Server _and_ client.
+- **One SDK** for feature flags, configs, kill switches, metrics, and feedback. Server _and_ client.
 - **One CLI** (`shipeasy`) for everything you can do in the dashboard.
 - **One MCP server** so your AI agent can do the boring setup for you.
 - **Sub-millisecond evaluation**: flags resolve in your code without a network round-trip.
-- **Export your data**: results and events are yours, not locked into our dashboard.
+- **Export your data**: your events and metric series are yours, not locked into our dashboard.
 
 <ConvertCTA
   eyebrow="READY?"

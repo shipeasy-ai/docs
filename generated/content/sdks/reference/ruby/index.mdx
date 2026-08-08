@@ -1,0 +1,78 @@
+---
+title: "Shipeasy Ruby SDK — Overview"
+description: "shipeasy-sdk is the server-side Ruby gem for the Shipeasy hosted service: feature gates (flags), dynamic configs, kill switches, A/B experiments, metric…"
+---
+
+<Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-ruby/pages/overview.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/overview.md).</Callout>
+
+`shipeasy-sdk` is the server-side Ruby gem for the [Shipeasy](https://shipeasy.ai)
+hosted service: feature gates (flags), dynamic configs, kill switches, A/B
+experiments, metric tracking, `see()` error reporting, and i18n view helpers for
+Rails. It uses your **server key** and must never be embedded in a browser. It is
+Rails-friendly but works in plain Ruby, Sinatra, Hanami, and serverless too.
+
+## Mental model: configure once, bind a `Client` per user
+
+There are exactly two things to learn:
+
+1. **`Shipeasy.configure { |c| ... }`** — call it **once** at boot with your
+   server key and an optional `attributes` transform (your user object → the
+   Shipeasy attribute hash). This is the whole setup story.
+2. **`Shipeasy::Client.new(user)`** — construct a cheap, **user-bound** handle per
+   request and read with **no user argument** (the user is bound at construction).
+
+```ruby
+# boot (config/initializers/shipeasy.rb)
+Shipeasy.configure do |c|
+  c.api_key    = ENV.fetch("SHIPEASY_SERVER_KEY")
+  c.attributes = ->(u) { { "user_id" => u.id, "plan" => u.plan } }
+end
+
+# per request — construct once per callsite (cheap; binds the user)
+flags = Shipeasy::Client.new(current_user)
+
+flags.get_flag("new_checkout")                       # NO user arg — bound at construction
+flags.get_config("button_color")
+assignment = flags.universe("checkout").assign       # <=1 experiment; auto-logs exposure
+assignment.get("label", "Buy")                       # variant ?? universe default ?? fallback
+flags.track("purchase", { revenue: 49 })             # on conversion
+flags.get_killswitch("payments")
+```
+
+## What the bound `Client` does
+
+Everything you need per request is on `Shipeasy::Client.new(user)` — no user
+argument on any call:
+
+- `get_flag(name, default: false)` · `get_flag_detail(name)`
+- `get_config(name, decode = nil, default: nil)`
+- `get_killswitch(name, switch_key = nil)`
+- `universe(name).assign` → an `Assignment` (`.name` / `.group` / `.enrolled?` /
+  `.get(field, fallback = nil)`); auto-logs one deduped exposure when enrolled
+- `track(event_name, props = {})`
+
+So an experiment is **end-to-end Client-only**. Constructing a
+`Shipeasy::Client.new(user)` before `Shipeasy.configure` raises `Shipeasy::Error`.
+
+## The configure family
+
+| call | when |
+| --- | --- |
+| [`Shipeasy.configure { ... }`](/sdks/reference/ruby/configuration) | production — your server key |
+| [`Shipeasy.configure_for_testing(...)`](/sdks/reference/ruby/testing) | unit tests — no network, seed overrides |
+| [`Shipeasy.configure_for_offline(...)`](/sdks/reference/ruby/testing) | evaluate real rules from a snapshot / file |
+
+After any of them, you read the same way: `Shipeasy::Client.new(user)`.
+
+## Pages
+
+- [installation](/sdks/reference/ruby/installation) — gem, frameworks (Rails / Sinatra / serverless), `configure`
+- [configuration](/sdks/reference/ruby/configuration) — `Shipeasy.configure`, keys, attributes, one-shot vs poll, options
+- [flags](/sdks/reference/ruby/flags) — `get_flag` + `get_flag_detail`
+- [configs](/sdks/reference/ruby/configs) — `get_config`
+- [killswitches](/sdks/reference/ruby/killswitches) — `get_killswitch`, named switches
+- [error-reporting](/sdks/reference/ruby/error-reporting) — `see()` structured reporting
+- [testing](/sdks/reference/ruby/testing) — `configure_for_testing`, `configure_for_offline`, overrides
+- [openfeature](/sdks/reference/ruby/openfeature) — `Shipeasy::OpenFeature::Provider`
+- [advanced](/sdks/reference/ruby/advanced) — anon-id middleware, private attributes, sticky bucketing, manual exposure, SSR
+

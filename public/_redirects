@@ -1,9 +1,35 @@
+# Workers static assets evaluate _redirects before serving assets or 404s, and
+# take the FIRST matching rule — so the narrower experiment rules must precede
+# the blanket /flags-experiments/* rename below.
+
 # i18n/Translations is hidden from all public surfaces (2026-07 pricing
 # restructure). The content is parked in content/_hidden/ (see its README),
 # so nothing under /translations is exported; these rules catch old
-# bookmarks/backlinks. Workers static assets evaluate _redirects before
-# serving assets or 404s.
+# bookmarks/backlinks.
 /translations/* / 302
 /translations / 302
-/llms/i18n-strings/ /llms/ 302
-/llms/i18n-strings /llms/ 302
+/llms/* /get-started/agents 302
+/llms /get-started/agents 302
+
+# Experiments are hidden the same way (2026-08). Their pages are parked in
+# content/_hidden/experiments; send old links to the nearest live page rather
+# than to a 404.
+/flags-experiments/experiments/* /flags 302
+/flags-experiments/experiments /flags 302
+/flags-experiments/case-studies/low-traffic-experiment /flags/case-studies 302
+/flags-experiments/case-studies/sticky-rebalance /flags/case-studies 302
+/flags-experiments/case-studies/exposure-when-seen /flags/case-studies 302
+/flags-experiments/case-studies/mutually-exclusive-experiments /flags/case-studies 302
+/flags-experiments/case-studies/guardrail-gated-launch /flags/case-studies 302
+/flags-experiments/case-studies/variant-across-login /flags/case-studies 302
+/metrics/power/ /metrics 302
+/metrics/power /metrics 302
+
+# The tab was renamed "Flags & Experiments" -> "Flags & Configs" and its folder
+# with it, so every old deep link needs a home. The API reference moved out from
+# under it at the same time — it documents the whole admin surface, not just
+# flags — hence its own rule ahead of the blanket one.
+/flags-experiments/api/* /api/:splat 301
+/flags-experiments/api /api 301
+/flags-experiments/* /flags/:splat 301
+/flags-experiments /flags 301

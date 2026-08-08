@@ -1,0 +1,19 @@
+{
+  "title": "Ruby",
+  "pages": [
+    "index",
+    "installation",
+    "configuration",
+    "flags",
+    "configs",
+    "killswitches",
+    "error-reporting",
+    "testing",
+    "openfeature",
+    "advanced",
+    "admin-api",
+    "---More---",
+    "snippets",
+    "skill"
+  ]
+}

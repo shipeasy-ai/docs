@@ -5,7 +5,9 @@ export const OG_CONTENT_TYPE = "image/png";
 
 // Human label for the product section, derived from the top-level slug segment.
 const SECTION_LABELS: Record<string, string> = {
-  "flags-experiments": "Flags & Experiments",
+  flags: "Flags & Configs",
+  api: "API reference",
+  metrics: "Metrics & Alerts",
   feedback: "Bugs & Requests",
   sdks: "SDKs",
   "get-started": "Get Started",

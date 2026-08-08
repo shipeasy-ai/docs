@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Native git hook (core.hooksPath=.githooks). No husky.
+set -euo pipefail
+
+# Nothing under generated/ is hand-authored, and its mirrored destinations are
+# gitignored — so a staged change there is either a fresh regen (fine) or an
+# edit somebody made in the wrong place. Say so loudly rather than silently
+# accepting bytes the next regen will throw away.
+if git diff --cached --name-only --diff-filter=ACMR | grep -q '^generated/'; then
+  echo "pre-commit: generated/ is machine-written — make sure this came from a"
+  echo "pre-commit: generator run (pnpm gen), not from editing the files."
+fi
+
+pnpm exec lint-staged

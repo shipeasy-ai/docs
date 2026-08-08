@@ -1,0 +1,6 @@
+{
+  "title": "API",
+  "description": "The admin REST API, generated from the OpenAPI spec",
+  "root": true,
+  "pages": ["index", "operations"]
+}

@@ -713,7 +713,7 @@ main {
 /* Uniform purple: every section resolves to the same accent as the base
    :root triplet (mirrors apps/ui `.theme-purple`). The per-section blocks are
    kept (rather than removed) so any MDX still keying off them stays purple. */
-html[data-section="flags-experiments"],
+html[data-section="flags"],
 html[data-section="translations"],
 html[data-section="feedback"],
 html[data-section="i18n"],
@@ -722,7 +722,7 @@ html[data-section="llms"] {
   --se-accent: oklch(0.72 0.19 292);
   --se-accent-fg: #100a1f;
 }
-html[data-section="flags-experiments"],
+html[data-section="flags"],
 html[data-section="translations"],
 html[data-section="feedback"],
 html[data-section="i18n"],

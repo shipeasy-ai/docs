@@ -1,0 +1,197 @@
+---
+title: "Snippets"
+description: "Minimal copy-paste blocks for flags, configs, kill switches and metric tracking."
+---
+
+Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same leaves the `docs get` op returns.
+
+## release
+
+### release / flags
+
+Read a flag with a user-bound `Client`. Assumes `Shipeasy\configure()` ran at
+startup — see Installation.
+
+```php
+use Shipeasy\Client;
+
+// construct once per callsite (cheap; binds the user)
+$client = new Client($currentUser);
+
+$enabled = $client->getFlag(
+    'new_checkout',   // gate name
+    false,            // optional $default — returned ONLY when unevaluable
+);                    //   (SDK not ready / flag not in blob), NOT when the gate is off
+```
+
+### release / configs
+
+Read a dynamic config value (with a fallback for the absent case). Assumes
+`Shipeasy\configure()` ran at startup — see Installation.
+
+```php
+use Shipeasy\Client;
+
+// construct once per callsite (cheap; binds the user)
+$client = new Client($currentUser);
+
+$value = $client->getConfig(
+    'billing_copy',                // config name
+    ['headline' => 'Welcome'],       // optional $default — returned when the config key is absent
+);
+```
+
+### release / killswitches
+
+Read a kill switch (global panic boolean). Assumes `Shipeasy\configure()` ran at
+startup — see Installation.
+
+```php
+use Shipeasy\Client;
+
+// construct once per callsite (cheap; binds the user)
+$client = new Client($currentUser);
+
+$panic = $client->getKillswitch(
+    'payments',   // kill switch name
+    null,                   // optional $switchKey — read a named per-key override
+);                          //   (null = top-level value; unconfigured key falls back to it too)
+```
+
+## metrics
+
+### metrics / track
+
+Track a metric/conversion event from the bound `Client`. Metrics in the dashboard
+are computed from these events. Assumes `Shipeasy\configure()` ran at startup —
+see Installation.
+
+### Track an event
+
+```php
+use Shipeasy\Client;
+
+// construct once per callsite (cheap; binds the user)
+$client = new Client($currentUser);
+
+// track($event, $props = [])
+//   $event — the event your metric is built on (required)
+//   $props — optional payload; numeric/string fields you can sum/filter on
+//            in a metric (private attributes are stripped before egress)
+$client->track('checkout_started', ['amount' => 49, 'currency' => 'usd']);
+```
+
+Fire-and-forget (never blocks your response) and a no-op under
+`Shipeasy\configureForTesting()` / `Shipeasy\configureForOffline()`. The unit is
+the bound user (`user_id`, else `anonymous_id`); with no unit the call is a no-op.
+
+### Track without properties
+
+```php
+use Shipeasy\Client;
+
+// construct once per callsite
+$client = new Client($currentUser);
+
+$client->track('checkout_started');   // $props are optional
+```
+
+## ops
+
+### ops / see
+
+Report a caught, handled error (or a non-exception "violation") to Shipeasy with
+`see()` — fire-and-forget, never re-throws. Package-level, so it reports against
+the SDK from `Shipeasy\configure()`. Assumes `Shipeasy\configure()` ran at startup
+— see Installation.
+
+### Report a handled exception
+
+```php
+use function Shipeasy\see;
+
+try {
+    charge($order);
+} catch (\Throwable $e) {
+    // ->causesThe($subject)   what the error affects (e.g. "checkout"; default "app")
+    // ->to($outcome)          the terminal — what you do about it; builds + fires once
+    see($e)->causesThe('checkout')->to('use the backup processor');
+    fallbackCharge($order);
+}
+```
+
+### Attach context with `->extras(...)`
+
+```php
+use function Shipeasy\see;
+
+try {
+    charge($order);
+} catch (\Throwable $e) {
+    // ->to($outcome, $array)  PREFERRED: fold the extras into the terminal. The
+    //                         consequence sentence stays whole and there is no
+    //                         ordering to remember.
+    see($e)->causesThe('checkout')->to('use cached prices', ['order_id' => $oid]);
+
+    // ->to fires synchronously here, so a trailing ->extras AFTER ->to is
+    // ignored with a warning (it never throws into the catch block) — the
+    // extras are DROPPED. Use the inline form above, or addExtras() below.
+    // see($e)->causesThe('checkout')->to('use cached prices')->extras(['order_id' => $oid]);
+
+    // NEVER: extras wedged between the subject and the outcome — it splits the
+    // consequence sentence in half and is hard to read.
+    // see($e)->causesThe('checkout')->extras(['order_id' => $oid])->to('use cached prices');
+}
+```
+
+### Attach context from anywhere with `Shipeasy\addExtras(...)`
+
+Prefer this over the inline form whenever the context already exists *above*
+the catch — it keeps the catch site a clean one-liner.
+
+```php
+use function Shipeasy\addExtras;
+use function Shipeasy\see;
+
+// Buffer extras earlier in the request — from any layer, not just the catch.
+// Every see() report that fires LATER in the same request carries them, so you
+// don't have to thread context down into the catch site. A chained ->extras /
+// ->to extra of the same key wins over the ambient one.
+addExtras(['order_id' => $order->id, 'tenant' => $tenant->slug]);
+
+// ...deep in a service, later in the same request...
+try {
+    charge($order);
+} catch (\Throwable $e) {
+    // report carries order_id + tenant automatically.
+    see($e)->causesThe('checkout')->to('use cached prices');
+}
+
+// PHP is share-nothing per request: under PHP-FPM / mod_php the buffer resets
+// per request automatically. Under a long-running runtime (Swoole / RoadRunner /
+// a resident worker loop) call Shipeasy\clearExtras() at request end.
+```
+
+### Report a non-exception violation
+
+```php
+use function Shipeasy\seeViolation;
+
+// a bad state that isn't an exception — the name is a STABLE fingerprint; put
+// variable data in ->extras(), never the name. ->to() is the terminal.
+seeViolation('missing_invoice')->causesThe('billing')->to('skip the dunning email');
+```
+
+### Mark an expected exception — report NOTHING
+
+```php
+use function Shipeasy\controlFlowException;
+
+try {
+    parse($token);
+} catch (\Throwable $e) {
+    // transmits nothing; ->because(...) / ->extras() are local-debug only
+    controlFlowException($e)->because('end of stream is expected');
+}
+```
+

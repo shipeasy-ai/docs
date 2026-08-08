@@ -10,7 +10,7 @@ description: anonymous_id, user_id, identity stitching, bucketBy, and sticky buc
   works="Node 20+ · Workers · Bun · Deno · Browser"
 />
 
-Every fractional rollout and every experiment buckets on a **unit id**. Get the unit right and a visitor sees a consistent experience across SSR, the browser, and your backend — in every language. This page is the contract.
+Every fractional rollout buckets on a **unit id**. Get the unit right and a visitor sees a consistent experience across SSR, the browser, and your backend — in every language. This page is the contract.
 
 ## The unit: user_id, then anonymous_id
 
@@ -64,7 +64,7 @@ Mint the cookie as early as possible so the **first** request already has an id 
 
 ## Identity stitching — alias on identify
 
-When an anonymous visitor logs in, tie the two ids together so analytics and experiment attribution don't split the same person in two:
+When an anonymous visitor logs in, tie the two ids together so analytics don't split the same person in two:
 
 ```ts
 // Client SDK — call right after authentication
@@ -81,25 +81,25 @@ This emits an `identify` (alias) event. The analysis pipeline resolves the alias
 Sometimes the right unit isn't the individual. Roll a feature out to **20% of companies** (everyone at a company flips together) or bucket by **session** instead of user. That's `bucketBy`:
 
 ```ts
-// Bucket this gate / experiment on company_id instead of user_id —
+// Bucket this gate on company_id instead of user_id —
 // the whole company moves together.
 const flags = new Client({ user_id: userId, company_id: "acme-co" });
 flags.getFlag("new-billing-ui");
 ```
 
-With `bucketBy: "company_id"`, the hash keys on the company attribute, so every user at `acme-co` lands in the same bucket. Common units: `company_id` (org-level rollout), `session_id` (per-session experiments), `device_id`. The named attribute just has to be present on the user you pass.
+With `bucketBy: "company_id"`, the hash keys on the company attribute, so every user at `acme-co` lands in the same bucket. Common units: `company_id` (org-level rollout), `session_id` (per-session ramps), `device_id`. The named attribute just has to be present on the user you pass.
 
 <Callout type="info" title="bucketBy support is rolling out">
-  `bucketBy` is fully wired for gate rollouts; experiment-level company bucketing and full
-  per-language coverage are landing across the SDKs. Check [bucketBy](/sdks/bucketby) for the
-  current per-language status before you rely on it in an experiment.
+  `bucketBy` is fully wired for gate rollouts; full per-language coverage is still landing across
+  the SDKs. Check [bucketBy](/sdks/bucketby) for the current per-language status before you rely on
+  it.
 </Callout>
 
 ## Sticky bucketing
 
 By default, bucketing is _stateless_ — recomputed from the hash every time, which is deterministic and needs no storage. **Sticky bucketing** instead **persists** a user's first assignment so they keep the same variant even if you later change allocation, weights, or the salt.
 
-Reach for it when re-bucketing would be jarring mid-experiment — e.g. you widen a group's weight and don't want already-enrolled users to jump variants. Sticky state is shared between SSR and the browser through a first-party `__se_sticky` cookie, the same way `__se_anon_id` keeps anonymous bucketing in agreement.
+Reach for it when re-bucketing mid-rollout would be jarring — e.g. you bump the salt and don't want users who already have the feature to lose it. Sticky state is shared between SSR and the browser through a first-party `__se_sticky` cookie, the same way `__se_anon_id` keeps anonymous bucketing in agreement.
 
 <SeeAlso
   links={[
@@ -108,14 +108,9 @@ Reach for it when re-bucketing would be jarring mid-experiment — e.g. you wide
       title: "bucketBy",
       note: "company / session / device units, per-language",
     },
-    {
-      href: "/sdks/sticky-bucketing",
-      title: "Sticky bucketing",
-      note: "persistent assignment across config changes",
-    },
     { href: "/get-started/attributes", title: "Attributes", note: "what you can pass on the user" },
     {
-      href: "/flags-experiments/gates/targeting",
+      href: "/flags/gates/targeting",
       title: "Targeting",
       note: "rules that run before bucketing",
     },

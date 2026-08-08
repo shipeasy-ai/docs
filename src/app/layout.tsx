@@ -5,7 +5,7 @@ import "./theme.css";
 import { DocsLayout } from "fumadocs-ui/layouts/docs";
 import { RootProvider } from "fumadocs-ui/provider/next";
 import { source } from "@/lib/source";
-import { Logo } from "@shipeasy/shared/Logo";
+import { Logo } from "@/components/logo";
 
 const BASE_URL = "https://docs.shipeasy.ai";
 
@@ -13,15 +13,15 @@ export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: { default: "Shipeasy Docs", template: "%s — Shipeasy Docs" },
   description:
-    "Shipeasy developer documentation. Guides and API reference for feature flags, killswitches, A/B experiments, and runtime configs — all served from the edge.",
+    "Shipeasy developer documentation. Guides and API reference for feature flags, kill switches, runtime configs, metrics and alerts — all served from the edge.",
   openGraph: {
     type: "website",
     locale: "en_US",
     url: BASE_URL,
     siteName: "Shipeasy Docs",
-    title: "Shipeasy Docs — Feature Flags & Experiments",
+    title: "Shipeasy Docs — Feature Flags, Configs & Metrics",
     description:
-      "Developer docs for Shipeasy: feature flags, killswitches, A/B experiments, and runtime configs. Install via MCP in 12 seconds.",
+      "Developer docs for Shipeasy: feature flags, kill switches, runtime configs, metrics and alerts. Install via MCP in 12 seconds.",
     images: [
       {
         url: "https://shipeasy.ai/opengraph-image",
@@ -33,9 +33,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Shipeasy Docs — Feature Flags & Experimentation",
+    title: "Shipeasy Docs — Feature Flags, Configs & Metrics",
     description:
-      "Developer docs for feature flags, A/B experiments, killswitches, and runtime configs. Served from the edge.",
+      "Developer docs for feature flags, kill switches, runtime configs, metrics and alerts. Served from the edge.",
     images: ["https://shipeasy.ai/opengraph-image"],
     creator: "@shipeasyai",
   },
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
 };
 
 const PRODUCT_DESCRIPTIONS: Record<string, string> = {
-  "Flags & Experiments": "Gates, configs, killswitches & A/B tests",
+  "Flags & Configs": "Gates, configs & kill switches",
   "Bugs & Requests": "Bug reports & feature requests",
 };
 

@@ -1,0 +1,208 @@
+---
+title: "Agent skill"
+description: "Installable LLM skill for the TypeScript / JavaScript SDK (configure() + Client(user), evaluate, experiment + track, testing)."
+---
+
+An installable agent skill for the TypeScript / JavaScript SDK. Fetch it with `shipeasy docs skill --sdk typescript` (`--install` writes it to your agent skills dir), or copy it below — the YAML frontmatter installs with it.
+
+````markdown
+---
+name: shipeasy-typescript
+description: Use Shipeasy (feature flags, configs, kill switches, A/B experiments, i18n) from TypeScript / JavaScript. Covers configure() + Client(user), getFlag/getConfig/getKillswitch/universe().assign(), track, testing, OpenFeature, and the see() error reporter — server (@shipeasy/sdk/server) and browser (@shipeasy/sdk/client).
+---
+
+# Shipeasy TypeScript SDK
+
+`@shipeasy/sdk` — one package, two entrypoints: `@shipeasy/sdk/server` (Node /
+Cloudflare Worker / Deno, **server** key) and `@shipeasy/sdk/client` (browser,
+public **client** key). Everything works from vanilla JS.
+
+> The documented surface is exactly **`configure()`** (setup) and the bound
+> **`new Client(user)`** (use), plus the package-level helpers below. For deeper
+> docs, fetch any page/snippet from the manifest at
+> <https://shipeasy-ai.github.io/sdk-ts/manifest.json> (raw page/snippet URLs below).
+
+## Install
+
+```bash
+npm install @shipeasy/sdk
+```
+
+## Configure once, evaluate per user
+
+```ts
+import { configure, Client } from "@shipeasy/sdk/server"; // or "@shipeasy/sdk/client"
+
+configure({
+  apiKey: process.env.SHIPEASY_SERVER_KEY!,           // browser: clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY
+  attributes: (u: MyUser) => ({ user_id: u.id, plan: u.plan }), // optional; omit = identity
+  // poll: true  // long-running server: keep flags fresh with a background poll (no engine.init() needed)
+});
+
+const flags = new Client(currentUser); // browser: await flags.ready() before first read
+
+flags.getFlag("new_checkout");                         // boolean (2nd arg = default if not-ready/not-found)
+flags.getConfig<{ max: number }>("limits", { defaultValue: { max: 50 } });
+flags.getKillswitch("payments");                       // global on/off (not user-bound)
+flags.getFlagDetail("new_checkout");                   // { value, reason }
+```
+
+`configure()` is first-config-wins and owns the fetch lifecycle (one-shot by
+default; `poll: true` for a background refresh). Construct `new Client(user)` once
+per user/request — it binds the user, so no method takes a user argument.
+
+Egress is **environment-derived**: network + usage telemetry default ON in
+production and OFF otherwise (prod is read from `SHIPEASY_ENV`/`NODE_ENV`, else
+the `env` option, default `"prod"`), so the SDK never phones home from dev/CI.
+Override with `isNetworkEnabled: false` (fully offline) or `disableTelemetry: true`
+(keep fetching, no usage beacons).
+Full reference: <https://shipeasy-ai.github.io/sdk-ts/pages/configuration.md> ·
+<https://shipeasy-ai.github.io/sdk-ts/pages/flags.md> ·
+snippets <https://shipeasy-ai.github.io/sdk-ts/snippets/release/flags.md> ·
+<https://shipeasy-ai.github.io/sdk-ts/snippets/release/configs.md> ·
+<https://shipeasy-ai.github.io/sdk-ts/snippets/release/killswitches.md>
+
+## Experiments + track (Client-only, end to end)
+
+```ts
+const flags = new Client(currentUser); // construct once per callsite
+
+// Read experiments by UNIVERSE (a mutual-exclusion pool — the unit lands in ≤1
+// experiment). Server: the first get() read auto-logs one deduped exposure
+// (peek with get(field, fallback, { exposure: false })). Browser: assign() logs it.
+const exp = flags.universe("hero_cta").assign();
+render(exp.get("primary_label", "Sign up")); // variant ?? universe default ?? fallback
+
+// Pass the universe's param shape to type get() — field names autocomplete and
+// a typo is a compile error. Optional; without it the value stays `unknown`.
+const typed = flags.universe<{ primary_label: string }>("hero_cta").assign();
+render(typed.get("primary_label", "Sign up")); // string | undefined
+
+if (exp.enrolled) {
+  // exp.group is the variant, exp.name is the experiment
+}
+flags.track("purchase", { value: 42 }); // record a conversion for the bound user
+```
+
+`Assignment = { name: string | null; group: string | null; enrolled: boolean;
+get(field, fallback) }`. Full reference:
+<https://shipeasy-ai.github.io/sdk-ts/pages/experiments.md> · track snippet
+<https://shipeasy-ai.github.io/sdk-ts/snippets/metrics/track.md>
+
+## i18n
+
+Full i18n ships in this SDK. Wire the loader via the SSR bootstrap (no separate
+init), then render with `i18n.t`:
+
+```ts
+import { i18n } from "@shipeasy/sdk/client";
+i18n.t("checkout.cta", "Place order");
+i18n.t("cart.count", "{count} items", { count: cart.length });
+```
+
+Full reference: <https://shipeasy-ai.github.io/sdk-ts/pages/i18n.md> · snippets
+<https://shipeasy-ai.github.io/sdk-ts/snippets/i18n/setup.md> ·
+<https://shipeasy-ai.github.io/sdk-ts/snippets/i18n/render.md>
+
+## Error reporting (see)
+
+```ts
+import { see, addExtras, runWithExtras } from "@shipeasy/sdk/server"; // or /client
+
+try { await submitOrder(order); }
+catch (e) { see(e).causes_the("checkout").to("use cached prices").extras({ order_id: order.id }); }
+// Extras go AFTER the terminal (TS defers dispatch a microtask) or inline on it
+// as .to(outcome, obj). NEVER .causes_the(x).extras({...}).to(y) — it splits the
+// consequence sentence in half.
+
+see.Violation("large query").causes_the("results").to("be trimmed").extras({ rows });
+see.ControlFlowException(e).because("because it wasn't an encoded Foo"); // expected — reports nothing
+
+// Ambient per-scope extras — buffer from any layer; every later see() merges them in.
+runWithExtras(async () => {                    // server: per-request ALS scope
+  addExtras({ order_id: order.id, tenant });   // browser: call addExtras() directly, one user/page
+  try { await charge(order); } catch (e) { see(e).causes_the("checkout").to("use cached prices"); }
+});
+```
+
+Fire-and-forget on the next microtask (no `.send()`). Don't catch what you can't
+name a consequence for. You may `see()` then re-throw (links as `caused_by`). Full
+reference: <https://shipeasy-ai.github.io/sdk-ts/pages/error-reporting.md> · snippet
+<https://shipeasy-ai.github.io/sdk-ts/snippets/ops/see.md>
+
+## Testing — no network
+
+```ts
+import { configureForTesting, configureForOffline, Client, overrideFlag, clearOverrides } from "@shipeasy/sdk/server";
+
+// Seed values up front; reads go through the ordinary new Client(user). Replaces
+// prior config, so each test can reconfigure freely.
+configureForTesting({
+  flags: { new_checkout: true },
+  configs: { limits: { max: 50 } },
+  experiments: { hero_cta: ["treatment", { primary_label: "Buy now" }] },
+});
+const flags = new Client({ user_id: "u_1" });
+flags.getFlag("new_checkout"); // true
+
+overrideFlag("new_checkout", false); // flip on the spot
+clearOverrides();                    // drop every override (incl. the seed)
+
+// Offline: evaluate the REAL rules from a snapshot or JSON file, no network.
+configureForOffline({ path: "./shipeasy-snapshot.json" });
+// or: configureForOffline({ snapshot: { flags, experiments }, flags: { new_checkout: true } });
+```
+
+Full reference: <https://shipeasy-ai.github.io/sdk-ts/pages/testing.md>
+
+## OpenFeature
+
+```ts
+import { OpenFeature } from "@openfeature/server-sdk";
+import { ShipeasyProvider } from "@shipeasy/openfeature/server"; // or /web
+
+// Assumes configure({ apiKey }) ran at startup — the no-arg provider resolves it.
+await OpenFeature.setProviderAndWait(new ShipeasyProvider());
+await OpenFeature.getClient().getBooleanValue("new_checkout", false, { targetingKey: "u1" });
+```
+
+Full reference: <https://shipeasy-ai.github.io/sdk-ts/pages/openfeature.md>
+
+## Advanced
+
+`privateAttributes`, `bucketBy` (custom bucketing unit), `stickyBucketing`
+(browser: on by default, `__se_sticky` cookie), exposure control (browser:
+`universe(name).assign({ logExposure: false })` + `disableAutoExposure`),
+`onChange(cb)` (requires `configure({ poll: true })`) / browser `subscribe()`.
+Devtools overlay: `Shift+Alt+S` or `?se=1`. Full reference:
+<https://shipeasy-ai.github.io/sdk-ts/pages/advanced.md>
+
+## React Native devtools
+
+Shake-to-open on-device devtools for RN/Expo apps — mount once at the root:
+
+```tsx
+import { ShipeasyDevtools } from "@shipeasy/react-native-devtools";
+
+// scheme = YOUR app's registered deep-link scheme; clientKey enables the
+// public "Report a bug" path (project must enable Allow public tickets).
+<ShipeasyDevtools scheme="myapp://se-auth" clientKey={CLIENT_KEY} />;
+```
+
+Shake several times fast to open (expo-sensors; or `ref.open()`). Login runs
+device-auth via the app's own scheme (PKCE — the deep link never carries the
+token) and unlocks User / Gates / Configs / Experiments / Feedback / I18n /
+Events panels, with live value forcing through the SDK's programmatic
+overrides. The sheet opens content-sized; drag its grab handle up — or tap it —
+to fill the screen, drag down to dismiss. Install it alongside the SDK — `npm install @shipeasy/react-native-devtools
+react-hook-form @hookform/resolvers` — it is a separate package so an app that
+only reads flags never pulls a UI toolchain in.
+Full reference: <https://shipeasy-ai.github.io/sdk-ts/pages/react-native-devtools.md>
+
+The browser overlay needs no install at all — it is delivered as a hosted
+script (`se-devtools.js`), with URL-param overrides and `Shift+Alt+S`. Emit it
+from SSR with `se.getDevtoolsTag()` / `se.getDevtoolsData()` — the project id and
+public client key come from `shipeasy({ projectId, clientKey })`, so every tag
+call (bootstrap, i18n loader, devtools) takes no arguments. Reference:
+<https://shipeasy-ai.github.io/sdk-ts/pages/browser-devtools.md>
+````

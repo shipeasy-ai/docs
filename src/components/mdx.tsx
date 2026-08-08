@@ -483,7 +483,7 @@ export function DocMeta({
 }
 
 /**
- * Compact 2×2 picker for "which Flags & Experiments primitive should I use?".
+ * Compact picker for "which Flags & Configs primitive should I use?".
  * Each cell answers a single question — no nested decision tree, no mermaid.
  */
 export function DecisionPicker() {
@@ -495,32 +495,25 @@ export function DecisionPicker() {
     body: string;
   }[] = [
     {
-      href: "/flags-experiments/gates",
+      href: "/flags/gates",
       q: "if / else by user?",
       name: "Gate",
       tag: "boolean",
       body: "Targeting rules + percentage rollout. The default tool for shipping behind a flag.",
     },
     {
-      href: "/flags-experiments/configs",
+      href: "/flags/configs",
       q: "what value?",
       name: "Config",
       tag: "typed",
       body: "String, number, boolean, JSON — schema-validated. Change without a redeploy.",
     },
     {
-      href: "/flags-experiments/killswitches",
+      href: "/flags/killswitches",
       q: "kill it now?",
       name: "Killswitch",
       tag: "incident",
       body: "One switch, no rollout %. The lever you pull at 3am during an incident.",
-    },
-    {
-      href: "/flags-experiments/experiments",
-      q: "is X better than Y?",
-      name: "Experiment",
-      tag: "stats",
-      body: "A/B test with automated p-values + 95% confidence intervals. Daily updates.",
     },
   ];
   return (
@@ -551,7 +544,7 @@ export function DecisionPicker() {
        title="Ship a feature behind a flag"
        steps={[
          { href: "/get-started/install", label: "Install", title: "Add the SDK" },
-         { href: "/flags-experiments/gates/quickstart", label: "Create", title: "Your first flag" },
+         { href: "/flags/gates/quickstart", label: "Create", title: "Your first flag" },
        ]}
      />
    ────────────────────────────────────────────────────────────── */
@@ -596,7 +589,7 @@ export function JourneyPath({
    Lighter than <CardGrid>; pairs with <DocFeedback> above the footer nav.
    Use:
      <SeeAlso links={[
-       { href: "/flags-experiments/gates/targeting", title: "Targeting rules" },
+       { href: "/flags/gates/targeting", title: "Targeting rules" },
        { href: "/get-started/attributes", title: "User attributes", note: "what you can target on" },
      ]} />
    ────────────────────────────────────────────────────────────── */

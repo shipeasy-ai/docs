@@ -30,7 +30,7 @@ This is why evaluation is synchronous and fast enough to call in a render path. 
 
 ## Deterministic murmur3 bucketing
 
-Fractional rollouts and experiment allocation are decided by hashing the unit:
+Fractional rollouts are decided by hashing the unit:
 
 ```
 segment = murmur3(`${salt}:${unitId}`) % 10000
@@ -41,11 +41,10 @@ on = segment < rolloutPct        // rolloutPct is an integer 0–10000
 - **Cross-language identical.** Every SDK uses `MurmurHash3_x86_32`, seed 0, UTF-8 bytes. A user buckets the same way in your Node SSR, your Go backend, and your browser bundle. The hash is published as a fixed test-vector table so every language agrees byte-for-byte.
 - **Integer math, no floats.** Rollout percentages are stored as integers `0–10000` (basis points). Comparison is pure integer — no float drift across languages.
 
-<Callout type="info" title="Two independent hashes for experiments">
-  Experiment allocation (are you in?) and group assignment (which variant?) use **separate** hashes
-  (`…:alloc:…` and `…:group:…`). That decorrelates who is enrolled from which variant they see.
-  Universe holdouts hash on the **universe name**, so the same segment is excluded from every
-  experiment in that universe. See [Identity & bucketing](/get-started/identity-and-bucketing).
+<Callout type="info" title="Change the salt, reshuffle everybody">
+  The salt is part of the hash input, so bumping a flag's salt moves every user to a fresh bucket.
+  That is the escape hatch when you want to re-run a 5% ramp on a *different* 5% — and the reason
+  not to touch it mid-rollout. See [Identity & bucketing](/get-started/identity-and-bucketing).
 </Callout>
 
 ## Background polling at the plan interval
@@ -60,8 +59,8 @@ The SDK keeps its in-memory rules fresh by polling in the background — never o
   <Step title="Plan-driven cadence">
     The flags blob polls at your plan's interval. The Worker returns an `X-Poll-Interval` header and
     the SDK auto-adjusts to it, so changing a plan lever re-paces every SDK on that plan with no
-    redeploy. The experiments blob polls on a longer, fixed cadence because experiments are stable
-    mid-run.
+    redeploy. The second blob polls on a longer, fixed cadence — its contents change far less
+    often.
   </Step>
   <Step title="Timers don't block shutdown">
     On the server the poll timers are `unref`'d, so they never keep a process alive. In serverless,
@@ -90,7 +89,7 @@ Your rules are served from Cloudflare KV as two separate blobs, fronted by the C
       type: "KV blob",
       description: (
         <>
-          Universes + experiments. Stable mid-run; served via <code>/sdk/experiments</code> with a
+          The long-lived half of the rule set. Served via <code>/sdk/experiments</code> with a
           longer cache window.
         </>
       ),
@@ -98,7 +97,7 @@ Your rules are served from Cloudflare KV as two separate blobs, fronted by the C
   }}
 />
 
-They are split on purpose: a gate change shouldn't invalidate the experiment cache, and vice versa. Browser clients hit `/sdk/evaluate`, where the Worker reads **both** blobs, evaluates server-side, and returns a flat map — so the client never sees raw rules.
+They are split on purpose: a gate change shouldn't invalidate the other blob's cache, and vice versa. Browser clients hit `/sdk/evaluate`, where the Worker reads **both** blobs, evaluates server-side, and returns a flat map — so the client never sees raw rules.
 
 D1 is the source of truth. KV is a globally replicated cache built from D1. Readers on the hot path **never** touch D1.
 
@@ -167,7 +166,7 @@ Add it up: purge fan-out (~150ms) plus the time until your SDK's next background
       note: "which env the blobs are scoped to",
     },
     {
-      href: "/flags-experiments/gates/rollouts",
+      href: "/flags/gates/rollouts",
       title: "Rollouts",
       note: "ramps and per-condition rollout",
     },

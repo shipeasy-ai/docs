@@ -96,211 +96,61 @@ That&apos;s why the MCP server is the recommended surface for any AI-driven setu
 
 ## Tool inventory
 
-The MCP server exposes ~30 tools, grouped by area. The agent sees them as `mcp__shipeasy__<name>`.
+The server advertises its tools grouped by product area. The agent sees each one as
+`mcp__shipeasy__<name>`:
 
-Every row is a tool the agent can call as `mcp__shipeasy__<name>` — these tables just name each one and say what it does.
+| Group        | Tools                                                                   | What it covers                                                          |
+| ------------ | ----------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| **Release**  | `release_flags_*`, `release_configs_*`, `release_killswitch_*`           | Create, target, roll out, and kill features                             |
+| **Metrics**  | `metrics_*`, `metrics_events_*`                                         | Define metrics over your events, read a series, manage the event catalog |
+| **Ops**      | `ops_*`, `ops_alerts_*`, `ops_comments_*`, `ops_investigations_*`        | File and work the bug / feature / alert queue, hand items to agents      |
+| **Errors**   | `errors_*`                                                              | Read, group, and resolve reported production errors                     |
+| **Projects** | `projects_*`, `whoami`                                                  | Which project you're bound to, and its settings                         |
+| **Docs**     | `docs_list`, `docs_get`, `docs_skill`                                   | Fetch SDK docs and installable agent skills for any language            |
 
-### Auth & project
+<Callout type="info" title="The exhaustive list is generated">
+  Every tool, with its full parameter list and error codes, is in the [MCP
+  reference](/get-started/mcp-reference) — generated from the server's own catalog, so it can't
+  drift from what the server actually advertises. Don't learn tool names from prose; read that page.
+</Callout>
 
-<ToolTable>
-  <ToolRow
-    name="auth_check"
-    desc={
-      <>
-        Returns <code>{`{ authenticated, project_id, user_email }`}</code>.
-      </>
-    }
-  />
-  <ToolRow
-    name="auth_login"
-    desc={
-      <>
-        Triggers <code>shipeasy login</code> — asks the human to click.
-      </>
-    }
-  />
-  <ToolRow name="auth_logout" desc={<>Wipes credentials.</>} />
-  <ToolRow
-    name="detect_project"
-    desc={<>Detects framework, source root, loader script presence, SDK install status.</>}
-  />
-</ToolTable>
+## Prompts
 
-### Inspection
-
-<ToolTable>
-  <ToolRow
-    name="list_resources"
-    desc={<>List flags, configs, experiments, profiles, keys — everything in the project.</>}
-  />
-  <ToolRow name="get_resource" desc={<>Fetch a single resource by name.</>} />
-  <ToolRow
-    name="get_sdk_snippet"
-    desc={<>Returns a copy-pasteable SDK init snippet for the detected framework.</>}
-  />
-</ToolTable>
-
-### Flags & experiments
-
-<ToolTable>
-  <ToolRow name="exp_create_gate" desc={<>Create a feature flag.</>} />
-  <ToolRow name="exp_create_config" desc={<>Create a dynamic config.</>} />
-  <ToolRow
-    name="exp_create_experiment"
-    desc={<>Create an experiment with a universe and group spec.</>}
-  />
-  <ToolRow
-    name="exp_start_experiment"
-    desc={
-      <>
-        Move from <code>draft</code> → <code>running</code>.
-      </>
-    }
-  />
-  <ToolRow
-    name="exp_stop_experiment"
-    desc={
-      <>
-        Move to <code>stopped</code>.
-      </>
-    }
-  />
-  <ToolRow
-    name="exp_experiment_status"
-    desc={<>Latest results — lift, p-value, CI per metric per group.</>}
-  />
-</ToolTable>
-
-### i18n (Polylang)
-
-<ToolTable>
-  <ToolRow
-    name="i18n_discover_site"
-    desc={
-      <>
-        Read the <code>/.well-known/i18n.json</code> manifest from a deployed site.
-      </>
-    }
-  />
-  <ToolRow
-    name="i18n_install_loader"
-    desc={
-      <>
-        Generate the loader <code>{"<script>"}</code> tag and create a client key.
-      </>
-    }
-  />
-  <ToolRow name="i18n_scan_code" desc={<>Find candidate translatable strings in source.</>} />
-  <ToolRow
-    name="i18n_codemod_preview"
-    desc={<>Dry-run the JSX literal codemod and show diffs.</>}
-  />
-  <ToolRow
-    name="i18n_codemod_apply"
-    desc={
-      <>
-        Apply the codemod — wraps JSX literals with <code>t()</code>.
-      </>
-    }
-  />
-  <ToolRow
-    name="i18n_create_profile"
-    desc={
-      <>
-        Create a <code>locale:env</code> profile.
-      </>
-    }
-  />
-  <ToolRow name="i18n_create_key" desc={<>Create a single key on a profile.</>} />
-  <ToolRow name="i18n_push_keys" desc={<>Sync codemod-discovered keys to the dashboard.</>} />
-  <ToolRow
-    name="i18n_translate_draft"
-    desc={<>Generate a translation draft via the configured AI provider.</>}
-  />
-  <ToolRow
-    name="i18n_validate_keys"
-    desc={<>Fail if any code reference is missing from a profile.</>}
-  />
-  <ToolRow name="i18n_publish_profile" desc={<>Push to KV — live in seconds.</>} />
-</ToolTable>
-
-## Onboarding prompts
-
-The MCP server bundles long-form prompts you can invoke with `/mcp:shipeasy:<prompt>`:
-
-<TileGrid>
-  <Tile
-    href="/llms"
-    icon="✎"
-    title="onboard_i18n"
-    meta={
-      <>
-        <span>full Polylang setup</span>
-      </>
-    }
-  >
-    Discover strings, codemod, push keys, AI-draft translations, publish — for a fresh project.
-  </Tile>
-  <Tile
-    href="#"
-    icon="◈"
-    title="add_experiment"
-    meta={
-      <>
-        <span>idea → metric → start</span>
-      </>
-    }
-  >
-    Walks the agent from a hypothesis through metric selection, variant creation, and start.
-  </Tile>
-  <Tile
-    href="#"
-    icon="⌗"
-    title="gate_a_feature"
-    meta={
-      <>
-        <span>existing code</span>
-        <span>·</span>
-        <span>sensible rollout</span>
-      </>
-    }
-  >
-    Wraps an existing feature with a flag, with rollout defaults that won&apos;t blow up your prod.
-  </Tile>
-</TileGrid>
+Alongside tools, the server bundles a few long-form workflow playbooks, invoked in Claude Code as
+`/mcp:shipeasy:<prompt>`. Ask your agent to list them (`ListPrompts`) rather than guessing names —
+the set moves with the server version.
 
 ## Practical example
 
-Open Claude Code in a fresh React project and say:
+Open your agent in a project that already has the SDK wired and say:
 
-> Use the Shipeasy MCP to onboard this project to translations. Use `en` as the source locale.
+> Use the Shipeasy MCP to put the new checkout behind a flag at 5%, and alert me if the checkout
+> error rate goes above 2% over the next day.
 
 The agent will:
 
 <Steps>
-  <Step title="Detect the project">
-    Calls `mcp__shipeasy__detect_project` to learn the framework, source root, and SDK install
-    status.
+  <Step title="Check who it is">
+    Calls `mcp__shipeasy__whoami` to confirm the credential and which project it is bound to.
   </Step>
-  <Step title="Check auth">
-    Calls `mcp__shipeasy__auth_check`. If you&apos;re not logged in, prompts you to run `shipeasy
-    login` in a real terminal.
+  <Step title="Look before it creates">
+    Calls `mcp__shipeasy__release_flags_list` to check the flag doesn&apos;t already exist — the
+    list-before-create guard below can make this mandatory.
   </Step>
-  <Step title="Install the loader">
-    Calls `mcp__shipeasy__i18n_install_loader` with the right framework hint. Creates a client key,
-    writes the script tag.
+  <Step title="Create and ramp the flag">
+    Calls `mcp__shipeasy__release_flags_create`, then `release_flags_update` to set the rollout
+    percentage.
   </Step>
-  <Step title="Preview & apply the codemod">
-    Calls `mcp__shipeasy__i18n_codemod_preview` to show diffs. Asks for your approval. Calls
-    `mcp__shipeasy__i18n_codemod_apply`.
+  <Step title="Define the metric it will watch">
+    Calls `mcp__shipeasy__metrics_create` with a query over the events your app already logs.
   </Step>
-  <Step title="Push & publish">
-    Calls `mcp__shipeasy__i18n_push_keys` then `mcp__shipeasy__i18n_publish_profile`. New copy is
-    live within seconds.
+  <Step title="Arm the alert">
+    Calls `mcp__shipeasy__ops_alerts_create` with the comparator, threshold and window. A firing
+    rule files its own item in the ops queue.
   </Step>
 </Steps>
 
-The whole flow takes a few minutes and the only thing you click is the browser confirmation during login. For the canonical step-by-step the agent follows, see [LLM Guides → String Manager](/llms).
+Nothing here needs a browser except the one-time login.
 
 ## Auth model (local server)
 
@@ -318,7 +168,7 @@ We also run a **hosted, remote** MCP server on Cloudflare — no `npx`, no local
 https://slack.shipeasy.ai/mcp
 ```
 
-This is the server behind Shipeasy in **Slack** — it powers Slack's built-in AI assistant ("MCP Server Connection") and the `@Shipeasy` bot. It exposes the flags / configs / kill-switch / experiment tools (`exp_*`), scoped to the Shipeasy project your Slack workspace is connected to.
+This is the server behind Shipeasy in **Slack** — it powers Slack's built-in AI assistant ("MCP Server Connection") and the `@Shipeasy` bot. It exposes the flags / configs / kill-switch / metrics / ops tools, scoped to the Shipeasy project your Slack workspace is connected to.
 
 <Callout
   type="info"
@@ -430,7 +280,7 @@ The header only selects _which_ project each call acts on — it is **not** a cr
 
 ### List-before-create guard (optional)
 
-A common agent failure is creating a duplicate flag/metric/experiment because it didn't check whether one already exists. The **list-before-create guard** forces the check: with it on, a `*_create` is refused unless it carries a fresh `listToken` that its sibling `*_list` just handed out (valid ~10 min). It's **off by default** on the hosted server; `shipeasy setup` writes it disabled and annotated so you can flip it on per connection:
+A common agent failure is creating a duplicate flag or metric because it didn't check whether one already exists. The **list-before-create guard** forces the check: with it on, a `*_create` is refused unless it carries a fresh `listToken` that its sibling `*_list` just handed out (valid ~10 min). It's **off by default** on the hosted server; `shipeasy setup` writes it disabled and annotated so you can flip it on per connection:
 
 ```json title=".mcp.json"
 {
@@ -477,8 +327,8 @@ A common agent failure is creating a duplicate flag/metric/experiment because it
   body="The richer your attributes, the more precise your targeting and analysis. Most teams under-invest here on day one and regret it."
   primaryHref="/get-started/attributes"
   primaryLabel="User attributes"
-  secondaryHref="/llms"
-  secondaryLabel="LLM guides"
+  secondaryHref="/get-started/agents"
+  secondaryLabel="Wire up your agent"
   cmds={[
     { label: "Install the MCP", cmd: "shipeasy mcp install" },
     { label: "Confirm auth", cmd: "shipeasy whoami" },

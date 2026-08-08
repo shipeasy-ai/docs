@@ -1,18 +1,18 @@
 ---
 title: Advanced use cases
-description: Five cross-cutting patterns that combine flags, configs, killswitches, experiments, metrics, alerts and feedback into one workflow — the things you can only do when it's all one platform.
+description: Four cross-cutting patterns that combine flags, configs, killswitches, metrics, alerts and feedback into one workflow — the things you can only do when it's all one platform.
 ---
 
 <DocMeta
   status="Guide"
   read="6 min read"
-  updated="July 5, 2026"
+  updated="August 8, 2026"
   works="Whole platform · SDK · CLI · Admin API"
 />
 
 Every primitive on its own is documented in its own section. This page is about the
 _seams_ — the workflows that only exist because flags, configs, killswitches,
-experiments, metrics, alerts and feedback share one SDK, one API and one project.
+metrics, alerts and feedback share one SDK, one API and one project.
 Each pattern below states the problem, the approach, and which primitives it wires
 together. Follow the links for the step-by-step version.
 
@@ -32,18 +32,11 @@ together. Follow the links for the step-by-step version.
     A dynamic config as the live entitlements map, targeted by plan.
   </Card>
   <Card
-    href="#ramp-a-feature-that-halts-itself-when-a-guardrail-regresses"
+    href="#ramp-a-feature-that-pages-you-when-the-number-moves"
     eyebrow="Gate + metric + alert"
     title="A rollout that halts itself"
   >
-    Ramp behind a guardrail that pages — and break-glass with a killswitch.
-  </Card>
-  <Card
-    href="#measure-what-a-whole-quarter-of-shipping-actually-added"
-    eyebrow="Universe + holdout"
-    title="A quarter's compounding impact"
-  >
-    One holdout measures everything you shipped, not one experiment.
+    Ramp behind a metric that pages — and break-glass with a killswitch.
   </Card>
   <Card
     href="#turn-a-spiking-exception-into-an-opened-pr"
@@ -61,7 +54,7 @@ never static — new accounts sign up every day, and you don't want to redeploy 
 hand-edit a targeting rule each time one does.
 
 **Approach.** Create **one** killswitch for the feature. A killswitch carries a map
-of named [**switches**](/flags-experiments/killswitches) — per-key boolean overrides
+of named [**switches**](/flags/killswitches) — per-key boolean overrides
 layered on top of the global state. Have your provisioning code call the Admin API to
 insert a `tenant:<id>` switch the moment a tenant is created, then flip that one
 switch to grant or revoke access — no code change, no deploy, one lever per tenant.
@@ -91,12 +84,12 @@ shipeasy release killswitch set new-checkout --switch-key tenant:acme --value tr
 <SeeAlso
   links={[
     {
-      href: "/flags-experiments/killswitches",
+      href: "/flags/killswitches",
       title: "Killswitches",
       note: "The switches map in full",
     },
     {
-      href: "/flags-experiments/case-studies/per-tenant-killswitch",
+      href: "/flags/case-studies/per-tenant-killswitch",
       title: "Per-tenant killswitch",
       note: "Worked example with the CLI",
     },
@@ -109,7 +102,7 @@ shipeasy release killswitch set new-checkout --switch-key tenant:acme --value tr
 want the new entitlements — seat count, API quota, which features are unlocked — to
 take effect immediately, without shipping code or running a migration.
 
-**Approach.** Model entitlements as a typed [**dynamic config**](/flags-experiments/configs)
+**Approach.** Model entitlements as a typed [**dynamic config**](/flags/configs)
 rather than a flag. Store the limits and feature set as the config's value, and
 target it by a `plan` (or `tenant`) attribute. Your code reads one `getConfig()`; a
 plan change is a config edit — or just a change to the customer's attribute — applied
@@ -124,28 +117,28 @@ const limits = flags.getConfig("entitlements"); // { seats: 25, apiRpm: 600, exp
 
 <SeeAlso
   links={[
-    { href: "/flags-experiments/configs", title: "Dynamic configs", note: "Typed remote values" },
+    { href: "/flags/configs", title: "Dynamic configs", note: "Typed remote values" },
     {
-      href: "/flags-experiments/case-studies/entitlements-with-configs",
+      href: "/flags/case-studies/entitlements-with-configs",
       title: "Entitlements with configs",
       note: "Full pattern",
     },
   ]}
 />
 
-## Ramp a feature that halts itself when a guardrail regresses
+## Ramp a feature that pages you when the number moves
 
 **Problem.** You want to ramp a risky change from 1% to 100%, but not babysit a
 dashboard the whole time. If it drives error rate or latency the wrong way, it should
 stop — or at least page someone — before it reaches everyone.
 
-**Approach.** Put the feature behind a [gate](/flags-experiments/gates) and ramp its
+**Approach.** Put the feature behind a [gate](/flags/gates) and ramp its
 rollout percentage. Define the thing you're afraid of breaking as a
-[**guardrail metric**](/metrics/guardrails), and attach a
+[**metric**](/metrics/quickstart), and attach a
 [**threshold alert**](/metrics/alerts) to it — "checkout errors > 50 in the last
 hour". The alert is evaluated server-side by cron and files a ticket into your
-feedback queue the instant the guardrail breaches, while you keep the same feature's
-[killswitch](/flags-experiments/killswitches) armed as the break-glass to cut it to
+feedback queue the instant it breaches, while you keep the same feature's
+[killswitch](/flags/killswitches) armed as the break-glass to cut it to
 zero without redeploying.
 
 **Combines:** gate rollout + a metric + a threshold alert (auto-files a ticket) + a killswitch for break-glass.
@@ -158,39 +151,12 @@ zero without redeploying.
 <SeeAlso
   links={[
     {
-      href: "/flags-experiments/case-studies/guardrail-gated-launch",
-      title: "Guardrail-gated launch",
-      note: "The ramp + guardrail recipe",
+      href: "/metrics/quickstart",
+      title: "Define the metric",
+      note: "The number the rule watches",
     },
     { href: "/metrics/alerts", title: "Alerts", note: "Threshold rules that file tickets" },
-    { href: "/flags-experiments/gates/rollouts", title: "Rollouts", note: "Gradual ramp" },
-  ]}
-/>
-
-## Measure what a whole quarter of shipping actually added
-
-**Problem.** Every experiment you ran this quarter showed a small lift in isolation.
-But did they _compound_, or did later wins quietly cannibalise earlier ones? A stack
-of individual p-values can't answer that.
-
-**Approach.** Run the quarter's experiments inside a single
-[**universe**](/flags-experiments/experiments) with a **holdout**. Because holdouts
-live on the universe — not the individual experiment — the held-out slice never sees
-_any_ of the changes. Comparing the holdout against everyone else measures the
-cumulative impact of everything you shipped, end to end. Run the experiments as
-mutually-exclusive within that universe so a single user never lands in two at once
-and the attribution stays clean.
-
-**Combines:** a universe + a universe-level holdout + mutually-exclusive experiments + your success metrics.
-
-<SeeAlso
-  links={[
-    { href: "/flags-experiments/experiments", title: "Experiments", note: "Universes & holdouts" },
-    {
-      href: "/flags-experiments/case-studies/mutually-exclusive-experiments",
-      title: "Mutually-exclusive experiments",
-      note: "Sharing one universe safely",
-    },
+    { href: "/flags/gates/rollouts", title: "Rollouts", note: "Gradual ramp" },
   ]}
 />
 
@@ -227,5 +193,5 @@ exception to proposed fix runs without anyone paging themselves.
 These patterns are deliberately composed from primitives you can read about
 individually. If one is close to what you need, start from its section links above;
 if you want the smaller, single-primitive recipes, the
-[Flags & Experiments case studies](/flags-experiments/case-studies) are the next
+[Flags & Configs case studies](/flags/case-studies) are the next
 level down.

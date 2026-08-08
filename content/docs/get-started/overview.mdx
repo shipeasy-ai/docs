@@ -10,7 +10,7 @@ description: A tour of the moving pieces — two runtimes, one shared database, 
       Fast reads, <em>explicit writes</em>, no surprises in your hot path.
     </>
   }
-  subtitle="Shipeasy splits the world into two runtimes — a Next.js admin app and an edge worker — sharing one database and a handful of config blobs. Reading a flag, an experiment, or a translation is a local memory lookup. Changing one purges a single CDN URL and propagates worldwide in under a second."
+  subtitle="Shipeasy splits the world into two runtimes — an admin app and an edge worker — sharing one database and a handful of config blobs. Reading a flag or a config is a local memory lookup. Changing one purges a single CDN URL and propagates worldwide in under a second."
   primaryHref="/get-started/install"
   primaryLabel="Install the SDK"
   secondaryHref="#two-runtimes"
@@ -24,7 +24,7 @@ description: A tour of the moving pieces — two runtimes, one shared database, 
   works="Edge worker · KV · events store · Queues"
 />
 
-Shipeasy is built around one rule: **the read path is fast and the write path is explicit.** Reading a flag, an experiment assignment, or a translation should never block your request. Changing one should be visible globally within a second of the dashboard click.
+Shipeasy is built around one rule: **the read path is fast and the write path is explicit.** Reading a flag or a config should never block your request. Changing one should be visible globally within a second of the dashboard click.
 
 That single rule decides almost every architectural choice — no per-request fetches, no TTL-based invalidation, no streaming sockets. Just config blobs at the edge, polled in the background, and purged on change.
 
@@ -105,7 +105,7 @@ That single rule decides almost every architectural choice — no per-request fe
 
 The admin app is a Next.js app that owns:
 
-- The dashboard UI for feature flags, configs, experiments, profiles and labels.
+- The dashboard UI for feature flags, configs, kill switches, metrics and alerts.
 - Server Actions and Route Handlers — the same endpoints the CLI calls.
 - Stateless JWT sessions (short expiry, no session table).
 - The KV rebuild + CDN purge pipeline. Whenever you change a flag, the admin app rebuilds the affected blob and purges the URL.
@@ -130,7 +130,7 @@ The same worker also handles the CLI device-auth flow and runs the cron + queue 
       required: true,
       description: (
         <>
-          Source of truth — feature flags, configs, experiments, profiles, keys, exposures, daily
+          Source of truth — feature flags, configs, kill switches, metrics, keys, exposures, daily
           results. Project-scoped on every query.
         </>
       ),
@@ -140,9 +140,8 @@ The same worker also handles the CLI device-auth flow and runs the cron + queue 
       required: true,
       description: (
         <>
-          Two blobs per project: <code>:flags</code> (feature flags + configs) and{" "}
-          <code>:experiments</code> (universes + experiments). Plus a per-profile manifest for i18n
-          labels.
+          Two blobs per project: <code>:flags</code> (feature flags, configs and kill switches)
+          and <code>:experiments</code>, the longer-lived half of the rule set.
         </>
       ),
     },
@@ -255,7 +254,7 @@ The other direction is much shorter — and on purpose.
     swaps atomically.
   </Step>
   <Step title="Exposure events are batched">
-    Each evaluation that resolves to an experiment variant queues a small exposure event. Events are
+    An evaluation queues a small exposure event recording what the user was shown. Events are
     flushed to <code>/collect</code> in batches — `sendBeacon` on page hide in the browser, periodic
     flush + on-process-exit on the server.
   </Step>
@@ -337,8 +336,8 @@ For B2B, you can bucket by `company_id` instead, so all teammates see the same v
   - **No per-request fetch from the SDK.** The bundle is in process memory. - **No TTL-based KV
   invalidation.** Writes purge the affected URL explicitly. - **No streaming sockets.** Polling at
   plan interval is good enough for flag changes and removes a class of operational headaches. - **No
-  vendor lock-in for stats.** Experiment results are plain rows in your database — exportable,
-  queryable, yours.
+  vendor lock-in for your data.** Events and metric series are plain rows in your database —
+  exportable, queryable, yours.
 </Callout>
 
 ## Where to next

@@ -1,11 +1,11 @@
 ---
 title: Metrics
-description: Define what you measure — primary metrics, guardrails, outliers, segmentation, and how to keep results honest.
+description: Define what you measure — aggregations, filters, outlier handling, and ratio metrics over your own events.
 ---
 
-<DocMeta status="Production ready" read="9 min read" updated="May 3, 2026" works="Server SDK" />
+<DocMeta status="Production ready" read="6 min read" updated="August 8, 2026" works="Server SDK" />
 
-A **metric** is a number computed per user from a set of events. Every experiment has at least one **primary** metric (the thing you're trying to move) and ideally a couple of **guardrails** (things you don't want to break). Get these two choices right and most of your experimentation problems go away on their own.
+A **metric** is a number computed from a set of events you log. It is the thing you watch while a flag ramps, and the thing an [alert rule](/metrics/alerts) compares against a threshold. Get the definition right and the rest of the observability story follows.
 
 <MetricPulseScene />
 
@@ -51,7 +51,7 @@ shipeasy metrics create sessions \
   --event-name session_start --query 'count(session_start)'
 ```
 
-Or in the dashboard: **Experiments → Metrics → New metric**.
+Or in the dashboard: **Metrics → New metric**.
 
 ## Filtering events into a metric
 
@@ -83,24 +83,6 @@ Operators are `=` (equal), `!=` (not equal), `=~` (regex match),
 'count_users(purchase{platform="web", country="US"})'
 ```
 
-## Primary vs guardrail
-
-When you attach metrics to an experiment, you mark each one as **primary** or **guardrail**.
-
-- **Primary**: the metric you're trying to move. The experiment's "did it win?" decision is read off these. Pick one or two; if you have five primaries you have none.
-- **Guardrail**: metrics that must _not_ regress. A new checkout flow had better not tank page load time. Shipeasy flags any guardrail that moves significantly in the wrong direction, even if your primary won. By default, the dashboard treats a guardrail as failed when `p < 0.05` and the lift is in the bad direction.
-
-A common pattern for a checkout experiment:
-
-| Role      | Metric                                   | Direction |
-| --------- | ---------------------------------------- | --------- |
-| Primary   | `purchase_conversion`                    | up        |
-| Guardrail | `error_rate`                             | down      |
-| Guardrail | `p95_page_load_ms`                       | down      |
-| Guardrail | `support_ticket_rate` (computed offline) | down      |
-
-The primary tells you _"did the change work?"_, the guardrails tell you _"did it work without breaking something else?"_. A win that ships is one where the primary moves and no guardrail regresses.
-
 ## Outliers
 
 For `sum` and `mean`, a single $50,000 enterprise purchase can swing the mean for thousands of users. Shipeasy supports two outlier handlers per metric:
@@ -120,13 +102,9 @@ shipeasy metrics create revenue_per_user \
   --winsorize 95
 ```
 
-Winsorising is the default and is rarely wrong. The trade-off: clamping reduces variance (good — narrower CI, easier to detect lift) at the cost of slightly understating the true effect when the variant genuinely moves the tail (rare).
-
-<Callout type="info" title="Outlier handling is symmetric across groups">
-  The p99 cutoff is computed from the **combined** control + variant sample, then applied to both.
-  This prevents the bug where one variant accidentally has its outliers preserved and looks
-  artificially better.
-</Callout>
+Winsorising is the default and is rarely wrong. The trade-off: clamping reduces variance (good — a
+steadier series, so a threshold alert stops flapping on one big order) at the cost of slightly
+understating a real move in the tail (rare).
 
 ## Ratio metrics
 
@@ -143,52 +121,7 @@ shipeasy metrics create click_through_rate \
 The two ratio arms must each be `count` or `count_users` — the DSL doesn't
 allow `sum`/`avg` in ratio position.
 
-Ratio metrics use the **delta method** to compute variance correctly (the naive ratio-of-means understates variance and inflates significance). The dashboard shows the per-user numerator and denominator alongside the ratio so the math is auditable.
-
-## Segmentation
-
-Once results are in, slice them by user attribute:
-
-```
-purchase_conversion          control  v1     lift     p
-  all                          4.8%   5.2%   +8.3%   0.018
-  country = US                 5.1%   5.4%   +5.9%   0.041
-  country = EU                 4.5%   4.9%   +8.9%   0.062
-  plan = pro                   7.8%   9.4%   +20.5%  0.001
-  plan = free                  3.9%   4.0%   +2.6%   0.401
-  device = mobile              4.2%   4.9%  +16.7%   0.006
-  device = desktop             5.6%   5.6%   +0.0%   0.974
-```
-
-Segmentation works on any attribute you [register](/get-started/attributes#registering-attributes-in-the-dashboard) on the project. The platform stores `attributes_at_exposure` on the `$exposure` event, so segmentation is on the user's state _at the moment they entered the experiment_ — a user who upgraded from `free` to `pro` mid-experiment stays in the `free` segment. This is the right behaviour: it's the only way segmentation is causal.
-
-You don't need to ask for a segment up front — the platform recomputes them on demand from the existing exposure + event data, no re-bucketing required.
-
-<Callout type="warn" title="Beware HARKing">
-  **H**ypothesising **A**fter **R**esults are **K**nown — combing through segments until you find one that's significant — gives false wins. With 20 segments and `p < 0.05`, you expect 1 false positive by pure chance. Pre-register the one or two segments you actually care about. Treat anything else as exploratory and label it as such on the dashboard.
-</Callout>
-
-## Sample size and power
-
-You can't detect a 1% lift with 100 users. Shipeasy shows you a **power estimate** before you start the experiment, given your traffic and the metric's historical variance — so you know roughly how long the test will need to run.
-
-Quick rules of thumb (80% power, α = 0.05, two-sided):
-
-| Baseline conversion | Detectable lift @ 80% power | Users per arm |
-| ------------------- | --------------------------- | ------------- |
-| 1%                  | +10% relative               | ~155,000      |
-| 5%                  | +5% relative                | ~25,000       |
-| 5%                  | +10% relative               | ~6,500        |
-| 20%                 | +5% relative                | ~5,500        |
-| 20%                 | +10% relative               | ~1,400        |
-| 50%                 | +5% relative                | ~1,600        |
-| 50%                 | +10% relative               | ~400          |
-
-If your traffic is low, increase your effect-size requirement (don't bother shipping for 0.5% lift) or run the experiment longer. The platform will not stop you from running an underpowered test, but the dashboard will mark it `insufficient_power` and warn that the absence of a significant result doesn't mean the absence of an effect.
-
-### MDE (minimum detectable effect)
-
-The flip side of "how many users do I need" is "given the users I have, what's the smallest lift I can reliably detect?" The dashboard surfaces an MDE alongside every running experiment, recomputed daily. If your MDE is `+8%` and the lift you're hoping to see is `+2%`, you're going to need to run the experiment for substantially longer — or accept that you won't be able to tell.
+Ratio metrics use the **delta method** to compute variance correctly (the naive ratio-of-means understates variance, which makes an anomaly rule fire on noise). The dashboard shows the numerator and denominator alongside the ratio so the math is auditable.
 
 ## API · `metrics.create`
 
@@ -253,8 +186,8 @@ The flip side of "how many users do I need" is "given the users I have, what's t
       type: '"up" | "down"',
       description: (
         <>
-          Which direction is "good". Used to colour result rows and trigger guardrail alerts.
-          Defaults to <code>up</code>.
+          Which direction is "good". Used to colour trend cells and to pick a side for a
+          directional alert rule. Defaults to <code>up</code>.
         </>
       ),
     },
@@ -265,32 +198,32 @@ The flip side of "how many users do I need" is "given the users I have, what's t
 
 <TileGrid>
   <Tile
-    href="/flags-experiments/experiments/events"
+    href="/metrics/grammar"
     icon="✎"
-    title="Events"
+    title="The metric DSL"
     meta={
       <>
-        <span>events store</span>
+        <span>full grammar</span>
         <span>·</span>
-        <span>fire-and-forget</span>
+        <span>what is refused</span>
       </>
     }
   >
-    What goes into a metric, and how to log it.
+    Every aggregation, filter and operator the query accepts, and the ones it rejects by name.
   </Tile>
   <Tile
-    href="/flags-experiments/experiments/analysis"
+    href="/metrics/alerts"
     icon="∫"
-    title="How analysis works"
+    title="Threshold alerts"
     meta={
       <>
-        <span>statistical analysis</span>
+        <span>windows · buckets</span>
         <span>·</span>
-        <span>p · CI · lift</span>
+        <span>auto-filed tickets</span>
       </>
     }
   >
-    From raw events to lift, p-value, CI.
+    Watch a metric and raise a ticket when it crosses the line.
   </Tile>
   <Tile
     href="/get-started/attributes"
@@ -316,17 +249,17 @@ The flip side of "how many users do I need" is "given the users I have, what's t
     </>
   }
   body="A metric is just an aggregation rule. The data that feeds it is your tracking calls — and there are exactly three things you need to get right."
-  primaryHref="/experiments/events"
-  primaryLabel="Read about events"
-  secondaryHref="/experiments/analysis"
-  secondaryLabel="Skip to analysis"
+  primaryHref="/metrics/quickstart"
+  primaryLabel="Track your first event"
+  secondaryHref="/metrics/alerts"
+  secondaryLabel="Skip to alerts"
   cmds={[
     {
-      label: "Create a primary metric",
+      label: "Create a conversion metric",
       cmd: "shipeasy metrics create purchase_conversion --event-name purchase --query 'count_users(purchase)'",
     },
     {
-      label: "Add a guardrail",
+      label: "Add an error-rate metric",
       cmd: "shipeasy metrics create error_rate --event-name client_error --query 'count_users(client_error)'",
     },
   ]}

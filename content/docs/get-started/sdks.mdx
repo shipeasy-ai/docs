@@ -16,7 +16,7 @@ Other languages have first-party adapters or community ports — see [Ruby](#rub
 
 ## Server SDK [#server]
 
-Use this on your backend (Node, Workers, Bun, Deno, Next.js Server Components, etc.). The server SDK polls flag and experiment blobs in the background and evaluates locally — there is no per-request network call from your code.
+Use this on your backend (Node, Workers, Bun, Deno, Next.js Server Components, etc.). The server SDK polls the rule blobs in the background and evaluates locally — there is no per-request network call from your code.
 
 ```ts
 import { configure, Client } from "@shipeasy/sdk/server";
@@ -58,24 +58,6 @@ flags.track("u_4f2a", "purchase", { value: 49.99, sku: "SHIRT-L-BLUE" });
 
 `track()` is fire-and-forget. Events are batched and sent to `/collect` on the Shipeasy edge.
 
-### Resolving an experiment
-
-Experiments are read by **universe** — a mutual-exclusion pool the user lands in at most one experiment of. The universe declares each param and its default, so a read is always safe:
-
-```ts
-const cta = flags.universe("checkout").assign();
-
-// variant override ?? universe default ?? your fallback
-const color = cta.get<"blue" | "green">("button_color", "blue");
-
-if (cta.enrolled) {
-  // cta.name   the experiment they landed in
-  // cta.group  e.g. "control" | "variant_a"
-}
-```
-
-Assignment is deterministic by `user_id`. `assign()` itself logs nothing; the first `get()` read of an enrolled assignment queues the exposure event the daily analysis pipeline reads.
-
 ### Translating a label
 
 ```ts
@@ -111,7 +93,7 @@ flags.track("checkout_viewed", { source: "nav" });
 ### Server-side rendering bootstrap
 
 For Next.js / Remix / SvelteKit, `configure()` once at startup, then bind a
-`Client` to the request user and read flags, configs, experiments,
+`Client` to the request user and read flags, configs, kill switches,
 killswitches, and SSR i18n strings directly:
 
 ```tsx title="app/layout.tsx"
@@ -165,7 +147,7 @@ framework provides (Vue's `onMounted` + `onUnmounted`, Svelte's
 
 ### A note on vanilla JS [#vanilla-js]
 
-Every Shipeasy SDK API works from plain JavaScript. You can drop the SDK into a plain `<script>` tag, an Astro island, an HTMX page, or a vanilla TS app, and every primitive — feature flags, configs, experiments, i18n — works without any framework.
+Every Shipeasy SDK API works from plain JavaScript. You can drop the SDK into a plain `<script>` tag, an Astro island, an HTMX page, or a vanilla TS app, and every primitive — feature flags, configs, kill switches — works without any framework.
 
 ## React Native & mobile [#mobile]
 
@@ -261,7 +243,7 @@ Useful for QA, dogfooding new variants, walking a customer through what they sho
       Drive everything from your <em>terminal</em>.
     </>
   }
-  body="The CLI does anything the dashboard does — flags, experiments, keys, i18n, MCP install. Plus JSON output for piping."
+  body="The CLI does anything the dashboard does — flags, configs, kill switches, metrics, keys, MCP install. Plus JSON output for piping."
   primaryHref="/get-started/cli"
   primaryLabel="Open the CLI reference"
   secondaryHref="/get-started/mcp"

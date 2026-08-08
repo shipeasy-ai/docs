@@ -1,6 +1,6 @@
 ---
 title: Slack
-description: Run your whole flags & experiments platform from Slack by chatting with @Shipeasy — create gates, configs, kill switches, experiments, alerts and metrics in plain language, then act on everything as it streams back into the channel as interactive cards.
+description: Run your whole release platform from Slack by chatting with @Shipeasy — create gates, configs, kill switches, alerts and metrics in plain language, then act on everything as it streams back into the channel as interactive cards.
 ---
 
 <DocMeta
@@ -12,7 +12,7 @@ description: Run your whole flags & experiments platform from Slack by chatting 
 
 Slack is a full front-end to Shipeasy. Connect it **once**, then talk to
 **@Shipeasy** in plain language to create and change anything — feature flags,
-dynamic configs, kill switches, A/B experiments, alerts, metrics — and watch it
+dynamic configs, kill switches, alerts, metrics — and watch it
 all stream back into the channel as **interactive cards** you act on without ever
 opening the dashboard. Bugs, requests and platform events land the same way.
 
@@ -49,10 +49,9 @@ entire platform:
 | **Feature flags**   | create a flag, roll it out to a %, choose who sees it, turn it on/off    |
 | **Dynamic configs** | create a config, change what it returns                                  |
 | **Kill switches**   | create one, flip it on or off                                            |
-| **A/B experiments** | set one up, start or stop it, ship the winning version, read the results |
 | **Alerts**          | tell you when a number gets too high or too low                          |
 | **Metrics**         | start tracking something people do                                       |
-| **Just ask**        | list what you have, check how a test is doing, "what changed today?"     |
+| **Just ask**        | list what you have, check how a metric is moving, "what changed today?" |
 
 ### Create anything, just by asking
 
@@ -118,15 +117,6 @@ how bad it is at a glance, and the same resolve / dismiss / mute controls:
 
 <SlackNotifyScene kind="error" />
 
-The same loop runs for everything you set up. Start an experiment and, when it
-reaches significance, the result lands with the actions that matter:
-
-<SlackNotifyScene kind="significance" />
-
-…and if a guardrail moves the wrong way, you can stop it on the spot:
-
-<SlackNotifyScene kind="guardrail" />
-
 Flip a kill switch and the channel offers a one-click revert; publish a config to
 prod and the change is announced with a link:
 
@@ -141,8 +131,6 @@ who did it, and recolours the card. Here's the full set:
 | ----------------------------------- | ------------------------------------------------------------------ |
 | **Alert triggered**                 | `Resolve` · `Dismiss` · `Mute rule` (disables the rule that fired) |
 | **Error spiking** (from `see()`)    | `Resolve` · `Dismiss` · `Mute this error` (with a trend chart)     |
-| **Experiment reached significance** | `Ship "<group>"` · `Stop experiment` · `Keep running`              |
-| **Guardrail breached**              | `Stop experiment` · `Acknowledge`                                  |
 | **Kill switch flipped**             | `Flip back` (one-click revert)                                     |
 | **Config published to prod**        | `Acknowledge`                                                      |
 | **Agent needs your attention**      | `Open the issue ↗` · `Acknowledge`                                 |
@@ -152,7 +140,7 @@ Choose which of these post to Slack in **Settings → Notifications** (the Slack
 column is live once a connector exists).
 
 <Callout type="info" title="Privileged actions check your membership">
-  Stopping or shipping an experiment, flipping a kill switch, and muting an alert rule go through
+  Flipping a kill switch, publishing a config, and muting an alert rule go through
   the real admin path (so the change propagates) and verify **you're a member of the project**
   first. If you're not, only you see a quiet "ask an admin to invite you" — the shared card is
   untouched for everyone else.
@@ -208,8 +196,8 @@ For anything beyond a quick alert, just talk to **@Shipeasy**.
 ## Drive Shipeasy from Slack's AI
 
 If you'd rather use **Slack's own AI assistant**, Shipeasy is also available there
-as an MCP connection — the same flags, configs, kill switches, experiments and
-metrics. Your workspace admin enables it once under the Slack App's **MCP Server
+as an MCP connection — the same flags, configs, kill switches, metrics and
+ops queue. Your workspace admin enables it once under the Slack App's **MCP Server
 Connection** (Slack identity auth); after that, ask Slack's assistant to manage
 Shipeasy and it calls through to your project under the same membership check.
 

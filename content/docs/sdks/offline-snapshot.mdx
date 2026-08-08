@@ -14,7 +14,7 @@ Sometimes you want real flag evaluation with **no network at all** — a CI job,
 
 ## The snapshot shape
 
-A snapshot is the bodies of `GET /sdk/flags` and `GET /sdk/experiments`:
+A snapshot is the bodies of both SDK wire endpoints, `GET /sdk/flags` and `GET /sdk/experiments` — the second is required even when your tests only read flags and configs:
 
 ```jsonc
 // snapshot.json
@@ -59,7 +59,7 @@ For seeding individual values without a snapshot, use [`configureForTesting()` +
 <SeeAlso
   links={[
     {
-      href: "/flags-experiments/case-studies/deterministic-tests",
+      href: "/flags/case-studies/deterministic-tests",
       title: "Use case: deterministic flags in CI and tests",
       note: "Snapshots in practice",
     },

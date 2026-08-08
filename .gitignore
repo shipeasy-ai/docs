@@ -1,0 +1,43 @@
+# dependencies
+node_modules/
+
+# next
+.next/
+out/
+.source/
+next-env.d.ts
+
+# cloudflare
+.wrangler/
+
+# tooling
+.turbo/
+*.tsbuildinfo
+
+# misc
+.DS_Store
+*.pem
+npm-debug.log*
+.pnpm-debug.log*
+
+# ---------------------------------------------------------------------------
+# Generated content, MIRRORED into place by `scripts/sync-generated.ts`.
+#
+# The committed copy of every machine-written page lives under `generated/`
+# (see generated/README.md). These destinations are rebuilt from it on
+# predev/prebuild, so they must never be committed — otherwise the same bytes
+# exist twice and a hand-edit here would survive review.
+# ---------------------------------------------------------------------------
+/content/docs/api/operations/
+/content/docs/sdks/reference/
+/content/docs/sdks/node-typescript.mdx
+/content/docs/sdks/python.mdx
+/content/docs/sdks/go.mdx
+/content/docs/sdks/java.mdx
+/content/docs/sdks/kotlin.mdx
+/content/docs/sdks/php.mdx
+/content/docs/sdks/swift.mdx
+/content/docs/sdks/ruby.mdx
+/content/docs/get-started/cli-reference.mdx
+/content/docs/get-started/mcp-reference.mdx
+/src/lib/cli-commands.json

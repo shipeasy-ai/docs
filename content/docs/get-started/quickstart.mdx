@@ -24,7 +24,7 @@ description: Install the SDK and CLI, bind a project, wire one init call, ship a
   works="Node 20+ · Workers · Bun · Deno · Browser"
 />
 
-This is the universal path. Every product — gates, configs, experiments, and i18n — starts here, then branches. If you only read one page, read this one.
+This is the universal path. Every product — gates, configs, kill switches, metrics — starts here, then branches. If you only read one page, read this one.
 
 <Quickstart title="Ship a flag in five minutes" time="~5 minutes · no card required">
   <QuickstartStep num={1} label="INSTALL" title="Add the SDK and CLI" cmd="npm install @shipeasy/sdk && npm install -g @shipeasy/cli">
@@ -48,7 +48,7 @@ This is the universal path. Every product — gates, configs, experiments, and i
   title="Configure once, use everywhere"
   cmd={`// app/layout.tsx — runs once per cold start\nimport { configure } from "@shipeasy/sdk/server";\nconfigure({ apiKey: process.env.SHIPEASY_SERVER_KEY ?? "", attributes: (u) => ({ user_id: u.id, plan: u.plan }) });`}
 >
-  The single `configure()` call boots flags, experiments, **and** i18n. The server SDK polls the
+  The single `configure()` call boots flags, configs **and** kill switches. The server SDK polls the
   rule set in the background and evaluates **locally** — there is no per-request network hop. Env
   (dev / staging / prod) is derived from the key, not from a query param. See [Keys &
   environments](/get-started/keys-and-environments).
@@ -238,16 +238,16 @@ Same single configure call, public client key, then a user-bound `Client` whose 
 You have a flag ramping. Pick where to go deeper.
 
 <CardGrid>
-<Card href="/flags-experiments/gates/quickstart" eyebrow="Feature flags" title="Gates">
+<Card href="/flags/gates/quickstart" eyebrow="Feature flags" title="Gates">
   Targeting rules, per-condition rollouts, gradual ramps, and kill switches.
 </Card>
-<Card href="/flags-experiments/configs/quickstart" eyebrow="Dynamic config" title="Configs">
+<Card href="/flags/configs/quickstart" eyebrow="Dynamic config" title="Configs">
   Typed JSON values you change at runtime — limits, copy, thresholds — without a deploy.
 </Card>
-<Card href="/flags-experiments/experiments/quickstart" eyebrow="A/B testing" title="Experiments">
-  Allocation, variant groups, holdouts on the universe, and significance verdicts.
+<Card href="/metrics/quickstart" eyebrow="Measurement" title="Metrics & alerts">
+  Turn the events you already log into a number, then have a threshold rule watch it for you.
 </Card>
-<Card href="/flags-experiments/killswitches/quickstart" eyebrow="Incident control" title="Kill switches">
+<Card href="/flags/killswitches/quickstart" eyebrow="Incident control" title="Kill switches">
   One switch that turns a subsystem off everywhere, without a deploy or a rollout ramp.
 </Card>
 </CardGrid>

@@ -1,6 +1,6 @@
 ---
 title: Drop-in script tag
-description: Add feature flags, configs and experiments to a no-build or static site with one <script> tag — evaluated at the edge, ready before first paint, no bundler required.
+description: Add feature flags and configs to a no-build or static site with one <script> tag — evaluated at the edge, ready before first paint, no bundler required.
 ---
 
 <DocMeta
@@ -40,8 +40,8 @@ For static sites, server-rendered pages, or anywhere you can't run a bundler, dr
 <Callout type="info" title="Why the preamble mints a cookie">
   `__se_anon_id` is the stable id the visitor is bucketed on. It has to be minted in the page
   because the cookie is first-party to **your** domain and is never sent to our CDN — `boot.js` can
-  only learn it from the URL. Without a stable id a visitor re-buckets on every navigation, and your
-  experiments leak between variants.
+  only learn it from the URL. Without a stable id a visitor re-buckets on every navigation, so a
+  half-rolled-out feature flickers on and off as they browse.
 </Callout>
 
 ## Use the global
@@ -56,7 +56,6 @@ Reads are synchronous. The data arrived with the script, so there is no `ready` 
 
   window.shipeasy.getConfig("checkout_copy");
   window.shipeasy.getKillswitch("payments"); // or ("payments", "apple_pay")
-  window.shipeasy.universe("hero_cta").assign().get("primary_label", "Sign up");
   window.shipeasy.track("checkout_started", { value: 49 });
 </script>
 ```
@@ -94,7 +93,7 @@ await window.shipeasy.identify({ user_id: "user-123", plan: "pro" });
   </Card>
 </CardGrid>
 
-The script tag is the **browser client** under a different delivery mechanism: it reads flags, configs and experiments for the identified visitor. For server-side evaluation, use the server SDK with your **server** key — never put a server key in a `<script>` tag.
+The script tag is the **browser client** under a different delivery mechanism: it reads flags and configs for the identified visitor. For server-side evaluation, use the server SDK with your **server** key — never put a server key in a `<script>` tag.
 
 One capability does not carry over: `see()`, our structured error reporting, needs the full client. On a script-tag page use your existing error tracking; on a bundled page, `import { see } from "@shipeasy/sdk"`.
 

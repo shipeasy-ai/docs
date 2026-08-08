@@ -1,0 +1,61 @@
+name: Regenerate reference docs
+
+# The safety net under the source repos' pre-push hooks (see docs/GENERATION.md).
+# A hook can be skipped — --no-verify, a fresh clone, an edit made on GitHub, a
+# contributor without this repo checked out. This runs the generators from the
+# published sources every night and commits whatever moved, so the worst case is
+# a day of staleness rather than an indefinite one.
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+  repository_dispatch:
+    types: [regen-docs]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: regen-docs
+  cancel-in-progress: true
+
+jobs:
+  regen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Deliberately NOT --frozen-lockfile: gen:api reads openapi.json out of
+      # @shipeasy/openapi, so picking up a newer published spec is the point.
+      - run: pnpm install --no-frozen-lockfile
+
+      # gen:sdk reads each sdk-* repo over raw.githubusercontent; GITHUB_TOKEN
+      # only lifts the API rate limit on the "last changed" lookup.
+      - run: pnpm gen
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # A regen that produces a page nothing links to, or breaks a link that
+      # used to resolve, must not land unnoticed.
+      - run: pnpm build
+      - run: pnpm check-links
+
+      - name: Commit if anything drifted
+        run: |
+          if git diff --quiet -- generated/; then
+            echo "no drift"
+            exit 0
+          fi
+          git config user.name "shipeasy-docs-bot"
+          git config user.email "noreply@shipeasy.ai"
+          git add generated/
+          git commit -m "docs: regenerate reference from upstream sources
+
+          Automated run — the OpenAPI spec or an SDK repo's docs/ moved and the
+          committed output no longer matched. See docs/GENERATION.md."
+          git push

@@ -1,0 +1,265 @@
+---
+title: Quickstart
+description: Create a feature flag, wrap your code, ramp from 0% to 100% — end to end in five minutes.
+---
+
+<DocMeta
+  status="Tutorial"
+  read="5 min read"
+  updated="May 15, 2026"
+  works="Server SDK · Browser SDK · CLI"
+/>
+
+This walks you through shipping a real feature behind a feature flag. You'll create the feature flag, wrap a code
+path, and ramp it from 0% → 5% → 25% → 100%. By the end the feature is live for everyone, with no
+redeploys between ramp steps.
+
+<Quickstart title="The 5-minute path" time="install · create · flag · ramp">
+  <QuickstartStep
+    num={1}
+    label="INSTALL"
+    title="Install the SDK & log in"
+    cmd="npm install @shipeasy/sdk && npx shipeasy login"
+  />
+  <QuickstartStep
+    num={2}
+    label="CREATE"
+    title="Create a feature flag at 0%"
+    cmd="shipeasy release flags create checkout-v2 --rollout-percent 0"
+  />
+  <QuickstartStep
+    num={3}
+    label="WRAP"
+    title="Put the new code path behind a feature flag"
+    cmd="const flags = new Client(currentUser);
+if (flags.getFlag('checkout-v2')) { ... }"
+  />
+  <QuickstartStep
+    num={4}
+    label="RAMP"
+    title="Bump to 5%, then 25%, then 100%"
+    cmd="shipeasy release flags update checkout-v2 --rollout-percent 100"
+  />
+</Quickstart>
+
+## Prerequisites
+
+- A Shipeasy project. The free tier covers everything in this walkthrough.
+- A **server SDK key** for the environment you're deploying to:
+
+```bash
+shipeasy sdk keys create --type server
+```
+
+- The SDK in your project:
+
+<InstallTabs npm="npm install @shipeasy/sdk" />
+
+## 1. Initialise once at boot
+
+The SDK loads the flag bundle into memory and refreshes it in the background. No fetch on the hot
+path, no per-request latency. Configure once, use everywhere.
+
+```ts title="src/lib/shipeasy.ts"
+import { configure } from "@shipeasy/sdk/server";
+
+configure({
+  apiKey: process.env.SHIPEASY_SERVER_KEY ?? "",
+  attributes: (u) => ({ user_id: u.id, plan: u.plan }),
+});
+```
+
+Call this once during boot (server entry, root layout, or worker startup). The same `configure()`
+call covers flags, configs, and killswitches — you do not need separate init for each.
+The optional `attributes` transform maps your user object onto the Shipeasy attribute map so that
+every bound `Client` you construct evaluates against the right context.
+
+## 2. Create the feature flag
+
+```bash
+shipeasy release flags create checkout-v2 --rollout-percent 0
+```
+
+`--rollout-percent 0` means "no one sees it yet." The feature flag exists, the SDK
+knows about it, but every call returns `false`. Safe to deploy. (A
+description field exists on the feature flag row but the CLI's `flags create`
+doesn't accept a `--description` flag today — add the description from
+the dashboard after creating.)
+
+Alternatively, create it in the dashboard: **Flags → New feature flag → Save**.
+
+## 3. Wrap the code path
+
+<Tabs items={["TypeScript", "Python", "Go", "Ruby", "Java", "Kotlin", "PHP", "Swift"]}>
+  <Tab value="TypeScript">
+
+```ts title="app/checkout/page.tsx"
+import { Client } from "@shipeasy/sdk/server";
+
+export default async function CheckoutPage() {
+  const flags = new Client(await getCurrentUser());
+
+  if (flags.getFlag("checkout-v2")) {
+    return <CheckoutV2 />;
+  }
+  return <CheckoutV1 />;
+}
+```
+
+  </Tab>
+  <Tab value="Python">
+
+```python
+flags = shipeasy.Client(current_user)
+if flags.get_flag("checkout-v2"):
+    return checkout_v2()
+return checkout_v1()
+```
+
+  </Tab>
+  <Tab value="Go">
+
+```go
+flags := shipeasy.NewClient(currentUser)
+if flags.GetFlag("checkout-v2") {
+    return checkoutV2()
+}
+return checkoutV1()
+```
+
+  </Tab>
+  <Tab value="Ruby">
+
+```ruby
+flags = Shipeasy::Client.new(current_user)
+if flags.get_flag("checkout-v2")
+  render CheckoutV2
+else
+  render CheckoutV1
+end
+```
+
+  </Tab>
+  <Tab value="Java">
+
+```java
+Client flags = new Client(currentUser);
+if (flags.getFlag("checkout-v2")) {
+    return checkoutV2();
+}
+return checkoutV1();
+```
+
+  </Tab>
+  <Tab value="Kotlin">
+
+```kotlin
+val flags = Client(currentUser)
+if (flags.getFlag("checkout-v2")) {
+    checkoutV2()
+} else {
+    checkoutV1()
+}
+```
+
+  </Tab>
+  <Tab value="PHP">
+
+```php
+$flags = new Shipeasy\Client($currentUser);
+if ($flags->getFlag('checkout-v2')) {
+    return checkoutV2();
+}
+return checkoutV1();
+```
+
+  </Tab>
+  <Tab value="Swift">
+
+```swift
+let flags = try Client(currentUser)
+if await flags.getFlag("checkout-v2") {
+    return checkoutV2()
+}
+return checkoutV1()
+```
+
+  </Tab>
+</Tabs>
+
+Two things to note:
+
+- **Bind the client to your user once.** The `attributes` transform you passed to `configure()`
+  resolves a stable `user_id` — the bucketing key. Same user, same answer, every request.
+- **The call is synchronous.** `flags.getFlag()` does a hash-table lookup against the in-memory
+  bundle — no network round-trip per read. (In Swift the getters are `async` because the engine is
+  an actor.)
+
+Deploy this. With `--rollout-percent 0`, every user sees `CheckoutV1`. The new path is shipped but dark.
+
+## 4. Ramp gradually
+
+When you're ready to start exposing real users:
+
+```bash
+# Day 1 — 5% of all users
+shipeasy release flags update checkout-v2 --rollout-percent 5
+
+# Day 3 — 25%, after metrics look fine
+shipeasy release flags update checkout-v2 --rollout-percent 25
+
+# Day 5 — full launch
+shipeasy release flags update checkout-v2 --rollout-percent 100
+```
+
+Each ramp step propagates to every SDK in under a second. No redeploy, no env var change.
+
+The same feature flag can be ramped from the dashboard with a slider, or via the
+[Admin API](/api). Resolve the feature flag's id, then PATCH:
+
+```bash
+# Resolve `checkout-v2` → its UUID
+GATE_ID=$(curl -sS \
+  -H "Authorization: Bearer $SHIPEASY_ADMIN_KEY" \
+  "https://shipeasy.ai/api/admin/gates?name=checkout-v2" | jq -r '.data[0].id')
+
+curl -X PATCH "https://shipeasy.ai/api/admin/gates/$GATE_ID" \
+  -H "Authorization: Bearer $SHIPEASY_ADMIN_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"rolloutPct": 2500}'   # rolloutPct is basis points: 2500 = 25%
+```
+
+## 5. Kill it if something goes wrong
+
+If the new path breaks at 25%, flip the killswitch:
+
+```bash
+shipeasy release flags disable checkout-v2
+```
+
+Every SDK serves `false` within the next poll (default 30s on Free, 60s
+on Team). Targeting rules and the rollout percentage are preserved on
+the feature flag — when you fix the bug, `shipeasy release flags enable checkout-v2`
+restores the previous state exactly.
+
+For incident-grade flips that propagate faster and are a dedicated
+control surface, use a [killswitch](/flags/killswitches)
+instead.
+
+## Where to next
+
+<TileGrid>
+  <Tile href="/flags/gates/targeting" icon="⌥" title="Add targeting rules">
+    Restrict eligibility — by country, plan tier, account attribute, or any field you pass in `ctx`.
+  </Tile>
+  <Tile href="/flags/gates/rollouts" icon="▦" title="Understand rollouts">
+    Sticky bucketing, deterministic hashing, multi-arm rollouts, salt — how the percentage actually
+    works.
+  </Tile>
+  <Tile href="/flags/gates/overrides" icon="◆" title="QA + dogfood overrides">
+    Force a feature flag on or off for specific user IDs without touching targeting or rollout.
+  </Tile>
+  <Tile href="/flags/case-studies" icon="⌗" title="Real scenarios">
+    Worked examples — checkout rollout, beta allow-list, regional rollout.
+  </Tile>
+</TileGrid>

@@ -1,0 +1,89 @@
+---
+title: Roll out to companies, not users (bucketBy)
+description: B2B rollout bucketed on company_id so a whole account flips together — never half a team on each version.
+---
+
+<DocMeta
+  status="Production ready"
+  read="4 min read"
+  updated="June 19, 2026"
+  works="Server SDK · Dashboard"
+/>
+
+You're shipping a redesigned admin panel to a B2B product. With a normal 20% user rollout, "Acme Corp" gets a problem: eight of their forty seats see the new panel, thirty-two see the old one. Their admin files a confused ticket, your support team can't reproduce, and the account's trust takes a hit — all because the rollout split _inside_ the account.
+
+The fix is to bucket on the **company**, not the user, so a whole account flips together.
+
+**The primitive:** a feature flag with [`bucketBy`](/sdks/bucketby) set to `company_id`. Same deterministic, sticky hashing — just on a coarser unit.
+
+## 1. Configure bucketBy on the flag
+
+Set `bucketBy: "company_id"` on the flag in the dashboard, CLI, or Admin API. A 20% rollout now means _20% of companies_, and every teammate in a selected company resolves to the same answer.
+
+## 2. Carry the attribute on the user
+
+Your only job in code is to make sure the bucketing attribute is present on the user object the `Client` is bound to. Carry it through the `attributes` transform you give `configure`:
+
+```ts
+import { configure, Client } from "@shipeasy/sdk/server";
+
+configure({
+  apiKey: process.env.SHIPEASY_SERVER_KEY!,
+  attributes: (u) => ({
+    user_id: u.userId,
+    company_id: u.companyId, // ← the bucketing unit
+  }),
+});
+
+const flags = new Client(session);
+const enabled = flags.getFlag("admin-panel-v2");
+
+return enabled ? <AdminPanelV2 /> : <AdminPanelV1 />;
+```
+
+<Callout type="warn" title="Missing attribute = fallback bucketing">
+  If <code>company_id</code> is absent on the user object, that user falls back to individual{" "}
+  <code>user_id</code> bucketing — and you get exactly the split-account problem you were avoiding.
+  Make the attribute non-optional on your session type so it can't go missing.
+</Callout>
+
+## 3. Ramp by account
+
+```bash
+# 5% of companies — internal + a few design partners
+shipeasy release flags update admin-panel-v2 --rollout-percent 5
+
+# 25% of companies once support is quiet
+shipeasy release flags update admin-panel-v2 --rollout-percent 25
+
+# everyone
+shipeasy release flags update admin-panel-v2 --rollout-percent 100
+```
+
+Each step adds whole accounts. A company is either fully on or fully off — never split.
+
+## Rollout & measurement plan
+
+- **Whitelist your design partners first.** Add specific `company_id`s to a targeting allow-list so they flip on at 0% rollout, independent of the percentage ramp.
+- **Watch per-account, not per-user.** A bad rollout shows up as a few _accounts_ churning, not a diffuse user metric. Slice your dashboards by company.
+- **Effective sample size is companies, not users.** A 5% rollout of 200 accounts is ten accounts — a metric sliced on that ramp moves in visible steps, and one noisy account can carry the whole number. Read the series with that in mind before concluding anything.
+
+<SeeAlso
+  links={[
+    {
+      href: "/sdks/bucketby",
+      title: "Multi-context bucketing",
+      note: "How bucketBy resolves the unit",
+    },
+    {
+      href: "/flags/gates/rollouts",
+      title: "Rollouts",
+      note: "Deterministic, sticky hashing",
+    },
+    {
+      href: "/metrics/quickstart",
+      title: "Define a metric",
+      note: "What to watch while the ramp climbs",
+    },
+  ]}
+/>

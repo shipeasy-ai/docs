@@ -128,7 +128,7 @@ API tokens skip the device-auth flow entirely. They&apos;re scoped to one projec
       required: true,
       description: (
         <>
-          Read-only. Lets the server SDK fetch flag/experiment blobs and ship exposure events.
+          Read-only. Lets the server SDK fetch the rule blobs and ship exposure events.
           Cannot mutate.
         </>
       ),
@@ -195,7 +195,7 @@ The credentials file is the only state the CLI writes. Project/env preferences l
       Wire it into <em>your code</em>.
     </>
   }
-  body="The SDK is one configure call for flags, experiments, and i18n. Pick your stack and copy the snippet."
+  body="The SDK is one configure call for flags, configs, and kill switches. Pick your stack and copy the snippet."
   primaryHref="/get-started/sdks"
   primaryLabel="Open SDK reference"
   secondaryHref="/get-started/cli"

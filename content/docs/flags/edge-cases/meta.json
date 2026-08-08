@@ -1,0 +1,15 @@
+{
+  "title": "Edge cases",
+  "defaultOpen": false,
+  "pages": [
+    "index",
+    "[Sticky bucketing](/flags/edge-cases#sticky-bucketing)",
+    "[Write propagation latency](/flags/edge-cases#kv-propagation)",
+    "[SSR/CSR flicker](/flags/edge-cases#ssr-flicker)",
+    "[Fail-safe defaults](/flags/edge-cases#fallback)",
+    "[Feature flag sprawl](/flags/edge-cases#gate-sprawl)",
+    "[Config schema drift](/flags/edge-cases#config-schema-drift)",
+    "[Killswitch decay](/flags/edge-cases#killswitch-decay)",
+    "[Cross-env flag drift](/flags/edge-cases#env-drift)"
+  ]
+}

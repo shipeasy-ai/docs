@@ -17,14 +17,15 @@ const ACCENT = "oklch(0.72 0.19 292)";
 
 const PRODUCTS: Product[] = [
   {
-    slug: "flags-experiments",
-    name: "Flags & Experiments",
-    href: "/flags-experiments",
-    desc: "Gates, configs, killswitches & A/B tests",
+    slug: "flags",
+    name: "Flags & Configs",
+    href: "/flags",
+    desc: "Gates, configs & killswitches",
     color: ACCENT,
   },
-  // "Translations" removed 2026-07 — the i18n product is hidden from all
-  // public surfaces (internal `translations` gate on the dashboard side).
+  // "Translations" removed 2026-07 and "Experiments" folded away 2026-08 —
+  // both products are hidden from every public surface. Their pages are parked
+  // in content/_hidden/ (see its README), not deleted.
   {
     slug: "feedback",
     name: "Bugs & Requests",

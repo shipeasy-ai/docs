@@ -1,20 +1,20 @@
 ---
 title: Multi-context bucketing (bucketBy)
-description: Bucket on company_id, session_id, or any attribute instead of user_id — so a rollout or experiment splits by account, not by individual user.
+description: Bucket on company_id, session_id, or any attribute instead of user_id — so a rollout splits by account, not by individual user.
 ---
 
 <DocMeta
   status="Production ready"
   read="4 min read"
   updated="June 19, 2026"
-  works="Gates · Experiments"
+  works="Gates"
 />
 
 By default Shipeasy buckets on `user_id ?? anonymous_id`: a 20% rollout means 20% of _users_. `bucketBy` changes the bucketing unit so you can roll out to 20% of **companies**, keep a whole **session** on one variant, or split by **device** — whatever attribute you hash on.
 
 ## How it works
 
-Set `bucketBy` to an attribute name on the gate or experiment. The SDK resolves the bucketing identifier from that attribute on the user object instead of `user_id`:
+Set `bucketBy` to an attribute name on the gate. The SDK resolves the bucketing identifier from that attribute on the user object instead of `user_id`:
 
 ```ts
 // make sure your attributes transform carries the bucketing attribute
@@ -23,15 +23,15 @@ configure({
   attributes: (u) => ({ user_id: u.id, company_id: u.companyId }),
 });
 
-// the experiment is configured with bucketBy: "company_id"
+// the gate is configured with bucketBy: "company_id"
 const flags = new Client(currentUser);
-flags.universe("pricing").assign().get("price", 9.99);
+flags.getFlag("new-pricing-page");
 ```
 
 Every teammate in `acme_corp` now hashes to the **same** group — the rollout splits at the account boundary, not the user boundary. The hash is still deterministic and sticky: same company, same answer, every time.
 
 <Callout type="info" title="Configured on the resource, carried in the attribute map">
-  <code>bucketBy</code> is set on the gate/experiment (in the dashboard, CLI, or API). Your job in
+  <code>bucketBy</code> is set on the gate (in the dashboard, CLI, or API). Your job in
   code is to make sure the named attribute (e.g. <code>company_id</code>) is present in the
   attribute map your transform produces (or on the user object you pass to the low-level{" "}
   <code>Engine</code>) — if it's missing, that user falls back to individual bucketing.
@@ -46,14 +46,13 @@ Every teammate in `acme_corp` now hashes to the **same** group — the rollout s
 | `device_id`                 | Consistent across logged-out sessions on a device |
 | `org_id`, `team_id`, …      | Any grouping you target on                        |
 
-## The analysis-unit caveat
+## The coarse-unit caveat
 
-<Callout type="warn" title="Bucketing unit vs analysis unit">
-  Bucketing by company makes <em>assignment</em> account-level, but the statistics still aggregate
-  per the experiment's configured analysis unit. When you bucket by a coarse unit (companies), plan
-  for the effective sample size being the number of <em>companies</em>, not users — and confirm your
-  metric and analysis unit line up. See{" "}
-  <a href="/flags-experiments/experiments/analysis">Analysis</a>.
+<Callout type="warn" title="A company is one unit, not N users">
+  Bucketing by company makes the decision account-level, so a 5% ramp of 200 accounts is ten
+  accounts — the number moves in visible steps and one busy account can carry the whole metric.
+  Read the [metric series](/metrics/quickstart) with that in mind before concluding the ramp is
+  safe.
 </Callout>
 
 <SeeAlso
@@ -63,11 +62,11 @@ Every teammate in `acme_corp` now hashes to the **same** group — the rollout s
       title: "Identity & bucketing",
       note: "The full bucketing model",
     },
-    { href: "/flags-experiments/gates/rollouts", title: "Rollouts", note: "Percentage ramps" },
+    { href: "/flags/gates/rollouts", title: "Rollouts", note: "Percentage ramps" },
     {
-      href: "/flags-experiments/experiments/analysis",
-      title: "Analysis",
-      note: "Sample size & analysis unit",
+      href: "/metrics/quickstart",
+      title: "Metrics",
+      note: "What to watch while the ramp climbs",
     },
   ]}
 />

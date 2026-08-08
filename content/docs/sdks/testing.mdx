@@ -36,44 +36,23 @@ flags.getConfig("upload_limits"); // { max_uploads: 50 }
 clearOverrides(); // reset every seeded override back to the empty-blob default
 ```
 
-`configureForTesting({ flags?, configs?, experiments?, attributes? })`:
+`configureForTesting({ flags?, configs?, attributes? })`:
 
 | Field         | Shape                         | Effect                                                  |
 | ------------- | ----------------------------- | ------------------------------------------------------- |
 | `flags`       | `{ [name]: boolean }`         | forced `getFlag` results                                |
 | `configs`     | `{ [name]: value }`           | forced `getConfig` results                              |
-| `experiments` | `{ [name]: [group, params] }` | forces the variant of an experiment that exists already |
 | `attributes`  | `(yourUser) => User`          | same transform as `configure()` (default identity)      |
-
-## Asserting an experiment
-
-An experiment seed **refines** an experiment that already lives in a universe — it does not invent one in an empty universe, and it's read **by universe**, not by experiment name. Seed the real universe + experiment with `configureForOffline()`, then read it:
-
-```ts
-const exp = new Client({ user_id: "u_1" }).universe("hero_cta").assign();
-
-exp.enrolled; // true when the seeded experiment enrolled the unit
-exp.group; // the assigned variant, or null
-exp.get("primary_label", "Sign up"); // variant ?? universe default ?? fallback
-```
-
-On an empty test-mode blob (no snapshot) `universe().assign()` returns not-enrolled regardless of the seed.
 
 ## Package-level overrides
 
 Layer a quick override on top of whatever `configureForTesting()` / `configureForOffline()` — or even a live `configure()` — set up. These are package-level; there's no object to hold:
 
 ```ts
-import {
-  overrideFlag,
-  overrideConfig,
-  overrideExperiment,
-  clearOverrides,
-} from "@shipeasy/sdk/server"; // or /client
+import { overrideFlag, overrideConfig, clearOverrides } from "@shipeasy/sdk/server"; // or /client
 
 overrideFlag("new_checkout", true);
 overrideConfig("upload_limits", { max_uploads: 50 });
-overrideExperiment("hero_cta", "treatment", { primary_label: "Buy now" });
 // …read through `new Client(user)` …
 clearOverrides(); // drop every on-the-spot override
 ```
@@ -96,7 +75,7 @@ programmatic override  >  URL / devtools override (?se_gate_… )  >  the server
 <SeeAlso
   links={[
     {
-      href: "/flags-experiments/case-studies/deterministic-tests",
+      href: "/flags/case-studies/deterministic-tests",
       title: "Use case: deterministic flags in CI and tests",
       note: "forTesting + snapshots in practice",
     },

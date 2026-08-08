@@ -1,8 +1,11 @@
 # Authoring Shipeasy docs
 
-This is the contributor guide for `apps/docs` (the Fumadocs site at
-`docs.shipeasy.ai`). Read it before adding or restructuring pages so the
-information architecture, cross-references, and components stay consistent.
+This is the contributor guide for the Fumadocs site at `docs.shipeasy.ai`. Read
+it before adding or restructuring pages so the information architecture,
+cross-references, and components stay consistent.
+
+For the repo layout, the gates, and how generated pages work, start at
+[`README.md`](README.md) and [`generated/README.md`](generated/README.md).
 
 ## Information architecture
 
@@ -13,16 +16,19 @@ folder whose `meta.json` has `"root": true`. Current tabs:
 | ------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Get started         | `get-started/`       | Onboarding (`overview`, `quickstart`, `install`, `authenticate`, `sdks`), platform **Concepts** (`keys-and-environments`, `evaluation-and-caching`, `identity-and-bucketing`, `attributes`, `plan-limits`), **Tooling** (`cli*`, `mcp*`), **AI agents** (`agents`, `triggers`) |
 | SDKs                | `sdks/`              | `index` + one page per **Language**, then per **Capability** (reasons, onchange, manual-exposure, bucketby, private-attributes, sticky-bucketing, offline-snapshot, testing, devtools-overlay, openfeature)                                                                    |
-| Flags & Experiments | `flags-experiments/` | Gates, configs, killswitches, experiments + `case-studies/`, `edge-cases/`, `api/`                                                                                                                                                                                             |
-| Metrics & Alerts    | `metrics/`           | Metric DSL (`index`, `quickstart`, `aggregations`, `grammar`, `guardrails`, `power`) + `alerts`                                                                                                                                                                                |
+| Flags & Configs     | `flags/`             | Gates, configs, killswitches + `case-studies/`, `edge-cases/`                                                                                                                                                                                                                  |
+| Metrics & Alerts    | `metrics/`           | Metric DSL (`index`, `quickstart`, `aggregations`, `grammar`) + `alerts`                                                                                                                                                                                                       |
+| API                 | `api/`               | Authored `index` + the generated `operations/` tree                                                                                                                                                                                                                            |
 | Bugs & Requests     | `feedback/`          | devtools, error-reporting + `case-studies/`, `edge-cases/`, `api/`                                                                                                                                                                                                             |
 | Assistant           | `assistant/`         | `index`, `read-vs-write`, `cards-and-plans`, `measurement-plans`, `credits`, `use-cases`                                                                                                                                                                                       |
 
-**Hidden (built, but not in nav):** `translations/` is intentionally **not** listed
-in the root `meta.json`, so the Translations tab is hidden. The pages still build
-and are reachable by URL — to bring the tab back, re-add `"translations"` to the
-root `pages` array (after `"flags-experiments"` or wherever it belongs) and restore
-the home-hub tile/journey in `index.mdx`. Don't delete the folder.
+**Hidden (not built at all):** i18n and experiments are parked under
+`content/_hidden/`, outside the Fumadocs content root — so they don't compile,
+don't index, and don't export. Old URLs 302 via `public/_redirects`. The full
+list, and the exact steps to un-hide a product, are in
+[`content/_hidden/README.md`](content/_hidden/README.md). Don't delete the
+folder, and don't reintroduce experiment vocabulary into the live pages — the
+scrub is deliberate.
 
 Use **labelled separators** in `meta.json` to group a long sidebar, e.g.
 `"---Concepts---"`. A plain `"---"` is an unlabelled divider.
@@ -42,7 +48,7 @@ Every leaf page ends with this trio, in this order:
   next={{ href: "/next", title: "Next title" }}
 />
 
-<DocFeedback editHref="https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs/<path>.mdx" />
+<DocFeedback editHref="https://github.com/shipeasy-ai/docs/edit/main/content/docs/<path>.mdx" />
 ```
 
 - `<DocNav>` prev/next follow the **sidebar order** in the section's `meta.json`.
@@ -78,30 +84,37 @@ concept. This keeps the web of cross-links intact as content grows.
 | ------------------------------------------ | ----------------------------------------------------------------------- |
 | `/get-started/overview`                    | home hub, every tab `index` (as "how it works")                         |
 | `/get-started/keys-and-environments`       | every SDK language page, `install`, `authenticate`                      |
-| `/get-started/identity-and-bucketing`      | `/sdks/bucketby`, `/sdks/sticky-bucketing`, gates/rollouts, experiments |
+| `/get-started/identity-and-bucketing`      | `/sdks/bucketby`, gates/rollouts, flags/edge-cases                      |
 | `/sdks` (overview)                         | `/get-started/overview`, `/get-started/sdks`, every language page       |
 | `/sdks/reasons`                            | `/sdks/openfeature`, gates/rollouts, node/browser pages                 |
 | `/sdks/testing` + `/sdks/offline-snapshot` | each other, node-typescript                                             |
 | `/sdks/devtools-overlay`                   | `/feedback/devtools`, browser-react, testing                            |
-| `/flags-experiments/decision`              | home hub, flags-experiments index                                       |
-| `/metrics/power`                           | experiments/analysis, low-traffic case study                            |
+| `/flags/decision`                          | home hub, flags index                                                   |
+| `/metrics/grammar`                         | metrics index, metrics/quickstart, metrics/alerts                       |
 | `/metrics/alerts`                          | assistant/measurement-plans, alert-to-ticket case study                 |
-| `/assistant/measurement-plans`             | `/feedback`, `/flags-experiments/metrics`, MCP page                     |
+| `/assistant/measurement-plans`             | `/feedback`, `/metrics`, MCP page                                       |
 
 ## After you change content
 
-1. `pnpm --filter @shipeasy/docs build` — Fumadocs warns on unknown slugs; fix any.
-2. **Refresh the assistant index** — the in-product assistant (Jarvis `search_docs`)
-   reads a bundled snapshot, not the live site:
-   `pnpm --filter @shipeasy/ui gen:docs-index`
-   Run this whenever you add, rename, or move a page, or the assistant will cite
-   stale URLs.
-3. On-site search (`/static.json`) is regenerated automatically by the build.
+1. `pnpm type-check` — compiles the MDX and validates every `shipeasy …`
+   invocation against the real CLI tree. The `pre-commit` hook runs this.
+2. `pnpm build && pnpm check-links` — the dead-link sweep, over the real export.
+   The `pre-push` hook runs this; run it yourself after moving or renaming a page.
+3. **Refresh the assistant index** in the `shipeasy` repo — the in-product
+   assistant (`search_docs`) reads a bundled snapshot, not the live site:
+   `pnpm --filter @shipeasy/assistant-core gen:docs-index`. Run it whenever you
+   add, rename, or move a page, or the assistant will cite URLs that 404.
+4. On-site search (`/static.json`) is regenerated automatically by the build.
 
 ## Don't
 
-- Don't hand-edit `flags-experiments/api/operations/*` — they're generated by
-  `scripts/generate-api-reference.ts` from the OpenAPI spec.
-- Don't add a GitHub Actions/CF deploy workflow — `shipeasy-docs` deploys via
-  Cloudflare Workers Builds.
+- Don't hand-edit anything under `generated/` or its mirrored destinations —
+  read [`generated/README.md`](generated/README.md) first. The mirrors are
+  gitignored precisely so a hand-edit can't be committed.
+- Don't add a GitHub Actions/CF **deploy** workflow — `shipeasy-docs` deploys via
+  Cloudflare Workers Builds. (`.github/workflows/regen.yml` is not a deploy; it
+  regenerates reference content.)
 - Don't reintroduce the `/` → `/get-started/how-it-works` redirect.
+- Don't learn a CLI command, MCP tool, or API operation name from prose — cite
+  the generated reference. Every hand-written tool list in this repo's history
+  eventually went stale, which is why they're gone.

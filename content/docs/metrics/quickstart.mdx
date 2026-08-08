@@ -1,13 +1,13 @@
 ---
 title: Quickstart
-description: Create your first metric, log the events it depends on, attach it to an experiment — five minutes, end to end.
+description: Create your first metric, log the events it depends on, and put an alert on it — five minutes, end to end.
 ---
 
-<DocMeta status="Tutorial" read="5 min read" updated="May 15, 2026" works="Server SDK · CLI" />
+<DocMeta status="Tutorial" read="5 min read" updated="August 8, 2026" works="Server SDK · CLI" />
 
-This walks you through the metric pipeline end to end: pick a metric, log the underlying events,
-create the metric definition, attach it to an experiment, and read the result. By the end you'll
-have a primary metric that drives a real ship/no-ship decision.
+This walks you through the metric pipeline end to end: pick what to measure, log the underlying
+events, create the metric definition, and put a threshold alert on it. By the end you'll have a
+number you can watch while you ramp, and a rule that pages when it moves the wrong way.
 
 <Quickstart title="The 5-minute path" time="define · log · attach · read">
   <QuickstartStep
@@ -24,37 +24,36 @@ have a primary metric that drives a real ship/no-ship decision.
   />
   <QuickstartStep
     num={3}
-    label="ATTACH"
-    title="Attach to an experiment as the primary metric"
-    cmd="In the dashboard: Experiments → paywall-v2 → Metrics → Attach primary"
+    label="ALERT"
+    title="Raise a ticket when it drops"
+    cmd="shipeasy ops alerts create --name 'Conversion dropped' --metric-id <id> --comparator lt --threshold 0.03 --window-hours 24"
   />
   <QuickstartStep
     num={4}
     label="READ"
-    title="Watch the lift + p-value on the dashboard"
-    cmd="open https://shipeasy.ai/experiments/paywall-v2"
+    title="Watch the series on the dashboard"
+    cmd="shipeasy metrics series purchase_conversion"
   />
 </Quickstart>
 
 ## 1. Pick what to measure
 
-Before you create anything, answer one question: **what number tells you the experiment worked?**
+Before you create anything, answer one question: **what number tells you the change worked?**
 
 For a checkout-flow rewrite: probably `purchase_conversion` — did exposed users buy? For a new
 paywall: probably `subscription_conversion` — did they sign up? For a homepage redesign:
 typically `session_engagement` — did they click past the fold?
 
-Pick one. Two is fine if they're closely related. Five primary metrics means you haven't decided
-yet — go back and decide.
+Pick one. Two is fine if they're closely related. Five means you haven't decided yet — go back and
+decide.
 
 The metric needs to be:
 
 - **Computable from events you already log** (or are willing to start logging).
-- **Specific to the change** — not "DAU," which moves for a hundred reasons. "Did _this exposed
-  user_ convert _after exposure_."
-- **Reasonable to detect** — a 1% conversion lift on 1,000 users a day will take a month. Check
-  the [power table](/metrics/power#sample-size-rules-of-thumb) before
-  committing.
+- **Specific to the change** — not "DAU," which moves for a hundred reasons.
+- **Reasonable to see** — on 1,000 users a day, a 1% move is inside the daily noise. Run
+  `shipeasy metrics series <name>` first and look at how much the number already wanders before
+  you decide what counts as a real move.
 
 ## 2. Define the metric
 
@@ -98,9 +97,8 @@ export default async function CheckoutSuccess({ order }: { order: Order }) {
 
 A few rules that matter:
 
-- **The first argument is the `userId`.** Without it, the event can't be
-  assigned to an experiment exposure — `flags.track` requires it as a
-  positional arg.
+- **The first argument is the `userId`.** `flags.track` requires it as a positional arg — it is
+  what makes `count_users` countable.
 - **Properties become filterable.** You can later add a metric like
   "organic-channel purchases" by filtering on `channel` inside the DSL
   selector (`count_users(purchase{channel="organic"})`).
@@ -111,53 +109,55 @@ A few rules that matter:
 Deploy this. Events start flowing. The metric definition will pick them up on the next analysis
 window (daily by default).
 
-## 4. Attach the metric to an experiment
+## 4. Put an alert on it
 
-Attaching metrics (primary / guardrail / secondary) to an experiment is a
-dashboard operation today — open the experiment detail page, scroll to
-**Metrics**, click **Attach** on `purchase_conversion`, pick `primary`,
-save. The same can be done via the [Admin API](/flags-experiments/api).
+A metric you have to remember to look at is a metric nobody looks at. Give it a threshold and let
+it page:
 
-Create a guardrail alongside it — don't tank page load while you're at it:
+```bash
+# `--metric-id` takes the metric's id — `shipeasy metrics list` prints it
+# next to the name.
+shipeasy ops alerts create \
+  --name 'Conversion dropped' \
+  --metric-id <id> \
+  --comparator lt --threshold 0.03 \
+  --window-hours 24 --bucket-minutes 60
+```
+
+Add a second metric for the thing you must not break while you ramp:
 
 ```bash
 shipeasy metrics create p95_page_load_ms \
   --event-name page_view \
   --query 'p95(page_view, loadTimeMs)'
+
+shipeasy ops alerts create \
+  --name 'Page load too slow' \
+  --metric-id <id> \
+  --comparator gt --threshold 1200 --window-hours 1
 ```
 
-Then attach it as `guardrail` on the same experiment detail page.
+A firing rule opens an item in the ops queue with the series attached, so the regression arrives as
+a ticket rather than as a message somebody has to notice. Full options — anomaly rules, sustained
+departure, required buckets — are in [Alerts](/metrics/alerts).
 
-The metric you mark **primary** drives the ship/no-ship decision. A
-metric marked **guardrail** must _not_ regress, even if the primary
-moves. See [Guardrails](/metrics/guardrails).
+## 5. Read the series
 
-## 5. Read the result
-
-The dashboard's experiment page shows lift, confidence interval, and p-value per metric, refreshed
-once per analysis window:
+`shipeasy metrics series purchase_conversion` prints the same buckets the dashboard charts and the
+alert evaluator reads, so what you see locally is what the rule is judging:
 
 ```
-
-purchase_conversion control v1 lift p 95% CI
-4.8% 5.2% +8.3% 0.018 [1.2%, 15.6%]
-
-p95_page_load_ms (guard) 860 ms 862 ms +0.2% 0.71 [-1.1%, 1.5%]
-
+2026-08-06  4.8%
+2026-08-07  5.2%
+2026-08-08  5.1%
 ```
 
-You read this as: paywall v1 lifted conversion by 8.3% (p=0.018, 95% CI excludes zero) and did
-not regress page-load time. Ship it.
+If the number is flat or missing, two checks:
 
-What if the result is flat or noisy? Two checks:
-
-1. **Are events actually landing?** Check the **Events** tab on the experiment — exposed users
-   should have non-trivial event counts. If the count is zero, your `track()` call isn't running
-   for the variant.
-2. **Is the experiment powered?** The dashboard shows MDE alongside the lift. If MDE is `±10%`
-   and the real lift is `+2%`, you can't tell — run longer or accept the null.
-
-See [Power & sample size](/metrics/power).
+1. **Are events actually landing?** Open the **Events** tab and confirm non-trivial counts. Zero
+   means your `track()` call isn't running on the path you think it is.
+2. **Is the window long enough?** A 1-hour window on a low-volume event is mostly empty buckets.
+   Widen the window, or set `--required-buckets` so one lone sample can't page anyone.
 
 ## Where to next
 
@@ -165,11 +165,11 @@ See [Power & sample size](/metrics/power).
   <Tile href="/metrics/aggregations" icon="∑" title="Aggregation types">
     Conversion, count, sum, mean, ratio — what each does and when to pick it.
   </Tile>
-  <Tile href="/metrics/guardrails" icon="◐" title="Primary vs guardrail">
-    The two roles a metric can play in an experiment, and how the dashboard treats each.
+  <Tile href="/metrics/grammar" icon="◐" title="The metric DSL">
+    The full grammar — every aggregation, filter and operator, and what the parser refuses.
   </Tile>
-  <Tile href="/metrics/power" icon="◯" title="Power & sample size">
-    Pre-flight check: do you have enough users to detect the lift you're hoping for?
+  <Tile href="/metrics/alerts" icon="◯" title="Threshold alerts">
+    Windows, buckets, anomaly rules, and the ticket a firing rule files for you.
   </Tile>
 </TileGrid>
 

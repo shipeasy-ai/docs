@@ -18,16 +18,16 @@ When you ask the assistant to "measure whether X works", it produces a plan that
 
 <Steps>
   <Step title="A success metric">
-    Created directly via <code>exp_create_metric</code> — the event, aggregation, and any
-    guardrails.
+    Created directly via <code>metrics_create</code> — the event and the aggregation over it.
   </Step>
   <Step title="The resources it can build">
-    The experiment or flag, as <a href="/assistant/cards-and-plans">confirmation cards</a> you
-    approve.
+    The flag, config or alert rule, as <a href="/assistant/cards-and-plans">confirmation cards</a>
+    you approve.
   </Step>
   <Step title="Instrumentation tickets">
-    The code changes it can't make itself — "fire <code>purchase</code> on checkout success", "wrap
-    the CTA on <code>universe().assign()</code>" — filed as <code>measure_plan</code> tickets.
+    The code changes it can't make itself — "fire <code>purchase</code> on checkout success",
+    "wrap the CTA in <code>getFlag('new_cta')</code>" — filed as <code>measure_plan</code>
+    tickets.
   </Step>
 </Steps>
 

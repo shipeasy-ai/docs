@@ -7,20 +7,20 @@ description: The shape of the eval context — pass everything you know about th
   status="Production ready"
   read="7 min read"
   updated="May 3, 2026"
-  works="Server SDK · Browser SDK · Targeting · Experiments"
+  works="Server SDK · Browser SDK · Targeting"
 />
 
 A **user attribute** is any key/value pair you attach to a user when calling the SDK. Shipeasy uses attributes for three things:
 
 1. **Targeting rules** on feature flags — _"only enable this for `plan = pro`"_.
-2. **Variant assignment** in experiments — _"assign by `account_id` so all teammates see the same thing"_.
+2. **Bucketing** — _"bucket by `account_id` so all teammates see the same thing"_.
 3. **Segmentation** in analysis — _"how did the lift differ for `country = US` vs `EU`?"_.
 
 The richer your attribute payload, the more precise your targeting and analysis. Most teams under-invest here on day one and regret it.
 
 ## The eval context
 
-Every SDK call that resolves a flag, config, or experiment takes an **eval context** — the user object plus any attributes you want available to the rule engine.
+Every SDK call that resolves a flag or config takes an **eval context** — the user object plus any attributes you want available to the rule engine.
 
 ```ts
 const ctx = {
@@ -72,7 +72,7 @@ Two keys are special:
 Shipeasy bucketing uses `user_id ?? anonymous_id` — so a user gets a stable assignment before _and_ after login. When the user authenticates, call `shipeasy.alias(anonymous_id, user_id)` to stitch their pre-login exposures to their post-login identity. Without this stitch, exposure events from before login show up as a separate user in analysis.
 
 <Callout type="warn" title="`user_id` is required for deterministic bucketing">
-  Without a stable id, every evaluation gets a fresh random bucket — rollouts oscillate, experiment
+  Without a stable id, every evaluation gets a fresh random bucket — rollouts oscillate, metric
   variants flip between page loads, and analysis falls apart. Pass `user_id` as soon as you have it;
   pass `anonymous_id` for the pre-login window.
 </Callout>
@@ -160,7 +160,7 @@ Most projects benefit from a few standard fields. Set them up once and your futu
       </>
     }
   >
-    `plan` (`free` / `pro` / `enterprise`) and `mrr_band` (`0` / `1-99` / `100+`). Most experiment
+    `plan` (`free` / `pro` / `enterprise`) and `mrr_band` (`0` / `1-99` / `100+`). Most rollout
     lift questions cut along money.
   </Tile>
   <Tile
@@ -211,7 +211,7 @@ Most projects benefit from a few standard fields. Set them up once and your futu
       </>
     }
   >
-    `account_id`, `org_id`, `role`. For B2B, bucket experiments by `account_id` so all teammates see
+    `account_id`, `org_id`, `role`. For B2B, bucket rollouts by `account_id` so all teammates see
     the same variant.
   </Tile>
 </TileGrid>
@@ -221,7 +221,7 @@ Most projects benefit from a few standard fields. Set them up once and your futu
 Go to **Project → User attributes → Register** and declare the attributes you plan to send. Registration is **optional** but unlocks two things:
 
 1. The dashboard rule builder can autocomplete attribute names and validate types.
-2. Analysis surfaces attributes as breakdown dimensions in experiment results.
+2. Registered attributes become the labels you can filter and slice a metric series by.
 
 Unregistered attributes still work — they just won&apos;t appear in pickers.
 
@@ -274,7 +274,7 @@ const flags = new Client({ user_id, plan, country });
 flags.getFlag("new-ui");
 ```
 
-In the **browser**, you bind the `Client` once after the user logs in and reuse it for every subsequent flag / config / experiment read:
+In the **browser**, you bind the `Client` once after the user logs in and reuse it for every subsequent flag / config read:
 
 ```ts
 const flags = new Client({ user_id, plan, country });
@@ -311,7 +311,7 @@ const flags = new Client({
 flags.getFlag("new-ui");
 ```
 
-Set the gate's (or experiment's) `bucket_by` to `account_id` in the dashboard so every read keys on the account attribute you pass on the bound client. The same identity is then used for both assignment and exposure stitching.
+Set the gate's `bucket_by` to `account_id` in the dashboard so every read keys on the account attribute you pass on the bound client. The same identity is then used for both bucketing and exposure stitching.
 
 ## Privacy & PII
 
@@ -359,7 +359,7 @@ You can set per-attribute retention in **Project → Privacy** (default 90 days 
   dashboard&apos;s **Test rules** panel — paste a sample context, see exactly which rules pass.
 </Callout>
 
-<Callout type="warn" title="Experiment assignments flip between page loads">
+<Callout type="warn" title="A flag flips between page loads">
   You&apos;re evaluating without a stable `user_id`. Either pass `user_id` (preferred) or pass a
   stable `anonymous_id` for the pre-login window.
 </Callout>
@@ -372,10 +372,10 @@ You can set per-attribute retention in **Project → Privacy** (default 90 days 
     </>
   }
   body="The shortest path from install to a flag in production. Five minutes, no card."
-  primaryHref="/configs/quickstart"
-  primaryLabel="Configs quickstart"
-  secondaryHref="/experiments/quickstart"
-  secondaryLabel="Or run an experiment"
+  primaryHref="/flags/gates/quickstart"
+  primaryLabel="Feature flag quickstart"
+  secondaryHref="/flags/configs/quickstart"
+  secondaryLabel="Or start with a config"
   cmds={[
     { label: "Create a feature flag", cmd: "shipeasy release flags create new-checkout" },
     {

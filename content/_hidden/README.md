@@ -1,11 +1,40 @@
 # Hidden docs content
 
-Content parked outside the `content/docs/` build tree so fumadocs does not
-compile, index, or export it. The i18n/Translations product is hidden from all
-public surfaces (2026-07 pricing restructure — dashboard is behind the internal
-`translations` gate, docs URLs 302 via `public/_redirects`).
+Content parked outside the `content/docs/` build tree so Fumadocs does not
+compile, index, or export it. Nothing here is deleted — hiding a product is a
+move plus a few nav edits, and un-hiding it is the same move backwards.
 
-To re-enable: move `translations/` back to `content/docs/translations`, move
-`llms-i18n-strings.mdx` back to `content/docs/llms/i18n-strings.mdx`, restore
-the nav entries (root `meta.json`, `llms/meta.json`, `product-switcher.tsx`,
-`layout.tsx` PRODUCT_DESCRIPTIONS), and drop the `_redirects` rules.
+## What is parked, and why
+
+| Path                                     | Product      | Hidden since                                                        |
+| ---------------------------------------- | ------------ | ------------------------------------------------------------------- |
+| `translations/`, `llms-i18n-strings.mdx` | i18n         | 2026-07 pricing restructure — dashboard is behind the `translations` internal gate |
+| `experiments/`                           | Experiments  | 2026-08 — the whole A/B product is off every public surface          |
+| `case-studies/*`                         | Experiments  | 2026-08 — the six experiment-only case studies                       |
+| `power.mdx`, `guardrails.mdx`            | Experiments  | 2026-08 — power/MDE and primary-vs-guardrail are experiment concepts |
+| `manual-exposure.mdx`, `sticky-bucketing.mdx` | Experiments | 2026-08 — both pages are about experiment exposure/enrolment      |
+| `llms/`                                  | —            | 2026-08 — its only shipped runbook was the i18n one, and its tool names had gone stale |
+
+## Un-hiding a product
+
+1. `git mv` the folder back under `content/docs/`.
+2. Restore its nav entries — the root `content/docs/meta.json`, the section's own
+   `meta.json`, and any `<Tile>` / `<Card>` / `<JourneyPath>` that used to point
+   at it.
+3. Drop the matching rules from `public/_redirects`.
+4. For **experiments** specifically, also flip the generators, which filter it
+   out at three points:
+   - `scripts/gen-api-reference.ts` — the `isHidden` regex in `beforeWrite`
+     drops `*Experiment*` / `*Universe*` operation pages.
+   - `scripts/gen-sdk-reference.ts` — `HIDDEN_PAGES` / `HIDDEN_SNIPPETS` drop
+     the per-SDK experiments page and its snippet.
+   - `marketplace/{cli,mcp}/scripts/gen-*-docs.ts` in the `shipeasy` repo —
+     `HIDDEN_DOCS_GROUPS` drops the experiment commands and tools from the
+     generated CLI/MCP reference.
+   Then `pnpm gen` here and re-run the marketplace generators there.
+5. `pnpm build && pnpm check-links` — the link checker is what tells you which
+   cross-references you missed.
+
+Experiments and i18n are hidden from the **docs**, not removed from the
+product: the API operations, CLI commands, MCP tools and SDK methods all still
+exist and still work.

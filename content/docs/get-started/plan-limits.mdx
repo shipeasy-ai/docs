@@ -1,13 +1,13 @@
 ---
 title: Plan limits & quotas
-description: Per-plan knobs — poll interval, resource caps, retention, and which statistical features are available on each tier.
+description: Per-plan knobs — poll interval, resource caps, included usage, overage rates, retention, and which features land on each tier.
 ---
 
 <DocMeta
   status="Production ready"
   read="4 min read"
-  updated="July 4, 2026"
-  works="Free · Pro · Business"
+  updated="August 8, 2026"
+  works="Free · Pro · Business · Enterprise"
 />
 
 Plan levers are platform knobs we control centrally — they live in the plan config, not per project. Changing a plan value re-paces every project on that plan through the next KV rebuild, with no per-project migration.
@@ -22,84 +22,81 @@ Plan levers are platform knobs we control centrally — they live in the plan co
 
 The biggest functional difference between tiers is how often the SDK refreshes its rules.
 
-| Knob               | Free                          | Pro                           | Business                      | Enterprise                    |
-| ------------------ | ----------------------------- | ----------------------------- | ----------------------------- | ----------------------------- |
-| Poll interval      | ~300s                         | ~60s                          | ~30s                          | ~30s                          |
-| Analysis frequency | Daily                         | Daily                         | Daily                         | Daily                         |
-| Propagation model  | Infinite-TTL + explicit purge | Infinite-TTL + explicit purge | Infinite-TTL + explicit purge | Infinite-TTL + explicit purge |
+| Knob              | Free                          | Pro                           | Business                      | Enterprise                    |
+| ----------------- | ----------------------------- | ----------------------------- | ----------------------------- | ----------------------------- |
+| Poll interval     | ~300s                         | ~60s                          | ~30s                          | ~30s                          |
+| Propagation model | Infinite-TTL + explicit purge | Infinite-TTL + explicit purge | Infinite-TTL + explicit purge | Infinite-TTL + explicit purge |
+
+30s is the platform floor — no tier polls faster than that.
 
 The poll interval is the worst-case lag between an edit going live at the edge and a given SDK instance noticing it on its next background poll. Evaluation itself is always local and instant — see [Evaluation & caching](/get-started/evaluation-and-caching). The Worker advertises the interval via `X-Poll-Interval` and the SDK auto-adjusts, so a plan change re-paces your fleet without a redeploy.
 
 ## Resource caps
 
-Team members and Autopilot scheduled runs are **unlimited on every tier**. Free caps capability (10 flags / configs / kill switches); Pro and above lift those caps. Experiments & universes are **Business+**. `Unlimited` means no plan-level cap (platform fair-use ceilings still apply for abuse protection).
+Team members and Autopilot runs are **unlimited on every tier** — seats are never counted or
+billed. Free caps capability (10 flags / configs / kill switches); Pro and above lift those caps.
+`Unlimited` means no plan-level cap (platform fair-use ceilings still apply for abuse protection).
 
-| Resource                      | Free      | Pro       | Business  | Enterprise |
-| ----------------------------- | --------- | --------- | --------- | ---------- |
-| Feature flags (gates)         | 10        | Unlimited | Unlimited | Unlimited  |
-| Dynamic configs               | 10        | Unlimited | Unlimited | Unlimited  |
-| Kill switches                 | 10        | Unlimited | Unlimited | Unlimited  |
-| Team members                  | Unlimited | Unlimited | Unlimited | Unlimited  |
-| Bugs & feature requests       | 1,000     | Unlimited | Unlimited | Unlimited  |
-| Autopilot scheduled runs / mo | Unlimited | Unlimited | Unlimited | Unlimited  |
-| Running experiments           | —         | —         | Unlimited | Unlimited  |
-| Universes                     | —         | —         | Unlimited | Unlimited  |
-| Metrics                       | 10        | 20        | 50        | Unlimited  |
-| Event catalog entries         | 50        | 250       | 1,000     | Unlimited  |
-| SDK keys                      | 5         | 50        | 200       | Unlimited  |
+| Resource                | Free      | Pro       | Business  | Enterprise |
+| ----------------------- | --------- | --------- | --------- | ---------- |
+| Feature flags (gates)   | 10        | Unlimited | Unlimited | Unlimited  |
+| Dynamic configs         | 10        | Unlimited | Unlimited | Unlimited  |
+| Kill switches           | 10        | Unlimited | Unlimited | Unlimited  |
+| Metrics                 | 10        | 50        | Unlimited | Unlimited  |
+| Alert rules             | 5         | 25        | Unlimited | Unlimited  |
+| Event catalog entries   | 50        | 250       | 1,000     | Unlimited  |
+| SDK keys                | 5         | 50        | 200       | Unlimited  |
+| Team members            | Unlimited | Unlimited | Unlimited | Unlimited  |
+| Bugs & feature requests | 1,000     | Unlimited | Unlimited | Unlimited  |
+| Autopilot runs / mo     | Unlimited | Unlimited | Unlimited | Unlimited  |
 
 ## Included monthly usage & overage
 
-Event usage is **notify-only** on paid plans — events are never dropped or rejected. When a project crosses 80% / 100% of its monthly credit, the usage cron notifies you (and ops, for paid projects). Free is hard-capped per day for abuse protection. Production error events (SEE) and experiment/gate-test exposures **share the events meter** — there is no separate per-error or per-exposure price. Flag evaluations carry their own monthly credit, then per-million overage on paid tiers.
+Event usage is **notify-only** on paid plans — events are never dropped or rejected. When a project
+crosses 80% / 100% of its monthly credit, the usage cron notifies you (and ops, for paid projects).
+Free is hard-capped per day for abuse protection. Production error events (SEE) **share the events
+meter** — there is no separate per-error price. Gate exposures are counted with flag evaluations,
+which carry their own monthly credit.
+
+Overage rates are **identical on every paid tier**: Business is a features tier, not a volume
+discount, so the cost lines stay parallel.
 
 | Allowance / rate    | Free             | Pro                     | Business                | Enterprise |
 | ------------------- | ---------------- | ----------------------- | ----------------------- | ---------- |
-| Events / month      | 100K (daily cap) | 100K, then **$1 / M**   | 1M, then **$0.75 / M**  | Committed  |
-| Evaluations / month | 1.5M (daily cap) | 10M, then **$0.10 / M** | 50M, then **$0.05 / M** | Committed  |
-| Included ops seats  | Unlimited        | 3, then $7/seat         | 5, then $12/seat        | Custom     |
+| Price / month       | $0               | $49                     | $199                    | Custom     |
+| Events / month      | 100K (daily cap) | 1M, then **$5 / M**     | 10M, then **$5 / M**    | Committed  |
+| Evaluations / month | 1.5M (daily cap) | 10M, then **$0.10 / M** | 50M, then **$0.10 / M** | Committed  |
 | Jarvis credits      | Pay-as-you-go    | $3 / mo, then credits   | $3 / mo, then credits   | Custom     |
 
 ## Retention
 
-| Data                          | Free     | Pro      | Business  | Enterprise |
-| ----------------------------- | -------- | -------- | --------- | ---------- |
-| Experiment results            | ~30 days | ~90 days | ~180 days | ~365 days  |
-| Raw events (Analytics Engine) | ~90 days | ~90 days | ~90 days  | ~90 days   |
-| Audit log                     | ~7 days  | ~30 days | ~180 days | ~365 days  |
+Retention is a real tier lever, enforced at read time — an older window is not queryable even
+while the underlying rows are still within Cloudflare's own three-month store.
+
+| Data                          | Free    | Pro      | Business  | Enterprise |
+| ----------------------------- | ------- | -------- | --------- | ---------- |
+| Raw events (Analytics Engine) | ~7 days | ~30 days | ~90 days  | ~90 days   |
+| Audit log                     | ~7 days | ~30 days | ~180 days | ~365 days  |
 
 ## Feature availability
 
-Experiments with **basic stats** (Welch t-test, SRM) and exposure logging land at **Business**. **Advanced statistics** — anything that needs pre-experiment data storage or extra computation (CUPED, mSPRT sequential testing, custom α) — plus SSO/RBAC and data warehouse export land at **Enterprise**.
+Governance (SSO / RBAC / SCIM) and data warehouse export land at **Enterprise**.
 
 | Feature                        | Free | Pro | Business | Enterprise |
 | ------------------------------ | ---- | --- | -------- | ---------- |
-| SRM detection                  | ✅   | ✅  | ✅       | ✅         |
 | MCP access (stdio library)     | ✅   | ✅  | ✅       | ✅         |
 | Hosted MCP server              | —    | ✅  | ✅       | ✅         |
 | Gradual rollouts               | —    | ✅  | ✅       | ✅         |
-| A/B tests on gates             | —    | ✅  | ✅       | ✅         |
 | Metric alerts                  | —    | ✅  | ✅       | ✅         |
 | Auto-filed error issues        | —    | ✅  | ✅       | ✅         |
 | Auto-trigger agents on issues  | —    | ✅  | ✅       | ✅         |
 | Change approvals               | —    | ✅  | ✅       | ✅         |
-| Experiments & universes        | —    | —   | ✅       | ✅         |
 | Custom gate templates          | —    | —   | ✅       | ✅         |
 | Kill-switch exception switches | —    | —   | ✅       | ✅         |
-| Holdout groups                 | —    | —   | ✅       | ✅         |
-| CUPED variance reduction       | —    | —   | —        | ✅         |
-| Sequential testing (mSPRT)     | —    | —   | —        | ✅         |
-| Custom significance threshold  | —    | —   | —        | ✅         |
 | Data warehouse export          | —    | —   | —        | ✅         |
 | SAML / SSO                     | —    | —   | —        | ✅         |
 | Custom RBAC roles              | —    | —   | —        | ✅         |
 | SCIM provisioning              | —    | —   | —        | ✅         |
-
-<Callout type="info" title="Sequential testing & holdouts">
-  **Sequential testing** lets you peek at results without inflating false positives — an
-  **Enterprise** feature. **Holdouts** live on the universe (a fixed segment excluded from every
-  experiment in it), a **Business** feature. SRM detection (sample-ratio-mismatch guard) is on for
-  everyone.
-</Callout>
 
 ## Changing plans
 
@@ -118,9 +115,9 @@ Upgrades take effect immediately and re-pace your fleet through KV — nothing t
       note: "what the poll interval governs",
     },
     {
-      href: "/flags-experiments/experiments/quickstart",
-      title: "Experiments",
-      note: "where holdouts and sequential testing apply",
+      href: "/metrics/alerts",
+      title: "Alerts",
+      note: "what the alert-rule cap governs",
     },
     { href: "/get-started/cli", title: "CLI", note: "manage resources from the terminal" },
   ]}

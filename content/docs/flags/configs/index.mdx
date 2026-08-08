@@ -1,0 +1,79 @@
+---
+title: Configs — typed values
+description: Typed config values you can change without a redeploy.
+---
+
+<Hero
+  eyebrow="Shipeasy · Configs"
+  title={
+    <>
+      Ship a value — <em>without a redeploy</em>.
+    </>
+  }
+  subtitle="Typed key/value configs (string, number, boolean, JSON) you can change without shipping code. Schema-validated. Sub-millisecond evaluation in your SDK with no per-request fetch."
+  primaryHref="/flags/configs/quickstart"
+  primaryLabel="Quickstart"
+  secondaryHref="#when-to-use"
+  secondaryLabel="When to use"
+/>
+
+<DocMeta
+  status="Production ready"
+  read="5 min read"
+  updated="May 10, 2026"
+  works="Server SDK · Browser SDK"
+/>
+
+A **config** is a typed key/value you can change without a redeploy. Use one when the answer to
+_"what should this be right now?"_ is not boolean — pricing, copy, limits, feature options,
+endpoint paths, model names, anything you'd otherwise hard-code as a constant.
+
+## When to use a config [#when-to-use]
+
+<TileGrid>
+  <Tile href="#values" icon="◫" title="Typed values">
+    `string`, `number`, `boolean`, or `json`. Schema-validated when you create the config and again
+    every time you change it.
+  </Tile>
+  <Tile href="#access" icon="◔" title="Typed access in your code">
+    `await config<number>('home.hero.duration')` returns a typed value with the right TS type, not
+    `unknown`.
+  </Tile>
+  <Tile href="#fallback" icon="✓" title="Fail-safe defaults">
+    Configs return last-known-good if our service is unreachable. Override with `defaultValue` per
+    call when "off" is the dangerous answer.
+  </Tile>
+  <Tile href="#audit" icon="◑" title="Audit log">
+    Every change records who, what, and when. Linkable in your incident timeline.
+  </Tile>
+</TileGrid>
+
+## Reading a config
+
+```ts
+import { config } from "@shipeasy/sdk/server";
+
+const heroTitle = await config<string>("home.hero.title");
+const promoActive = await config<boolean>("promo.active");
+const limits = await config<{ maxItems: number; maxPrice: number }>("checkout.limits");
+```
+
+Sub-millisecond evaluation — no per-request fetch from your code.
+
+## Configs vs feature flags
+
+Both are typed values you can change without a redeploy. Pick by the **shape of the answer**:
+
+| Question            | Feature flag       | Config                                 |
+| ------------------- | ------------------ | -------------------------------------- |
+| Output              | boolean            | `string` / `number` / `boolean` / JSON |
+| Targeting rules?    | yes                | no — values are global                 |
+| Rollout percentage? | yes                | no                                     |
+| Use case            | "is feature X on?" | "what value should X be?"              |
+
+## See also
+
+- [Quickstart](/flags/configs/quickstart) — create your first config in 5 minutes
+- [Values](/flags/configs/values) — schema validation, JSON shapes, complex configs
+- [Targeting](/flags/configs/targeting) — when you need targeting, reach for a feature flag
+- [Decision tree](/flags/decision) — feature flag vs config vs killswitch

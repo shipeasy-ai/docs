@@ -1,6 +1,6 @@
 ---
 title: CLI
-description: The `shipeasy` command — manage flags, experiments, keys, and the MCP server from your terminal or CI.
+description: The `shipeasy` command — manage flags, configs, kill switches, metrics, the ops queue, keys, and the MCP server from your terminal or CI.
 ---
 
 <DocMeta
@@ -37,7 +37,7 @@ See [Authenticate](/get-started/authenticate) for the login flow.
 ```bash
 shipeasy release flags list
 shipeasy release configs list
-shipeasy release experiments list
+shipeasy release killswitch list
 shipeasy sdk keys list
 shipeasy mcp install
 ```
@@ -139,29 +139,6 @@ writes each environment directly with `--dev` / `--staging` / `--prod`.
 shipeasy release configs update pricing --value '{"base":9.99,"currency":"USD"}'
 ```
 
-## Experiments
-
-| Command                                                            | Description                                                                                         |
-| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
-| <Cmd cmd="shipeasy release experiments list" />                    | All experiments + status                                                                            |
-| <Cmd cmd="shipeasy release experiments create <name>" />           | Create an experiment. Options: `--universe`, `--allocation-percent`, `--groups`, `--targeting-gate` |
-| <Cmd cmd="shipeasy release experiments start <name>" />            | Move from `draft` → `running`                                                                       |
-| <Cmd cmd="shipeasy release experiments stop <name>" />             | Move to `stopped`                                                                                   |
-| <Cmd cmd="shipeasy release experiments results <name>" />          | Latest analysis — lift, p-value, CI per metric per group                                            |
-| <Cmd cmd="shipeasy release experiments universes create <name>" /> | Create the universe the experiments live in. Options: `--param-schema`, `--holdout-range`           |
-
-Params are declared once on the **universe**; an experiment's `--groups` carries only per-variant **overrides** of those keys:
-
-```bash
-shipeasy release experiments universes create checkout \
-  --param-schema '[{"name":"label","type":"string","default":"Pay"}]'
-
-shipeasy release experiments create checkout-cta \
-  --universe checkout \
-  --allocation-percent 100 \
-  --groups '[{"name":"control","weight":50,"params":{}},{"name":"v1","weight":50,"params":{"label":"Buy now"}}]'
-```
-
 ## Metrics
 
 | Command                                      | Description                                                                                           |
@@ -210,7 +187,7 @@ shipeasy ops bug "Checkout button overlaps footer" \
 
 shipeasy ops feature "Dark mode dashboard" \
   --description "System-prefers dark theme for the dashboard chrome" \
-  --use-case "Reviewing experiments at night" \
+  --use-case "Reviewing the ops queue at night" \
   --importance important
 ```
 
@@ -323,8 +300,8 @@ SHIPEASY_CLI_TOKEN="$CI_TOKEN" shipeasy ops bug "Smoke test failed on deploy" \
   body="The MCP server exposes the same surface as typed tools. Your agent gets one-call install and a curated tool inventory."
   primaryHref="/get-started/mcp"
   primaryLabel="Install the MCP server"
-  secondaryHref="/llms"
-  secondaryLabel="LLM guides"
+  secondaryHref="/get-started/agents"
+  secondaryLabel="Wire up your agent"
   cmds={[
     { label: "Install the MCP", cmd: "shipeasy mcp install" },
     { label: "Then restart your agent", cmd: "# pick up the new MCP config" },

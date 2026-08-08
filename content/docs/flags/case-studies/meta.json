@@ -1,0 +1,27 @@
+{
+  "title": "Case studies",
+  "defaultOpen": false,
+  "pages": [
+    "index",
+    "maintenance-mode",
+    "entitlements-with-configs",
+    "company-rollout-bucketby",
+    "private-attribute-targeting",
+    "debug-missing-feature",
+    "cache-invalidation-onchange",
+    "deterministic-tests",
+    "openfeature-migration",
+    "qa-with-devtools",
+    "per-tenant-killswitch",
+    "[Redesigned checkout](/flags/case-studies#new-checkout)",
+    "[Homepage hero copy](/flags/case-studies#hero-copy)",
+    "[Pause outbound emails](/flags/case-studies#kill-emails)",
+    "[Beta allow-list](/flags/case-studies#beta-feature)",
+    "[Search ranking weights](/flags/case-studies#search-relevance)",
+    "[Progressive region rollout](/flags/case-studies#progressive-region-rollout)",
+    "[Block stale clients](/flags/case-studies#sdk-version-gate)",
+    "[Price changes w/o deploy](/flags/case-studies#pricing-config)",
+    "[Typed announcement banner](/flags/case-studies#typed-banner)",
+    "[CTR ratio metric](/flags/case-studies#ctr-ratio-metric)"
+  ]
+}

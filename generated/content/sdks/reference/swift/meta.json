@@ -1,0 +1,18 @@
+{
+  "title": "Swift",
+  "pages": [
+    "index",
+    "installation",
+    "configuration",
+    "flags",
+    "configs",
+    "killswitches",
+    "error-reporting",
+    "testing",
+    "openfeature",
+    "advanced",
+    "---More---",
+    "snippets",
+    "skill"
+  ]
+}

@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+#
+# Pre-push: build the site and prove nothing links into a hole.
+# Bypass once with: git push --no-verify
+#
+# This is where the expensive gates live. A dead internal link is the single
+# most common way this repo regresses — pages move, `meta.json` keeps a slug
+# that no longer exists — and it is invisible until a reader hits the 404.
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT" || exit 0
+
+echo "pre-push: building the site…"
+pnpm build >/dev/null
+
+echo "pre-push: checking internal links…"
+pnpm check-links
+
+echo "pre-push: OK."
