@@ -12,7 +12,10 @@ export default {
   "*.{ts,tsx,js,jsx,mjs,cjs}": ["prettier --write", "eslint --fix --no-warn-ignored --quiet"],
   "*.{json,md,mdx,yaml,yml,css}": ["prettier --write"],
 
-  // Content changed → MDX must still compile and every `shipeasy …` invocation
-  // in it must still exist in the CLI.
-  "content/docs/**": () => ["pnpm type-check"],
+  // Content changed → MDX must still compile, every `shipeasy …` invocation in
+  // it must still exist in the CLI, and the agent bundles (which are stitched
+  // FROM this content) must be restitched and carried into the same commit.
+  // Without that last step every content edit shows up as drift on the next
+  // `pnpm verify:generated`.
+  "content/docs/**": () => ["pnpm type-check", "tsx scripts/gen-llms.ts", "git add generated/"],
 };

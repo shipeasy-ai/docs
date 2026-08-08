@@ -155,3 +155,19 @@ Installing only _registers_ the skills + MCP — it runs no shell commands. To w
 | One-command install          |     ✅      |  ✅   |     ✅      |      two steps      |
 
 Slash commands are the only Claude-Code-exclusive surface. Everything that _does_ the work — creating feature flags, defining metrics, raising alerts, filing feedback — runs through the MCP server, which every host has.
+
+## No MCP, no plugin
+
+An agent that can only fetch a URL still gets everything. [`/agents.md`](/agents.md) is this documentation's setup path stitched into one file, ending in every CLI command and every MCP tool by name — which is the part that stops an agent inventing a command that doesn't exist. See [Docs for agents](/get-started/llms) for that and the two other bundles
+
+<SeeAlso
+  links={[
+    {
+      href: "/get-started/llms",
+      title: "Docs for agents",
+      note: "llms.txt, the full corpus, the setup runbook",
+    },
+    { href: "/get-started/mcp", title: "MCP server", note: "what the tools do" },
+    { href: "/get-started/triggers", title: "Scheduled triggers", note: "unattended agent runs" },
+  ]}
+/>

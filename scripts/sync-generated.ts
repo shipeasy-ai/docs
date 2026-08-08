@@ -13,6 +13,12 @@ import { cpSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { GENERATED, MIRRORS, ROOT } from "./generated-map";
 
+// `pnpm gen` syncs mid-run, before gen-llms has written the bundles it stitches
+// from the just-synced reference pages. That one call passes --allow-missing;
+// the final sync at the end of `gen` does not, so a genuinely absent mirror
+// still fails.
+const allowMissing = process.argv.includes("--allow-missing");
+
 let copied = 0;
 const missing: string[] = [];
 
@@ -38,7 +44,7 @@ for (const m of MIRRORS) {
 
 console.log(`sync-generated: ${copied}/${MIRRORS.length} mirrors in place`);
 
-if (missing.length) {
+if (missing.length && !allowMissing) {
   // A missing mirror is a broken build, not a warning: the page it feeds is
   // referenced from meta.json and Fumadocs fails on the dangling slug anyway —
   // better to say which generator did not run.

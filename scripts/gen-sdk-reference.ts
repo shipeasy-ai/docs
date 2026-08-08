@@ -351,7 +351,9 @@ async function loadSdk(sdk: Sdk): Promise<SdkDocs> {
   ];
   const files = new Map<string, string>();
   await Promise.all(wanted.map(async (rel) => files.set(rel, await get(rel))));
-  console.log(`  ${sdk.slug}: github (${GITHUB_ORG}/${sdk.repo}@${GITHUB_REF}, ${files.size} files)`);
+  console.log(
+    `  ${sdk.slug}: github (${GITHUB_ORG}/${sdk.repo}@${GITHUB_REF}, ${files.size} files)`,
+  );
 
   return {
     manifest,

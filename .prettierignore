@@ -21,4 +21,8 @@ content/docs/sdks/swift.mdx
 content/docs/sdks/ruby.mdx
 content/docs/get-started/cli-reference.mdx
 content/docs/get-started/mcp-reference.mdx
+content/docs/get-started/llms.mdx
 src/lib/cli-commands.json
+public/llms.txt
+public/llms-full.txt
+public/agents.md

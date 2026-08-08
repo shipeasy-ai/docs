@@ -51,9 +51,21 @@ for (const line of readFileSync(join(ROOT, "public/_redirects"), "utf8").split("
   else redirects.exact.add(from.replace(/\/$/, "") || "/");
 }
 
+/**
+ * Static assets shipped from `public/` — `llms.txt`, `agents.md` and friends.
+ * These are real exported files rather than routes, so they need a file check
+ * rather than a route lookup, and they are exactly the links most worth
+ * verifying: they are what an agent is told to fetch.
+ */
+function isFile(path: string): boolean {
+  const p = join(OUT, path.replace(/^\//, ""));
+  return existsSync(p) && statSync(p).isFile();
+}
+
 function resolves(path: string): boolean {
   const clean = path.replace(/\/$/, "") || "/";
   if (served.has(clean) || served.has(clean + "/")) return true;
+  if (isFile(path)) return true;
   if (redirects.exact.has(clean)) return true;
   return redirects.prefixes.some((p) => clean.startsWith(p));
 }
@@ -73,8 +85,8 @@ for (const file of walk(CONTENT, ".mdx").concat(walk(CONTENT, ".json"))) {
       ...[...line.matchAll(/href=["'](\/[^"'#]*)(#[^"']*)?["']/g)].map((m) => m[1]),
     ];
     for (const href of hrefs) {
-      // Not site routes: the OG image endpoint and static assets.
-      if (href.startsWith("/og/") || /\.(png|svg|jpg|json|txt|xml)$/.test(href)) continue;
+      // The OG endpoint is generated per page and has no file to point at.
+      if (href.startsWith("/og/")) continue;
       checked++;
       if (!resolves(href)) bad.push(`  ${rel}:${i + 1}  ${href}`);
     }

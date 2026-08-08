@@ -10288,13 +10288,9 @@ Every write to a feature flag is recorded in the audit log: who, when, from what
 
 ### Limits [#rollout]
 
-| Plan       | Feature flags per project | Rules per feature flag | Overrides per feature flag |
-| ---------- | ------------------------- | ---------------------- | -------------------------- |
-| Free       | 50                        | 5                      | 100                        |
-| Pro        | 500                       | 20                     | 10,000                     |
-| Enterprise | Unlimited                 | Unlimited              | Unlimited                  |
+Feature flags per project, rules per flag and overrides per flag are all plan-derived. The [pricing page](https://shipeasy.ai/pricing) has the matrix; **Settings → Billing** shows your own caps and how close you are to each. A create over a cap is rejected with `PLAN_LIMIT` rather than silently truncated.
 
-If you hit a limit, audit for stale flags first; those numbers are very generous if you delete what you ship.
+If you hit one, audit for stale flags first — the caps are generous if you delete what you ship.
 
 ---
 
@@ -11002,11 +10998,8 @@ You can `GET` and `PATCH` this shape directly via the admin API.
 
 ### Limits
 
-| Plan       | Overrides per feature flag |
-| ---------- | -------------------------- |
-| Free       | 100                        |
-| Pro        | 10,000                     |
-| Enterprise | Unlimited                  |
+How many overrides a single feature flag may carry is plan-derived — the [pricing
+page](https://shipeasy.ai/pricing) has the matrix, **Settings → Billing** has yours.
 
 If you're approaching the limit, you're almost certainly using overrides where you should be using
 rules. Audit the list — most overrides are old QA accounts that should have been removed when the
@@ -11371,7 +11364,7 @@ Unlike feature flags, dynamic values are **global per environment**: every user 
 - `string` (string) — Copy, theme name, feature variant. Example: `"v2"`,  `"USD"`, `"claude-haiku-4-5"`.
 - `number` (number) — Limits, prices, timeouts. Example: `9.99`, `100`, `30000` .
 - `boolean` (boolean) — Site-wide on/off, separate from a feature flag when no targeting is needed.
-- `json` (object | array) — Structured config — see below. Up to 256 KB per value (Enterprise).
+- `json` (object | array) — Structured config — see below. The per-value size cap is plan-derived.
 
 ### Reading a value
 
@@ -11520,13 +11513,9 @@ Pair that with a grep across your source so a CI step fails when the code refere
 
 ### Limits
 
-| Plan       | Values per project | JSON size per value |
-| ---------- | ------------------ | ------------------- |
-| Free       | 25                 | 4 KB                |
-| Pro        | 250                | 64 KB               |
-| Enterprise | Unlimited          | 256 KB              |
+How many values a project may hold, and how large a single JSON value may be, are both plan-derived — see the [pricing page](https://shipeasy.ai/pricing), or **Settings → Billing** for your own numbers. A write over either limit is rejected with `PLAN_LIMIT` before it reaches KV.
 
-If your JSON is approaching the limit, you're probably storing data that belongs in a database, not a config. Configs are designed for "a few KB of decisions per project", not "the user's shopping cart".
+If your JSON is approaching the size limit, you're probably storing data that belongs in a database, not a config. Configs are designed for "a few KB of decisions per project", not "the user's shopping cart".
 
 ---
 

@@ -49,6 +49,18 @@ export const MIRRORS: Mirror[] = [
     kind: "file",
     owner: "marketplace",
   },
+  // The agent-facing bundles. These are stitched from content/docs itself, so
+  // they are regenerated AFTER the other mirrors are in place — see the order
+  // in `pnpm gen`.
+  {
+    from: "content/get-started/llms.mdx",
+    to: "content/docs/get-started/llms.mdx",
+    kind: "file",
+    owner: "docs",
+  },
+  { from: "public/llms.txt", to: "public/llms.txt", kind: "file", owner: "docs" },
+  { from: "public/llms-full.txt", to: "public/llms-full.txt", kind: "file", owner: "docs" },
+  { from: "public/agents.md", to: "public/agents.md", kind: "file", owner: "docs" },
 ];
 
 /**

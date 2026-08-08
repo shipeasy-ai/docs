@@ -29,9 +29,17 @@ cpSync(GENERATED, backup, { recursive: true });
 
 let failed = false;
 try {
-  for (const script of ["gen-api-reference.ts", "gen-sdk-reference.ts"]) {
+  // Order matters: gen-llms stitches the MIRRORED tree, so the reference pages
+  // the other two produce have to be in place under content/docs first.
+  const steps: [string, string[]][] = [
+    ["gen-api-reference.ts", []],
+    ["gen-sdk-reference.ts", []],
+    ["sync-generated.ts", ["--allow-missing"]],
+    ["gen-llms.ts", []],
+  ];
+  for (const [script, args] of steps) {
     console.log(`verify:generated: running ${script}…`);
-    execFileSync("pnpm", ["exec", "tsx", join("scripts", script)], {
+    execFileSync("pnpm", ["exec", "tsx", join("scripts", script), ...args], {
       cwd: ROOT,
       stdio: "inherit",
     });
