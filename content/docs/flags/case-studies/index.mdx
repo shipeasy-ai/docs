@@ -98,9 +98,8 @@ exist — fall back with `??` to the value your local dev environment will read 
 created the config. Treat the fallback as the source-of-truth copy; the dashboard value as the
 _override_.
 
-If the copy needs translation, don't store strings in a config — use the i18n module. Configs are
-for values that vary across environments; translations are for values that vary
-across locales. Different problem, different tool.
+Configs hold values that vary across environments, not text that varies across languages — if the
+copy needs translating, that is a different problem and a different tool.
 
 ## Pause outbound emails during incident [#kill-emails]
 

@@ -58,16 +58,6 @@ flags.track("u_4f2a", "purchase", { value: 49.99, sku: "SHIRT-L-BLUE" });
 
 `track()` is fire-and-forget. Events are batched and sent to `/collect` on the Shipeasy edge.
 
-### Translating a label
-
-```ts
-import { i18n } from "@shipeasy/sdk/server";
-
-const greeting = i18n.t("home.hero.greeting", "Welcome back");
-```
-
-The `i18n.t()` function is part of the same SDK — no separate i18n init. Configuration happens once via the same `shipeasy()` call.
-
 ## Browser SDK [#browser]
 
 Use this in the browser (Vite, Webpack, Next.js client, plain HTML). The browser SDK manages an `anonymous_id` cookie, fetches an evaluation bundle on init, and batches event uploads with `navigator.sendBeacon` on page hide.
@@ -93,8 +83,7 @@ flags.track("checkout_viewed", { source: "nav" });
 ### Server-side rendering bootstrap
 
 For Next.js / Remix / SvelteKit, `configure()` once at startup, then bind a
-`Client` to the request user and read flags, configs, kill switches,
-killswitches, and SSR i18n strings directly:
+`Client` to the request user and read flags, configs and kill switches directly:
 
 ```tsx title="app/layout.tsx"
 import { configure, Client } from "@shipeasy/sdk/server";
@@ -115,11 +104,11 @@ first read.
 
 ## Framework usage [#frameworks]
 
-Shipeasy ships a single SDK — `@shipeasy/sdk` — that works from plain JavaScript. Every API (`getFlag`, `getConfig`, `universe().assign()`, `track`) is callable directly from React, Vue, Svelte, Angular, or vanilla JS without any framework-specific wrapper.
+Shipeasy ships a single SDK — `@shipeasy/sdk` — that works from plain JavaScript. Every API (`getFlag`, `getConfig`, `getKillswitch`, `track`) is callable directly from React, Vue, Svelte, Angular, or vanilla JS without any framework-specific wrapper.
 
 ```tsx title="React"
 import { useEffect, useState } from "react";
-import { configure, Client, i18n } from "@shipeasy/sdk/client";
+import { configure, Client } from "@shipeasy/sdk/client";
 
 configure({
   clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "",
@@ -135,7 +124,7 @@ function CheckoutButton() {
     window.addEventListener("se:override:change", onChange);
     return () => window.removeEventListener("se:override:change", onChange);
   }, []);
-  return <button>{i18n.t("checkout.cta", "Pay")}</button>;
+  return <button>{enabled ? "Pay now" : "Pay"}</button>;
 }
 ```
 
@@ -179,17 +168,17 @@ if flags.get_flag("new-checkout-flow")
 end
 ```
 
-The gem mirrors the JS API surface. Polling, evaluation, exposure events, and i18n all behave the same.
+The gem mirrors the JS API surface. Polling, evaluation and exposure events all behave the same.
 
 ### Rails
 
-In a Rails app, drop the `Shipeasy.configure` block above into `config/initializers/shipeasy.rb` and you're done — the gem auto-mounts `i18n_head_tags`, `i18n_inline_data`, `i18n_script_tag`, and `i18n_t` view helpers via a Railtie. In plain Ruby (Sinatra, Hanami, scripts) the Rails surface is skipped automatically.
+In a Rails app, drop the `Shipeasy.configure` block above into `config/initializers/shipeasy.rb` and you're done — the gem auto-mounts its view helpers via a Railtie. In plain Ruby (Sinatra, Hanami, scripts) the Rails surface is skipped automatically.
 
 ## Python & Go
 
-In closed beta. Same wire format, same mental model. Reach out on the dashboard if you want early access.
+Both are published and production-ready, same wire format and same mental model:
 
-```python title="Python (preview)"
+```python title="Python"
 import shipeasy
 
 shipeasy.configure(
@@ -202,7 +191,7 @@ if flags.get_flag("new-checkout-flow"):
     ...
 ```
 
-```go title="Go (preview)"
+```go title="Go"
 shipeasy.Configure(shipeasy.Options{
     APIKey: os.Getenv("SHIPEASY_SERVER_KEY"),
 })
@@ -212,6 +201,9 @@ if flags.GetFlag("new-checkout-flow") {
     // ...
 }
 ```
+
+Full per-language reference: [Python](/sdks/python), [Go](/sdks/go) — and the same for
+[Java](/sdks/java), [Kotlin](/sdks/kotlin), [PHP](/sdks/php) and [Swift](/sdks/swift).
 
 ## DevTools overlay [#devtools]
 

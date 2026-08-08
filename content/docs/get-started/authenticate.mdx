@@ -104,10 +104,10 @@ This means a stolen refresh token is good for at most one refresh — the moment
 For GitHub Actions, GitLab CI, and any non-interactive environment, generate a long-lived **API token** in **Project → Tokens → Create** and pass it as `SHIPEASY_CLI_TOKEN`:
 
 ```yaml title=".github/workflows/release.yml"
-- name: Validate i18n keys
+- name: Check the flags this release depends on
   env:
     SHIPEASY_CLI_TOKEN: ${{ secrets.SHIPEASY_CLI_TOKEN }}
-  run: shipeasy i18n validate --profile en:prod
+  run: shipeasy release flags list --json
 ```
 
 API tokens skip the device-auth flow entirely. They&apos;re scoped to one project, can be marked **read-only** or **read-write**, and can be revoked with one click.
