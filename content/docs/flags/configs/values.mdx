@@ -48,8 +48,8 @@ Unlike feature flags, dynamic values are **global per environment**: every user 
       required: true,
       description: (
         <>
-          Structured config — see <a href="#structured-configs">below</a>. Up to 256 KB per value
-          (Enterprise).
+          Structured config — see <a href="#structured-configs">below</a>. The per-value size cap is
+          plan-derived.
         </>
       ),
     },
@@ -203,13 +203,9 @@ Pair that with a grep across your source so a CI step fails when the code refere
 
 ## Limits
 
-| Plan       | Values per project | JSON size per value |
-| ---------- | ------------------ | ------------------- |
-| Free       | 25                 | 4 KB                |
-| Pro        | 250                | 64 KB               |
-| Enterprise | Unlimited          | 256 KB              |
+How many values a project may hold, and how large a single JSON value may be, are both plan-derived — see the [pricing page](https://shipeasy.ai/pricing), or **Settings → Billing** for your own numbers. A write over either limit is rejected with `PLAN_LIMIT` before it reaches KV.
 
-If your JSON is approaching the limit, you&apos;re probably storing data that belongs in a database, not a config. Configs are designed for &quot;a few KB of decisions per project&quot;, not &quot;the user&apos;s shopping cart&quot;.
+If your JSON is approaching the size limit, you&apos;re probably storing data that belongs in a database, not a config. Configs are designed for &quot;a few KB of decisions per project&quot;, not &quot;the user&apos;s shopping cart&quot;.
 
 <ConvertCTA
   eyebrow="NEXT"

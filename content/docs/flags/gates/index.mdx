@@ -289,13 +289,9 @@ Every write to a feature flag is recorded in the audit log: who, when, from what
 
 ## Limits [#rollout]
 
-| Plan       | Feature flags per project | Rules per feature flag | Overrides per feature flag |
-| ---------- | ------------------------- | ---------------------- | -------------------------- |
-| Free       | 50                        | 5                      | 100                        |
-| Pro        | 500                       | 20                     | 10,000                     |
-| Enterprise | Unlimited                 | Unlimited              | Unlimited                  |
+Feature flags per project, rules per flag and overrides per flag are all plan-derived. The [pricing page](https://shipeasy.ai/pricing) has the matrix; **Settings → Billing** shows your own caps and how close you are to each. A create over a cap is rejected with `PLAN_LIMIT` rather than silently truncated.
 
-If you hit a limit, audit for stale flags first; those numbers are very generous if you delete what you ship.
+If you hit one, audit for stale flags first — the caps are generous if you delete what you ship.
 
 <ConvertCTA
   eyebrow="NEXT"
