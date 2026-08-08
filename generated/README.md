@@ -1,8 +1,13 @@
 # `generated/` — machine-written docs
 
 Nothing in this folder is hand-authored. Every file is emitted by a generator
-from a source of truth that lives in **another repo**, and is copied into place
-by `scripts/sync-generated.ts` before `next dev` / `next build` runs.
+and copied into place by `scripts/sync-generated.ts` before `next dev` /
+`next build` runs.
+
+Most sources of truth live in **another repo**. The exception is the agent
+bundles at the bottom of the table, which are stitched from this repo's own
+`content/docs` — so a content edit makes them stale, and the pre-commit hook
+regenerates them.
 
 If a page here is wrong, fixing it here is pointless — the next regeneration
 overwrites it. Fix the source, then regenerate.
@@ -17,6 +22,10 @@ overwrites it. Fix the source, then regenerate.
 | `content/get-started/cli-reference.mdx`    | `content/docs/get-started/`           | the live Commander tree in `marketplace/cli`                       | `pnpm --filter @shipeasy/cli docs` (**in shipeasy**) |
 | `content/get-started/mcp-reference.mdx`    | `content/docs/get-started/`           | the MCP tool catalog in `marketplace/mcp`                          | `pnpm --filter @shipeasy/mcp docs` (**in shipeasy**) |
 | `data/cli-commands.json`                   | `src/lib/cli-commands.json`           | same Commander tree                                                | `pnpm --filter @shipeasy/cli docs` (**in shipeasy**) |
+| `public/llms.txt`                          | `public/llms.txt`                     | `content/docs/**` (this repo)                                      | `pnpm gen:llms` (here, + pre-commit)                |
+| `public/llms-full.txt`                     | `public/llms-full.txt`                | `content/docs/**` (this repo)                                      | `pnpm gen:llms` (here, + pre-commit)                |
+| `public/agents.md`                         | `public/agents.md`                    | `content/docs/**` + `cli-commands.json` + the MCP reference        | `pnpm gen:llms` (here, + pre-commit)                |
+| `content/get-started/llms.mdx`             | `content/docs/get-started/llms.mdx`   | the three files above                                              | `pnpm gen:llms` (here, + pre-commit)                |
 
 The two `marketplace`-owned targets are **pushed here**, not pulled: the
 generator in that repo writes straight into a local checkout of this one (its
@@ -37,8 +46,12 @@ copy here instead means:
 
 - Never edit a file under `generated/` by hand.
 - Never commit `content/docs/api/`, `content/docs/sdks/reference/`,
-  `content/docs/get-started/{cli,mcp}-reference.mdx`, or
-  `src/lib/cli-commands.json` — they are gitignored mirrors.
+  `content/docs/get-started/{cli-reference,mcp-reference,llms}.mdx`,
+  `src/lib/cli-commands.json`, or `public/{llms.txt,llms-full.txt,agents.md}` —
+  they are gitignored mirrors.
+- `pnpm gen` runs the generators in dependency order: API and SDK reference
+  first, a sync, then `gen:llms`, which stitches the mirrored tree. Running
+  `gen:llms` against a tree that was never synced fails with a message saying so.
 - Adding a new generated tree means: emit into `generated/content/<path>`, add
   the destination to `.gitignore` + `.prettierignore` + `eslint.config.mjs`,
   and add a row to the table above.

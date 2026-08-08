@@ -10,7 +10,13 @@ description: The assistant runs on prepaid credits — how they're deducted, how
   works="Billing · Assistant"
 />
 
-The assistant is metered with **prepaid credits**. Each plan includes an allowance; you top up when you want more headroom. Credits keep heavy AI usage predictable instead of metered after the fact.
+The assistant is metered with **prepaid credits**, separately from your subscription. Each plan includes an allowance; you top up when you want more headroom. Credits keep heavy AI usage predictable instead of metered after the fact.
+
+<Callout type="info" title="No numbers here">
+  What each plan includes, and what a top-up pack costs, is on the [pricing
+  page](https://shipeasy.ai/pricing) and on **Settings → Billing** — never in these docs, so there
+  is nothing here to go stale
+</Callout>
 
 ## How credits are deducted
 
@@ -20,7 +26,8 @@ A credit is consumed per assistant interaction that calls the model. Read-only b
   type={{
     "Included allowance": {
       type: "per plan",
-      description: "Each plan ships with a monthly credit allowance — enough for everyday use.",
+      description:
+        "Each plan ships with a monthly credit allowance. The amount is on the pricing page and the billing tab.",
     },
     "Top-ups": {
       type: "prepaid",
@@ -52,8 +59,8 @@ When the balance hits zero, the assistant pauses write and reasoning actions and
     { href: "/assistant", title: "Assistant", note: "What credits power" },
     { href: "/assistant/read-vs-write", title: "Read vs write mode" },
     {
-      href: "/get-started/plan-limits",
-      title: "Plan limits & quotas",
+      href: "https://shipeasy.ai/pricing",
+      title: "Pricing",
       note: "What each plan includes",
     },
   ]}

@@ -91,7 +91,7 @@ const cfg = flags.getConfig<{ tier: string; limit: number }>("plan-defaults");
 
 ## Updating a value
 
-Dashboard: **Configs &rarr; Dynamic values &rarr; click &rarr; edit value &rarr; Save**. The change is in KV in &lt;100 ms and visible to your SDK on the next poll (default 30s; faster on Pro).
+Dashboard: **Configs &rarr; Dynamic values &rarr; click &rarr; edit value &rarr; Save**. The change is in KV in &lt;100 ms and visible to your SDK on its next poll.
 
 CLI:
 
@@ -182,11 +182,11 @@ The SDK calls `decode` once per fetched blob — invalid payloads are dropped (w
 
 | Question                           | Use                                                                |
 | ---------------------------------- | ------------------------------------------------------------------ |
-| Should I show feature X?           | [Feature flag](/flags/gates).                          |
+| Should I show feature X?           | [Feature flag](/flags/gates).                                      |
 | What should the value of N be?     | Dynamic value.                                                     |
 | Different value per user / cohort? | Feature flag around the read, or structured value keyed by cohort. |
 | Need an audit trail?               | Both. Every write is versioned.                                    |
-| Need a kill-switch?                | [Killswitch](/flags/killswitches).                     |
+| Need a kill-switch?                | [Killswitch](/flags/killswitches).                                 |
 
 A useful rule: if you&apos;d say <em>&quot;show feature X&quot;</em>, put it behind a feature flag. If you&apos;d say <em>&quot;set feature X to value Y&quot;</em>, use a dynamic value.
 

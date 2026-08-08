@@ -140,8 +140,8 @@ The same worker also handles the CLI device-auth flow and runs the cron + queue 
       required: true,
       description: (
         <>
-          Two blobs per project: <code>:flags</code> (feature flags, configs and kill switches)
-          and <code>:experiments</code>, the longer-lived half of the rule set.
+          Two blobs per project: <code>:flags</code> (feature flags, configs and kill switches) and{" "}
+          <code>:experiments</code>, the longer-lived half of the rule set.
         </>
       ),
     },
@@ -202,8 +202,8 @@ classDef sink fill:#131318,stroke:#2e2c38,color:#cbc9d6;
 
 <Steps>
   <Step title="You change something in the dashboard or CLI">
-    A flag flipped, a rollout bumped, a config published. The CLI hits the same Server Action
-    the dashboard does — there is no second API.
+    A flag flipped, a rollout bumped, a config published. The CLI hits the same Server Action the
+    dashboard does — there is no second API.
   </Step>
   <Step title="The admin app writes the row to the database">
     The database is the source of truth. Every other surface (config blob, daily analysis row,
@@ -295,15 +295,9 @@ For the native server SDKs (Go, Python, Ruby, Java, Kotlin, PHP, Swift) the eval
 
 ## Plan-driven knobs
 
-A handful of behaviours are plan-derived rather than per-project. The big one is the SDK poll interval:
+A handful of behaviours are plan-derived rather than per-project. The big one is the **SDK poll interval** — the worst-case lag between an edit going live at the edge and a given SDK instance noticing it. Evaluation itself is local and instant on every plan; only the refresh cadence moves.
 
-| Plan       | Poll interval | Notes                                  |
-| ---------- | ------------- | -------------------------------------- |
-| Free       | 300s          | One CDN fetch per project every 5 min. |
-| Team       | 60s           | Same path, tighter cadence.            |
-| Enterprise | custom        | Talk to us — sub-second tier.          |
-
-Bumping a plan propagates through the next KV rebuild — no per-project migration. See [Plan limits & quotas](/get-started/plan-limits) for the full matrix.
+You never configure it. The worker advertises the current value in the `X-Poll-Interval` response header and the SDK re-paces itself on the next poll, so a plan change propagates through the next KV rebuild with no redeploy and no per-project migration. Your plan's interval is on the [pricing page](https://shipeasy.ai/pricing) and on **Settings → Billing**.
 
 ## Identity model
 

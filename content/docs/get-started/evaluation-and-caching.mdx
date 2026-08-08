@@ -59,8 +59,7 @@ The SDK keeps its in-memory rules fresh by polling in the background — never o
   <Step title="Plan-driven cadence">
     The flags blob polls at your plan's interval. The Worker returns an `X-Poll-Interval` header and
     the SDK auto-adjusts to it, so changing a plan lever re-paces every SDK on that plan with no
-    redeploy. The second blob polls on a longer, fixed cadence — its contents change far less
-    often.
+    redeploy. The second blob polls on a longer, fixed cadence — its contents change far less often.
   </Step>
   <Step title="Timers don't block shutdown">
     On the server the poll timers are `unref`'d, so they never keep a process alive. In serverless,
@@ -170,6 +169,10 @@ Add it up: purge fan-out (~150ms) plus the time until your SDK's next background
       title: "Rollouts",
       note: "ramps and per-condition rollout",
     },
-    { href: "/get-started/plan-limits", title: "Plan limits", note: "poll interval per plan" },
+    {
+      href: "https://shipeasy.ai/pricing",
+      title: "Pricing",
+      note: "what the poll interval is on each plan",
+    },
   ]}
 />

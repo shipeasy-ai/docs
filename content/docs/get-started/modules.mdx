@@ -16,17 +16,17 @@ Everything about a project — its name, which features it exposes, billing, and
 
 The **Modules** tab toggles which parts of Shipeasy are exposed in this project's devtools overlay and admin tabs. Turning a module off hides its surface; it doesn't delete data.
 
-| Module key    | Tab name                | What it controls                                                           |
-| ------------- | ----------------------- | -------------------------------------------------------------------------- |
-| `gates`       | Gatekeepers             | Feature flags with targeting rules and percentage rollouts.                |
-| `configs`     | Configs                 | Per-environment JSON config values published to your SDK clients.          |
-| `feedback`    | Bugs & feature requests | In-app bug reports and feature requests captured via the devtools overlay. |
-| `events`      | Events                  | Live SDK event stream (evaluations, overrides) in the devtools overlay.    |
-| `user`        | User                    | Devtools tab for inspecting and overriding the current SDK user.           |
+| Module key | Tab name                | What it controls                                                           |
+| ---------- | ----------------------- | -------------------------------------------------------------------------- |
+| `gates`    | Gatekeepers             | Feature flags with targeting rules and percentage rollouts.                |
+| `configs`  | Configs                 | Per-environment JSON config values published to your SDK clients.          |
+| `feedback` | Bugs & feature requests | In-app bug reports and feature requests captured via the devtools overlay. |
+| `events`   | Events                  | Live SDK event stream (evaluations, overrides) in the devtools overlay.    |
+| `user`     | User                    | Devtools tab for inspecting and overriding the current SDK user.           |
 
 <Callout type="info" title="Modules are per project">
-  Each project chooses its own module set, so a flags-only project and a bug-intake-only project
-  can live in the same workspace without clutter.
+  Each project chooses its own module set, so a flags-only project and a bug-intake-only project can
+  live in the same workspace without clutter.
 </Callout>
 
 ## General
@@ -39,7 +39,7 @@ The **Notifications** tab manages per-event notification preferences for the pro
 
 ## Billing & plan limits
 
-The **Billing** tab shows your subscription status, lets you upgrade/downgrade or switch billing interval, top up assistant credits, and lists the hard limits for your current plan (flags, configs, kill switches, metrics, alert rules, SDK keys, and SDK poll interval). See [Plan limits](/get-started/plan-limits) for what each limit means.
+The **Billing** tab is the whole billing surface: subscription status, upgrade/downgrade, billing interval, assistant credit top-ups, and your current plan's live limits (flags, configs, kill switches, metrics, alert rules, SDK keys, poll interval) with usage against each. It is authoritative — the docs deliberately state no caps or prices; the [pricing page](https://shipeasy.ai/pricing) has the per-plan matrix.
 
 ## Danger zone
 
@@ -59,7 +59,7 @@ The **Danger** tab holds the two irreversible, owner-only actions:
       title: "Team & permissions",
       note: "Roles and who can change settings.",
     },
-    { href: "/get-started/plan-limits", title: "Plan limits", note: "Every plan-level cap." },
+    { href: "https://shipeasy.ai/pricing", title: "Pricing", note: "Every plan-level cap." },
     {
       href: "/get-started/keys-and-environments",
       title: "Keys & environments",

@@ -58,7 +58,7 @@ When the pager fires:
 shipeasy release ks set-value checkout-maintenance --value true
 ```
 
-Every SDK serves the maintenance branch within the next poll (30s on Free, 60s on Team). No deploy, no env var, no code change. The flip is recorded in the audit log with who and when — so the incident timeline writes itself.
+Every SDK serves the maintenance branch within one poll interval. No deploy, no env var, no code change. The flip is recorded in the audit log with who and when — so the incident timeline writes itself.
 
 When the provider recovers:
 

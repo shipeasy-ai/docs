@@ -37,7 +37,7 @@ If you&apos;d rather hand this to an AI agent, [wire up the MCP server](/get-sta
 
 ## Prerequisites
 
-- A Shipeasy project. Sign up at [shipeasy.ai](https://shipeasy.ai) — the free tier is enough for this walkthrough.
+- A Shipeasy project. Sign up at [shipeasy.ai](https://shipeasy.ai) — starting a project costs nothing.
 - A **server SDK key** scoped to your environment. Find it in **Project &rarr; SDK keys &rarr; Create &rarr; server**, or generate one from the CLI:
 
 ```bash
@@ -234,7 +234,7 @@ shipeasy sdk keys create --type server
   </Step>
 
   <Step title="Killswitch (when something breaks)">
-    If something goes wrong, flip the killswitch. It overrides every targeting rule and serves `false` everywhere within the SDK&apos;s next poll (default 30s, faster on Pro).
+    If something goes wrong, flip the killswitch. It overrides every targeting rule and serves `false` everywhere within the SDK&apos;s next poll.
 
     ```bash
     shipeasy release flags disable new-checkout-flow
@@ -264,8 +264,7 @@ shipeasy sdk keys create --type server
 ## What just happened
 
 When you flipped that rollout from `25` to `100`, Shipeasy propagated the change worldwide. Within
-the SDK's poll interval (default 30s, 10s on Pro, push on Enterprise), every server saw the new
-value.
+one SDK poll interval, every server saw the new value.
 
 No deploy. No restart. No backend round-trip on the read.
 

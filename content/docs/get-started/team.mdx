@@ -16,11 +16,11 @@ Each project has its own roster. Open **Team** in the dashboard (`/dashboard/<pr
 
 Membership is role-based. There are three roles:
 
-| Role       | What they can do                                                                                                       |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **Admin**  | Full control. Manage members, billing, and API keys. Publish to production.                                            |
+| Role       | What they can do                                                                                                         |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **Admin**  | Full control. Manage members, billing, and API keys. Publish to production.                                              |
 | **Editor** | Create and edit feature flags, configs, and kill switches. Promote to staging. Cannot publish to prod or invite members. |
-| **Viewer** | Read-only. See dashboards, metrics, and the ops queue. Useful for stakeholders.                                        |
+| **Viewer** | Read-only. See dashboards, metrics, and the ops queue. Useful for stakeholders.                                          |
 
 The **owner** of the project is always an admin and can't be removed without first transferring ownership (see [Project settings → Danger zone](/get-started/modules#danger-zone)).
 
@@ -55,16 +55,16 @@ From the members table:
 - **Resend an invite** — re-send the email for a pending member.
 - **Remove a member** — revoke their access to the project. Removal is owner-only.
 
-## Seats and plans
+## Seats
 
-Team size is a plan limit (**max team members**). The current count against your cap shows on **Settings → Billing** as `used / cap seats`. The Free plan is single-seat; paid plans raise or remove the cap. See [Plan limits](/get-started/plan-limits) for the full table.
+Seats are **not** metered — invite the whole team on any plan, including Free. Nothing on the roster counts against a quota or adds to the bill.
 
 <SeeAlso
   links={[
     {
-      href: "/get-started/plan-limits",
-      title: "Plan limits",
-      note: "Seat caps and every other plan-level limit.",
+      href: "https://shipeasy.ai/pricing",
+      title: "Pricing",
+      note: "What each plan includes.",
     },
     {
       href: "/get-started/modules",

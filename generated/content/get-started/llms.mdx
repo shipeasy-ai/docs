@@ -1,0 +1,45 @@
+---
+title: Docs for agents
+description: Machine-readable bundles of this documentation — an index, the full corpus, and a setup runbook — regenerated from the same pages you are reading.
+---
+
+<Callout type="info" title="This page is generated">
+  So are the three files it describes. They are stitched from `content/docs` on every
+  regeneration, which is why they cannot drift from the pages you are reading
+</Callout>
+
+Point a coding agent at one of these instead of asking it to crawl the site. All three are plain text served from the docs root, need no auth, and are rebuilt whenever the documentation changes.
+
+| Endpoint | What it is | Size |
+| --- | --- | --- |
+| [`/llms.txt`](/llms.txt) | **Index** — Every page with its one-line description. Fetch this first | 34 KB |
+| [`/llms-full.txt`](/llms-full.txt) | **Full corpus** — The whole documentation in one file, in nav order | 767 KB |
+| [`/agents.md`](/agents.md) | **Setup runbook** — Install to first flag, then a full CLI + MCP reference | 118 KB |
+
+## Which one
+
+**Wiring Shipeasy into a repo** — [`/agents.md`](/agents.md). It is the install → authenticate → keys → first flag → metrics → alerts path stitched in the order the work happens, followed by every CLI command and every MCP tool by name. That appendix is the part worth having in context: a hallucinated command name is the single most common way an agent fails at this.
+
+**Answering questions about Shipeasy** — [`/llms.txt`](/llms.txt) first, then fetch the one or two pages it points at. Cheaper and sharper than loading the corpus.
+
+**Bulk ingestion** — [`/llms-full.txt`](/llms-full.txt), 92 pages in one request.
+
+## What is not in them
+
+The 101 per-operation [API reference](/api) pages and the 101 per-language [SDK reference](/sdks) pages are **indexed in `llms.txt` but not inlined** — they are generated schema tables, and inlining them would bury the prose. Fetch the page you need, or read the [OpenAPI spec](/api) directly.
+
+## Skip the fetch entirely
+
+If your agent can run MCP, the [`shipeasy` server](/get-started/mcp) ships `docs_list`, `docs_get` and `docs_skill` — the same content, retrieved by topic instead of by URL, plus installable skills that already know these workflows. See [Install in your agent](/get-started/agents).
+
+<SeeAlso
+  links={[
+    {
+      href: "/get-started/agents",
+      title: "Install in your agent",
+      note: "skills + MCP, per host",
+    },
+    { href: "/get-started/mcp", title: "MCP server", note: "what the tools do" },
+    { href: "/get-started/triggers", title: "Agent triggers", note: "let an alert start a run" },
+  ]}
+/>

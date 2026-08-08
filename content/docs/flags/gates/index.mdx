@@ -224,9 +224,11 @@ The killswitch is a separate field from `enabled` so you can keep targeting and 
 A killed feature flag returns `false` everywhere within the SDK&apos;s next poll. Re-enabling restores the full prior state — overrides, rules, rollout %, salt, all of it. Treat the killswitch as your incident lever; treat `enabled` as your &quot;feature is shipped, deactivated cleanly&quot; lever.
 
 <Callout type="warn" title="Killswitch is a contract, not a panic button">
-  A killed feature flag goes false within the next poll, not instantly. With the default 30s poll a
-  worst-case worker still serves the new path for ~30s after you hit the switch. For sub-second
-  cutoff, use the Pro 10s poll or the Enterprise streaming push.
+  A killed feature flag goes false within the next poll, not instantly — a worst-case worker still
+  serves the old path for up to one poll interval after you hit the switch. That interval is
+  plan-derived; the [pricing page](https://shipeasy.ai/pricing) says what yours is. If your cutoff
+  has to be tighter than a poll, gate the call site on a value you already hold rather than waiting
+  on a refresh.
 </Callout>
 
 ## Overrides [#overrides]

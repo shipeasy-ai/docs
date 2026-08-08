@@ -8,8 +8,23 @@
 # bookmarks/backlinks.
 /translations/* / 302
 /translations / 302
-/llms/* /get-started/agents 302
-/llms /get-started/agents 302
+
+# Prices, plan caps, allowances and retention windows are stated in exactly one
+# place — the public pricing page — because docs pushes cannot keep up with a
+# pricing change and twice did not. Both pages are parked in content/_hidden.
+/get-started/plan-limits/ https://shipeasy.ai/pricing 302
+/get-started/plan-limits https://shipeasy.ai/pricing 302
+/get-started/billing/ https://shipeasy.ai/pricing 302
+/get-started/billing https://shipeasy.ai/pricing 302
+
+# /llms is the agent entry point. The machine-readable endpoints (llms.txt,
+# llms-full.txt, agents.md) are real files at the root, so they are NOT
+# redirected — only the bare human-facing path is.
+/llms/* /get-started/llms 302
+/llms/ /get-started/llms 302
+/llms /get-started/llms 302
+/llms-i18n-strings/ /get-started/llms 302
+/llms-i18n-strings /get-started/llms 302
 
 # Experiments are hidden the same way (2026-08). Their pages are parked in
 # content/_hidden/experiments; send old links to the nearest live page rather

@@ -13,7 +13,6 @@
     "evaluation-and-caching",
     "identity-and-bucketing",
     "attributes",
-    "plan-limits",
     "---Tooling---",
     "cli",
     "cli-reference",
@@ -26,7 +25,6 @@
     "team",
     "modules",
     "usage",
-    "billing",
     "---Help---",
     "troubleshooting"
   ]

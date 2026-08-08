@@ -1,0 +1,334 @@
+# Shipeasy
+
+> Feature flags, dynamic configs, kill switches, product metrics, alerts and an ops queue — evaluated locally in your process, changed from a dashboard, a CLI, an MCP server or an AI agent.
+
+Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with `pnpm gen:llms`.
+
+## Start here
+
+- [Setup runbook](https://docs.shipeasy.ai/agents.md): the install-to-first-flag path, stitched end to end, with every CLI command and MCP tool listed at the bottom
+- [Full documentation](https://docs.shipeasy.ai/llms-full.txt): every page below, in one file
+
+## Home
+
+- [Shipeasy](https://docs.shipeasy.ai): Feature flags & configs, metrics & alerts, and bug + error capture — one SDK, one API key, for everything you ship.
+
+## Get started
+
+- [How it works](https://docs.shipeasy.ai/get-started/overview): A tour of the moving pieces — two runtimes, one shared database, config blobs at the edge, and an SDK that never blocks your request.
+- [Quickstart (get-started)](https://docs.shipeasy.ai/get-started/quickstart): Install the SDK and CLI, bind a project, wire one init call, ship a flag at 0%, and ramp — in about five minutes.
+- [Install](https://docs.shipeasy.ai/get-started/install): Add the Shipeasy SDK to your application, the CLI to your machine, and (optionally) the MCP server to your AI assistant.
+- [Authenticate](https://docs.shipeasy.ai/get-started/authenticate): One `shipeasy login` opens your browser, signs in the CLI and every MCP tool on your machine, and quietly refreshes itself for 30 days.
+- [SDKs (get-started)](https://docs.shipeasy.ai/get-started/sdks): One package, two builds — server and browser. Plus framework adapters, native runtimes, and a DevTools overlay.
+- [Keys & environments](https://docs.shipeasy.ai/get-started/keys-and-environments): Server key vs client key, where each goes, and how the read environment is derived from the key — never from a query param.
+- [Evaluation & caching](https://docs.shipeasy.ai/get-started/evaluation-and-caching): The read path in depth — in-memory rules, deterministic murmur3 bucketing, background polling, KV blobs, and infinite-TTL CDN propagation.
+- [Identity & bucketing](https://docs.shipeasy.ai/get-started/identity-and-bucketing): anonymous_id, user_id, identity stitching, bucketBy, and sticky bucketing — how Shipeasy decides which unit a flag buckets on.
+- [User attributes](https://docs.shipeasy.ai/get-started/attributes): The shape of the eval context — pass everything you know about the user, and Shipeasy uses it for targeting, holdouts, and analysis breakdowns.
+- [CLI](https://docs.shipeasy.ai/get-started/cli): The `shipeasy` command — manage flags, configs, kill switches, metrics, the ops queue, keys, and the MCP server from your terminal or CI.
+- [CLI reference](https://docs.shipeasy.ai/get-started/cli-reference): Auto-generated reference for the `shipeasy` CLI — every command, argument, and flag, straight from the command definitions.
+- [MCP server](https://docs.shipeasy.ai/get-started/mcp): Hand the docs and tools to Claude Code, Cursor, Windsurf, or any MCP-compatible AI assistant — and let it do the boring setup for you.
+- [MCP reference](https://docs.shipeasy.ai/get-started/mcp-reference): Auto-generated reference for the @shipeasy/mcp server — every tool, nested under its group, with title, full description, parameters, and error codes.
+- [Install in your agent](https://docs.shipeasy.ai/get-started/agents): One plugin tree, every coding agent. Install Shipeasy's skills + MCP server into Claude Code, Codex, GitHub Copilot CLI, OpenCode, Cursor, Windsurf, Cline, Gemini, Continue, and more.
+- [Scheduled triggers](https://docs.shipeasy.ai/get-started/triggers): Provision an unattended, scheduled agent that runs ops:work --pr on a cadence — burning down the feedback queue and opening one PR per item — on Claude Code, Cursor, Copilot, Jules, Codex, or Gemini.
+- [Team & permissions](https://docs.shipeasy.ai/get-started/team): Invite teammates to a project, assign roles, and control who can publish to production.
+- [Project settings & modules](https://docs.shipeasy.ai/get-started/modules): Toggle which Shipeasy modules a project exposes, and manage notifications, billing, ownership, and deletion.
+- [Usage & quotas](https://docs.shipeasy.ai/get-started/usage): See per-evaluation usage across feature flags, configs, killswitches, and events — and how it tracks against your plan's included credit.
+- [Troubleshooting](https://docs.shipeasy.ai/get-started/troubleshooting): Common errors you may hit wiring up Shipeasy — what they mean and how to resolve them.
+
+## SDKs
+
+- [SDKs](https://docs.shipeasy.ai/sdks): One package for JavaScript (server + browser) plus seven native server languages — all evaluating the same blob, the same way.
+- [Node / TypeScript](https://docs.shipeasy.ai/sdks/node-typescript): The canonical Shipeasy SDK — one package with a server and a browser build, local evaluation, configs, kill switches, and metric tracking.
+- [Browser & React](https://docs.shipeasy.ai/sdks/browser-react): The client build of @shipeasy/sdk — client-key init, identify, in-browser evaluation, the DevTools overlay, and SSR bootstrap.
+- [Go](https://docs.shipeasy.ai/sdks/go): The Shipeasy Go server SDK — context-aware client, local evaluation, configs, kill switches, and metric tracking.
+- [Python](https://docs.shipeasy.ai/sdks/python): The Shipeasy Python server SDK — local evaluation, configs, WSGI/ASGI anon middleware, and metric tracking.
+- [Ruby](https://docs.shipeasy.ai/sdks/ruby): The Shipeasy Ruby gem — fork-safe singleton, Rails railtie, local evaluation, configs, kill switches, and metric tracking.
+- [Java](https://docs.shipeasy.ai/sdks/java): The Shipeasy Java server SDK — configure once, bind a Client per request, servlet anon filter, local evaluation, configs, kill switches, and metric tracking.
+- [Kotlin](https://docs.shipeasy.ai/sdks/kotlin): The Shipeasy Kotlin SDK — pure-JVM core plus an Android client artifact, local evaluation, configs, kill switches, and metric tracking.
+- [PHP](https://docs.shipeasy.ai/sdks/php): The Shipeasy PHP server SDK — PHP-FPM friendly per-request init, local evaluation, configs, kill switches, and metric tracking.
+- [Swift](https://docs.shipeasy.ai/sdks/swift): The Shipeasy Swift SDK — a native client SDK on SwiftPM, authenticating with the public client key, for flags, configs, kill switches, and metric tracking.
+- [Evaluation reasons](https://docs.shipeasy.ai/sdks/reasons): getFlagDetail returns the value plus the reason a flag resolved the way it did — RULE_MATCH, DEFAULT, OFF, OVERRIDE, FLAG_NOT_FOUND, and CLIENT_NOT_READY.
+- [Reacting to changes](https://docs.shipeasy.ai/sdks/onchange): onChange fires after a background poll picks up new rules — use it to invalidate caches or re-render when a flag flips.
+- [Multi-context bucketing (bucketBy)](https://docs.shipeasy.ai/sdks/bucketby): Bucket on company_id, session_id, or any attribute instead of user_id — so a rollout splits by account, not by individual user.
+- [Private attributes](https://docs.shipeasy.ai/sdks/private-attributes): Mark attributes as private so they're used for targeting but never persisted or sent to the events store.
+- [Offline & snapshots](https://docs.shipeasy.ai/sdks/offline-snapshot): Build a fully offline client from a captured snapshot — real evaluation, zero network. For CI, tests, and air-gapped runtimes.
+- [Testing](https://docs.shipeasy.ai/sdks/testing): Swap configure() for configureForTesting() and seed the values your code should see — unit-test flag-gated code without touching the network.
+- [Devtools overlay](https://docs.shipeasy.ai/sdks/devtools-overlay): A browser overlay to flip any gate, config, or kill switch for the current session — for QA, demos, and bug repro.
+- [Drop-in script tag](https://docs.shipeasy.ai/sdks/script-loader): Add feature flags and configs to a no-build or static site with one <script> tag — evaluated at the edge, ready before first paint, no bundler required.
+- [OpenFeature provider](https://docs.shipeasy.ai/sdks/openfeature): Plug Shipeasy in as the backing provider for the CNCF OpenFeature API — a pure adapter over the SDK, server and web.
+
+## Flags & Configs
+
+- [Flags & Configs](https://docs.shipeasy.ai/flags): One product, three primitives. Pick the right one for the change you're shipping.
+- [Getting started (flags)](https://docs.shipeasy.ai/flags/getting-started): Install the SDK, configure once, ship a flag — under five minutes.
+- [Which primitive should I use?](https://docs.shipeasy.ai/flags/decision): Decision tree — map your goal to feature flags, configs, or killswitches.
+- [Flow & dependencies](https://docs.shipeasy.ai/flags/flow): A live dependency graph of your events, metrics, and alerts — trace what feeds what before you change it.
+- [Feature flags](https://docs.shipeasy.ai/flags/gates): Boolean feature flags with targeting rules, percentage rollouts, kill-switches, and per-user overrides — evaluated locally in your SDK with zero per-request cost.
+- [Quickstart (flags/gates)](https://docs.shipeasy.ai/flags/gates/quickstart): Create a feature flag, wrap your code, ramp from 0% to 100% — end to end in five minutes.
+- [Targeting rules](https://docs.shipeasy.ai/flags/gates/targeting): Decide who is eligible for a feature flag. Predicates against user, account, request, or any custom attribute — ANDed, evaluated locally, zero network cost.
+- [Rollouts & bucketing](https://docs.shipeasy.ai/flags/gates/rollouts): How the percentage actually works — sticky hashing, deterministic assignment, multi-arm rollouts, salt, and how to re-shuffle.
+- [Overrides](https://docs.shipeasy.ai/flags/gates/overrides): Force a feature flag on or off for specific user IDs — for QA, dogfood, demos, and customer-specific repros. Bypasses targeting and rollout.
+- [Configs — typed values](https://docs.shipeasy.ai/flags/configs): Typed config values you can change without a redeploy.
+- [Quickstart (flags/configs)](https://docs.shipeasy.ai/flags/configs/quickstart): From zero to a feature behind a feature flag in production — install the SDK, create a feature flag, roll it out, kill-switch it, and watch it in the dashboard. Five minutes, end to end.
+- [Dynamic values](https://docs.shipeasy.ai/flags/configs/values): Typed config values — strings, numbers, booleans, JSON — that change instantly without a redeploy. Schema-validated, versioned.
+- [Targeting & rollouts](https://docs.shipeasy.ai/flags/configs/targeting): Express &quot;show this to the right users&quot; with attribute rules, deterministic percentage rollouts, and per-feature-flag salts. The rules engine, in detail.
+- [Killswitches](https://docs.shipeasy.ai/flags/killswitches): A flag with a single job — disable a system instantly during an incident.
+- [Quickstart (flags/killswitches)](https://docs.shipeasy.ai/flags/killswitches/quickstart): Wire a killswitch around a risky subsystem in five minutes — so the 3am on-call has one switch to flip.
+- [Patterns](https://docs.shipeasy.ai/flags/killswitches/patterns): When a killswitch is the right answer — what to put behind one, fail-safe defaults, alerting, and the post-incident cleanup.
+- [Case studies (flags)](https://docs.shipeasy.ai/flags/case-studies): Real scenarios — when to reach for a feature flag vs config vs killswitch.
+- [Maintenance mode with a killswitch](https://docs.shipeasy.ai/flags/case-studies/maintenance-mode): Wrap a subsystem in a break-glass killswitch that defaults off and flips on in seconds during an incident.
+- [Plan entitlements with a dynamic config](https://docs.shipeasy.ai/flags/case-studies/entitlements-with-configs): Gate features by plan tier from one typed config instead of a sprawl of per-feature flags.
+- [Roll out to companies, not users (bucketBy)](https://docs.shipeasy.ai/flags/case-studies/company-rollout-bucketby): B2B rollout bucketed on company_id so a whole account flips together — never half a team on each version.
+- [Target on email or PII without it landing in analytics](https://docs.shipeasy.ai/flags/case-studies/private-attribute-targeting): Use privateAttributes to target on email or tier while stripping those fields from every event the SDK emits.
+- [Debug why a user isn't seeing a feature](https://docs.shipeasy.ai/flags/case-studies/debug-missing-feature): Use getFlagDetail reasons to tell DEFAULT (rolled to 0%) from FLAG_NOT_FOUND (typo or stale bundle) from OFF (killed).
+- [Invalidate a server cache the instant a config flips](https://docs.shipeasy.ai/flags/case-studies/cache-invalidation-onchange): Use onChange to drop a memoized render or a derived config on the next poll, so a dashboard change takes effect without a restart.
+- [Deterministic flags in CI and unit tests](https://docs.shipeasy.ai/flags/case-studies/deterministic-tests): Use configureForTesting() + overrides for unit tests and a captured snapshot for integration and CI — flag-gated code that never touches the network.
+- [Migrate off another flag vendor via OpenFeature](https://docs.shipeasy.ai/flags/case-studies/openfeature-migration): Drop ShipeasyProvider in behind the OpenFeature API so your existing getBooleanValue(...) call sites keep working unchanged.
+- [QA a flag before you ramp (and share a repro link)](https://docs.shipeasy.ai/flags/case-studies/qa-with-devtools): Use the devtools overlay (Shift+Alt+S / ?se=1) and ?se_gate_… URL overrides to QA a feature, demo a variant, and reproduce a bug — all session-scoped.
+- [Disable one tenant or route without flipping the whole killswitch](https://docs.shipeasy.ai/flags/case-studies/per-tenant-killswitch): Use the killswitch per-key "switches" feature to set a named override on one tenant or route in one environment — without killing the feature for everyone.
+- [Edge cases (flags)](https://docs.shipeasy.ai/flags/edge-cases): Things that bite you once and never again — sticky bucketing, KV propagation, SSR flicker, flag sprawl, and more.
+
+## Metrics & Alerts
+
+- [Metrics](https://docs.shipeasy.ai/metrics): Define what you measure — aggregations, filters, outlier handling, and ratio metrics over your own events.
+- [Quickstart (metrics)](https://docs.shipeasy.ai/metrics/quickstart): Create your first metric, log the events it depends on, and put an alert on it — five minutes, end to end.
+- [Aggregation types](https://docs.shipeasy.ai/metrics/aggregations): Conversion, count, sum, mean, ratio — pick the right aggregation, set outlier handling, and avoid the variance traps that bite means and sums.
+- [Query DSL grammar](https://docs.shipeasy.ai/metrics/grammar): The complete formal grammar for the Shipeasy metric query DSL — aggregates, expressions, selectors, filters, group-by, and the full function set, with the limits and the deliberate refusals.
+- [Configure alerts](https://docs.shipeasy.ai/metrics/alerts): Turn an event into a metric, then raise a metric-threshold alert that files its own ticket when the metric crosses the line.
+
+## Bugs & Requests
+
+- [Bugs & Feature Requests](https://docs.shipeasy.ai/feedback): Capture user-reported bugs and feature requests, prioritize them, route to the right channel.
+- [Getting started (feedback)](https://docs.shipeasy.ai/feedback/getting-started): Wire a "Report bug" button into your app in two minutes.
+- [The devtools overlay](https://docs.shipeasy.ai/feedback/devtools): Mount the in-app devtools overlay so you and your team can file bugs and feature requests without leaving the product.
+- [Error reporting with see()](https://docs.shipeasy.ai/feedback/error-reporting): Report every handled exception with see() so it folds into the errors primitive with a product consequence.
+- [Errors dashboard & triage](https://docs.shipeasy.ai/feedback/errors): Fingerprint-grouped error issues with a status workflow, occurrence timeseries, and automatic re-open on regression.
+- [Connectors](https://docs.shipeasy.ai/feedback/connectors): Mirror new bug reports and feature requests out to a GitHub repo, a Google Sheet, or a Slack channel as they come in.
+- [Slack](https://docs.shipeasy.ai/feedback/slack): Run your whole release platform from Slack by chatting with @Shipeasy — create gates, configs, kill switches, alerts and metrics in plain language, then act on everything as it streams back into the channel as interactive cards.
+- [Case studies (feedback)](https://docs.shipeasy.ai/feedback/case-studies): Bug & feature request workflows — from "report bug" button to Linear sync.
+- [Route bug reports to Linear/Jira](https://docs.shipeasy.ai/feedback/case-studies/route-bugs-to-linear): Forward triaged bug reports into your tracker with a webhook, and dedup so one bug never opens five issues.
+- [From metric alert to auto-filed ticket](https://docs.shipeasy.ai/feedback/case-studies/alert-to-ticket-loop): Turn an event into a metric, raise a threshold alert on it, and have the alert file its own ticket for an agent to work.
+- [Edge cases (feedback)](https://docs.shipeasy.ai/feedback/edge-cases): Spam, dedup, PII, anonymous users, and other things that bite in production.
+- [API reference (feedback)](https://docs.shipeasy.ai/feedback/api): REST endpoints for bug reports and feature requests.
+
+## Assistant
+
+- [Assistant](https://docs.shipeasy.ai/assistant): The in-dashboard AI assistant — what it is, how read and write modes differ, what it renders, and how it meters credits.
+- [Read vs write mode](https://docs.shipeasy.ai/assistant/read-vs-write): Read tools auto-execute and stream a thinking trace; write tools never auto-run — they surface as editable cards you confirm.
+- [Confirmation cards & plans](https://docs.shipeasy.ai/assistant/cards-and-plans): How the assistant turns an intent into an editable card you confirm — and how plan cards split instant resources from ship-code work.
+- [Measurement plans](https://docs.shipeasy.ai/assistant/measurement-plans): When a change needs instrumentation it can't do itself, the assistant writes a measurement plan and files measure_plan tickets for an agent to implement.
+- [Credits & metering](https://docs.shipeasy.ai/assistant/credits): The assistant runs on prepaid credits — how they're deducted, how to top up, and what happens at zero.
+- [Assistant use cases](https://docs.shipeasy.ai/assistant/use-cases): Three worked chat flows — ramp a feature with an alert on it, generate a measurement plan, and run a read-mode audit of your flags.
+
+## API
+
+- [API reference](https://docs.shipeasy.ai/api): REST endpoints for feature flags, configs, killswitches, metrics, alerts and the ops queue — with live request samples in cURL, JavaScript, and Python.
+
+## use-cases
+
+- [Advanced use cases](https://docs.shipeasy.ai/use-cases): Four cross-cutting patterns that combine flags, configs, killswitches, metrics, alerts and feedback into one workflow — the things you can only do when it's all one platform.
+
+## Reference (not inlined in llms-full.txt)
+
+- [Ack an item (start a run)](https://docs.shipeasy.ai/api/operations/ackOpsItem)
+- [Add entries to a gate's whitelist](https://docs.shipeasy.ai/api/operations/addToGateWhitelist)
+- [Approve a pending event](https://docs.shipeasy.ai/api/operations/approveEvent)
+- [Create an alert rule](https://docs.shipeasy.ai/api/operations/createAlertRule)
+- [Declare a targeting attribute](https://docs.shipeasy.ai/api/operations/createAttribute)
+- [Create a dynamic config](https://docs.shipeasy.ai/api/operations/createConfig)
+- [Create a connector](https://docs.shipeasy.ai/api/operations/createConnector)
+- [Register an event](https://docs.shipeasy.ai/api/operations/createEvent)
+- [Create a feature gate](https://docs.shipeasy.ai/api/operations/createGate)
+- [Create a gate template](https://docs.shipeasy.ai/api/operations/createGateTemplate)
+- [Create an API key](https://docs.shipeasy.ai/api/operations/createKey)
+- [Create a killswitch](https://docs.shipeasy.ai/api/operations/createKillswitch)
+- [Create a metric](https://docs.shipeasy.ai/api/operations/createMetric)
+- [Comment on an item](https://docs.shipeasy.ai/api/operations/createOpsComment)
+- [Record an investigation](https://docs.shipeasy.ai/api/operations/createOpsInvestigation)
+- [File a queue item](https://docs.shipeasy.ai/api/operations/createOpsItem)
+- [File a bug](https://docs.shipeasy.ai/api/operations/createPublicBug)
+- [File a feature request](https://docs.shipeasy.ai/api/operations/createPublicFeatureRequest)
+- [Create a recurring coding-agent trigger](https://docs.shipeasy.ai/api/operations/createTriggerConnector)
+- [Delete an alert rule](https://docs.shipeasy.ai/api/operations/deleteAlertRule)
+- [Archive a targeting attribute](https://docs.shipeasy.ai/api/operations/deleteAttribute)
+- [Delete a dynamic config](https://docs.shipeasy.ai/api/operations/deleteConfig)
+- [Delete a connector](https://docs.shipeasy.ai/api/operations/deleteConnector)
+- [Archive an event](https://docs.shipeasy.ai/api/operations/deleteEvent)
+- [Delete a feature gate](https://docs.shipeasy.ai/api/operations/deleteGate)
+- [Delete a gate template](https://docs.shipeasy.ai/api/operations/deleteGateTemplate)
+- [Delete a killswitch](https://docs.shipeasy.ai/api/operations/deleteKillswitch)
+- [Archive a metric](https://docs.shipeasy.ai/api/operations/deleteMetric)
+- [Delete a queue item](https://docs.shipeasy.ai/api/operations/deleteOpsItem)
+- [Disable a gate](https://docs.shipeasy.ai/api/operations/disableGate)
+- [Discard a draft](https://docs.shipeasy.ai/api/operations/discardConfigDraft)
+- [Enable a gate](https://docs.shipeasy.ai/api/operations/enableGate)
+- [File a feedback ticket for an error](https://docs.shipeasy.ai/api/operations/fileErrorTicket)
+- [Fire a trigger connector](https://docs.shipeasy.ai/api/operations/fireConnector)
+- [Get a targeting attribute](https://docs.shipeasy.ai/api/operations/getAttribute)
+- [Get one config](https://docs.shipeasy.ai/api/operations/getConfig)
+- [Get a connector](https://docs.shipeasy.ai/api/operations/getConnector)
+- [Show the current project](https://docs.shipeasy.ai/api/operations/getCurrentProject)
+- [Get a tracked error](https://docs.shipeasy.ai/api/operations/getError)
+- [Get an error's occurrence series](https://docs.shipeasy.ai/api/operations/getErrorSeries)
+- [Get an event](https://docs.shipeasy.ai/api/operations/getEvent)
+- [Get one gate](https://docs.shipeasy.ai/api/operations/getGate)
+- [Get one gate template](https://docs.shipeasy.ai/api/operations/getGateTemplate)
+- [Read a gate's whitelist](https://docs.shipeasy.ai/api/operations/getGateWhitelist)
+- [Get one killswitch](https://docs.shipeasy.ai/api/operations/getKillswitch)
+- [Get a metric](https://docs.shipeasy.ai/api/operations/getMetric)
+- [Get a metric's time series](https://docs.shipeasy.ai/api/operations/getMetricSeries)
+- [Get one queue item](https://docs.shipeasy.ai/api/operations/getOpsItem)
+- [Show a project by id](https://docs.shipeasy.ai/api/operations/getProject)
+- [Link a fixing PR](https://docs.shipeasy.ai/api/operations/linkPrToOpsItem)
+- [List alert rules](https://docs.shipeasy.ai/api/operations/listAlertRules)
+- [List fired alerts](https://docs.shipeasy.ai/api/operations/listAlerts)
+- [List targeting attributes](https://docs.shipeasy.ai/api/operations/listAttributes)
+- [List config activity](https://docs.shipeasy.ai/api/operations/listConfigActivity)
+- [List config version history](https://docs.shipeasy.ai/api/operations/listConfigVersions)
+- [List dynamic configs](https://docs.shipeasy.ai/api/operations/listConfigs)
+- [List connectors](https://docs.shipeasy.ai/api/operations/listConnectors)
+- [List tracked errors](https://docs.shipeasy.ai/api/operations/listErrors)
+- [List events](https://docs.shipeasy.ai/api/operations/listEvents)
+- [List gate activity](https://docs.shipeasy.ai/api/operations/listGateActivity)
+- [List gate templates](https://docs.shipeasy.ai/api/operations/listGateTemplates)
+- [List feature gates](https://docs.shipeasy.ai/api/operations/listGates)
+- [List API keys](https://docs.shipeasy.ai/api/operations/listKeys)
+- [List killswitches](https://docs.shipeasy.ai/api/operations/listKillswitches)
+- [List metrics](https://docs.shipeasy.ai/api/operations/listMetrics)
+- [List connected AI agents](https://docs.shipeasy.ai/api/operations/listOpsAgents)
+- [List an item's comments](https://docs.shipeasy.ai/api/operations/listOpsComments)
+- [List an item's investigation records](https://docs.shipeasy.ai/api/operations/listOpsInvestigations)
+- [List the operational queue](https://docs.shipeasy.ai/api/operations/listOpsItems)
+- [List Slack channels](https://docs.shipeasy.ai/api/operations/listSlackChannels)
+- [Raise an attention notification](https://docs.shipeasy.ai/api/operations/notifyOps)
+- [Publish a draft](https://docs.shipeasy.ai/api/operations/publishConfigDraft)
+- [Remove entries from a gate's whitelist](https://docs.shipeasy.ai/api/operations/removeFromGateWhitelist)
+- [Resolve a tracked error](https://docs.shipeasy.ai/api/operations/resolveError)
+- [Revoke an API key](https://docs.shipeasy.ai/api/operations/revokeKey)
+- [Save a draft value](https://docs.shipeasy.ai/api/operations/saveConfigDraft)
+- [Search project resources](https://docs.shipeasy.ai/api/operations/searchResources)
+- [Replace a gate's whitelist](https://docs.shipeasy.ai/api/operations/setGateWhitelist)
+- [Set one switch entry](https://docs.shipeasy.ai/api/operations/setKillswitchSwitch)
+- [Set the flat value on one env](https://docs.shipeasy.ai/api/operations/setKillswitchValue)
+- [Test a connector](https://docs.shipeasy.ai/api/operations/testConnector)
+- [Toggle a killswitch or one of its switches](https://docs.shipeasy.ai/api/operations/toggleKillswitch)
+- [Unarchive a metric](https://docs.shipeasy.ai/api/operations/unarchiveMetric)
+- [Remove one switch entry](https://docs.shipeasy.ai/api/operations/unsetKillswitchSwitch)
+- [Update a fired alert](https://docs.shipeasy.ai/api/operations/updateAlert)
+- [Update an alert rule](https://docs.shipeasy.ai/api/operations/updateAlertRule)
+- [Update a targeting attribute](https://docs.shipeasy.ai/api/operations/updateAttribute)
+- [Update a dynamic config](https://docs.shipeasy.ai/api/operations/updateConfig)
+- [Update a config schema](https://docs.shipeasy.ai/api/operations/updateConfigSchema)
+- [Update a connector](https://docs.shipeasy.ai/api/operations/updateConnector)
+- [Update a tracked error's status](https://docs.shipeasy.ai/api/operations/updateErrorStatus)
+- [Update an event](https://docs.shipeasy.ai/api/operations/updateEvent)
+- [Update a feature gate](https://docs.shipeasy.ai/api/operations/updateGate)
+- [Update a gate template](https://docs.shipeasy.ai/api/operations/updateGateTemplate)
+- [Update a killswitch](https://docs.shipeasy.ai/api/operations/updateKillswitch)
+- [Update a metric](https://docs.shipeasy.ai/api/operations/updateMetric)
+- [Update an investigation record](https://docs.shipeasy.ai/api/operations/updateOpsInvestigation)
+- [Update a queue item](https://docs.shipeasy.ai/api/operations/updateOpsItem)
+- [Update the current project](https://docs.shipeasy.ai/api/operations/updateProject)
+- [Update a trigger connector](https://docs.shipeasy.ai/api/operations/updateTriggerConnector)
+- [Find-or-create a project by domain](https://docs.shipeasy.ai/api/operations/upsertProject)
+- [Admin API client (optional) — `admin`](https://docs.shipeasy.ai/sdks/reference/go/admin-api)
+- [Advanced](https://docs.shipeasy.ai/sdks/reference/go/advanced)
+- [Dynamic configs](https://docs.shipeasy.ai/sdks/reference/go/configs)
+- [Configuration](https://docs.shipeasy.ai/sdks/reference/go/configuration)
+- [Error reporting — `See()`](https://docs.shipeasy.ai/sdks/reference/go/error-reporting)
+- [Feature flags (gates)](https://docs.shipeasy.ai/sdks/reference/go/flags)
+- [Shipeasy Go SDK — Overview](https://docs.shipeasy.ai/sdks/reference/go)
+- [Installation](https://docs.shipeasy.ai/sdks/reference/go/installation)
+- [Kill switches](https://docs.shipeasy.ai/sdks/reference/go/killswitches)
+- [OpenFeature provider](https://docs.shipeasy.ai/sdks/reference/go/openfeature)
+- [Agent skill](https://docs.shipeasy.ai/sdks/reference/go/skill)
+- [Snippets](https://docs.shipeasy.ai/sdks/reference/go/snippets)
+- [Testing](https://docs.shipeasy.ai/sdks/reference/go/testing)
+- [SDK reference](https://docs.shipeasy.ai/sdks/reference)
+- [Advanced](https://docs.shipeasy.ai/sdks/reference/java/advanced)
+- [Dynamic configs](https://docs.shipeasy.ai/sdks/reference/java/configs)
+- [Configuration](https://docs.shipeasy.ai/sdks/reference/java/configuration)
+- [Error reporting — `see()`](https://docs.shipeasy.ai/sdks/reference/java/error-reporting)
+- [Feature flags](https://docs.shipeasy.ai/sdks/reference/java/flags)
+- [Overview](https://docs.shipeasy.ai/sdks/reference/java)
+- [Installation](https://docs.shipeasy.ai/sdks/reference/java/installation)
+- [Kill switches](https://docs.shipeasy.ai/sdks/reference/java/killswitches)
+- [OpenFeature provider](https://docs.shipeasy.ai/sdks/reference/java/openfeature)
+- [Agent skill](https://docs.shipeasy.ai/sdks/reference/java/skill)
+- [Snippets](https://docs.shipeasy.ai/sdks/reference/java/snippets)
+- [Testing](https://docs.shipeasy.ai/sdks/reference/java/testing)
+- [Advanced](https://docs.shipeasy.ai/sdks/reference/kotlin/advanced)
+- [Dynamic configs](https://docs.shipeasy.ai/sdks/reference/kotlin/configs)
+- [Configuration](https://docs.shipeasy.ai/sdks/reference/kotlin/configuration)
+- [Error reporting — `see()`](https://docs.shipeasy.ai/sdks/reference/kotlin/error-reporting)
+- [Flags (feature gates)](https://docs.shipeasy.ai/sdks/reference/kotlin/flags)
+- [Overview](https://docs.shipeasy.ai/sdks/reference/kotlin)
+- [Installation & configuration](https://docs.shipeasy.ai/sdks/reference/kotlin/installation)
+- [Kill switches](https://docs.shipeasy.ai/sdks/reference/kotlin/killswitches)
+- [OpenFeature](https://docs.shipeasy.ai/sdks/reference/kotlin/openfeature)
+- [Agent skill](https://docs.shipeasy.ai/sdks/reference/kotlin/skill)
+- [Snippets](https://docs.shipeasy.ai/sdks/reference/kotlin/snippets)
+- [Testing](https://docs.shipeasy.ai/sdks/reference/kotlin/testing)
+- [Admin API client (optional) — `Shipeasy\\Admin`](https://docs.shipeasy.ai/sdks/reference/php/admin-api)
+- [Advanced](https://docs.shipeasy.ai/sdks/reference/php/advanced)
+- [Dynamic configs](https://docs.shipeasy.ai/sdks/reference/php/configs)
+- [Configuration](https://docs.shipeasy.ai/sdks/reference/php/configuration)
+- [Error reporting — `see()`](https://docs.shipeasy.ai/sdks/reference/php/error-reporting)
+- [Flags](https://docs.shipeasy.ai/sdks/reference/php/flags)
+- [Overview](https://docs.shipeasy.ai/sdks/reference/php)
+- [Installation & configuration](https://docs.shipeasy.ai/sdks/reference/php/installation)
+- [Kill switches](https://docs.shipeasy.ai/sdks/reference/php/killswitches)
+- [OpenFeature](https://docs.shipeasy.ai/sdks/reference/php/openfeature)
+- [Agent skill](https://docs.shipeasy.ai/sdks/reference/php/skill)
+- [Snippets](https://docs.shipeasy.ai/sdks/reference/php/snippets)
+- [Testing](https://docs.shipeasy.ai/sdks/reference/php/testing)
+- [Admin API client (optional) — `shipeasy.admin`](https://docs.shipeasy.ai/sdks/reference/python/admin-api)
+- [Advanced](https://docs.shipeasy.ai/sdks/reference/python/advanced)
+- [Dynamic configs — `get_config`](https://docs.shipeasy.ai/sdks/reference/python/configs)
+- [Configuration](https://docs.shipeasy.ai/sdks/reference/python/configuration)
+- [Error reporting — `see()`](https://docs.shipeasy.ai/sdks/reference/python/error-reporting)
+- [Feature flags — `get_flag`](https://docs.shipeasy.ai/sdks/reference/python/flags)
+- [Shipeasy Python SDK — Overview](https://docs.shipeasy.ai/sdks/reference/python)
+- [Installation & configuration](https://docs.shipeasy.ai/sdks/reference/python/installation)
+- [Kill switches — `get_killswitch`](https://docs.shipeasy.ai/sdks/reference/python/killswitches)
+- [OpenFeature provider](https://docs.shipeasy.ai/sdks/reference/python/openfeature)
+- [Agent skill](https://docs.shipeasy.ai/sdks/reference/python/skill)
+- [Snippets](https://docs.shipeasy.ai/sdks/reference/python/snippets)
+- [Testing](https://docs.shipeasy.ai/sdks/reference/python/testing)
+- [Admin API client (optional) — `Shipeasy::Admin`](https://docs.shipeasy.ai/sdks/reference/ruby/admin-api)
+- [Advanced](https://docs.shipeasy.ai/sdks/reference/ruby/advanced)
+- [Dynamic configs — `get_config`](https://docs.shipeasy.ai/sdks/reference/ruby/configs)
+- [Configuration](https://docs.shipeasy.ai/sdks/reference/ruby/configuration)
+- [Error reporting — `see()`](https://docs.shipeasy.ai/sdks/reference/ruby/error-reporting)
+- [Feature flags — `get_flag`](https://docs.shipeasy.ai/sdks/reference/ruby/flags)
+- [Shipeasy Ruby SDK — Overview](https://docs.shipeasy.ai/sdks/reference/ruby)
+- [Installation & configuration](https://docs.shipeasy.ai/sdks/reference/ruby/installation)
+- [Kill switches — `get_killswitch`](https://docs.shipeasy.ai/sdks/reference/ruby/killswitches)
+- [OpenFeature provider](https://docs.shipeasy.ai/sdks/reference/ruby/openfeature)
+- [Agent skill](https://docs.shipeasy.ai/sdks/reference/ruby/skill)
+- [Snippets](https://docs.shipeasy.ai/sdks/reference/ruby/snippets)
+- [Testing](https://docs.shipeasy.ai/sdks/reference/ruby/testing)
+- [Advanced](https://docs.shipeasy.ai/sdks/reference/swift/advanced)
+- [Dynamic configs](https://docs.shipeasy.ai/sdks/reference/swift/configs)
+- [Configuration](https://docs.shipeasy.ai/sdks/reference/swift/configuration)
+- [Error reporting — `see()`](https://docs.shipeasy.ai/sdks/reference/swift/error-reporting)
+- [Flags](https://docs.shipeasy.ai/sdks/reference/swift/flags)
+- [Overview](https://docs.shipeasy.ai/sdks/reference/swift)
+- [Installation & configuration](https://docs.shipeasy.ai/sdks/reference/swift/installation)
+- [Kill switches](https://docs.shipeasy.ai/sdks/reference/swift/killswitches)
+- [OpenFeature](https://docs.shipeasy.ai/sdks/reference/swift/openfeature)
+- [Agent skill](https://docs.shipeasy.ai/sdks/reference/swift/skill)
+- [Snippets](https://docs.shipeasy.ai/sdks/reference/swift/snippets)
+- [Testing](https://docs.shipeasy.ai/sdks/reference/swift/testing)
+- [Advanced](https://docs.shipeasy.ai/sdks/reference/typescript/advanced)
+- [Dynamic configs (`getConfig`)](https://docs.shipeasy.ai/sdks/reference/typescript/configs)
+- [Configuration](https://docs.shipeasy.ai/sdks/reference/typescript/configuration)
+- [Error reporting (`see()`)](https://docs.shipeasy.ai/sdks/reference/typescript/error-reporting)
+- [Feature flags (`getFlag`)](https://docs.shipeasy.ai/sdks/reference/typescript/flags)
+- [Overview](https://docs.shipeasy.ai/sdks/reference/typescript)
+- [Installation & configuration](https://docs.shipeasy.ai/sdks/reference/typescript/installation)
+- [Kill switches (`getKillswitch`)](https://docs.shipeasy.ai/sdks/reference/typescript/killswitches)
+- [OpenFeature](https://docs.shipeasy.ai/sdks/reference/typescript/openfeature)
+- [Agent skill](https://docs.shipeasy.ai/sdks/reference/typescript/skill)
+- [Snippets](https://docs.shipeasy.ai/sdks/reference/typescript/snippets)
+- [Testing](https://docs.shipeasy.ai/sdks/reference/typescript/testing)

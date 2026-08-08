@@ -146,8 +146,8 @@ shipeasy release killswitch update transactional.emails-enabled --value false
 ```
 
 Time how long it takes from "decide to flip" to "next email is suppressed."
-With the default 30-second poll interval on Free / 60-second on Team, the
-next call should return the new value within that window of flipping.
+The next call should return the new value within one poll interval of the
+flip — that interval is plan-derived and advertised to the SDK, not configured.
 
 ## 4. Get notified when the killswitch flips
 
@@ -185,11 +185,7 @@ of your phone.
   <Tile href="/flags/gates" icon="⏻" title="Feature flags vs killswitches">
     Same primitive at the wire level, different ergonomics. When to reach for which.
   </Tile>
-  <Tile
-    href="/flags/case-studies#kill-emails"
-    icon="◈"
-    title="Worked example: paused emails"
-  >
+  <Tile href="/flags/case-studies#kill-emails" icon="◈" title="Worked example: paused emails">
     The walkthrough from the case-studies page, with more context on the incident.
   </Tile>
 </TileGrid>

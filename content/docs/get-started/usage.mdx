@@ -32,21 +32,27 @@ Below the tiles, **Busiest resources** lists your highest-volume individual flag
 
 ## Included credit & quotas
 
-Some plans include a monthly allowance of events and evaluations. When you cross **80%** of the included credit for the month, a banner appears on this page showing usage vs the allowance; at 100% the banner turns red.
+Paid plans include a monthly allowance of events and evaluations. Cross **80%** of it and a banner appears on this page showing usage against the allowance; at 100% the banner turns red.
 
 <Callout type="warn" title="Nothing is dropped">
   Exceeding the included credit is **informational only** — evaluations and events keep flowing. The
   banner is a heads-up to consider upgrading if the volume is your new normal.
 </Callout>
 
-Other limits (number of flags, configs, kill switches, metrics, alert rules, SDK keys) are hard caps rather than usage meters — see [Plan limits](/get-started/plan-limits) for the full table and the [Billing tab](/get-started/modules#billing--plan-limits) for your current plan's numbers.
+Some resources (flags, configs, kill switches, metrics, alert rules, SDK keys) are hard caps rather than usage meters — exceeding one is rejected with `PLAN_LIMIT` rather than billed.
+
+<Callout type="info" title="Where the numbers live">
+  Docs carry no allowances, caps or prices — they move faster than a docs push. **Settings →
+  Billing** shows your live limits and where you stand against each one; the [pricing
+  page](https://shipeasy.ai/pricing) has the full matrix
+</Callout>
 
 <SeeAlso
   links={[
     {
-      href: "/get-started/plan-limits",
-      title: "Plan limits",
-      note: "The hard caps behind every plan.",
+      href: "https://shipeasy.ai/pricing",
+      title: "Pricing",
+      note: "The caps and allowances behind every plan.",
     },
     {
       href: "/get-started/modules",

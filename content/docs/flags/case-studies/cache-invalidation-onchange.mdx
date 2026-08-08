@@ -49,7 +49,7 @@ const unsubscribe = engine.subscribe(() => {
 ## Rollout & measurement plan
 
 - **Invalidate, don't poll your cache.** Don't re-derive on every request "just in case" — subscribe once and rebuild only on the change event.
-- **Latency is the poll interval.** A config flip lands within one poll (30s on Free, 60s on Team), not instantly — that's the freshness contract, and it's plenty for cache busting.
+- **Latency is the poll interval.** A config flip lands within one poll, not instantly — that's the freshness contract, and it's plenty for cache busting.
 - **Serverless has nothing to subscribe to.** A one-shot request reads the latest blob and exits; `onChange` is for long-lived servers, background jobs, and live dashboards.
 
 <SeeAlso

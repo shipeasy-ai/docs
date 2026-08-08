@@ -44,7 +44,7 @@ if (flags.getFlag('checkout-v2')) { ... }"
 
 ## Prerequisites
 
-- A Shipeasy project. The free tier covers everything in this walkthrough.
+- A Shipeasy project. Starting one costs nothing.
 - A **server SDK key** for the environment you're deploying to:
 
 ```bash
@@ -237,8 +237,8 @@ If the new path breaks at 25%, flip the killswitch:
 shipeasy release flags disable checkout-v2
 ```
 
-Every SDK serves `false` within the next poll (default 30s on Free, 60s
-on Team). Targeting rules and the rollout percentage are preserved on
+Every SDK serves `false` within its next poll — the interval is
+plan-derived, not something you set. Targeting rules and the rollout percentage are preserved on
 the feature flag — when you fix the bug, `shipeasy release flags enable checkout-v2`
 restores the previous state exactly.
 
