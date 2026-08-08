@@ -71,6 +71,7 @@ Every keyword is **lower-case and case-sensitive**, and bare — never quoted.
 
 <predicate> ::=
     {   <label> { = | =~ } <string>
+      | <label> { > | >= | < | <= } <number>
       | <label> [ not ] in ( <string> [ ,...n ] [ , ] )
       | <label> : *
       | ( <disjunction> )
@@ -214,8 +215,9 @@ always the general one:
 
 ## Filters
 
-Filters narrow which events an aggregate reads. Values are always double-quoted strings, even for
-numeric labels — they are coerced server-side.
+Filters narrow which events an aggregate reads. Equality, globs and value sets take double-quoted
+strings, even for numeric labels — they are coerced server-side. The four ORDER comparisons take a
+bare number instead, because they are the operators that only a number can answer.
 
 ```text
 count(checkout{country="US"})                       equals
@@ -224,6 +226,8 @@ count(checkout{country in ("US", "CA")})            a value set
 count(checkout{not country in ("US")})              a negated set
 count(latency{route=~"/api*"})                      glob
 count(latency{route:*})                             the label is set at all
+count(latency{ms > 500})                            greater than — a numeric label only
+count(latency{ms >= 100, ms < 500})                 a range is two comparisons
 count(checkout{country="US" or status="ok"})        boolean group
 count(checkout{country="US", tier="pro"})           a comma is one more AND
 ```
@@ -295,6 +299,8 @@ These are not gaps. Each one is refused by name, with a message saying what to w
 
 | Refused                              | Why, and what to write                                                                                                                                                                                     |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `>` `>=` `<` `<=` on a text label    | They compare numbers. A string label would answer lexicographically, which is a different question from the one it looks like — use `=` or `in (…)`.                                                       |
+| A quoted comparison — `ms > "500"`   | Quotes say the value is text, which is the one thing these four cannot ask about. Write `ms > 500`.                                                                                                        |
 | `!=` and `!~`                        | There is one negation and it goes in front of the whole term: `not status="ok"`.                                                                                                                           |
 | Regex in `=~`                        | Globs only. Anchors, character classes, alternation and quantifiers are rejected rather than reinterpreted.                                                                                                |
 | `count_users`, `unique`              | Both are `count(DISTINCT ...)`, which sampling biases by per-user activity rather than blurring. Use `count`.                                                                                              |

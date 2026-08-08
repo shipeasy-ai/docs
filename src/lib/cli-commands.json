@@ -636,6 +636,7 @@
         "--required-buckets",
         "--severity",
         "--sigma",
+        "--sustained",
         "--threshold",
         "--window-hours"
       ]
@@ -672,6 +673,7 @@
         "--required-buckets",
         "--severity",
         "--sigma",
+        "--sustained",
         "--threshold",
         "--window-hours"
       ]
