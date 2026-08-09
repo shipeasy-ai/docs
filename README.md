@@ -65,8 +65,8 @@ plus the link sweep. Enable them with `pnpm install` (its `prepare` sets
 ## Authoring
 
 `CONTRIBUTING-docs.md` has the information architecture, the required page
-footer (`SeeAlso` / `DocNav` / `DocFeedback`), the component inventory, and the
-cross-reference matrix.
+footer (`SeeAlso` — the rest of the chrome is rendered for you), the component
+inventory, and the cross-reference matrix.
 
 ## Deploy
 
