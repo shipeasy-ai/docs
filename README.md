@@ -30,12 +30,12 @@ version: every file there comes from a source of truth in another repo, is copie
 into `content/docs/` by `pnpm sync`, and is overwritten by the next regeneration.
 The destinations are gitignored so a hand-edit cannot be committed.
 
-| What                            | Owned by                        | Regenerate with                                       |
-| ------------------------------- | ------------------------------- | ----------------------------------------------------- |
-| `/api/operations/*`             | the OpenAPI spec (`shipeasy`)   | `pnpm gen:api` (here)                                  |
-| `/sdks/reference/*`, `/sdks/<lang>` | each `shipeasy-ai/sdk-*` repo | `pnpm gen:sdk` (here)                                  |
-| `/get-started/cli-reference`    | the CLI's Commander tree        | `pnpm --filter @shipeasy/cli docs` (in `shipeasy`)     |
-| `/get-started/mcp-reference`    | the MCP tool catalog            | `pnpm --filter @shipeasy/mcp docs` (in `shipeasy`)     |
+| What                                | Owned by                      | Regenerate with                                    |
+| ----------------------------------- | ----------------------------- | -------------------------------------------------- |
+| `/api/operations/*`                 | the OpenAPI spec (`shipeasy`) | `pnpm gen:api` (here)                              |
+| `/sdks/reference/*`, `/sdks/<lang>` | each `shipeasy-ai/sdk-*` repo | `pnpm gen:sdk` (here)                              |
+| `/get-started/cli-reference`        | the CLI's Commander tree      | `pnpm --filter @shipeasy/cli docs` (in `shipeasy`) |
+| `/get-started/mcp-reference`        | the MCP tool catalog          | `pnpm --filter @shipeasy/mcp docs` (in `shipeasy`) |
 
 `pnpm gen:sdk` reads the SDK repos over GitHub by default. Point it at local
 checkouts to see unpushed edits:
@@ -69,6 +69,21 @@ cross-reference matrix.
 
 ## Deploy
 
-Cloudflare Workers Builds deploys on every push to `main` — there is no deploy
-workflow in this repo, and there must not be one. `wrangler.jsonc` serves `out/`
-as Workers Assets on `docs.shipeasy.ai`.
+Cloudflare Workers Builds deploys the `shipeasy-docs` Worker on every push to
+`main` — there is no deploy workflow in this repo, and there must not be one.
+`wrangler.jsonc` serves `out/` as Workers Assets on `docs.shipeasy.ai`.
+
+|        |                                                         |
+| ------ | ------------------------------------------------------- |
+| Build  | `pnpm install --frozen-lockfile && pnpm build`          |
+| Deploy | `pnpm exec wrangler deploy`                             |
+| Root   | `/` — no path filters; every push here is a docs change |
+
+Out of band: `pnpm deploy` from a checkout does the same two steps.
+
+**Read the build log, not the outcome.** The trigger this replaced still pointed
+at the monorepo path this site used to live at, and ran `pnpm --filter
+@shipeasy/docs …`. A pnpm filter that matches nothing exits 0, so every build
+reported success while building and deploying nothing — the site sat stale for
+days with a green tick over it. A build that did real work says
+`Uploaded … files` and prints a version id.
