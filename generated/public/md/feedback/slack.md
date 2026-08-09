@@ -2,7 +2,7 @@
 
 Source: https://docs.shipeasy.ai/feedback/slack
 
-> Run your whole release platform from Slack by chatting with @Shipeasy — create gates, configs, kill switches, alerts and metrics in plain language, then act on everything as it streams back into the channel as interactive cards.
+> Run your release platform from Slack — create gates, configs, kill switches, alerts and metrics in plain language, and act on them as interactive cards.
 
 Slack is a full front-end to Shipeasy. Connect it **once**, then talk to
 **@Shipeasy** in plain language to create and change anything — feature flags,

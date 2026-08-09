@@ -6,8 +6,14 @@
  *
  * Runs against the static export in `out/`, so it sees exactly what the Worker
  * will serve — including the generated pages, which are the ones most likely to
- * point at something that just moved. Anchors (`#…`) are not checked; a missing
- * page is a 404, a missing anchor is a scroll that doesn't happen.
+ * point at something that just moved.
+ *
+ * Anchors are checked too, against the ids the export actually emits. They used
+ * to be skipped on the theory that a missing anchor is only a scroll that does
+ * not happen — but that is precisely why they rot unnoticed: nothing 404s, the
+ * reader lands at the top of a long page, and nobody files it. Nine were broken
+ * when the check went in, four of them pointing at a heading whose em dash
+ * slugifies to a double hyphen.
  *
  * `public/_redirects` counts as a destination: a link to a page we deliberately
  * moved is fine as long as a rule catches it.
@@ -70,8 +76,29 @@ function resolves(path: string): boolean {
   return redirects.prefixes.some((p) => clean.startsWith(p));
 }
 
+/**
+ * Every `id` the export emits, per route. Read lazily — most links carry no
+ * fragment, and parsing 295 HTML files to answer nothing would double the
+ * runtime of the common case.
+ */
+const idCache = new Map<string, Set<string> | null>();
+
+function idsOf(route: string): Set<string> | null {
+  if (idCache.has(route)) return idCache.get(route)!;
+  const clean = route.replace(/\/$/, "");
+  const file = [join(OUT, clean.slice(1), "index.html"), join(OUT, `${clean.slice(1)}.html`)].find(
+    (p) => existsSync(p),
+  );
+  const ids = file
+    ? new Set([...readFileSync(file, "utf8").matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]))
+    : null;
+  idCache.set(route, ids);
+  return ids;
+}
+
 const bad: string[] = [];
 let checked = 0;
+let anchors = 0;
 
 for (const file of walk(CONTENT, ".mdx").concat(walk(CONTENT, ".json"))) {
   const src = readFileSync(file, "utf8");
@@ -80,11 +107,22 @@ for (const file of walk(CONTENT, ".mdx").concat(walk(CONTENT, ".json"))) {
 
   lines.forEach((line, i) => {
     // Markdown links, and JSX href props — both forms appear in this content.
-    const hrefs = [
-      ...[...line.matchAll(/\]\((\/[^)\s#]*)(#[^)\s]*)?\)/g)].map((m) => m[1]),
-      ...[...line.matchAll(/href=["'](\/[^"'#]*)(#[^"']*)?["']/g)].map((m) => m[1]),
+    const links = [
+      ...[...line.matchAll(/\]\((\/[^)\s#]*)(?:#([^)\s]*))?\)/g)].map((m) => [m[1], m[2]] as const),
+      ...[...line.matchAll(/href=["'](\/[^"'#]*)(?:#([^"']*))?["']/g)].map(
+        (m) => [m[1], m[2]] as const,
+      ),
     ];
-    for (const href of hrefs) {
+    for (const [href, fragment] of links) {
+      if (fragment && !href.startsWith("/og/")) {
+        const ids = idsOf(href);
+        // A route with no exported HTML is reported by the page check below;
+        // do not report it twice as a missing anchor.
+        if (ids) {
+          anchors++;
+          if (!ids.has(fragment)) bad.push(`  ${rel}:${i + 1}  ${href}#${fragment}`);
+        }
+      }
       // The OG endpoint is generated per page and has no file to point at.
       if (href.startsWith("/og/")) continue;
       checked++;
@@ -93,7 +131,7 @@ for (const file of walk(CONTENT, ".mdx").concat(walk(CONTENT, ".json"))) {
   });
 }
 
-console.log(`check-links: ${checked} internal links checked.`);
+console.log(`check-links: ${checked} internal links checked, ${anchors} of them into an anchor.`);
 if (bad.length) {
   console.error(`\n${bad.length} dead:\n${[...new Set(bad)].join("\n")}\n`);
   process.exit(1);

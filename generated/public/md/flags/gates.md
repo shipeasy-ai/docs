@@ -2,7 +2,7 @@
 
 Source: https://docs.shipeasy.ai/flags/gates
 
-> Boolean feature flags with targeting rules, percentage rollouts, kill-switches, and per-user overrides — evaluated locally in your SDK with zero per-request cost.
+> Boolean feature flags with targeting rules, percentage rollouts, kill-switches and per-user overrides — evaluated locally, at zero per-request cost.
 
 A **feature flag** is a single boolean answer for a single user. It is the unit of <em>"should I do the new thing?"</em> in your code. Feature flags are evaluated locally — the SDK keeps the bundle in process and the call is a hash table lookup, not a network round trip.
 

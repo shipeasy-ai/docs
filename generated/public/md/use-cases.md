@@ -2,7 +2,7 @@
 
 Source: https://docs.shipeasy.ai/use-cases
 
-> Four cross-cutting patterns that combine flags, configs, killswitches, metrics, alerts and feedback into one workflow — the things you can only do when it's all one platform.
+> Four cross-cutting patterns combining flags, configs, killswitches, metrics, alerts and feedback — the things you can only do when it is all one platform.
 
 Every primitive on its own is documented in its own section. This page is about the
 _seams_ — the workflows that only exist because flags, configs, killswitches,

@@ -134,7 +134,7 @@ shipeasy release configs update pricing --value '{"base":9.99,"currency":"USD"}'
 For long-lived CI access, create an **admin** SDK key from the dashboard's
 **SDK Keys** page (`shipeasy sdk keys create --type admin`) and pass it
 via the `SHIPEASY_CLI_TOKEN` env. See
-[Authenticate → SDK keys vs API tokens](https://docs.shipeasy.ai/get-started/authenticate#sdk-keys-vs-api-tokens-pick-the-right-one)
+[Authenticate → SDK keys vs API tokens](https://docs.shipeasy.ai/get-started/authenticate#sdk-keys-vs-api-tokens--pick-the-right-one)
 for when to use each.
 
 ## Feedback (bugs & requests)

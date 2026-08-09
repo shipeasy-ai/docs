@@ -70,7 +70,7 @@ For a call `gate(name, ctx)` where `ctx.userId` is in the overrides list:
 6. rollout                        → not evaluated
 ```
 
-The override sits at step 3–4 in [evaluation order](https://docs.shipeasy.ai/flags/gates/rollouts#bucketing-key)
+The override sits at step 3–4 in [evaluation order](https://docs.shipeasy.ai/flags/gates/rollouts#the-bucketing-key)
 and short-circuits everything below. Crucially, it also bypasses the killswitch — which is what
 you want for QA (you can still test a killed feature) but is dangerous for production users.
 

@@ -156,10 +156,6 @@ If the number is flat or missing, two checks:
 
 - **[Threshold alerts](https://docs.shipeasy.ai/metrics/alerts)** — Windows, buckets, anomaly rules, and the ticket a firing rule files for you.
 
-```
-
-```
-
 **Related**
 
 - [Aggregation types](https://docs.shipeasy.ai/metrics/aggregations) — Conversion, count, sum, mean, ratio

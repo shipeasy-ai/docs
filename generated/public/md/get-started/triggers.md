@@ -2,7 +2,7 @@
 
 Source: https://docs.shipeasy.ai/get-started/triggers
 
-> Provision an unattended, scheduled agent that runs ops:work --pr on a cadence — burning down the feedback queue and opening one PR per item — on Claude Code, Cursor, Copilot, Jules, Codex, or Gemini.
+> Provision a scheduled agent that runs ops:work --pr on a cadence, burning down the feedback queue one PR at a time — on Claude Code, Cursor, Copilot and more.
 
 A **trigger** is an _unattended, scheduled_ agent run. On a cron cadence it runs **`/shipeasy:ops:work --pr`** against your project — burning down the feedback queue (bugs, feature requests, auto-filed error/alert tickets) one item at a time, committing each fix on its own branch, and opening **one PR per item** for review. No human in the loop.
 

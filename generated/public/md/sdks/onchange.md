@@ -50,7 +50,7 @@ const unsubscribe = engine.subscribe(() => {
 - **Long-lived servers** — re-evaluate a flag that gates a background job without restarting.
 - **Dashboards** — reflect a flag flip live without a page reload.
 
-For one-shot serverless reads there is nothing to subscribe to — see [init vs initOnce](https://docs.shipeasy.ai/sdks/node-typescript#init-vs-initonce-serverless).
+For one-shot serverless reads there is nothing to subscribe to — see [the TypeScript configuration reference](https://docs.shipeasy.ai/sdks/reference/typescript/configuration).
 
 **Related**
 

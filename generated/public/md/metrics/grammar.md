@@ -2,7 +2,7 @@
 
 Source: https://docs.shipeasy.ai/metrics/grammar
 
-> The complete formal grammar for the Shipeasy metric query DSL — aggregates, expressions, selectors, filters, group-by, and the full function set, with the limits and the deliberate refusals.
+> The complete formal grammar for the Shipeasy metric query DSL — aggregates, expressions, selectors, filters, group-by, and the deliberate refusals.
 
 Every metric is backed by a query in the **metric query DSL**. A query is an _expression_:
 aggregates are the leaves, arithmetic composes them, and functions transform the resulting series.

@@ -2,7 +2,7 @@
 
 Source: https://docs.shipeasy.ai/flags/configs/targeting
 
-> Express &quot;show this to the right users&quot; with attribute rules, deterministic percentage rollouts, and per-feature-flag salts. The rules engine, in detail.
+> Show a value to the right users — attribute rules, deterministic percentage rollouts, and per-feature-flag salts. The rules engine, in detail.
 
 A targeting rule on a feature flag is a predicate of the form **`attr op value`**. Multiple rules on a feature flag are **ANDed** together. To OR, use the `in` operator with an array, or split into separate feature flags and combine in code.
 

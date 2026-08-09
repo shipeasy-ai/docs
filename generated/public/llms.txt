@@ -28,8 +28,8 @@ Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with
 - [CLI reference](https://docs.shipeasy.ai/get-started/cli-reference): Auto-generated reference for the `shipeasy` CLI — every command, argument, and flag, straight from the command definitions.
 - [MCP server](https://docs.shipeasy.ai/get-started/mcp): Hand the docs and tools to Claude Code, Cursor, Windsurf, or any MCP-compatible AI assistant — and let it do the boring setup for you.
 - [MCP reference](https://docs.shipeasy.ai/get-started/mcp-reference): Auto-generated reference for the @shipeasy/mcp server — every tool, nested under its group, with title, full description, parameters, and error codes.
-- [Install in your agent](https://docs.shipeasy.ai/get-started/agents): One plugin tree, every coding agent. Install Shipeasy's skills + MCP server into Claude Code, Codex, GitHub Copilot CLI, OpenCode, Cursor, Windsurf, Cline, Gemini, Continue, and more.
-- [Scheduled triggers](https://docs.shipeasy.ai/get-started/triggers): Provision an unattended, scheduled agent that runs ops:work --pr on a cadence — burning down the feedback queue and opening one PR per item — on Claude Code, Cursor, Copilot, Jules, Codex, or Gemini.
+- [Install in your agent](https://docs.shipeasy.ai/get-started/agents): One plugin tree, every coding agent. Install Shipeasy's skills and MCP server into Claude Code, Codex, Copilot CLI, Cursor, Windsurf, Cline, Gemini and more.
+- [Scheduled triggers](https://docs.shipeasy.ai/get-started/triggers): Provision a scheduled agent that runs ops:work --pr on a cadence, burning down the feedback queue one PR at a time — on Claude Code, Cursor, Copilot and more.
 - [Team & permissions](https://docs.shipeasy.ai/get-started/team): Invite teammates to a project, assign roles, and control who can publish to production.
 - [Project settings & modules](https://docs.shipeasy.ai/get-started/modules): Toggle which Shipeasy modules a project exposes, and manage notifications, billing, ownership, and deletion.
 - [Usage & quotas](https://docs.shipeasy.ai/get-started/usage): See per-evaluation usage across feature flags, configs, killswitches, and events — and how it tracks against your plan's included credit.
@@ -63,15 +63,15 @@ Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with
 - [Getting started (flags)](https://docs.shipeasy.ai/flags/getting-started): Install the SDK, configure once, ship a flag — under five minutes.
 - [Which primitive should I use?](https://docs.shipeasy.ai/flags/decision): Decision tree — map your goal to feature flags, configs, or killswitches.
 - [Flow & dependencies](https://docs.shipeasy.ai/flags/flow): A live dependency graph of your events, metrics, and alerts — trace what feeds what before you change it.
-- [Feature flags](https://docs.shipeasy.ai/flags/gates): Boolean feature flags with targeting rules, percentage rollouts, kill-switches, and per-user overrides — evaluated locally in your SDK with zero per-request cost.
+- [Feature flags](https://docs.shipeasy.ai/flags/gates): Boolean feature flags with targeting rules, percentage rollouts, kill-switches and per-user overrides — evaluated locally, at zero per-request cost.
 - [Quickstart (flags/gates)](https://docs.shipeasy.ai/flags/gates/quickstart): Create a feature flag, wrap your code, ramp from 0% to 100% — end to end in five minutes.
 - [Targeting rules](https://docs.shipeasy.ai/flags/gates/targeting): Decide who is eligible for a feature flag. Predicates against user, account, request, or any custom attribute — ANDed, evaluated locally, zero network cost.
 - [Rollouts & bucketing](https://docs.shipeasy.ai/flags/gates/rollouts): How the percentage actually works — sticky hashing, deterministic assignment, multi-arm rollouts, salt, and how to re-shuffle.
 - [Overrides](https://docs.shipeasy.ai/flags/gates/overrides): Force a feature flag on or off for specific user IDs — for QA, dogfood, demos, and customer-specific repros. Bypasses targeting and rollout.
 - [Configs — typed values](https://docs.shipeasy.ai/flags/configs): Typed config values you can change without a redeploy.
-- [Quickstart (flags/configs)](https://docs.shipeasy.ai/flags/configs/quickstart): From zero to a feature behind a feature flag in production — install the SDK, create a feature flag, roll it out, kill-switch it, and watch it in the dashboard. Five minutes, end to end.
+- [Quickstart (flags/configs)](https://docs.shipeasy.ai/flags/configs/quickstart): Create a typed config, read it with getConfig, change the value in production — no redeploy, five minutes end to end.
 - [Dynamic values](https://docs.shipeasy.ai/flags/configs/values): Typed config values — strings, numbers, booleans, JSON — that change instantly without a redeploy. Schema-validated, versioned.
-- [Targeting & rollouts](https://docs.shipeasy.ai/flags/configs/targeting): Express &quot;show this to the right users&quot; with attribute rules, deterministic percentage rollouts, and per-feature-flag salts. The rules engine, in detail.
+- [Targeting & rollouts](https://docs.shipeasy.ai/flags/configs/targeting): Show a value to the right users — attribute rules, deterministic percentage rollouts, and per-feature-flag salts. The rules engine, in detail.
 - [Killswitches](https://docs.shipeasy.ai/flags/killswitches): A flag with a single job — disable a system instantly during an incident.
 - [Quickstart (flags/killswitches)](https://docs.shipeasy.ai/flags/killswitches/quickstart): Wire a killswitch around a risky subsystem in five minutes — so the 3am on-call has one switch to flip.
 - [Patterns](https://docs.shipeasy.ai/flags/killswitches/patterns): When a killswitch is the right answer — what to put behind one, fail-safe defaults, alerting, and the post-incident cleanup.
@@ -93,7 +93,7 @@ Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with
 - [Metrics](https://docs.shipeasy.ai/metrics): Define what you measure — aggregations, filters, outlier handling, and ratio metrics over your own events.
 - [Quickstart (metrics)](https://docs.shipeasy.ai/metrics/quickstart): Create your first metric, log the events it depends on, and put an alert on it — five minutes, end to end.
 - [Aggregation types](https://docs.shipeasy.ai/metrics/aggregations): Conversion, count, sum, mean, ratio — pick the right aggregation, set outlier handling, and avoid the variance traps that bite means and sums.
-- [Query DSL grammar](https://docs.shipeasy.ai/metrics/grammar): The complete formal grammar for the Shipeasy metric query DSL — aggregates, expressions, selectors, filters, group-by, and the full function set, with the limits and the deliberate refusals.
+- [Query DSL grammar](https://docs.shipeasy.ai/metrics/grammar): The complete formal grammar for the Shipeasy metric query DSL — aggregates, expressions, selectors, filters, group-by, and the deliberate refusals.
 - [Configure alerts](https://docs.shipeasy.ai/metrics/alerts): Turn an event into a metric, then raise a metric-threshold alert that files its own ticket when the metric crosses the line.
 
 ## Bugs & Requests
@@ -104,7 +104,7 @@ Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with
 - [Error reporting with see()](https://docs.shipeasy.ai/feedback/error-reporting): Report every handled exception with see() so it folds into the errors primitive with a product consequence.
 - [Errors dashboard & triage](https://docs.shipeasy.ai/feedback/errors): Fingerprint-grouped error issues with a status workflow, occurrence timeseries, and automatic re-open on regression.
 - [Connectors](https://docs.shipeasy.ai/feedback/connectors): Mirror new bug reports and feature requests out to a GitHub repo, a Google Sheet, or a Slack channel as they come in.
-- [Slack](https://docs.shipeasy.ai/feedback/slack): Run your whole release platform from Slack by chatting with @Shipeasy — create gates, configs, kill switches, alerts and metrics in plain language, then act on everything as it streams back into the channel as interactive cards.
+- [Slack](https://docs.shipeasy.ai/feedback/slack): Run your release platform from Slack — create gates, configs, kill switches, alerts and metrics in plain language, and act on them as interactive cards.
 - [Case studies (feedback)](https://docs.shipeasy.ai/feedback/case-studies): Bug & feature request workflows — from "report bug" button to Linear sync.
 - [Route bug reports to Linear/Jira](https://docs.shipeasy.ai/feedback/case-studies/route-bugs-to-linear): Forward triaged bug reports into your tracker with a webhook, and dedup so one bug never opens five issues.
 - [From metric alert to auto-filed ticket](https://docs.shipeasy.ai/feedback/case-studies/alert-to-ticket-loop): Turn an event into a metric, raise a threshold alert on it, and have the alert file its own ticket for an agent to work.
@@ -126,7 +126,7 @@ Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with
 
 ## use-cases
 
-- [Advanced use cases](https://docs.shipeasy.ai/use-cases): Four cross-cutting patterns that combine flags, configs, killswitches, metrics, alerts and feedback into one workflow — the things you can only do when it's all one platform.
+- [Advanced use cases](https://docs.shipeasy.ai/use-cases): Four cross-cutting patterns combining flags, configs, killswitches, metrics, alerts and feedback — the things you can only do when it is all one platform.
 
 ## Reference (not inlined in llms-full.txt)
 

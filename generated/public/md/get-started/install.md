@@ -190,7 +190,7 @@ The SDK reads the following from `process.env` (and `import.meta.env` in Vite). 
 
 - **[Node · Workers · Bun · Deno](https://docs.shipeasy.ai/get-started/sdks#server)** — `@shipeasy/sdk/server` works in any V8/Node-compatible runtime out of the box.
 
-- **[React, Vue, Svelte, Angular](https://docs.shipeasy.ai/get-started/sdks#react)** — Per-framework adapters that wrap the browser SDK with idiomatic primitives.
+- **[React, Vue, Svelte, Angular](https://docs.shipeasy.ai/get-started/sdks#frameworks)** — Per-framework adapters that wrap the browser SDK with idiomatic primitives.
 
 - **[React Native, iOS, Android](https://docs.shipeasy.ai/get-started/sdks#mobile)** — Use the server build — it has zero DOM dependencies.
 

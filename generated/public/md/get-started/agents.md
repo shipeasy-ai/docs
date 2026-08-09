@@ -2,7 +2,7 @@
 
 Source: https://docs.shipeasy.ai/get-started/agents
 
-> One plugin tree, every coding agent. Install Shipeasy's skills + MCP server into Claude Code, Codex, GitHub Copilot CLI, OpenCode, Cursor, Windsurf, Cline, Gemini, Continue, and more.
+> One plugin tree, every coding agent. Install Shipeasy's skills and MCP server into Claude Code, Codex, Copilot CLI, Cursor, Windsurf, Cline, Gemini and more.
 
 Shipeasy ships a set of agent **skills** (`flags`, `metrics`, `alerts`, `ops`, `see`, `setup`, `migrate`) and the **`shipeasy` MCP server** (`npx -y @shipeasy/mcp@latest`). The skills auto-trigger on natural-language phrasing and walk your agent through each workflow; the MCP server is the typed toolkit that actually creates feature flags, defines metrics, raises alert rules, and files feedback.
 
