@@ -4,17 +4,17 @@ description: Machine-readable bundles of this documentation — an index, the fu
 ---
 
 <Callout type="info" title="This page is generated">
-  So are the three files it describes. They are stitched from `content/docs` on every
-  regeneration, which is why they cannot drift from the pages you are reading
+  So is everything it describes. All of it is stitched from `content/docs` on every
+  regeneration, which is why it cannot drift from the pages you are reading
 </Callout>
 
-Point a coding agent at one of these instead of asking it to crawl the site. All three are plain text served from the docs root, need no auth, and are rebuilt whenever the documentation changes.
+Point a coding agent at one of these instead of asking it to crawl the site. Every one of them is plain text served from the docs root, needs no auth, and is rebuilt whenever the documentation changes.
 
 | Endpoint | What it is | Size |
 | --- | --- | --- |
 | [`/llms.txt`](/llms.txt) | **Index** — Every page with its one-line description. Fetch this first | 34 KB |
-| [`/llms-full.txt`](/llms-full.txt) | **Full corpus** — The whole documentation in one file, in nav order | 767 KB |
-| [`/agents.md`](/agents.md) | **Setup runbook** — Install to first flag, then a full CLI + MCP reference | 118 KB |
+| [`/llms-full.txt`](/llms-full.txt) | **Full corpus** — The whole documentation in one file, in nav order | 783 KB |
+| [`/agents.md`](/agents.md) | **Setup runbook** — Install to first flag, then a full CLI + MCP reference | 123 KB |
 
 ## Which one
 
@@ -23,6 +23,12 @@ Point a coding agent at one of these instead of asking it to crawl the site. All
 **Answering questions about Shipeasy** — [`/llms.txt`](/llms.txt) first, then fetch the one or two pages it points at. Cheaper and sharper than loading the corpus.
 
 **Bulk ingestion** — [`/llms-full.txt`](/llms-full.txt), 92 pages in one request.
+
+## One page at a time
+
+Every page on this site is also served as plain markdown at `/md/<path>.md` — [`/md/get-started/quickstart.md`](/md/get-started/quickstart.md) for [the quickstart](/get-started/quickstart), 295 files in total, generated from the same conversion as the bundles above. The **Copy page** button under any page title copies exactly that file, and **Open in** hands the URL to an assistant.
+
+Reach for it when you know which page you want. The corpus is for when you do not.
 
 ## What is not in them
 

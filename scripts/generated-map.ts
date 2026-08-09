@@ -49,6 +49,8 @@ export const MIRRORS: Mirror[] = [
     kind: "file",
     owner: "marketplace",
   },
+  // Route → the date that page last changed, stamped by the pre-commit hook.
+  { from: "data/updated.json", to: "src/lib/updated.json", kind: "file", owner: "docs" },
   // The agent-facing bundles. These are stitched from content/docs itself, so
   // they are regenerated AFTER the other mirrors are in place — see the order
   // in `pnpm gen`.
@@ -61,6 +63,8 @@ export const MIRRORS: Mirror[] = [
   { from: "public/llms.txt", to: "public/llms.txt", kind: "file", owner: "docs" },
   { from: "public/llms-full.txt", to: "public/llms-full.txt", kind: "file", owner: "docs" },
   { from: "public/agents.md", to: "public/agents.md", kind: "file", owner: "docs" },
+  // One markdown file per page, behind each page's "Copy Markdown" button.
+  { from: "public/md", to: "public/md", kind: "dir", owner: "docs" },
 ];
 
 /**

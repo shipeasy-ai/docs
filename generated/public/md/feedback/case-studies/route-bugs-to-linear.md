@@ -1,0 +1,86 @@
+# Route bug reports to Linear/Jira
+
+Source: https://docs.shipeasy.ai/feedback/case-studies/route-bugs-to-linear
+
+> Forward triaged bug reports into your tracker with a webhook, and dedup so one bug never opens five issues.
+
+Your team lives in Linear (or Jira). Bug reports filed through the [devtools widget](https://docs.shipeasy.ai/feedback/devtools) live in Shipeasy. You don't want a second triage surface — you want each real bug to become an issue in the tracker your engineers already work from, automatically, without spawning duplicates.
+
+The shape: **webhook on status change → create issue → write the issue id back so it never fires twice.**
+
+## 1. Fire on triage, not on capture
+
+Don't forward every raw report — most need a human glance first. Trigger the webhook when a report moves to `triaged`, so only real, confirmed bugs reach the tracker.
+
+```ts
+// your webhook receiver
+export async function POST(req: Request) {
+  const event = await req.json();
+  if (event.type !== "feedback.status_changed") return ok();
+  if (event.data.status !== "triaged") return ok();
+  if (event.data.type !== "bug") return ok(); // skip feature requests
+
+  await createTrackerIssue(event.data);
+  return ok();
+}
+```
+
+## 2. Map the payload to an issue
+
+The report already carries the context an engineer needs — URL, browser, repro steps, screenshot, console breadcrumbs. Map it straight onto the issue body:
+
+```ts
+async function createTrackerIssue(bug: FeedbackItem) {
+  await linear.issueCreate({
+    title: bug.title,
+    teamId: ENGINEERING_TEAM,
+    description: [
+      bug.body,
+      `**URL:** ${bug.url}`,
+      `**Browser:** ${bug.browser}`,
+      `**Repro:** ${bug.reproSteps ?? "—"}`,
+      bug.screenshotUrl ? `![screenshot](${bug.screenshotUrl})` : "",
+    ].join("\n\n"),
+  });
+}
+```
+
+## 3. Dedup with the back-reference
+
+The webhook can retry, and a bug can be re-triaged. To make issue creation idempotent, write the tracker issue id back onto the Shipeasy item and short-circuit if it's already set:
+
+```ts
+async function createTrackerIssue(bug: FeedbackItem) {
+  if (bug.externalRef) return; // already synced — webhook retry, do nothing
+
+  const issue = await linear.issueCreate({
+    /* … */
+  });
+
+  // PATCH the feedback item via the Admin API to record the link
+  await fetch(`https://shipeasy.ai/api/admin/feedback/${bug.id}`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${ADMIN_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ externalRef: issue.id }),
+  });
+}
+```
+
+> **The back-reference is the dedup key**
+
+Idempotency comes from <em>one</em> stored fact: <code>externalRef</code>. Set it the first time,
+check it every time. No separate dedup table, no fuzzy title matching — the link itself is the
+lock.
+
+## Rollout & measurement plan
+
+- **One direction first.** Ship Shipeasy → tracker before you attempt status sync the other way. One-way forwarding is reliable; bidirectional sync is a project.
+- **Filter by type and severity.** Forward `bug` (and maybe auto-filed `error` tickets), not feature requests — those usually belong on a roadmap, not in the sprint.
+- **Close the loop visibly.** Store the issue URL on the item so triagers in Shipeasy can click straight through to the tracker.
+- **Errors and alerts ride the same queue.** Auto-filed [error reports](https://docs.shipeasy.ai/feedback/error-reporting) and [alert tickets](https://docs.shipeasy.ai/feedback/case-studies/alert-to-ticket-loop) are feedback items too — the same webhook forwards them if you don't filter them out.
+
+**Related**
+
+- [Devtools widget](https://docs.shipeasy.ai/feedback/devtools) — Where bug reports come from
+- [Error reporting](https://docs.shipeasy.ai/feedback/error-reporting) — Auto-filed error tickets in the same queue
+- [Alert → ticket loop](https://docs.shipeasy.ai/feedback/case-studies/alert-to-ticket-loop) — Metric alerts that file their own tickets

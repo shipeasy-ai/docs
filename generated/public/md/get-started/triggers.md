@@ -1,0 +1,116 @@
+# Scheduled triggers
+
+Source: https://docs.shipeasy.ai/get-started/triggers
+
+> Provision an unattended, scheduled agent that runs ops:work --pr on a cadence — burning down the feedback queue and opening one PR per item — on Claude Code, Cursor, Copilot, Jules, Codex, or Gemini.
+
+A **trigger** is an _unattended, scheduled_ agent run. On a cron cadence it runs **`/shipeasy:ops:work --pr`** against your project — burning down the feedback queue (bugs, feature requests, auto-filed error/alert tickets) one item at a time, committing each fix on its own branch, and opening **one PR per item** for review. No human in the loop.
+
+Provision it from the CLI:
+
+```bash
+shipeasy setup triggers
+shipeasy setup triggers --platform claude
+```
+
+`--platform` is one of `claude`, `codex`, `cursor`, `copilot`, `gemini`, `jules`. The command
+explains the trade, has you pick a platform, then opens the guided setup on the dashboard's
+**Triggers** tab preselected to it — the same surface that manages the trigger afterwards.
+`shipeasy setup` offers this as an inline step.
+
+> **Note**
+
+Every provider schedules the **same work** — only what *schedules* it, and how the run is
+launched and authenticated, differs. The low-level plumbing is still there if you want it:
+`shipeasy ops trigger create <provider> --help` and `shipeasy ops trigger prep`.
+
+## Three scheduler tiers
+
+| Tier                             | Platforms                                | Mechanism                                                                          |
+| -------------------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------- |
+| **A — Shipeasy fires it**        | `claude`, `cursor`, `copilot`, `jules`   | Shipeasy's own cron starts the run over HTTPS — your machine can be off            |
+| **B — scheduled on the platform**| `codex`                                  | the vendor's own scheduler or an Actions workflow starts it                        |
+| **C — headless + external cron** | `gemini` (and `codex`)                   | non-interactive run mode driven by system cron or a GitHub Actions `schedule:` job |
+
+| `--platform` | Scheduler                                                                                | Launch / auth                                            |
+| ------------ | ----------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `claude`     | `/schedule` cloud routine                                                                 | runs `ops:work --pr`; **registers a Shipeasy connector** |
+| `cursor`     | Shipeasy cron → `POST https://api.cursor.com/v1/agents`                                  | `autoCreatePR`; `CURSOR_API_KEY`                         |
+| `copilot`    | Shipeasy cron → GitHub coding-agent task via `.github/agents/shipeasy.agent.md`           | **Connect GitHub** (user-to-server token); PAT fallback  |
+| `jules`      | Shipeasy cron → Jules session                                                             | Jules API key                                            |
+| `codex`      | Codex Automations (local cron) or an Actions `schedule:` job                              | `codex exec --sandbox danger-full-access`                |
+| `gemini`     | Actions `schedule:` (run-gemini-cli)                                                      | `gemini -p --approval-mode=yolo`                         |
+
+## The run is identical everywhere
+
+Whatever the provider, the scheduled run authenticates with a restricted **`ops`** key, refreshes the plugin + CLI, and follows the installed `ops:work --pr` workflow. Mint the key with:
+
+```bash
+npx -y @shipeasy/cli@latest keys create --type ops
+```
+
+The `ops` key can read the queue, flip item status, link the PR it opens, and create resources — but never edits or deletes existing ones, and auto-extends its 7-day expiry on each run. A leaked trigger prompt can't compromise the project. **Never embed your admin login token.**
+
+## Tier C — the GitHub Actions shape
+
+For headless providers with no native scheduler, a scheduled Actions workflow is the always-on driver (Gemini shown via the official [`run-gemini-cli`](https://github.com/google-github-actions/run-gemini-cli) Action — swap the run step for `codex exec` for Codex):
+
+```yaml title=".github/workflows/shipeasy-feedback-trigger.yml"
+on:
+  schedule:
+    - cron: "0 9 * * 1-5" # weekdays 09:00 UTC
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: google-github-actions/run-gemini-cli@v0
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SHIPEASY_CLI_TOKEN: ${{ secrets.SHIPEASY_OPS_KEY }}
+          SHIPEASY_PROJECT_ID: ${{ secrets.SHIPEASY_PROJECT_ID }}
+        with:
+          prompt: "<trigger prompt>"
+          settings: '{ "approval-mode": "yolo" }'
+```
+
+> **Note**
+
+Unattended runs use an auto-approve flag (`--approval-mode=yolo`, `--sandbox danger-full-access`,
+`--dangerously-skip-permissions`) that removes the human gate — run only in an isolated env. They also spend tokens/credits on every fire, so
+start with a weekly or daily cron and watch the first runs. PRs land for review; nothing
+auto-merges.
+
+## Connector registration — Shipeasy-fired vs. platform-scheduled
+
+A Shipeasy **connector** (Settings → Triggers, "Trigger now" + event auto-fire) means **Shipeasy's
+own cron fires the run**. That backend is a Cloudflare Worker, so it can only fire a provider that
+exposes (1) a clean HTTP "start a run" endpoint — a plain `fetch()`, no CLI binary, no local
+scheduler — and (2) a storable static token.
+
+Four providers clear that bar and are registered as trigger connectors:
+
+- **`claude`** — `POST …/routines/<id>/fire` with a per-routine bearer token.
+- **`cursor`** — `POST https://api.cursor.com/v1/agents` with `CURSOR_API_KEY` + `autoCreatePR`.
+- **`copilot`** — a GitHub coding-agent task, via the GitHub connection you already made.
+- **`jules`** — a Jules session started from its API key.
+
+Each gets a guided flow and a **Trigger now** button on the dashboard, plus auto-fire on new queue
+items. `codex` and `gemini` are **platform-scheduled**: they run on their own surface (Codex
+Automations, or a GitHub Actions `schedule:` job), so pause, run and inspect them there.
+
+> **Note**
+
+Rule of thumb: if a provider can't be started from nothing by one authenticated HTTP call,
+Shipeasy can't fire it — it schedules on the provider's own platform instead.
+
+**Related**
+
+- [CLI](https://docs.shipeasy.ai/get-started/cli) — The command a trigger runs
+- [Install in your agent](https://docs.shipeasy.ai/get-started/agents) — The agent side of the same setup
+- [Configure alerts](https://docs.shipeasy.ai/metrics/alerts) — What files the work a trigger burns down
+- [Team & permissions](https://docs.shipeasy.ai/get-started/team) — What an unattended run may publish

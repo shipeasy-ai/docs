@@ -1,0 +1,43 @@
+# Kill switches
+
+Source: https://docs.shipeasy.ai/sdks/reference/go/killswitches
+
+> A kill switch is an operational on/off you can flip from the dashboard to instantly disable a feature. Kill switches ride the flags blob alongside gates, so…
+
+> **Note**
+Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-go/pages/killswitches.md`](https://shipeasy-ai.github.io/sdk-go/pages/killswitches.md).
+
+A kill switch is an operational on/off you can flip from the dashboard to
+instantly disable a feature. Kill switches ride the **flags blob** alongside
+gates, so reading one is local with no extra fetch. They are not user-scoped.
+
+## `GetKillswitch`
+
+```go
+c := shipeasy.NewClient(acct)
+
+paused := c.GetKillswitch("payments_paused")  // bool — true means the switch is engaged
+if paused {
+    // feature is killed
+}
+```
+
+`true` means the switch is **engaged** (the feature is killed). It returns
+`false` when the engine isn't initialized or the switch is absent.
+
+## Named per-key "switches"
+
+The dashboard "switches" feature lets one kill switch carry named per-key
+overrides. Pass an optional `switchKey` to read a specific one; it falls back to
+the kill switch's top-level value when that key has no override:
+
+```go
+// Pass the switch variant as the switchKey argument. When that named key has
+// no override configured, the read falls back to the kill switch's top-level
+// value.
+killedForEU := c.GetKillswitch("payments_paused", "eu")
+```
+
+> Note: a gate's own kill state is also folded into gate evaluation — a
+> killswitched gate reads `false` from `GetFlag` with reason `OFF`. `GetKillswitch`
+> is for standalone kill-switch resources.

@@ -1,0 +1,53 @@
+# Invalidate a server cache the instant a config flips
+
+Source: https://docs.shipeasy.ai/flags/case-studies/cache-invalidation-onchange
+
+> Use onChange to drop a memoized render or a derived config on the next poll, so a dashboard change takes effect without a restart.
+
+You memoize an expensive render — a navigation tree, a pricing table, a derived config object — and key it off a flag or dynamic config. It's fast, but now it's _stale_: someone flips the config in the dashboard and your long-lived server keeps serving the cached version until the next deploy. Flag reads are fresh on every poll; your derived cache isn't.
+
+[`onChange`](https://docs.shipeasy.ai/sdks/onchange) closes the gap: it fires the moment a background poll picks up new rules, so you can drop the derived cache exactly when — and only when — something actually changed.
+
+```ts
+import { Engine } from "@shipeasy/sdk/server";
+
+const engine = new Engine({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
+await engine.init();
+
+const unsubscribe = engine.onChange(() => {
+  rebuildRenderCache(); // drop the memoized render / derived config
+});
+
+// on shutdown
+unsubscribe();
+```
+
+> **Only fires on real changes**
+
+The poll carries an <code>ETag</code>. An unchanged body comes back <code>304</code> and listeners
+stay quiet — you only wake up when the dashboard actually changed. It never fires in test or
+offline mode, since no polling happens there.
+
+In the browser the equivalent is `engine.subscribe()`, which fires after each `identify()` and after any override change — exactly when a re-render is warranted:
+
+```ts
+import { Engine } from "@shipeasy/sdk/client";
+
+const engine = new Engine({ clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY! });
+
+const unsubscribe = engine.subscribe(() => {
+  renderFlags();
+});
+```
+
+## Rollout & measurement plan
+
+- **Invalidate, don't poll your cache.** Don't re-derive on every request "just in case" — subscribe once and rebuild only on the change event.
+- **Latency is the poll interval.** A config flip lands within one poll, not instantly — that's the freshness contract, and it's plenty for cache busting.
+- **Serverless has nothing to subscribe to.** A one-shot request reads the latest blob and exits; `onChange` is for long-lived servers, background jobs, and live dashboards.
+
+**Related**
+
+- [Reacting to changes](https://docs.shipeasy.ai/sdks/onchange) — onChange / subscribe in full
+- [Evaluation & caching](https://docs.shipeasy.ai/get-started/evaluation-and-caching) — How polling keeps reads fresh
+- [Plan entitlements with a config](https://docs.shipeasy.ai/flags/case-studies/entitlements-with-configs) — The kind of config you

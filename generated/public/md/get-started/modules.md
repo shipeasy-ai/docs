@@ -1,0 +1,53 @@
+# Project settings & modules
+
+Source: https://docs.shipeasy.ai/get-started/modules
+
+> Toggle which Shipeasy modules a project exposes, and manage notifications, billing, ownership, and deletion.
+
+Everything about a project — its name, which features it exposes, billing, and the danger zone — lives under **Settings** (`/dashboard/<projectId>/settings`). The page has a left nav rail with tabs: **General**, **Modules**, **Notifications**, **Billing**, and **Danger**.
+
+## Modules
+
+The **Modules** tab toggles which parts of Shipeasy are exposed in this project's devtools overlay and admin tabs. Turning a module off hides its surface; it doesn't delete data.
+
+| Module key | Tab name                | What it controls                                                           |
+| ---------- | ----------------------- | -------------------------------------------------------------------------- |
+| `gates`    | Gatekeepers             | Feature flags with targeting rules and percentage rollouts.                |
+| `configs`  | Configs                 | Per-environment JSON config values published to your SDK clients.          |
+| `feedback` | Bugs & feature requests | In-app bug reports and feature requests captured via the devtools overlay. |
+| `events`   | Events                  | Live SDK event stream (evaluations, overrides) in the devtools overlay.    |
+| `user`     | User                    | Devtools tab for inspecting and overriding the current SDK user.           |
+
+> **Modules are per project**
+
+Each project chooses its own module set, so a flags-only project and a bug-intake-only project can
+live in the same workspace without clutter.
+
+## General
+
+The **General** tab sets the project **name**, **default environment** (`dev` / `staging` / `prod`), **timezone**, and an optional **domain** and **logo**. The default environment is the one the dashboard assumes when an environment isn't specified.
+
+## Notifications
+
+The **Notifications** tab manages per-event notification preferences for the project.
+
+## Billing & plan limits
+
+The **Billing** tab is the whole billing surface: subscription status, upgrade/downgrade, billing interval, assistant credit top-ups, and your current plan's live limits (flags, configs, kill switches, metrics, alert rules, SDK keys, poll interval) with usage against each. It is authoritative — the docs deliberately state no caps or prices; the [pricing page](https://shipeasy.ai/pricing) has the per-plan matrix.
+
+## Danger zone
+
+The **Danger** tab holds the two irreversible, owner-only actions:
+
+> **Owner-only and irreversible**
+
+Both actions require you to be the project owner and ask you to confirm the project name.
+
+- **Transfer ownership** — move the project to a different admin, who gains full control. You pick the new owner from the existing active members.
+- **Delete project** — removes all gates, configs, kill switches, metrics, and audit logs after a **14-day grace period**.
+
+**Related**
+
+- [Team & permissions](https://docs.shipeasy.ai/get-started/team) — Roles and who can change settings.
+- [Pricing](https://shipeasy.ai/pricing) — Every plan-level cap.
+- [Keys & environments](https://docs.shipeasy.ai/get-started/keys-and-environments) — What the default environment drives.

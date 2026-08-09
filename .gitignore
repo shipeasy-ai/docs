@@ -42,6 +42,8 @@ npm-debug.log*
 /content/docs/get-started/mcp-reference.mdx
 /content/docs/get-started/llms.mdx
 /src/lib/cli-commands.json
+/src/lib/updated.json
 /public/llms.txt
 /public/llms-full.txt
 /public/agents.md
+/public/md/

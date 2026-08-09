@@ -1,0 +1,15 @@
+# Create a dynamic config
+
+Source: https://docs.shipeasy.ai/api/operations/createConfig
+
+> >-
+
+Creates a new config with the given `schema`. The initial `value` (or an empty object) is published as version 1 on **every** env.
+
+Returns `409` if `name` already exists in the project, `400` if `value` doesn't validate against `schema`.
+
+**Use cases**
+
+- **Minimal create** — `name` + `schema`. Initial value defaults to `{}`.
+- **Seeded create** — supply a flat `value` to publish the same object on every env.
+- **Per-env seed** — supply a `{ env: value }` map under `value`, or pass the env keys `dev`/`staging`/`prod` directly (each overrides `value` for that env and is published at version 1).

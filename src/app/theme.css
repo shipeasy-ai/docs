@@ -2789,6 +2789,20 @@ button[aria-label="Open Sidebar"] {
 }
 
 /* ════════════════════════════════════════════════════════════════════════
+   PAGE ACTIONS — the copy-as-markdown / open-in-assistant row that sits
+   between a page's description and its first paragraph.
+   Component: src/components/page-actions.tsx
+   ════════════════════════════════════════════════════════════════════════ */
+
+.se-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+  margin: -1.25rem 0 1.75rem;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
    LAZY PLACEHOLDER — holds the space for a component that loads after
    hydration (the API endpoint list, the live alert chart), so the prose under
    it does not jump once the chunk lands. Components: src/components/heavy.tsx

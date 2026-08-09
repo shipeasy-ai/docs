@@ -1,0 +1,171 @@
+# Java
+
+Source: https://docs.shipeasy.ai/sdks/java
+
+> The Shipeasy Java server SDK — configure once, bind a Client per request, servlet anon filter, local evaluation, configs, kill switches, and metric tracking.
+
+> **Note**
+Generated from the Java SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk java overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-java`](https://shipeasy-ai.github.io/sdk-java). Edit it in the SDK repo, not here.
+
+`shipeasy` (`ai.shipeasy:shipeasy`) is the **server-side Java SDK** for
+[Shipeasy](https://shipeasy.ai) — feature flags, dynamic configs, kill switches,
+A/B experiments, metric tracking, and `see()` error reporting. Rules are
+evaluated **locally** against a cached blob fetched from the edge, so there is no
+network call per evaluation.
+
+## Install
+
+```xml
+<dependency>
+  <groupId>ai.shipeasy</groupId>
+  <artifactId>shipeasy</artifactId>
+  <version>0.10.0</version>
+</dependency>
+```
+
+Full wiring — frameworks, options, env vars — is in [Installation](https://docs.shipeasy.ai/sdks/reference/java/installation).
+
+## The mental model: `configure()` once, `new Client(user)` per request
+
+You learn exactly two things. **First**, configure the SDK once at startup. This
+authenticates with your server key and kicks off the initial rules fetch:
+
+```java
+import ai.shipeasy.Shipeasy;
+import ai.shipeasy.Client;
+import java.util.Map;
+
+// Once, at startup (main(), an @PostConstruct bean, a static initializer):
+Shipeasy.configure(System.getenv("SHIPEASY_SERVER_KEY"));
+
+// Per user / per request, anywhere downstream. The user is bound at
+// construction, so every read takes NO user argument:
+Client c = new Client(Map.of("user_id", "u_123", "plan", "pro"));
+
+boolean enabled = c.getFlag("new_checkout");
+Object  cfg     = c.getConfig("billing_copy");
+boolean killed  = c.getKillswitch("panic_button");
+
+Assignment cta = c.universe("hero_cta").assign(); // <=1 experiment; auto-logs exposure
+c.track("purchase", Map.of("amount", 49));  // record the conversion
+```
+
+`new Client(user)` is **cheap** — it owns no HTTP connection, blob cache, or poll
+timer. It runs the configured `attributes` transform on your user object once,
+binds the resulting attribute map, and forwards every call to the single
+process-wide engine that `configure()` built. Construct one per request and
+throw it away.
+
+Constructing a `Client` before `configure()` has run throws
+`IllegalStateException`.
+
+## Pages
+
+- [Installation](https://docs.shipeasy.ai/sdks/reference/java/installation) — Maven/Gradle coordinates, per-framework wiring, and the canonical `configure()` setup with its options table.
+- [Configuration](https://docs.shipeasy.ai/sdks/reference/java/configuration) — `configure()`, the `attributes` transform, one-shot vs background poll, env vars.
+- [Flags](https://docs.shipeasy.ai/sdks/reference/java/flags) — `getFlag`, defaults, `getFlagDetail`.
+- [Configs](https://docs.shipeasy.ai/sdks/reference/java/configs) — `getConfig`, typed values, defaults.
+- [Kill switches](https://docs.shipeasy.ai/sdks/reference/java/killswitches) — `getKillswitch` and named per-key switches.
+- [Error reporting](https://docs.shipeasy.ai/sdks/reference/java/error-reporting) — `see()` structured error reporting.
+- [Testing](https://docs.shipeasy.ai/sdks/reference/java/testing) — `configureForTesting()` / `configureForOffline()` + the override statics.
+- [OpenFeature](https://docs.shipeasy.ai/sdks/reference/java/openfeature) — the `ShipeasyProvider` server provider.
+- [Advanced](https://docs.shipeasy.ai/sdks/reference/java/advanced) — auto-exposure, private attributes, sticky bucketing, anon-id middleware, change listeners, SSR.
+
+The blocks below are the SDK repo's own snippets — the same ones `shipeasy docs get --sdk java release/flags` returns, with a worked example baked in.
+
+## Feature flags
+
+Read `new_checkout` off a user-bound `Client`. Assumes `configure()` ran at
+startup — see Installation.
+
+```java
+import ai.shipeasy.Client;
+import java.util.Map;
+
+// construct once per callsite (cheap; binds the user)
+Client client = new Client(Map.of("user_id", "u_123"));
+
+boolean enabled = client.getFlag("new_checkout"); // gate name
+// optional default overload — returned ONLY when unresolvable (engine not
+// ready / flag absent), never when the flag legitimately evaluates to false:
+// boolean enabled = client.getFlag("new_checkout", true /* default */);
+```
+
+## Dynamic configs
+
+Read the dynamic config `billing_copy` (with a fallback when absent).
+Assumes `configure()` ran at startup — see Installation.
+
+```java
+import ai.shipeasy.Client;
+import java.util.Map;
+
+// construct once per callsite (cheap; binds the user)
+Client client = new Client(Map.of("user_id", "u_123"));
+
+Object cfg = client.getConfig(
+    "billing_copy",          // config name
+    Map.of("title", "Default")); // fallback returned when the config is absent
+// one-arg overload returns null when absent: client.getConfig("billing_copy")
+```
+
+## Kill switches
+
+Check whether the kill switch `payments` is killed. Assumes
+`configure()` ran at startup — see Installation.
+
+```java
+import ai.shipeasy.Client;
+import java.util.Map;
+
+// construct once per callsite (cheap; binds the user)
+Client client = new Client(Map.of("user_id", "u_123"));
+
+boolean killed = client.getKillswitch("payments"); // killswitch name
+// optional second arg reads one named per-key switch (null = whole killswitch):
+// boolean off = client.getKillswitch("payments", "eu_region" /* switchKey */);
+
+if (killed) {
+    // disable the protected path
+}
+```
+
+## Track a conversion
+
+Track a metric/conversion event from the bound `Client`. Metrics in the dashboard
+are computed from these events. Assumes `Shipeasy.configure(...)` ran at startup —
+see Installation.
+
+### Track an event
+
+```java
+import ai.shipeasy.Client;
+import java.util.Map;
+
+Client client = new Client(Map.of("user_id", "u_123")); // construct once per callsite
+
+// track(eventName, props)
+//   eventName — the event your metric is built on (required)
+//   props     — optional payload; numeric/string fields you can sum/filter on in
+//               a metric (private attributes are stripped before egress)
+client.track("checkout_started", Map.of("amount", 49, "currency", "usd"));
+```
+
+Fire-and-forget (never blocks your response) and a no-op under
+`Shipeasy.configureForTesting` / `configureForOffline`. The unit is the bound user
+(`user_id`, else `anonymous_id`); with no unit the call is a no-op.
+
+### Track without properties
+
+```java
+Client client = new Client(Map.of("user_id", "u_123")); // construct once per callsite
+
+client.track("checkout_started", Map.of()); // props are optional (pass an empty map)
+```
+
+**Related**
+
+- [Java full reference](https://docs.shipeasy.ai/sdks/reference/java) — Every feature page
+- [Shared evaluation model](https://docs.shipeasy.ai/sdks) — How every SDK buckets
+- [Testing](https://docs.shipeasy.ai/sdks/reference/java/testing) — Seed values, zero network
+- [Error reporting](https://docs.shipeasy.ai/sdks/reference/java/error-reporting) — The see() surface

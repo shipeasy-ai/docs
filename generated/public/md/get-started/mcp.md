@@ -1,0 +1,281 @@
+# MCP server
+
+Source: https://docs.shipeasy.ai/get-started/mcp
+
+> Hand the docs and tools to Claude Code, Cursor, Windsurf, or any MCP-compatible AI assistant — and let it do the boring setup for you.
+
+Shipeasy ships an MCP (Model Context Protocol) server: `@shipeasy/mcp`. Plug it into your AI coding assistant and the agent gains a typed toolkit for inspecting and changing your Shipeasy project — plus prompts that walk it through complete onboarding flows.
+
+The MCP server is the same surface as the CLI, exposed as JSON-Schema-typed tools instead of argv. That distinction matters: a typed tool is much harder for an LLM to misuse than a free-form CLI invocation.
+
+## Install
+
+The CLI patches the right config file for whichever assistants you use:
+
+shipeasy mcp install
+
+\n? Which assistants? › Claude Code, Cursor\n✔ Wrote ~/.claude/settings.json\n✔
+Wrote .cursor/mcp.json\nMCP server registered. Restart your AI assistant to pick it up.
+
+After install, restart your assistant. The new MCP server appears under its tool list as `shipeasy`.
+
+## Manual config
+
+If your client isn't auto-detected, or you prefer to write the config yourself:
+
+**Claude Code**
+
+```json title="~/.claude/settings.json (Claude Code)"
+{
+  "mcpServers": {
+    "shipeasy": {
+      "command": "npx",
+      "args": ["-y", "@shipeasy/mcp@latest"]
+    }
+  }
+}
+```
+
+**Cursor**
+
+```json title=".cursor/mcp.json (Cursor)"
+{
+  "mcpServers": {
+    "shipeasy": {
+      "command": "npx",
+      "args": ["-y", "@shipeasy/mcp@latest"]
+    }
+  }
+}
+```
+
+**Windsurf**
+
+```json title=".windsurf/mcp.json (Windsurf)"
+{
+  "mcpServers": {
+    "shipeasy": {
+      "command": "npx",
+      "args": ["-y", "@shipeasy/mcp@latest"]
+    }
+  }
+}
+```
+
+For any other MCP-compatible client, write the same block to whatever config file it reads.
+
+> **The MCP server uses your CLI credentials**
+
+There are no environment variables to set. Run `shipeasy login` once and the MCP server picks up
+`~/.shipeasy/credentials` on every tool call. No second auth flow, no shared tokens, no secrets in
+`mcp.json`.
+
+## Why typed tools beat free-form
+
+A CLI is great for a human — short flags, terse output, easy to chain. For an LLM, a CLI is a parsing hazard. The agent has to remember the flag spelling, escape JSON correctly, and interpret the textual response.
+
+A typed MCP tool flips that. Each tool is a named function with a JSON-Schema parameter object. The agent sees the schema, fills it, and gets a structured response back. Misuse — wrong types, missing required fields, unsupported flags — is caught at the protocol layer, not by the CLI's argv parser.
+
+That's why the MCP server is the recommended surface for any AI-driven setup. The CLI is for humans and CI.
+
+## Tool inventory
+
+The server advertises its tools grouped by product area. The agent sees each one as
+`mcp__shipeasy__<name>`:
+
+| Group        | Tools                                                                   | What it covers                                                          |
+| ------------ | ----------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| **Release**  | `release_flags_*`, `release_configs_*`, `release_killswitch_*`           | Create, target, roll out, and kill features                             |
+| **Metrics**  | `metrics_*`, `metrics_events_*`                                         | Define metrics over your events, read a series, manage the event catalog |
+| **Ops**      | `ops_*`, `ops_alerts_*`, `ops_comments_*`, `ops_investigations_*`        | File and work the bug / feature / alert queue, hand items to agents      |
+| **Errors**   | `errors_*`                                                              | Read, group, and resolve reported production errors                     |
+| **Projects** | `projects_*`, `whoami`                                                  | Which project you're bound to, and its settings                         |
+| **Docs**     | `docs_list`, `docs_get`, `docs_skill`                                   | Fetch SDK docs and installable agent skills for any language            |
+
+> **The exhaustive list is generated**
+
+Every tool, with its full parameter list and error codes, is in the [MCP
+reference](https://docs.shipeasy.ai/get-started/mcp-reference) — generated from the server's own catalog, so it can't
+drift from what the server actually advertises. Don't learn tool names from prose; read that page.
+
+## Prompts
+
+Alongside tools, the server bundles a few long-form workflow playbooks, invoked in Claude Code as
+`/mcp:shipeasy:<prompt>`. Ask your agent to list them (`ListPrompts`) rather than guessing names —
+the set moves with the server version.
+
+## Practical example
+
+Open your agent in a project that already has the SDK wired and say:
+
+> Use the Shipeasy MCP to put the new checkout behind a flag at 5%, and alert me if the checkout
+> error rate goes above 2% over the next day.
+
+The agent will:
+
+**Check who it is**
+
+Calls `mcp__shipeasy__whoami` to confirm the credential and which project it is bound to.
+
+**Look before it creates**
+
+Calls `mcp__shipeasy__release_flags_list` to check the flag doesn't already exist — the
+list-before-create guard below can make this mandatory.
+
+**Create and ramp the flag**
+
+Calls `mcp__shipeasy__release_flags_create`, then `release_flags_update` to set the rollout
+percentage.
+
+**Define the metric it will watch**
+
+Calls `mcp__shipeasy__metrics_create` with a query over the events your app already logs.
+
+**Arm the alert**
+
+Calls `mcp__shipeasy__ops_alerts_create` with the comparator, threshold and window. A firing
+rule files its own item in the ops queue.
+
+Nothing here needs a browser except the one-time login.
+
+## Auth model (local server)
+
+The `@shipeasy/mcp` server above runs **locally** — launched as a subprocess of your AI assistant over stdio. It reads `~/.shipeasy/credentials` on every tool call — the same file the CLI writes. There are three implications worth knowing:
+
+1. **One login covers everything.** Run `shipeasy login` once on your machine, and every MCP tool in every assistant is authenticated.
+2. **Refresh happens transparently.** If the access token has expired, the MCP server refreshes it before the tool call — same behaviour as the CLI.
+3. **Tokens never appear in MCP config.** Your `mcp.json` only contains the launcher command. Stealing the config gives an attacker nothing.
+
+## Hosted MCP server
+
+We also run a **hosted, remote** MCP server on Cloudflare — no `npx`, no local subprocess, no credentials file. It speaks JSON-RPC over Streamable HTTP at:
+
+```
+https://slack.shipeasy.ai/mcp
+```
+
+This is the server behind Shipeasy in **Slack** — it powers Slack's built-in AI assistant ("MCP Server Connection") and the `@Shipeasy` bot. It exposes the flags / configs / kill-switch / metrics / ops tools, scoped to the Shipeasy project your Slack workspace is connected to.
+
+> **It authenticates you by your Slack identity — there is no token to paste**
+
+The hosted server is designed for an MCP client that can vouch for who you are (Slack does this).
+You don't put a key in any config; the client injects your verified identity and the server
+maps it to your Shipeasy account.
+
+### How auth works
+
+Discovery is open; **acting** is gated. `initialize`, `ping`, and `tools/list` answer without auth so a client can connect and enumerate tools. Every `tools/call` runs through the full chain:
+
+- `1 · Signed request`
+
+- `2 · Workspace → project`
+
+- `3 · You → member`
+
+Every action then runs **as that verified member** against the admin API, which re-checks membership — so the service can only ever act as someone who is genuinely on the project.
+
+### Connecting to it
+
+You don't configure this endpoint by hand. Add the Shipeasy app to your Slack workspace and connect the **Slack connector** in the dashboard; Slack then talks to `https://slack.shipeasy.ai/mcp` for you (Slack App → _MCP Server Connection_, auth type _Slack identity_). See the [Slack integration guide](https://docs.shipeasy.ai/feedback/devtools) for the workspace setup.
+
+> **This endpoint is not a drop-in for Claude Code / Cursor**
+
+The hosted server trusts Slack's injected identity, so a generic MCP client that can't
+present a Slack-signed identity can reach discovery but every `tools/call` will fail the signature
+gate. For coding assistants, use the local `@shipeasy/mcp` server above — it covers the full
+~30-tool surface against your CLI login.
+
+## Remote server for coding assistants (OAuth)
+
+For Claude Code, Cursor, and claude.ai connectors we also run a **remote MCP server with OAuth 2.1** — no `npx`, no local subprocess, no credentials file. It exposes the full ~30-tool admin surface (not just the Slack `exp_*` subset) over Streamable HTTP at:
+
+```
+https://mcp.shipeasy.ai/mcp
+```
+
+Add it as an HTTP MCP server in your assistant's `mcp.json`:
+
+```json title=".mcp.json"
+{
+  "mcpServers": {
+    "shipeasy": {
+      "type": "http",
+      "url": "https://mcp.shipeasy.ai/mcp"
+    }
+  }
+}
+```
+
+### How auth works
+
+When the assistant first calls a tool, the server answers with a `401` + `WWW-Authenticate` challenge and the client opens your browser. You sign in, pick the project to authorize, and approve with one click. From then on:
+
+1. **You stay signed in.** The access token lasts 24 hours and is refreshed silently in the background via a 30-day refresh token — an actively-used machine effectively never re-logs in. You're only sent back through the browser after ~30 days of not using it, or if you revoke the grant.
+2. **Re-auth is automatic.** When a token expires (or you revoke access), the very next tool call gets a fresh `401` challenge, so the client refreshes or re-runs the flow on its own — you don't run any command by hand.
+3. **Membership is re-checked on every call.** The grant records _who_ you are; the admin API re-verifies your access to the target project on each request, so losing project access cuts you off immediately, regardless of token lifetime.
+
+### Targeting a specific project
+
+The project you pick at consent time is the connection's default. To point a connection at a **specific project by UUID** — e.g. one `mcp.json` per repo, each bound to its own project — add an `X-Project-Id` header. No re-authorization is needed; the same login works across every project you're a member of:
+
+```json title=".mcp.json"
+{
+  "mcpServers": {
+    "shipeasy": {
+      "type": "http",
+      "url": "https://mcp.shipeasy.ai/mcp",
+      "headers": {
+        "X-Project-Id": "8f3c1e20-…-your-project-uuid"
+      }
+    }
+  }
+}
+```
+
+The header only selects _which_ project each call acts on — it is **not** a credential. The admin API still re-checks that your authenticated identity is a member of that project, so a header pointing at a project you can't reach is rejected.
+
+### List-before-create guard (optional)
+
+A common agent failure is creating a duplicate flag or metric because it didn't check whether one already exists. The **list-before-create guard** forces the check: with it on, a `*_create` is refused unless it carries a fresh `listToken` that its sibling `*_list` just handed out (valid ~10 min). It's **off by default** on the hosted server; `shipeasy setup` writes it disabled and annotated so you can flip it on per connection:
+
+```json title=".mcp.json"
+{
+  "mcpServers": {
+    "shipeasy": {
+      "type": "http",
+      "url": "https://mcp.shipeasy.ai/mcp",
+      "//list-guard": "Set X-Shipeasy-List-Guard to \"on\" to require a *_list before each *_create.",
+      "headers": {
+        "X-Project-Id": "8f3c1e20-…-your-project-uuid",
+        "X-Shipeasy-List-Guard": "on"
+      }
+    }
+  }
+}
+```
+
+(`//list-guard` is a JSON-safe note key — strict JSON has no `//` comments — placed beside `headers`, never inside it, so it's never sent as an HTTP header.) The local `@shipeasy/mcp` stdio server has the same guard **on by default**, toggled instead via env (`SHIPEASY_MCP_LIST_GUARD=off`, window `SHIPEASY_MCP_LIST_GUARD_WINDOW_MINUTES`).
+
+## Troubleshooting
+
+> **Tool calls return `not authenticated`**
+
+Run `shipeasy login` in a real terminal. The MCP server reads the same credentials file the CLI
+writes. If the CLI sees you as logged in (`shipeasy whoami`) but the MCP server doesn't, your
+assistant is launching with a stripped env — set `HOME` explicitly in your `mcp.json` block.
+
+> **Tool calls return `project not detected`**
+
+Pass an explicit `--project <id>` to `shipeasy login`, or set `SHIPEASY_PROJECT_ID=<id>` before launching your AI assistant. Some agents inherit env from the launcher, others don't.
+
+> **Tool list is empty after install**
+
+Restart the AI assistant. MCP servers are loaded at process start; editing `mcp.json` while the
+assistant is running has no effect.
+
+**Related**
+
+- [MCP reference](https://docs.shipeasy.ai/get-started/mcp-reference) — Every tool, by group
+- [Install in your agent](https://docs.shipeasy.ai/get-started/agents) — Claude Code, Cursor, Windsurf and the rest
+- [Docs for agents](https://docs.shipeasy.ai/get-started/llms) — The docs as one file, for context
+- [Authenticate](https://docs.shipeasy.ai/get-started/authenticate) — How a tool call gets a project

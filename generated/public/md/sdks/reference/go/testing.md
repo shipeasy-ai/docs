@@ -1,0 +1,142 @@
+# Testing
+
+Source: https://docs.shipeasy.ai/sdks/reference/go/testing
+
+> In tests you don't want a live edge or a real API key. Configure Shipeasy in test mode with ConfigureForTesting (or ConfigureForOffline), then read the…
+
+> **Note**
+Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-go/pages/testing.md`](https://shipeasy-ai.github.io/sdk-go/pages/testing.md).
+
+In tests you don't want a live edge or a real API key. Configure Shipeasy in
+test mode with `ConfigureForTesting` (or `ConfigureForOffline`), then read the
+seeded values through the ordinary `NewClient(user)`. Both are drop-in siblings
+of `Configure` that do **zero network, ever** — no api key needed — and they
+**replace** any previous configuration, so a test suite can reconfigure freely
+between cases.
+
+## `ConfigureForTesting` — seed the values by hand
+
+```go
+func TestCheckout(t *testing.T) {
+    shipeasy.ConfigureForTesting(shipeasy.TestOptions{
+        Flags:   map[string]bool{"new_checkout": true},
+        Configs: map[string]any{"billing_copy": map[string]any{"cta": "Buy now"}},
+    })
+
+    c := shipeasy.NewClient(shipeasy.User{"user_id": "u_123"}) // bind once
+
+    if !c.GetFlag("new_checkout") {
+        t.Fatal("expected new_checkout on")
+    }
+}
+```
+
+To assert an **experiment** assignment, seed a real universe + experiment with
+`ConfigureForOffline` (below) — an experiment override *refines* an experiment
+that lives in a universe; it doesn't invent one in an empty universe. Read it by
+universe with `Universe(name).Assign()`:
+
+```go
+a := shipeasy.NewClient(shipeasy.User{"user_id": "u_1"}).Universe("hero_cta").Assign()
+_ = a.Enrolled              // true when the seeded experiment enrolled the unit
+_ = a.Group                 // the assigned variant, or "" when not enrolled
+_ = a.Get("primary_label", "Sign up") // variant ?? universe default ?? fallback
+```
+
+`TestOptions` fields are all optional:
+
+| Field | Type | Effect |
+| --- | --- | --- |
+| `Flags` | `map[string]bool` | forced `GetFlag` results |
+| `Configs` | `map[string]any` | forced `GetConfig` results |
+| `Experiments` | `map[string]ExperimentOverride` | forced enrolment for an experiment that exists in a universe (see below) |
+| `Attributes` | `func(any) User` | same transform as `Configure` (default identity) |
+
+An `Experiments` seed (and `OverrideExperiment`) **refines** an experiment that
+already lives in a universe — it forces that experiment's variant. It does not
+invent an experiment in an empty universe, and it is read by universe, not by
+experiment name. Seed the universe + experiment via `ConfigureForOffline`, then
+force the variant; on an empty test-mode blob (no snapshot) `Universe().Assign()`
+returns not-enrolled regardless of the seed.
+
+`Track` is a no-op and `Assign` logs no exposure in test mode — they never hit
+the network.
+
+## On-the-spot overrides
+
+The package-level `Override*` helpers force a single value on top of whatever the
+current configuration set up. They win over everything until `ClearOverrides`:
+
+```go
+shipeasy.OverrideFlag("new_checkout", true)         // force GetFlag → true
+shipeasy.OverrideConfig("billing_copy", "Buy now")  // force GetConfig → ("Buy now", true)
+shipeasy.OverrideExperiment("checkout_button", "treatment", map[string]any{"color": "green"})
+
+// ... assertions ...
+
+shipeasy.ClearOverrides() // reset between cases
+```
+
+| Helper | Effect |
+| --- | --- |
+| `OverrideFlag(name, bool)` | force `GetFlag(name)` to that value |
+| `OverrideConfig(name, value)` | force `GetConfig(name)` → `(value, true)` |
+| `OverrideExperiment(name, group, params)` | force enrolment with `group` / `params` |
+| `ClearOverrides()` | drop every flag/config/experiment override |
+
+Under `ConfigureForTesting` there is no blob beneath, so `ClearOverrides` reverts
+everything (including the `TestOptions` seed) to empty-blob defaults. Under
+`ConfigureForOffline` the snapshot remains and evaluations revert to it.
+
+## `ConfigureForOffline` — evaluate the REAL rules from a snapshot
+
+`ConfigureForOffline` evaluates the **real** evaluator against a captured snapshot
+of the edge blobs — still zero network. Provide exactly one source: an in-memory
+`Snapshot`, or a `Path` to a JSON file. The `Flags` / `Configs` / `Experiments`
+overrides layer on top.
+
+```go
+// From a JSON file:
+shipeasy.ConfigureForOffline(shipeasy.OfflineOptions{Path: "shipeasy-snapshot.json"})
+
+// Or from in-memory parsed blobs:
+shipeasy.ConfigureForOffline(shipeasy.OfflineOptions{
+    Snapshot: &shipeasy.Snapshot{Flags: flagsBody, Experiments: experimentsBody},
+})
+
+c := shipeasy.NewClient(shipeasy.User{"user_id": "u_123"})
+on := c.GetFlag("new_checkout") // runs the real rollout/targeting evaluator
+_ = on
+```
+
+`ConfigureForOffline` returns an error only when reading/parsing a `Path` snapshot
+fails.
+
+### Snapshot file format
+
+The file is JSON of the shape
+`{ "flags": <body of /sdk/flags>, "experiments": <body of /sdk/experiments> }`.
+A minimal but complete, valid snapshot — `new_checkout` rolled out to 10% of
+users:
+
+```json
+{
+  "flags": {
+    "version": 1,
+    "plan": "pro",
+    "gates": {
+      "new_checkout": { "rules": [], "rolloutPct": 1000, "salt": "s", "enabled": 1 }
+    },
+    "configs": {},
+    "killswitches": {}
+  },
+  "experiments": {
+    "version": 1,
+    "universes": {},
+    "experiments": {}
+  }
+}
+```
+
+`rolloutPct` is in **basis points**: `10000` = 100%, `1000` = 10%, `0` = off. A
+gate object is `{ "rules": [...], "rolloutPct": <bp>, "salt": "<str>", "enabled": 0|1 }`.

@@ -1,0 +1,52 @@
+# Debug why a user isn't seeing a feature
+
+Source: https://docs.shipeasy.ai/flags/case-studies/debug-missing-feature
+
+> Use getFlagDetail reasons to tell DEFAULT (rolled to 0%) from FLAG_NOT_FOUND (typo or stale bundle) from OFF (killed).
+
+A customer says the new dashboard isn't showing up. Through `getFlag` all you see is `false` — which tells you nothing about _why_. Did the gate roll out to 0%? Did someone mistype the name? Is the bundle stale? Is the gate killed? Every one of those reads as the same `false`, and you're left guessing.
+
+[`getFlagDetail`](https://docs.shipeasy.ai/sdks/reasons) returns `{ value, reason }` from the **same** single evaluation, so the cause is right there.
+
+```ts
+import { configure, Client } from "@shipeasy/sdk/server";
+
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY! });
+
+const flags = new Client({ user_id: "u_4f2a" });
+const d = flags.getFlagDetail("new_dashboard");
+// → { value: false, reason: "DEFAULT" }
+```
+
+## Read the reason
+
+| reason             | what it means for your bug                                        |
+| ------------------ | ----------------------------------------------------------------- |
+| `DEFAULT`          | the gate exists and evaluated `false` — likely rolled out to 0%   |
+| `FLAG_NOT_FOUND`   | the name isn't in the loaded rules — typo or a stale bundle       |
+| `OFF`              | the gate is disabled / killed (server only)                       |
+| `OVERRIDE`         | a local or `?se_gate_…` override decided it, not the real rules   |
+| `RULE_MATCH`       | it evaluated `true` — the feature _is_ on for this user           |
+| `CLIENT_NOT_READY` | the SDK answered with your default because nothing had loaded yet |
+
+The two that look identical through `getFlag` are the two that matter most here: `DEFAULT` means "the gate is real, this user just isn't in the rollout"; `FLAG_NOT_FOUND` means "this name resolves to nothing" — a typo or a client running an old blob.
+
+> **No extra cost**
+
+<code>getFlagDetail</code> is the same evaluation as <code>getFlag</code>, with the reason kept
+instead of discarded. The reason is computed at the client boundary — drop it into your structured
+logs and the next "why isn't this on?" answers itself.
+
+On the **browser**, the edge pre-evaluates the killed state into a boolean, so `OFF` folds into `DEFAULT` — `OFF` is a server-only reason.
+
+## Rollout & measurement plan
+
+- **Log the reason, not just the value.** A line of structured logging with `reason` turns every future "missing feature" report into a lookup instead of an investigation.
+- **`FLAG_NOT_FOUND` in prod = ship hygiene.** It almost always means a typo or a client that hasn't picked up the latest rules — check the name against the dashboard and the bundle's freshness.
+- **`CLIENT_NOT_READY` means you read too early.** Make sure `init()` (server) or `identify()` (browser) resolved before the read, or accept the caller default knowingly.
+
+**Related**
+
+- [Evaluation reasons](https://docs.shipeasy.ai/sdks/reasons) — The full reason enum
+- [Rollouts](https://docs.shipeasy.ai/flags/gates/rollouts) — What drives RULE_MATCH vs DEFAULT
+- [QA with devtools](https://docs.shipeasy.ai/flags/case-studies/qa-with-devtools) — Force a state to reproduce the report

@@ -734,6 +734,13 @@ Use `import.meta.env.VITE_SHIPEASY_CLIENT_KEY` rather than `process.env.*` in Vi
 inline it at build time. Don't pass `process.env.SHIPEASY_SERVER_KEY` to the client build —
 that key belongs only on the server.
 
+**Related**
+
+- [Keys & environments](https://docs.shipeasy.ai/get-started/keys-and-environments) — Which key goes where
+- [SDKs](https://docs.shipeasy.ai/get-started/sdks) — Server build, browser build, native ports
+- [Authenticate](https://docs.shipeasy.ai/get-started/authenticate) — Sign in the CLI and your agent
+- [Troubleshooting](https://docs.shipeasy.ai/get-started/troubleshooting) — When the install does not take
+
 ---
 
 ## Authenticate
@@ -891,6 +898,13 @@ confirm, and the CLI in the SSH session completes when the poll succeeds.
 Run `shipeasy login` in a real terminal first. The MCP server reads the same
 `~/.shipeasy/credentials` file the CLI writes. Some agents launch with a stripped env — set `HOME`
 explicitly in your MCP config if the tool can't find the file.
+
+**Related**
+
+- [Keys & environments](https://docs.shipeasy.ai/get-started/keys-and-environments) — The keys your app uses, not the CLI
+- [CLI](https://docs.shipeasy.ai/get-started/cli) — What the session unlocks
+- [MCP server](https://docs.shipeasy.ai/get-started/mcp) — The same login, for your agent
+- [Team & permissions](https://docs.shipeasy.ai/get-started/team) — Who may publish to production
 
 ---
 
@@ -1117,6 +1131,13 @@ analytics and exposure events are tagged so you can filter them out of analysis.
 The two key kinds aren't interchangeable. Server keys can read full payloads and write
 events; they don't belong in a bundle. Put the **client** key in the browser and the
 **server** key in your server runtime — both come from **Project → SDK keys**.
+
+**Related**
+
+- [SDK reference](https://docs.shipeasy.ai/sdks) — Every language, method by method
+- [Keys & environments](https://docs.shipeasy.ai/get-started/keys-and-environments) — Server key vs client key
+- [Browser & React](https://docs.shipeasy.ai/sdks/browser-react) — The client build in detail
+- [Testing](https://docs.shipeasy.ai/sdks/testing) — Seed values instead of hitting the network
 
 ---
 
@@ -1642,6 +1663,13 @@ dashboard's **Test rules** panel — paste a sample context, see exactly which r
 You're evaluating without a stable `user_id`. Either pass `user_id` (preferred) or pass a
 stable `anonymous_id` for the pre-login window.
 
+**Related**
+
+- [Targeting rules](https://docs.shipeasy.ai/flags/gates/targeting) — What the attributes are for
+- [Identity & bucketing](https://docs.shipeasy.ai/get-started/identity-and-bucketing) — The two ids, and which one sticks
+- [Private attributes](https://docs.shipeasy.ai/sdks/private-attributes) — Target on it without persisting it
+- [Target on PII safely](https://docs.shipeasy.ai/flags/case-studies/private-attribute-targeting) — The worked example
+
 ---
 
 ## CLI
@@ -1871,6 +1899,13 @@ SHIPEASY_CLI_TOKEN="$CI_TOKEN" shipeasy ops bug "Smoke test failed on deploy" \
 Every read command accepts `--json`. Every write command exits non-zero on failure. The CLI is
 built to be scripted — drop it into a Makefile or a GitHub Actions step and it behaves the way
 you'd expect.
+
+**Related**
+
+- [CLI reference](https://docs.shipeasy.ai/get-started/cli-reference) — Every command, argument and flag
+- [Authenticate](https://docs.shipeasy.ai/get-started/authenticate) — One login for the CLI and every MCP tool
+- [MCP server](https://docs.shipeasy.ai/get-started/mcp) — The same operations, driven by an agent
+- [Scheduled triggers](https://docs.shipeasy.ai/get-started/triggers) — Run it unattended, on a cadence
 
 ---
 
@@ -2137,6 +2172,7 @@ shipeasy metrics create [options] <name>
 
 | Option | | Description |
 | --- | --- | --- |
+| `--display-name <value>` | optional | What a human calls the metric — "Checkout revenue" beside the `checkout.revenue` that identifies it. Unlike `name` it is free text, it is editable, and nothing addresses the metric by it: the dashboard leads with it and falls back to `name` when it is absent, so a metric nobody named simply reads as its key. Send `null` to clear it. |
 | `--folder <value>` | optional | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
 | `--event-name <value>` | optional | Source event the query reads from. |
 | `--query <value>` | optional | Metric query DSL string, e.g. `sum(purchase, amount)`. The alternative to `query_ir`. Every label the query references — in filters, the value position, `by (…)`, or `without (…)` — must exist as a property on the tracked event's payload; a query over a label the event never carries validates fine but returns empty results. |
@@ -2177,6 +2213,7 @@ shipeasy metrics update [options] <id>
 
 | Option | | Description |
 | --- | --- | --- |
+| `--display-name <value>` | optional | What a human calls the metric — "Checkout revenue" beside the `checkout.revenue` that identifies it. Unlike `name` it is free text, it is editable, and nothing addresses the metric by it: the dashboard leads with it and falls back to `name` when it is absent, so a metric nobody named simply reads as its key. Send `null` to clear it. |
 | `--folder <value>` | optional | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
 | `--event-name <value>` | optional | Source event the query reads from. |
 | `--query <value>` | optional | Metric query DSL string, e.g. `sum(purchase, amount)`. The alternative to `query_ir`. Every label the query references — in filters, the value position, `by (…)`, or `without (…)` — must exist as a property on the tracked event's payload; a query over a label the event never carries validates fine but returns empty results. |
@@ -2329,7 +2366,15 @@ shipeasy ops alerts create [options]
 | `--window-hours <value>` | optional | Lookback window (hours) the metric is aggregated over. 1–720. |
 | `--bucket-minutes <value>` | optional | Width of the buckets the window is split into, in minutes. Omit (or `null`) to divide the window into 12 equal buckets. The rule is judged per bucket, so this is the resolution at which "sustained" is measured — a short bucket asks the condition to hold through finer detail. |
 | `--required-buckets <value>` | optional | How many buckets must breach before the rule fires. Omit (or `null`) to require every bucket that had data. Buckets with nothing in them are excluded before this is counted, so on a sparse metric `null` can mean a single bucket — set this to 2 or more where one lone sample must never page. |
-| `--severity <value>` | optional | Severity of the raised alert. |
+| `--warn-threshold <value>` | optional | The milder bound — a second level, in the same unit the kind judges in, that raises a quieter alert before the firing level is reached. Must be strictly milder than the level the rule fires at, or it could never fire on its own. Refused on a range rule and on a `sustained` one: neither condition is a single number, so there is nothing to substitute. |
+| `--recovery-threshold <value>` | optional | What the metric must get back to before a live alert closes. Without it a metric sitting on its threshold pages and clears once per tick. Must be on the safe side of the firing level, or equal to it. Omit (or `null`) for no hysteresis. |
+| `--group-alerts <value>` | optional | Fire one alert per `by()` group instead of one for the whole metric. The firing key becomes (rule, group), so each group raises, dedupes and recovers on its own. Refused on a metric with no `by()`, and on `no_data` — a group that went silent has no rows left to be missing from. |
+| `--max-groups <value>` | optional | How many groups this rule may alert on at once. Omit (or `null`) for 10. Past the cap the worst groups fire and the count of the rest is stated on each ticket — a group set is customer data, and an uncapped rule on `by(user_id)` would file a ticket per user. |
+| `--no-data-minutes <value>` | optional | For a `no_data` rule: how long the silence must last. Omit (or `null`) for 15 minutes. Five is the floor — below it, ordinary ingest lag empties the trailing bucket and reads as an outage. |
+| `--delay-minutes <value>` | optional | Hold the evaluated window back this far behind live, on top of the reader's own settle grace. For a metric assembled from a source that lands in batches, whose trailing buckets are legitimately incomplete for longer than the grace covers. |
+| `--auto-resolve-minutes <value>` | optional | Close a live instance that has gone this long without a fresh verdict. A rule that cannot reach a verdict deliberately leaves its alert alone, which is right for a tick and wrong for a week. Never closes an instance that is currently breaching. Omit (or `null`) to never auto-resolve. |
+| `--composite <value>` | optional | What a `composite` rule is a boolean over. `rules` are sibling alert-rule ids in the same project and `op` is how their states combine. A child's state is what the current pass concluded about it, falling back to whether it has an open instance — so a composite still means something on a tick where a child could not be evaluated, which is exactly the tick a "two of these are broken at once" rule is for. One level deep: a child may not itself be composite. |
+| `--severity <value>` | optional | Severity of the raised alert. A `warnThreshold` breach opens one step quieter than this. |
 | `--enabled <value>` | optional | Whether the rule is evaluated by the cron. |
 | `--notify <value>` | optional | Delivery target for a notification; `null` = use the project default. |
 
@@ -2356,6 +2401,14 @@ shipeasy ops alerts update [options] <id>
 | `--sigma <value>` | optional | Sigmas an `anomaly` or `outliers` rule fires at; `null` restores the default of 3. |
 | `--direction <value>` | optional | Which side an `anomaly` or `outliers` rule watches; `null` restores either. |
 | `--sustained <value>` | optional | Judge the window by accumulated departure rather than bucket by bucket. `anomaly` and `outliers` only; refused alongside `requiredBuckets`. |
+| `--warn-threshold <value>` | optional | The milder bound; `null` drops the warning level, leaving the rule with one. |
+| `--recovery-threshold <value>` | optional | What the metric must get back to before a live alert closes; `null` drops the hysteresis. |
+| `--group-alerts <value>` | optional | Fire one alert per `by()` group. Refused on a metric with no grouping. |
+| `--max-groups <value>` | optional | How many groups may alert at once; `null` restores the default of 10. |
+| `--no-data-minutes <value>` | optional | How long a `no_data` rule's silence must last; `null` restores 15 minutes. |
+| `--delay-minutes <value>` | optional | How far behind live the window is held; `null` drops the delay. |
+| `--auto-resolve-minutes <value>` | optional | Close a stale live instance after this long; `null` never auto-resolves. |
+| `--composite <value>` | optional | What a `composite` rule is a boolean over. `rules` are sibling alert-rule ids in the same project and `op` is how their states combine. A child's state is what the current pass concluded about it, falling back to whether it has an open instance — so a composite still means something on a tick where a child could not be evaluated, which is exactly the tick a "two of these are broken at once" rule is for. One level deep: a child may not itself be composite. |
 | `--window-hours <value>` | optional | — |
 | `--bucket-minutes <value>` | optional | Bucket width in minutes; `null` restores the default 12 buckets per window. |
 | `--required-buckets <value>` | optional | Buckets that must breach to fire; `null` restores "every bucket that had data". |
@@ -4476,6 +4529,13 @@ Pass an explicit `--project <id>` to `shipeasy login`, or set `SHIPEASY_PROJECT_
 Restart the AI assistant. MCP servers are loaded at process start; editing `mcp.json` while the
 assistant is running has no effect.
 
+**Related**
+
+- [MCP reference](https://docs.shipeasy.ai/get-started/mcp-reference) — Every tool, by group
+- [Install in your agent](https://docs.shipeasy.ai/get-started/agents) — Claude Code, Cursor, Windsurf and the rest
+- [Docs for agents](https://docs.shipeasy.ai/get-started/llms) — The docs as one file, for context
+- [Authenticate](https://docs.shipeasy.ai/get-started/authenticate) — How a tool call gets a project
+
 ---
 
 ## MCP reference
@@ -5540,6 +5600,7 @@ _Parameters_
 | Parameter | | Type | Description |
 | --- | --- | --- | --- |
 | `name` | required | `string` | Stable metric key. Single segment or `folder.name`; lowercase letters, digits, `_`/`-`; max 128 chars. _(length 0–128; pattern `^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?)?$`)_ |
+| `display_name` | optional | `any` | What a human calls the metric — "Checkout revenue" beside the `checkout.revenue` that identifies it. Unlike `name` it is free text, it is editable, and nothing addresses the metric by it: the dashboard leads with it and falls back to `name` when it is absent, so a metric nobody named simply reads as its key. Send `null` to clear it. _(length 0–200)_ |
 | `folder` | optional | `any` | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
 | `event_name` | required | `string` | Source event the query reads from. _(length 1–∞)_ |
 | `query` | optional | `string` | Metric query DSL string, e.g. `sum(purchase, amount)`. The alternative to `query_ir`. Every label the query references — in filters, the value position, `by (…)`, or `without (…)` — must exist as a property on the tracked event's payload; a query over a label the event never carries validates fine but returns empty results. _(length 1–4096)_ |
@@ -5677,6 +5738,7 @@ _Parameters_
 | Parameter | | Type | Description |
 | --- | --- | --- | --- |
 | `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `display_name` | optional | `any` | What a human calls the metric — "Checkout revenue" beside the `checkout.revenue` that identifies it. Unlike `name` it is free text, it is editable, and nothing addresses the metric by it: the dashboard leads with it and falls back to `name` when it is absent, so a metric nobody named simply reads as its key. Send `null` to clear it. _(length 0–200)_ |
 | `folder` | optional | `any` | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
 | `event_name` | optional | `string` | Source event the query reads from. _(length 1–∞)_ |
 | `query` | optional | `string` | Metric query DSL string, e.g. `sum(purchase, amount)`. The alternative to `query_ir`. Every label the query references — in filters, the value position, `by (…)`, or `without (…)` — must exist as a property on the tracked event's payload; a query over a label the event never carries validates fine but returns empty results. _(length 1–4096)_ |
@@ -7190,6 +7252,13 @@ Automations, or a GitHub Actions `schedule:` job), so pause, run and inspect the
 Rule of thumb: if a provider can't be started from nothing by one authenticated HTTP call,
 Shipeasy can't fire it — it schedules on the provider's own platform instead.
 
+**Related**
+
+- [CLI](https://docs.shipeasy.ai/get-started/cli) — The command a trigger runs
+- [Install in your agent](https://docs.shipeasy.ai/get-started/agents) — The agent side of the same setup
+- [Configure alerts](https://docs.shipeasy.ai/metrics/alerts) — What files the work a trigger burns down
+- [Team & permissions](https://docs.shipeasy.ai/get-started/team) — What an unattended run may publish
+
 ---
 
 ## Team & permissions
@@ -7444,6 +7513,13 @@ is almost always a caching layer in front of you — not a lost write. Check, in
 order: your browser's cache (hard-reload), then your zone's Browser Cache TTL,
 then re-publish. Remember the SDK also polls on your plan's interval — a fresh
 read can be up to that old. See [Evaluation & caching](https://docs.shipeasy.ai/get-started/evaluation-and-caching).
+
+**Related**
+
+- [Keys & environments](https://docs.shipeasy.ai/get-started/keys-and-environments) — The cause of most wrong-value reads
+- [Evaluation & caching](https://docs.shipeasy.ai/get-started/evaluation-and-caching) — Why a change has not landed yet
+- [Evaluation reasons](https://docs.shipeasy.ai/sdks/reasons) — Ask the SDK why it answered that
+- [Edge cases](https://docs.shipeasy.ai/flags/edge-cases) — The ones that bite exactly once
 
 ---
 
@@ -10008,6 +10084,13 @@ Sub-millisecond evaluation. No per-request network call from your code.
 
 - **[CLI commands](https://docs.shipeasy.ai/get-started/cli)** — Every feature flag / config / killswitch verb the CLI exposes.
 
+**Related**
+
+- [Which primitive?](https://docs.shipeasy.ai/flags/decision) — Flag, config or killswitch
+- [Feature flag quickstart](https://docs.shipeasy.ai/flags/gates/quickstart) — The same path, in full
+- [Keys & environments](https://docs.shipeasy.ai/get-started/keys-and-environments) — Server key, client key, environments
+- [Troubleshooting](https://docs.shipeasy.ai/get-started/troubleshooting) — When the first read returns the default
+
 ---
 
 ## Which primitive should I use?
@@ -10047,6 +10130,13 @@ ramp — the flag decides exposure, the metric decides whether you keep going.
 
 Page-at-3am feature flags blur incident response. Killswitches sit in their own list, default to
 "on", and don't have ramp percentages to fat-finger.
+
+**Related**
+
+- [Feature flags](https://docs.shipeasy.ai/flags/gates) — Ramps, targeting, per-user overrides
+- [Configs](https://docs.shipeasy.ai/flags/configs) — Typed values you change without a deploy
+- [Killswitches](https://docs.shipeasy.ai/flags/killswitches) — One switch, one job, for incidents
+- [Case studies](https://docs.shipeasy.ai/flags/case-studies) — The same choice, made in real scenarios
 
 ---
 
@@ -10531,6 +10621,13 @@ instead.
 
 - **[Real scenarios](https://docs.shipeasy.ai/flags/case-studies)** — Worked examples — checkout rollout, beta allow-list, regional rollout.
 
+**Related**
+
+- [Rollouts & bucketing](https://docs.shipeasy.ai/flags/gates/rollouts) — What the percentage actually does
+- [Targeting rules](https://docs.shipeasy.ai/flags/gates/targeting) — Who is eligible in the first place
+- [Keys & environments](https://docs.shipeasy.ai/get-started/keys-and-environments) — Which key reads which environment
+- [Edge cases](https://docs.shipeasy.ai/flags/edge-cases) — Sticky bucketing, propagation, SSR flicker
+
 ---
 
 ## Targeting rules
@@ -10741,6 +10838,13 @@ When a user complains "I should be in this beta but I'm not," check four things 
 3. **Is there an override?** Overrides win over rules. Check **Feature flags → checkout-v2 → Overrides**.
 4. **Are you passing the attribute the rule expects?** A rule on `plan` won't match `ctx.userPlan`. Log the user you bind to the `Client` and compare against the rule shape.
 
+**Related**
+
+- [User attributes](https://docs.shipeasy.ai/get-started/attributes) — The context a rule reads from
+- [Rollouts & bucketing](https://docs.shipeasy.ai/flags/gates/rollouts) — What happens after a rule matches
+- [Overrides](https://docs.shipeasy.ai/flags/gates/overrides) — Force one user past every rule
+- [Private attributes](https://docs.shipeasy.ai/sdks/private-attributes) — Target on email without keeping it
+
 ---
 
 ## Rollouts & bucketing
@@ -10887,6 +10991,13 @@ The dashboard's **Test evaluator** panel takes a JSON user context and prints th
 
 If the dashboard's decision doesn't match what the user reports seeing, something is different about the `ctx` the SDK actually saw — usually a missing or differently-named attribute. Log the user you bind to the `Client` in production to compare.
 
+**Related**
+
+- [Identity & bucketing](https://docs.shipeasy.ai/get-started/identity-and-bucketing) — Which id the hash is taken on
+- [Multi-context bucketing](https://docs.shipeasy.ai/sdks/bucketby) — Bucket on company or session instead
+- [Roll out to companies](https://docs.shipeasy.ai/flags/case-studies/company-rollout-bucketby) — A whole account flips together
+- [Edge cases](https://docs.shipeasy.ai/flags/edge-cases) — What breaks stickiness
+
 ---
 
 ## Overrides
@@ -11031,6 +11142,13 @@ Every override change is recorded — who added it, who removed it, when, from w
 (dashboard, CLI, API). Find the audit trail under **Feature flag → History**. Particularly useful when a
 customer reports a feature they're "always seeing" — the history tells you whether they were
 overridden, by whom, and when.
+
+**Related**
+
+- [Targeting rules](https://docs.shipeasy.ai/flags/gates/targeting) — Eligibility for everyone else
+- [QA a flag before you ramp](https://docs.shipeasy.ai/flags/case-studies/qa-with-devtools) — Overrides from the browser overlay
+- [Debug a missing feature](https://docs.shipeasy.ai/flags/case-studies/debug-missing-feature) — Why a user did not get it
+- [Evaluation reasons](https://docs.shipeasy.ai/sdks/reasons) — How an override shows up in a detail read
 
 ---
 
@@ -11347,6 +11465,13 @@ any of it.
 
 - **[Measure, don't guess](https://docs.shipeasy.ai/metrics/quickstart)** — Once the value is remote, define a metric on the events it moves and watch it change.
 
+**Related**
+
+- [Dynamic values](https://docs.shipeasy.ai/flags/configs/values) — Types, defaults, and what changes without a deploy
+- [Targeting & rollouts](https://docs.shipeasy.ai/flags/configs/targeting) — Different values for different users
+- [Plan entitlements with a config](https://docs.shipeasy.ai/flags/case-studies/entitlements-with-configs) — One config instead of a flag sprawl
+- [Reacting to changes](https://docs.shipeasy.ai/sdks/onchange) — Invalidate a cache when a value flips
+
 ---
 
 ## Dynamic values
@@ -11516,6 +11641,13 @@ Pair that with a grep across your source so a CI step fails when the code refere
 How many values a project may hold, and how large a single JSON value may be, are both plan-derived — see the [pricing page](https://shipeasy.ai/pricing), or **Settings → Billing** for your own numbers. A write over either limit is rejected with `PLAN_LIMIT` before it reaches KV.
 
 If your JSON is approaching the size limit, you're probably storing data that belongs in a database, not a config. Configs are designed for "a few KB of decisions per project", not "the user's shopping cart".
+
+**Related**
+
+- [Targeting & rollouts](https://docs.shipeasy.ai/flags/configs/targeting) — Vary a value by user
+- [Reacting to changes](https://docs.shipeasy.ai/sdks/onchange) — Act on a value the moment it changes
+- [Evaluation & caching](https://docs.shipeasy.ai/get-started/evaluation-and-caching) — When a new value reaches your process
+- [Invalidate a server cache](https://docs.shipeasy.ai/flags/case-studies/cache-invalidation-onchange) — A config flip that drops a memo
 
 ---
 
@@ -11705,6 +11837,13 @@ export function buildEvalCtx(req: Request) {
 ### Debugging a rule
 
 The dashboard's **Test evaluator** panel takes a JSON context and shows the full evaluation trace — which rule matched, which didn't, what bucket the user landed in. Indispensable when a customer says "I should be in the beta, why am I not?". From your own code, `flags.getFlag(...)` returns the same evaluator result on every read — log the user context plus the result for the same answer in production.
+
+**Related**
+
+- [User attributes](https://docs.shipeasy.ai/get-started/attributes) — What you can write a rule against
+- [Feature flag targeting](https://docs.shipeasy.ai/flags/gates/targeting) — The same predicates on a boolean
+- [Rollouts & bucketing](https://docs.shipeasy.ai/flags/gates/rollouts) — How the percentage is decided
+- [Private attributes](https://docs.shipeasy.ai/sdks/private-attributes) — Target on PII without storing it
 
 ---
 
@@ -11939,6 +12078,13 @@ of your phone.
 
 - **[Worked example: paused emails](https://docs.shipeasy.ai/flags/case-studies#kill-emails)** — The walkthrough from the case-studies page, with more context on the incident.
 
+**Related**
+
+- [Patterns](https://docs.shipeasy.ai/flags/killswitches/patterns) — What belongs behind one, and what does not
+- [Maintenance mode](https://docs.shipeasy.ai/flags/case-studies/maintenance-mode) — The worked incident
+- [Which primitive?](https://docs.shipeasy.ai/flags/decision) — Killswitch vs flag vs config
+- [Evaluation & caching](https://docs.shipeasy.ai/get-started/evaluation-and-caching) — How fast a flip actually lands
+
 ---
 
 ## Patterns
@@ -12083,6 +12229,13 @@ tab pinned during incidents — it's the central console.
 Hovering on a killswitch shows its recent flip history. If a switch has been flipped 5 times in
 the last week, that's a signal that the underlying system needs a real fix, not just a kill
 button.
+
+**Related**
+
+- [Killswitch quickstart](https://docs.shipeasy.ai/flags/killswitches/quickstart) — Wiring the first one
+- [Maintenance mode](https://docs.shipeasy.ai/flags/case-studies/maintenance-mode) — A subsystem behind break-glass
+- [Per-tenant killswitch](https://docs.shipeasy.ai/flags/case-studies/per-tenant-killswitch) — Disable one tenant, not everyone
+- [Configure alerts](https://docs.shipeasy.ai/metrics/alerts) — Let the metric tell you to flip it
 
 ---
 
@@ -13879,6 +14032,13 @@ If the number is flat or missing, two checks:
 
 ```
 
+**Related**
+
+- [Aggregation types](https://docs.shipeasy.ai/metrics/aggregations) — Conversion, count, sum, mean, ratio
+- [Query DSL grammar](https://docs.shipeasy.ai/metrics/grammar) — Everything the query language allows
+- [Configure alerts](https://docs.shipeasy.ai/metrics/alerts) — Raise a threshold on what you just built
+- [Flow & dependencies](https://docs.shipeasy.ai/flags/flow) — Trace what feeds what
+
 ---
 
 ## Aggregation types
@@ -14090,6 +14250,13 @@ shipeasy metrics series purchase_conversion --from 2026-06-01 --to 2026-06-30 --
 Run `shipeasy metrics series` before you put a rule on a metric — the daily buckets show you the
 baseline rate and how much it already wanders, which is what a sane threshold has to sit outside
 of.
+
+**Related**
+
+- [Query DSL grammar](https://docs.shipeasy.ai/metrics/grammar) — The formal shape of a query
+- [Quickstart](https://docs.shipeasy.ai/metrics/quickstart) — One metric, end to end
+- [Configure alerts](https://docs.shipeasy.ai/metrics/alerts) — Put a threshold on the number
+- [Flow & dependencies](https://docs.shipeasy.ai/flags/flow) — What feeds the metric, and what it feeds
 
 ---
 
@@ -14403,6 +14570,13 @@ shipeasy metrics create checkout_rate --event-name checkout_completed \
 `shipeasy metrics grammar` prints a reference in your terminal, and the same text is available to
 agents over MCP as `metrics_grammar`.
 
+**Related**
+
+- [Aggregation types](https://docs.shipeasy.ai/metrics/aggregations) — Which aggregate to reach for
+- [Quickstart](https://docs.shipeasy.ai/metrics/quickstart) — The grammar in use
+- [Metrics](https://docs.shipeasy.ai/metrics) — Filters, outlier handling, ratios
+- [CLI reference](https://docs.shipeasy.ai/get-started/cli-reference) — Authoring a query from the terminal
+
 ---
 
 ## Configure alerts
@@ -14620,6 +14794,13 @@ buckets to be recorded at all.
 
 - **[API reference](https://docs.shipeasy.ai/feedback/api)** — The `alert-rules` and `alerts` admin endpoints.
 
+**Related**
+
+- [Quickstart](https://docs.shipeasy.ai/metrics/quickstart) — Getting to a metric worth alerting on
+- [Alert to auto-filed ticket](https://docs.shipeasy.ai/feedback/case-studies/alert-to-ticket-loop) — The loop, worked end to end
+- [Scheduled triggers](https://docs.shipeasy.ai/get-started/triggers) — Hand the ticket to an agent
+- [Killswitch patterns](https://docs.shipeasy.ai/flags/killswitches/patterns) — What to flip when it fires
+
 ---
 
 ## Bugs & Feature Requests
@@ -14725,6 +14906,13 @@ Or use the dashboard. Either way the records live in your project.
 - **[API reference](https://docs.shipeasy.ai/feedback/api)** — `POST /api/admin/bugs`, `POST /api/admin/feature-requests`, listing, status updates.
 
 - **[CLI commands](https://docs.shipeasy.ai/get-started/cli)** — Every `shipeasy feedback …` verb.
+
+**Related**
+
+- [The devtools overlay](https://docs.shipeasy.ai/feedback/devtools) — Filing without leaving the app
+- [Connectors](https://docs.shipeasy.ai/feedback/connectors) — Mirror reports into GitHub, Sheets or Slack
+- [Edge cases](https://docs.shipeasy.ai/feedback/edge-cases) — Spam, dedup, PII, anonymous users
+- [Feedback API](https://docs.shipeasy.ai/feedback/api) — The REST endpoints underneath
 
 ---
 
@@ -14910,6 +15098,13 @@ skills.
 
 - **[Case studies](https://docs.shipeasy.ai/feedback/case-studies)** — Custom report buttons, Slack forwarding, roadmap voting.
 
+**Related**
+
+- [Getting started](https://docs.shipeasy.ai/feedback/getting-started) — The two-minute wiring
+- [Devtools overlay](https://docs.shipeasy.ai/sdks/devtools-overlay) — The same overlay, from the SDK side
+- [Edge cases](https://docs.shipeasy.ai/feedback/edge-cases) — Spam, dedup, PII, anonymous users
+- [QA a flag before you ramp](https://docs.shipeasy.ai/flags/case-studies/qa-with-devtools) — Overrides in the overlay
+
 ---
 
 ## Error reporting with see()
@@ -15073,6 +15268,13 @@ links straight to its root cause on the server.
 - **[Wire up the SDK](https://docs.shipeasy.ai/feedback/getting-started)** — The one `shipeasy()` boot that powers errors, bugs, and requests.
 
 - **[API reference](https://docs.shipeasy.ai/feedback/api)** — The `errors` and `feedback` admin endpoints.
+
+**Related**
+
+- [Errors dashboard](https://docs.shipeasy.ai/feedback/errors) — Where a reported error lands
+- [Evaluation reasons](https://docs.shipeasy.ai/sdks/reasons) — The other thing worth reporting
+- [Alert to auto-filed ticket](https://docs.shipeasy.ai/feedback/case-studies/alert-to-ticket-loop) — Errors that open their own ticket
+- [Feedback API](https://docs.shipeasy.ai/feedback/api) — Report from a language with no SDK
 
 ---
 

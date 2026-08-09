@@ -1,0 +1,78 @@
+# Shipeasy Go SDK — Overview
+
+Source: https://docs.shipeasy.ai/sdks/reference/go
+
+> github.com/shipeasy-ai/sdk-go is the server-side Go SDK for Shipeasy: feature flags (\"gates\"), dynamic configs, kill switches, A/B experiments, metric…
+
+> **Note**
+Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-go/pages/overview.md`](https://shipeasy-ai.github.io/sdk-go/pages/overview.md).
+
+`github.com/shipeasy-ai/sdk-go` is the **server-side** Go SDK for
+[Shipeasy](https://shipeasy.dev): feature flags ("gates"), dynamic configs,
+kill switches, A/B experiments, metric tracking, and structured error reporting.
+Evaluation is **local** against a cached copy of the edge blobs — there is no
+network call on the hot path.
+
+## Quickstart
+
+```go
+package main
+
+import (
+    "os"
+
+    shipeasy "github.com/shipeasy-ai/sdk-go"
+)
+
+func main() {
+    // 1) Once, at process start. The api key lives here.
+    shipeasy.Configure(shipeasy.Options{
+        APIKey: os.Getenv("SHIPEASY_SERVER_KEY"),
+    })
+
+    // 2) Per request: bind the user once, then call with NO user argument.
+    c := shipeasy.NewClient(shipeasy.User{"user_id": "u_123", "plan": "pro"})
+    if c.GetFlag("new_checkout") {
+        // new behaviour
+    }
+}
+```
+
+## Mental model: configure once, bind per request
+
+The whole SDK is exactly two calls:
+
+1. **`Configure(Options{...})`** — call it **once** at process start. The api key
+   lives here, and it kicks off a background fetch so the first read resolves
+   against real rules. It is first-config-wins (idempotent).
+2. **`NewClient(user)`** — a cheap, user-bound handle you build per request. It
+   carries no api key and opens no connection; every read is local. Its methods
+   take **no** user argument (the user is already bound):
+   `GetFlag`, `GetFlagOr`, `GetFlagDetail`, `GetConfig`, `GetConfigOr`,
+   `Universe(name).Assign()`, `GetKillswitch`, plus `Track(event, props)`.
+
+So an experiment is end-to-end Client-only: bind → `Universe(name).Assign()` →
+`Track`. `Assign()` auto-logs a single deduped exposure when the unit is enrolled.
+
+```go
+c := shipeasy.NewClient(acct)            // acct is your own *Account
+if c.GetFlag("new_checkout") { /* ... */ }
+```
+
+If you don't supply an `Attributes` transform (see [Installation](https://docs.shipeasy.ai/sdks/reference/go/installation)),
+the value you pass to `NewClient` is assumed to already BE the attribute map, so
+`shipeasy.NewClient(shipeasy.User{"user_id": "u_123", "plan": "pro"})` works
+as-is. `NewClient` **panics** if `Configure` was not called first (the api key
+lives in the global config — failing loudly surfaces the misconfiguration).
+
+## Feature pages
+
+- [Installation](https://docs.shipeasy.ai/sdks/reference/go/installation) — `go get`, per-framework wiring, the global `Configure()` call + options table.
+- [Configuration](https://docs.shipeasy.ai/sdks/reference/go/configuration) — `Configure` options, env vars, init/poll vs one-shot, change listeners.
+- [Flags](https://docs.shipeasy.ai/sdks/reference/go/flags) — `GetFlag`, `GetFlagOr`, `GetFlagDetail`.
+- [Configs](https://docs.shipeasy.ai/sdks/reference/go/configs) — `GetConfig`, `GetConfigOr`.
+- [Kill switches](https://docs.shipeasy.ai/sdks/reference/go/killswitches) — `GetKillswitch`, named switches.
+- [Error reporting](https://docs.shipeasy.ai/sdks/reference/go/error-reporting) — the `See()` surface.
+- [Testing](https://docs.shipeasy.ai/sdks/reference/go/testing) — `ConfigureForTesting`, `ConfigureForOffline`, the `Override*` helpers.
+- [OpenFeature](https://docs.shipeasy.ai/sdks/reference/go/openfeature) — `NewGlobalProvider()`.
+- [Advanced](https://docs.shipeasy.ai/sdks/reference/go/advanced) — manual exposure, private attributes, bucketBy, sticky bucketing, anon-id middleware.

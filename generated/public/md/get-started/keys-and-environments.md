@@ -1,0 +1,106 @@
+# Keys & environments
+
+Source: https://docs.shipeasy.ai/get-started/keys-and-environments
+
+> Server key vs client key, where each goes, and how the read environment is derived from the key — never from a query param.
+
+Shipeasy has exactly two kinds of SDK key. One per entrypoint, one configure call per side. Get this right and everything else — env isolation, public-bundle safety, evaluation scope — falls out for free.
+
+## One key per entrypoint
+
+|            | **Server key**                                        | **Client key**                         |
+| ---------- | ----------------------------------------------------- | -------------------------------------- |
+| Import     | `@shipeasy/sdk/server`                                | `@shipeasy/sdk/client`                 |
+| Field      | `apiKey`                                              | `clientKey`                            |
+| Visibility | **Secret** — never ships to a browser                 | **Public** — ships in your bundle      |
+| Reads      | Full rule set (gates, configs, kill switches)         | Only client-readable flags and configs |
+| Writes     | Events                                                | Events, rate-limited by domain         |
+| Env        | Bound to one env; may override per request            | **Locked** to its env                  |
+
+```ts
+// Server (root layout / startup) — server key ONLY, passed as apiKey
+import { configure } from "@shipeasy/sdk/server";
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY ?? "" });
+
+// Client (one "use client" component at startup) — public client key ONLY
+import { configure } from "@shipeasy/sdk/client";
+configure({ clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "" });
+```
+
+> **Never interchange them**
+
+Never pass `clientKey` to the server entrypoint or the server key to the client. The server key
+authenticates the **full** payload and must never leave your server. A leaked server key in a
+browser bundle exposes every rule you have.
+
+## Where each key goes
+
+**Server key → secrets**
+
+Store it as a deploy secret: `SHIPEASY_SERVER_KEY` in your platform's env, a Cloudflare secret,
+a Vercel encrypted env var. Read it with `process.env.SHIPEASY_SERVER_KEY`. It never appears in
+client code or the network tab.
+
+**Client key → public env**
+
+Prefix it so your bundler inlines it: `NEXT_PUBLIC_SHIPEASY_CLIENT_KEY` (Next.js) or
+`VITE_SHIPEASY_CLIENT_KEY` (Vite). It is meant to be public — the client key only exposes the
+flags and configs you mark client-readable, and the Worker rate-limits it by domain.
+
+**Mint and manage**
+
+Create, rotate, and revoke keys in **Project → SDK keys**, or with `shipeasy sdk keys`. Each key
+is bound to its environment **at mint time** — you pick the env when you create the key, not
+when you use it.
+
+## The read environment is derived from the key
+
+This is the part people expect to be a config flag and it isn't. **There is no `?env=` for normal use.** The environment a key reads is baked into the key when you mint it.
+
+- A key minted for `prod` reads `prod` flags and configs. Forever.
+- A key minted for `staging` reads `staging`. Forever.
+
+So you deploy the prod key to prod and the staging key to staging — there is nothing to set in code, and nothing a misconfigured request can override into the wrong env.
+
+> **Why not a query param?**
+
+Deriving env from the key makes the wrong env **unreachable** by accident. A request can't ask for
+prod data with a staging key, because the key *is* the env credential. It also means a public
+client key can't be coaxed into reading another environment from the browser.
+
+### Client keys are locked; server keys can override
+
+|                | Per-request env override                                                                                                   |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **Client key** | No. The env is locked to the key — a `staging` client key can only ever read `staging`.                                    |
+| **Server key** | Yes, for **local debugging only** — a server key may override per request (e.g. to preview another env from your machine). |
+
+A client key is public, so allowing it to switch environments would let anyone with your bundle read any env. A server key is a trusted secret on your own infrastructure, so the per-request override is safe there — but you should still deploy the right key per environment and treat the override as a debugging convenience, not a deploy strategy.
+
+## Env scoping
+
+Each environment is an isolated slice of your project's rules. A flag at 100% in `staging` can be at 0% in `prod`. Use a **separate key per environment** and let the key carry the scope:
+
+- `dev` (env) — Local development. Often the loosest rollouts — flip things on to see them.
+- `staging` (env) — Pre-production. Mirror the prod rule shape; ramp ahead of prod to soak changes.
+- `prod` (env) — Production. The env your real users read; ramp deliberately here.
+
+> **One client key per environment — don't share**
+
+Never reuse a single client key across environments expecting isolation. The key *is* the env
+boundary; sharing one collapses the boundary. Mint `staging` and `prod` client keys separately and
+ship each to its own build.
+
+## SDK key environment variables
+
+- `SHIPEASY_SERVER_KEY` (string) — Server-side key. Read by the server build. Treat as a secret; never expose it.
+- `NEXT_PUBLIC_SHIPEASY_CLIENT_KEY` (string) — Client-side key. Safe to expose. Vite: `VITE_SHIPEASY_CLIENT_KEY`.
+
+Anything passed explicitly to `configure({ ... })` wins over the environment variable.
+
+**Related**
+
+- [Install](https://docs.shipeasy.ai/get-started/install) — where the init calls live
+- [Authenticate](https://docs.shipeasy.ai/get-started/authenticate) — CLI login + CI tokens
+- [Evaluation & caching](https://docs.shipeasy.ai/get-started/evaluation-and-caching) — what the key fetches
+- [SDKs](https://docs.shipeasy.ai/sdks) — the same key model in every language

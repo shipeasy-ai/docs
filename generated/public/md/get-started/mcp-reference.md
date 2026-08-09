@@ -1,0 +1,2450 @@
+# MCP reference
+
+Source: https://docs.shipeasy.ai/get-started/mcp-reference
+
+> Auto-generated reference for the @shipeasy/mcp server — every tool, nested under its group, with title, full description, parameters, and error codes.
+
+Every tool below is generated from the MCP server's own tool catalog (so it
+matches what the server advertises), nested under its group the same way the
+[CLI reference](https://docs.shipeasy.ai/get-started/cli-reference) nests commands, and enriched from
+the OpenAPI spec with each group's description plus every tool's title, full
+description, and error codes.
+
+New to the MCP server? Start with the [MCP guide](https://docs.shipeasy.ai/get-started/mcp) for
+installation and connecting your agent — this page is the exhaustive
+tool-by-tool reference.
+
+## Errors
+
+Every registry-backed tool resolves to an admin-API call that, on failure, returns the uniform error envelope below. The MCP server surfaces it to the client as a tool error.
+
+```json
+{ "error": "human-readable message", "code": "ERROR_CODE", "detail": "optional context" }
+```
+
+Every such tool can return these: `UNAUTHORIZED`, `FORBIDDEN`. Each tool's own **Errors** note lists only the codes beyond this common set.
+
+All error codes:
+
+| Code | Meaning |
+| --- | --- |
+| `BAD_REQUEST` | Malformed request (bad JSON, missing project scope). |
+| `UNAUTHORIZED` | Missing or invalid admin SDK key. |
+| `FORBIDDEN` | Key is valid but not allowed to act on this project. |
+| `PLAN_REQUIRED` | The requested feature requires a higher plan tier (e.g. sequential testing, custom alpha, holdout, group count). |
+| `NOT_FOUND` | The resource does not exist or is not visible to the caller. |
+| `ALREADY_EXISTS` | A resource with this name already exists in the project. |
+| `INVALID_TRANSITION` | The requested lifecycle transition is not allowed from the current state. |
+| `IMMUTABLE_FIELD` | A field that is immutable in the current state was modified (e.g. editing allocation while running). |
+| `READ_ONLY` | The resource is a read-only built-in (e.g. a built-in gate-rule template) and cannot be modified or deleted. |
+| `REFERENCED_IN_USE` | The resource cannot be archived/deleted while another resource still references it. |
+| `VALIDATION` | The request body failed structural (schema) validation. |
+| `REFERENCED_NOT_FOUND` | A referenced entity (universe, metric, gate, event) does not exist. |
+| `GROUPS_WEIGHT_SUM` | Experiment group weights must sum to 10000 (basis points). |
+| `EVENT_PENDING` | The referenced event is still pending review and cannot back a metric yet. |
+| `INTERNAL` | Unexpected server error. |
+| `PLAN_LIMIT` | The action would exceed a plan quota (e.g. the tier's maximum experiments, metrics, or configs). Upgrade the plan or archive an existing resource. |
+| `EXPERIMENT_NO_GOAL_METRIC` | The experiment has no goal metric set, which the requested action requires. |
+| `EXPERIMENT_ARCHIVED_RESTART` | An archived experiment cannot be restarted. |
+| `EXPERIMENT_RESTORE_INVALID` | The experiment cannot be restored from its current state. |
+| `EXPERIMENT_NOT_RUNNING` | The action requires the experiment to be running. |
+| `EXPERIMENT_RUNNING_ARCHIVE` | A running experiment cannot be archived — stop it first. |
+| `EXPERIMENT_IMMUTABLE_FIELD` | A field that is immutable while the experiment is running was modified. |
+| `METRIC_NOT_FOUND` | The referenced metric does not exist or is not visible to the caller. |
+| `METRIC_UNKNOWN_ID` | The supplied metric id is malformed or not recognised. |
+| `AGENT_NOT_CONNECTED` | The named AI agent type has no connected trigger connector in this project — list the available agents (`ops agents list` / `GET /api/admin/agent-profiles`) and use one of those, or connect the agent under Settings → Triggers. |
+
+Hand-written tools (`projects_upsert` and auth) layer the `.shipeasy` bind or the device-auth flow on top of the admin API rather than being plain spec calls, so they don't use this envelope. All filesystem / AST tooling (project detection, i18n source scanners / codemods / loader install) now lives in the `shipeasy` CLI, not this MCP server.
+
+## Release
+
+Feature delivery — flags, kill switches, dynamic configs, A/B experiments, and the universes they bucket in.
+
+### Flags
+
+Feature gates: boolean flags evaluated at runtime against project rules + a percentage rollout.
+
+**Identity.** Each gate is keyed by a stable `name` (a-z, 0-9, `_`/`-`, max 64 chars) which is what SDKs pass to `Shipeasy.checkGate(user, '<name>')`. The `name` is immutable — rename means delete + recreate.
+
+**Evaluation model.** A gate returns `true` when (a) `enabled` is true, and (b) the caller satisfies the gate's rules. There are two evaluation shapes:
+- **Flat** — `rules` (AND-combined predicates) gate the caller, then `rollout_pct` (basis points, 0–10000) hashes them into a bucket. Used for simple `is in X% rollout` gates.
+- **Gatekeeper stack** — an ordered array of `condition` and `rollout` sub-gates, evaluated top-to-bottom; first match wins. Used to express `internal-only ∪ 1% beta ∪ 50% public` in one gate. When `stack` is present it takes precedence over the flat fields.
+
+**Rules.** Each rule is `{ attr, op, value }`. Supported ops: `eq`, `neq`, `in`, `not_in`, `gt`, `gte`, `lt`, `lte`, `contains`, `regex`. Attribute names match the keys on the SDK evaluation context (e.g. `country`, `plan`, `email`).
+
+**Rollout basis points.** `rollout_pct` is in **basis points**, not percent. `0` = 0%, `100` = 1%, `5000` = 50%, `10000` = 100%. This allows sub-1% precision (e.g. `7` = 0.07%).
+
+**Lifecycle.** Create dark (`rollout_pct: 0`) → attach rules → ramp via PATCH → flip kill-switch via `disable`/`enable` → delete once retired. Deletion is blocked while a running experiment references the gate as a targeting gate.
+
+#### `release_flags_activity`
+
+**List gate activity**
+
+Returns recent audit rows for one gate (create, update, enable, disable, delete) ordered newest first. Use the `limit` query parameter to cap the result (1–100, default 20).
+
+**Use case:** Render the activity feed in the gate detail panel or answer "who ramped this gate, and when?" during an incident review.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `limit` | optional | `integer` | Max rows to return (1–100). Defaults to 20. _(default `20`; 1–100)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `release_flags_archive`
+
+**Delete a feature gate**
+
+Soft-deletes the gate. Returns 409 if the gate is still referenced by a running experiment as a targeting gate — stop the experiment first.
+
+**Use case:** Tear down a gate after a feature has fully shipped and the rollout flag is no longer needed.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `REFERENCED_IN_USE` — The resource cannot be archived/deleted while another resource still references it.
+
+#### `release_flags_create`
+
+**Create a feature gate**
+
+Creates a new gate. Default `enabled: true` at the supplied `rollout_pct` (`0` = fully dark).
+
+Only `name` is required. Request fields use snake_case (`owner_email`); the GET response returns camelCase (`ownerEmail`, `groupName`).
+
+Returns `409` if `name` already exists in the project (case-sensitive).
+
+**Use cases**
+
+- **Dark create + ramp later** — `{ "name": "checkout_v2" }` at 0% rollout. Ramp via PATCH after deploy validation.
+- **Targeted rollout** — supply `rules` to gate the caller (e.g. only `plan = pro` users) plus a `rollout_pct` to bucket within that audience.
+- **Gatekeeper stack** — supply `stack` instead of `rules`/`rollout_pct` for `internal ∪ beta ∪ public` fall-through. Stack entries evaluated top-to-bottom; first match wins.
+- **Dashboard metadata** — populate `title`, `description`, `folder`, `group`, `owner_email` so the admin UI is self-documenting from day one.
+- **Disabled on create** — pre-provision with `enabled: false` for a future launch; flip on with `POST /{id}/enable` at go-live.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `name` | required | `string` | Stable gate key used by SDKs (`Shipeasy.checkGate(user, '<name>')`). Single segment or `folder.name`. Lowercase letters, digits, `_` or `-`; max 128 chars. Immutable after create — rename = delete + recreate. _(length 0–128; pattern `^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?)?$`)_ |
+| `type` | optional | `"targeting" \| "holdout"` | Gate kind. `targeting` (default) is a normal flag with the full builder. `holdout` is a **restricted** flag — only a public rollout % and a whitelist are allowed; attribute rules and a gatekeeper stack are rejected. Used as an experiment's `holdout_gate`. _(default `"targeting"`)_ |
+| `enabled` | optional | `boolean` | Master switch. Defaults to `true`. Set `false` to create the gate disabled (evaluates to `false` regardless of rules/rollout); flip on via `POST /{id}/enable` or PATCH. _(default `true`)_ |
+| `rollout_pct` | optional | `integer` | Initial rollout in **basis points** (0–10000 = 0%–100%) — `100` here means **1%**, not 100%. Use `rollout_percent` (0–100) below if you'd rather think in percent. Use `0` to create the gate dark and ramp via PATCH after deploy validation. _(default `0`; 0–10000)_ |
+| `rollout_percent` | optional | `number` | Initial rollout as a **percentage** (0–100, fractional ok). Friendlier alias for `rollout_pct`; converted internally to basis points (e.g. `100` here = 10000 bp = 100%). If both `rollout_pct` and `rollout_percent` are set, `rollout_percent` wins. _(0–100)_ |
+| `rules` | optional | `object[]` | Targeting predicates. AND-combined. If non-empty, the gate returns `true` only for callers that satisfy every rule **and** fall under `rollout_pct`. _(default `[]`)_ |
+| `salt` | optional | `string` | Hash salt for percentage bucketing. Auto-generated if omitted. Provide explicitly to keep a gate's buckets stable across delete/recreate. **Immutable after create** — there is no PATCH for `salt` because changing it would re-bucket every caller. _(length 1–64)_ |
+| `stack` | optional | `any` | Optional gatekeeper stack. When provided, takes precedence over `rules` + `rollout_pct` at evaluation time. Omit (or pass `null`) for a flat gate. |
+| `title` | optional | `string` | Human-readable title shown in the dashboard. Free-form, no key format constraint. _(length 0–140)_ |
+| `description` | optional | `string` | Long-form description / runbook. Markdown is rendered in the dashboard. _(length 0–2000)_ |
+| `folder` | optional | `any` | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
+| `group` | optional | `string` | Group label for dashboard organisation (e.g. team or product area). _(length 0–64)_ |
+| `owner_email` | optional | `string` | Owner contact. Displayed verbatim; not used for auth. _(length 0–190)_ |
+| `listToken` | optional | `string` | REQUIRED. The `listToken` returned by the most recent `release_flags_list` call. It proves you listed existing release flags and confirmed this one doesn't already exist before creating it. Call `release_flags_list` first if you don't have a fresh token. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `ALREADY_EXISTS` — A resource with this name already exists in the project.
+- `VALIDATION` — The request body failed structural (schema) validation.
+- `PLAN_LIMIT` — The action would exceed a plan quota (e.g. the tier's maximum experiments, metrics, or configs). Upgrade the plan or archive an existing resource.
+
+#### `release_flags_disable`
+
+**Disable a gate**
+
+Sets `enabled: false` so the gate evaluates to `false` for every caller, regardless of `rollout_pct` or `rules`. Use as a quick kill switch.
+
+**Use case:** Flip a gate off in production without redeploying — the canonical kill-switch flow.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `release_flags_enable`
+
+**Enable a gate**
+
+Sets `enabled: true`. The current `rollout_pct` is preserved.
+
+**Use case:** Re-enable a previously disabled gate without re-issuing a full update.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `release_flags_get`
+
+**Get one gate**
+
+Returns the full gate row — including the gatekeeper `stack`, resolved creator/last-editor emails, and the edit `version` — for one gate, addressed by id or `name`.
+
+**Use case:** Inspect a single gate's current rollout, rules, and stack before editing it, without paging through the whole list.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `release_flags_list`
+
+**List feature gates**
+
+Returns a single page of gates ordered by `updated_at desc, id desc`. Use the `cursor` query parameter to paginate.
+
+**Use case:** Snapshot every gate in the project — for example to render an admin overview or to drive a CI check that asserts no gate is left at 100% in staging.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `limit` | optional | `integer` | Page size (1–500). Defaults to 100. _(default `100`; 1–500)_ |
+| `cursor` | optional | `string` | Opaque cursor returned in the previous page's `next_cursor`. Omit for the first page. |
+| `q` | optional | `string` | Case-insensitive substring filter across the resource's human-readable text columns (e.g. `name`, `title`, `description`). OR-matched across those columns; omit to return everything. _(length 0–100)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+
+#### `release_flags_update`
+
+**Update a feature gate**
+
+Partial update — only supplied fields change. Array fields (`rules`, `stack`) **replace** wholesale; there is no merge or append.
+
+`name` and the gate id are immutable. The response carries only `{ id }` — re-fetch via `GET /api/admin/gates` for the new row.
+
+**Use cases**
+
+- **Ramp rollout** — `{ "rollout_pct": 5000 }` for 50%. Basis points (0–10000); `100` = 1%.
+- **Kill switch** — `{ "enabled": false }`. Forces evaluation to `false` for every caller regardless of rules/rollout. Re-enable with `POST /{id}/enable` or `{ "enabled": true }`.
+- **Modify a rule's `in` set** — send the full new `rules` array. To add `'GB'` to `['US','CA']`: `{ "rules": [{ "attr": "country", "op": "in", "value": ["US","CA","GB"] }] }`. No per-rule patch endpoint.
+- **Add targeting from scratch** — `{ "rules": [{ "attr": "email", "op": "regex", "value": "@acme\\.com$" }] }`.
+- **Switch to gatekeeper stack** — send a non-null `stack`. To revert to flat eval, send `{ "stack": null }`.
+- **Update metadata** — any subset of `title`, `description`, `folder`, `group`, `owner_email`.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `type` | optional | `"targeting" \| "holdout"` | Gate kind. Switching to `holdout` requires the gate carry only a public rollout % + whitelist (attribute rules / stack are rejected). |
+| `rollout_pct` | optional | `integer` | New rollout in **basis points** (0–10000 = 0%–100%) — `100` here means **1%**. Use `rollout_percent` (0–100) below for percent. Omit both to leave unchanged. _(0–10000)_ |
+| `rollout_percent` | optional | `number` | New rollout as a **percentage** (0–100). Friendlier alias for `rollout_pct`; converted internally. Wins over `rollout_pct` if both are supplied. Omit both to leave unchanged. _(0–100)_ |
+| `rules` | optional | `object[]` | Replaces the rule list wholesale. To add a value to an `in` rule, send the full new `rules` array with the augmented `value` (e.g. previous `['US','CA']` → `['US','CA','GB']`). |
+| `enabled` | optional | `boolean` | Master switch. `false` makes the gate evaluate to `false` for every caller regardless of `rollout_pct`, `rules`, or `stack` — use as kill switch. |
+| `stack` | optional | `any` | Replaces the gatekeeper stack wholesale. Send `null` to revert to flat `rules` + `rollout_pct` evaluation. |
+| `title` | optional | `string` | Human-readable title shown in the dashboard. Free-form, no key format constraint. _(length 0–140)_ |
+| `description` | optional | `string` | Long-form description / runbook. Markdown is rendered in the dashboard. _(length 0–2000)_ |
+| `folder` | optional | `any` | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
+| `group` | optional | `string` | Group label for dashboard organisation (e.g. team or product area). _(length 0–64)_ |
+| `owner_email` | optional | `string` | Owner contact. Displayed verbatim; not used for auth. _(length 0–190)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `release_flags_whitelist`
+
+**Read a gate's whitelist**
+
+Returns the gate's whitelist — the always-first allowlist that admits the listed identities before any targeting rule or percentage rollout is evaluated.
+
+A gate with no whitelist returns `entries: []` (and the default `attr`), never a 404 — so a caller can read-then-write without special-casing the empty gate.
+
+**Use case:** Check whether an account is already let through before adding it.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `release_flags_whitelist_add`
+
+**Add entries to a gate's whitelist**
+
+Adds identities to the gate's whitelist, creating the block if the gate doesn't have one yet. Entries already on the list are skipped, so the call is idempotent and safe to retry.
+
+Adding to a gate that already has a whitelist keyed on the other attribute is rejected (409) rather than silently re-keying the entries already there — use `PUT` to switch `attr` deliberately.
+
+**Use case:** Let one more customer into a private beta without reading the current list first.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `attr` | optional | `any` | Identity attribute to match on. Only honoured when the gate has no whitelist yet (this call creates it); passing an attribute that disagrees with an existing whitelist is a 409 rather than a silent re-key of the entries already there. |
+| `entries` | required | `string[]` | Identities to admit. Already-listed entries are skipped, so the call is idempotent. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `IMMUTABLE_FIELD` — A field that is immutable in the current state was modified (e.g. editing allocation while running).
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `release_flags_whitelist_remove`
+
+**Remove entries from a gate's whitelist**
+
+Removes identities from the gate's whitelist. Entries that aren't on the list are skipped, so the call is idempotent.
+
+Removing the last entry leaves an empty whitelist block in place; to drop the block itself use `PUT` with `entries: []`.
+
+**Use case:** Revoke one beta tester's access without touching anyone else's.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `entries` | required | `string[]` | Identities to stop admitting. Entries that aren't listed are skipped, so the call is idempotent. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `release_flags_whitelist_set`
+
+**Replace a gate's whitelist**
+
+Replaces the gate's whole whitelist with `entries`, creating the block if the gate didn't have one. Idempotent — the same call twice leaves the same list.
+
+This is the only whitelist call that can switch `attr` (`email` ⇄ `user_id`) or clear the block: `entries: []` removes the whitelist from the gate entirely.
+
+**Use cases**
+
+- **Pin an exact list** — `{ "entries": ["alice@acme.dev", "bob@acme.dev"] }`.
+- **Switch to user ids** — `{ "attr": "user_id", "entries": ["usr_123"] }`.
+- **Drop the whitelist** — `{ "entries": [] }`.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `attr` | optional | `any` | Identity attribute to match on. Defaults to the whitelist's current attribute, or `email` when the gate has no whitelist yet. |
+| `entries` | required | `string[]` | The complete whitelist after the call. Pass `[]` to remove the whitelist from the gate entirely. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### Templates
+
+Targeting-rule templates: reusable `{ attr, op, value }` rule definitions
+(country, email-domain, region presets, …). Read-only built-ins ship with
+the platform; each project can also save its own. To target by
+country/plan/region, list templates, copy the matching template's `rules`,
+substitute the concrete value(s), and pass them to `release flags create`.
+
+##### `release_flags_templates_archive`
+
+**Delete a gate template**
+
+Soft-deletes (archives) a **customer** template. Returns `409` if `id` names a read-only built-in template.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `READ_ONLY` — The resource is a read-only built-in (e.g. a built-in gate-rule template) and cannot be modified or deleted.
+
+##### `release_flags_templates_create`
+
+**Create a gate template**
+
+Creates a per-project (customer) targeting-rule template. Built-ins are read-only and cannot be created here. Returns `409` if a template with this `name` already exists in the project.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `name` | required | `string` | Human label. Unique per project. _(length 1–140)_ |
+| `description` | optional | `string` | One-liner shown in pickers and matched by the list `query` filter. _(default `""`; length 0–2000)_ |
+| `category` | optional | `"condition" \| "rollout"` | — _(default `"condition"`)_ |
+| `icon_key` | optional | `string` | Display-only icon hint. _(length 0–64)_ |
+| `auto` | optional | `boolean` | Mark the attribute as request-derived (resolved at the SDK edge). _(default `false`)_ |
+| `rules` | required | `object[]` | The rule definition captured by the template. |
+| `listToken` | optional | `string` | REQUIRED. The `listToken` returned by the most recent `release_flags_templates_list` call. It proves you listed existing release flags templates and confirmed this one doesn't already exist before creating it. Call `release_flags_templates_list` first if you don't have a fresh token. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `ALREADY_EXISTS` — A resource with this name already exists in the project.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+##### `release_flags_templates_get`
+
+**Get one gate template**
+
+Returns a single template by its `id` — a built-in slug (`country`) or a customer `gtpl_…` id.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+##### `release_flags_templates_list`
+
+**List gate templates**
+
+Returns the merged targeting-rule template catalog — read-only **built-ins first** (the `@team`/`@owner` audience aliases, country, email-domain, region presets, …), then this project's **customer** templates. Each item carries a `rules: [{ attr, op, value }]` definition; the alias templates carry a symbol value (`email in ["@team"]`) that the SDK expands to the resolved email list at rebuild.
+
+**Turn "launch X in country Y" into a gated flag:** list templates (optionally with `q`), take the matching template's `rules`, substitute the concrete value(s), and pass them as the `rules` arg of `release_flags_create`.
+
+The catalog is small and bounded, so the full merged set is returned in one page — this endpoint is **not** paginated (`next_cursor` is always `null`; there are no `limit`/`cursor` params).
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `q` | optional | `string` | Case-insensitive substring filter across the resource's human-readable text columns (e.g. `name`, `title`, `description`). OR-matched across those columns; omit to return everything. _(length 0–100)_ |
+| `query` | optional | `string` | Deprecated alias for `q`, kept working for one release. Prefer `q`. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+
+##### `release_flags_templates_update`
+
+**Update a gate template**
+
+Partial update of a **customer** template. `rules` replaces the list wholesale. Returns `409` if `id` names a read-only built-in template.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `name` | optional | `string` | — _(length 1–140)_ |
+| `description` | optional | `string` | — _(length 0–2000)_ |
+| `category` | optional | `"condition" \| "rollout"` | — |
+| `icon_key` | optional | `any` | — |
+| `auto` | optional | `boolean` | — |
+| `rules` | optional | `object[]` | — |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `READ_ONLY` — The resource is a read-only built-in (e.g. a built-in gate-rule template) and cannot be modified or deleted.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### Attributes
+
+Targeting attributes: the auto-inferred schema of user-context keys the
+platform has observed in evaluation calls. Read-only — populated by the
+SDK hot path, surfaced here so you can see which keys (and value types)
+are available when writing gate/experiment targeting rules.
+
+##### `release_flags_attributes_archive`
+
+**Archive a targeting attribute**
+
+Soft-deletes (archives) a targeting attribute.
+
+**Use case:** Retire an attribute no targeting rule references anymore (the user-facing verb is `archive`).
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+##### `release_flags_attributes_create`
+
+**Declare a targeting attribute**
+
+Declare a targeting attribute the SDK reports and gates/experiments can target. `type: enum` requires `enum_values`.
+
+**Use case:** Register a `plan` or `country` attribute so targeting rules can reference it.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `name` | required | `string` | Attribute key (lowercase alphanumeric start, then letters/digits/`_`/`-`; max 64 chars). Immutable after create. _(pattern `^[a-z0-9][a-z0-9_-]{0,63}$`)_ |
+| `type` | required | `"string" \| "number" \| "boolean" \| "enum" \| "date"` | Declared value type of a targeting attribute. |
+| `enum_values` | optional | `any` | Allowed values when `type` is `enum` (required in that case — 422 otherwise); `null` for non-enum types. _(default `null`)_ |
+| `required` | optional | `boolean` | Whether the attribute must be present on the evaluation context. _(default `false`)_ |
+| `description` | optional | `string` | Optional human note shown in the dashboard. |
+| `sdk_path` | optional | `string` | Optional dotted path the SDK reads the value from. |
+| `listToken` | optional | `string` | REQUIRED. The `listToken` returned by the most recent `release_flags_attributes_list` call. It proves you listed existing release flags attributes and confirmed this one doesn't already exist before creating it. Call `release_flags_attributes_list` first if you don't have a fresh token. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `ALREADY_EXISTS` — A resource with this name already exists in the project.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+##### `release_flags_attributes_get`
+
+**Get a targeting attribute**
+
+Fetch one targeting attribute by id.
+
+**Use case:** Inspect an attribute's declared type + allowed values before editing it.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+##### `release_flags_attributes_list`
+
+**List targeting attributes**
+
+Returns every auto-inferred targeting attribute in the project — the `name` and (when known) the value `type` — for building gate/experiment targeting rules.
+
+**Use case:** Discover which user-context keys are available before authoring a targeting rule, instead of guessing attribute names.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `q` | optional | `string` | Case-insensitive substring filter across the resource's human-readable text columns (e.g. `name`, `title`, `description`). OR-matched across those columns; omit to return everything. _(length 0–100)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+
+##### `release_flags_attributes_update`
+
+**Update a targeting attribute**
+
+Update a targeting attribute's type, allowed values, required flag, description, or SDK path. `name` is immutable.
+
+**Use case:** Add an allowed value to an `enum` attribute, or flip its required flag.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `type` | optional | `"string" \| "number" \| "boolean" \| "enum" \| "date"` | Declared value type of a targeting attribute. |
+| `enum_values` | optional | `any` | Replacement allowed values (for `enum`), or `null` to clear. |
+| `required` | optional | `boolean` | Whether the attribute must be present on the evaluation context. |
+| `description` | optional | `string` | Optional human note shown in the dashboard. |
+| `sdk_path` | optional | `string` | Optional dotted path the SDK reads the value from. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+### Killswitch
+
+Killswitches: per-env boolean overrides for kill-style operational toggles. Optimised for incident response — no rules, no rollout, just a flat boolean (plus optional per-key overrides) versioned per environment.
+
+**Identity.** Each killswitch is keyed by `name` in `folder.name` form (e.g. `payments.checkout`). Immutable after create.
+
+**Per-env values.** Every killswitch stores one version stream per env (`dev`, `stage`, `prod`). A `PATCH` with `value`/`switches` applies to **every** env in one shot (publishes a new version per env). To touch a single env, use `PUT /{id}/switch` and friends.
+
+**Switches map.** Optional `switches: { key: bool }` overrides the flat `value` for specific named call sites — useful for region/feature-scoped kills.
+
+**Versioning.** Each publish (create, update, set-switch, unset-switch) bumps the per-env `version` monotonically. SDKs deliver the latest published version.
+
+#### `release_killswitch_archive`
+
+**Delete a killswitch**
+
+Soft-deletes the killswitch and rebuilds the project's flags KV blob so SDKs stop seeing it.
+
+**Use case:** Tear down a killswitch after the feature it protected has been removed.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `release_killswitch_create`
+
+**Create a killswitch**
+
+Creates a new killswitch with `value` (default `false`) applied to **every** env at version 1.
+
+Returns `409` if `name` already exists in the project.
+
+**Use cases**
+
+- **Untripped create** — `{ "name": "payments.checkout" }`. Provision the kill ahead of an incident.
+- **Pre-tripped** — `{ "value": true }` to ship the killswitch already engaged.
+- **With switches** — seed `switches` to carve out per-region/per-tenant kills from day one.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `name` | required | `string` | Stable config/killswitch key in `folder.name` form (two lowercase segments separated by a dot, e.g. `pricing.tiers`). Immutable after create. _(length 0–128; pattern `^(?:_default\|[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?)\.[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$`)_ |
+| `description` | optional | `string` | Optional free-form description shown in the dashboard. Max 512 chars. _(length 0–512)_ |
+| `folder` | optional | `any` | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
+| `value` | optional | `boolean` | Default value applied to every env at creation. Defaults to `false`. Use `true` to ship the killswitch pre-tripped. |
+| `switches` | optional | `object` | Initial per-switch overrides applied to every env. Empty/omitted leaves the killswitch with only the flat `value`. |
+| `listToken` | optional | `string` | REQUIRED. The `listToken` returned by the most recent `release_killswitch_list` call. It proves you listed existing release killswitch and confirmed this one doesn't already exist before creating it. Call `release_killswitch_list` first if you don't have a fresh token. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `ALREADY_EXISTS` — A resource with this name already exists in the project.
+- `VALIDATION` — The request body failed structural (schema) validation.
+- `PLAN_LIMIT` — The action would exceed a plan quota (e.g. the tier's maximum experiments, metrics, or configs). Upgrade the plan or archive an existing resource.
+
+#### `release_killswitch_get`
+
+**Get one killswitch**
+
+Returns the killswitch metadata plus the latest published `value`/`switches`/`version` per env.
+
+**Use case:** Fetch the current state of one killswitch — e.g. to verify a trip propagated before declaring an incident mitigated.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `release_killswitch_list`
+
+**List killswitches**
+
+Returns a single page of killswitches ordered by `updated_at desc, id desc`. Each row includes the latest published `value`/`switches`/`version` per env.
+
+**Use case:** Snapshot every killswitch in the project — e.g. to render an incident-response runbook listing every kill and its current trip state.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `limit` | optional | `integer` | Page size (1–500). Defaults to 100. _(default `100`; 1–500)_ |
+| `cursor` | optional | `string` | Opaque cursor returned in the previous page's `next_cursor`. Omit for the first page. |
+| `q` | optional | `string` | Case-insensitive substring filter across the resource's human-readable text columns (e.g. `name`, `title`, `description`). OR-matched across those columns; omit to return everything. _(length 0–100)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+
+#### `release_killswitch_set`
+
+**Set one switch entry**
+
+Sets or updates a single `switchKey` on a single `env`. Publishes one new version on that env only — other envs untouched.
+
+Use this for surgical per-env, per-key flips during incident response (e.g. trip `eu_region` on prod without touching the flat `value` or other envs).
+
+**Use cases**
+
+- **Trip a region** — `{ "env": "prod", "switchKey": "eu_region", "value": true }`.
+- **Untrip without removing** — same payload with `value: false`. To remove the entry entirely use `DELETE /{id}/switch`.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `env` | required | `"dev" \| "staging" \| "prod"` | Target environment. One of the project's configured envs (`dev`, `staging`, `prod`). |
+| `switchKey` | required | `string` | Switch key to set. _(length 0–64; pattern `^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$`)_ |
+| `value` | required | `boolean` | New boolean value for this `switchKey` on this `env`. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `release_killswitch_set_value`
+
+**Set the flat value on one env**
+
+Sets the flat `value` on a single `env`, publishing one new version on that env only. `switches` and other envs are untouched.
+
+Use this to trip (or untrip) a killswitch on one environment without replacing its per-key overrides.
+
+**Use cases**
+
+- **Trip on prod** — `{ "env": "prod", "value": true }`.
+- **Untrip on prod** — `{ "env": "prod", "value": false }`.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `env` | required | `"dev" \| "staging" \| "prod"` | Target environment. One of the project's configured envs (`dev`, `staging`, `prod`). |
+| `value` | required | `boolean` | Flat boolean to publish on `env`. Publishes a new version on that env only. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `release_killswitch_toggle`
+
+**Toggle a killswitch or one of its switches**
+
+Flips a killswitch on one environment and publishes a new version there. This is the one-call incident verb: it reads the current value, flips it, and publishes, so you don't have to fetch the killswitch first.
+
+Every body field is optional, which is what makes the call widen cleanly:
+
+- **Flip the killswitch** — `{}`. Flips the flat `value` on `prod`.
+- **Flip one sub-switch** — `{ "switchKey": "eu_region" }`. Flips that entry on `prod`, creating it (from `false`) if it isn't in the map yet.
+- **Set it idempotently** — `{ "switchKey": "eu_region", "value": true }`. Publishes exactly that value, so a retried call can't undo the first one. A `null` `value` means "flip", not "set to null".
+- **Choose the environment** — add `"env": "staging"`. Omitted, `env` is `prod`.
+
+The response reports both `previous` and `value`, so a caller that asked for a flip can see what it actually changed.
+
+Prefer this over `PUT /{id}/value` and `PUT /{id}/switch` unless you specifically need those endpoints' unconditional set semantics.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `switchKey` | optional | `any` | Which target to flip. Omit (or `null`) to flip the killswitch's own flat `value`; name a switch key to flip that nested sub-switch instead, creating the entry if it doesn't exist yet. |
+| `value` | optional | `any` | The value to publish. Omit (or `null`) to flip whatever is stored now — read-modify-write in one call. Pass an explicit `true`/`false` to make the call idempotent, so a retry can't undo the first attempt. |
+| `env` | optional | `any` | Environment to publish on. Defaults to `prod` — the environment an incident response means when it says "kill it". |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `release_killswitch_unset`
+
+**Remove one switch entry**
+
+Removes a single `switchKey` from the `switches` map on a single `env`. Publishes a new version on that env.
+
+Returns `{ removed: false }` if the entry didn't exist (idempotent no-op).
+
+**Use case:** Clean up a per-region override after the incident is resolved so the flat `value` governs again.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `env` | required | `"dev" \| "staging" \| "prod"` | Target environment. One of the project's configured envs (`dev`, `staging`, `prod`). |
+| `switchKey` | required | `string` | Switch key to remove. _(length 0–64; pattern `^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$`)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `release_killswitch_update`
+
+**Update a killswitch**
+
+Partial update applied to **every** env. Setting `value`/`switches` publishes a new version per env. Description-only patches don't bump versions.
+
+To change a single switch on a single env, use `PUT /{id}/switch` instead.
+
+**Use cases**
+
+- **Trip everywhere** — `{ "value": true }`. Kills the feature across dev/stage/prod in one call.
+- **Untrip everywhere** — `{ "value": false }`.
+- **Replace switches** — send the full new map; per-key edits use `PUT /{id}/switch`.
+- **Update description** — metadata-only patches don't bump versions.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `description` | optional | `any` | New description, or `null` to clear it. Max 512 chars. |
+| `folder` | optional | `any` | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
+| `value` | optional | `boolean` | Flat value applied to every env. Publishes a new version per env when set. Omit to leave values unchanged. |
+| `switches` | optional | `object` | Replace the switches map wholesale on every env. To edit a single entry on a single env use `PUT /{id}/switch` instead. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+### Configs
+
+Dynamic configs: JSON-Schema-validated structured values delivered to SDKs and editable per environment with a draft/publish workflow.
+
+**Identity.** Each config is keyed by `name` in `folder.name` form (e.g. `pricing.tiers`). Immutable after create.
+
+**Schema-first.** Every config carries a JSON Schema (draft 2020-12, top-level `type: 'object'`). Every published value is validated against it.
+
+**Drafts → publish.** Per-env edits go through `PUT /{id}/drafts` (stages a value) then `POST /{id}/publish` (promotes to a new version). The flat `PATCH /{id}` republishes on **every** env in one shot — bypassing drafts.
+
+**Versioning.** Each publish bumps the per-env `version` monotonically. SDKs deliver the latest published version for each env.
+
+#### `release_configs_archive`
+
+**Delete a dynamic config**
+
+Soft-deletes the config and rebuilds the project's flags KV blob.
+
+**Use case:** Tear down a config after its consumers have stopped reading it.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `release_configs_create`
+
+**Create a dynamic config**
+
+Creates a new config with the given `schema`. The initial `value` (or an empty object) is published as version 1 on **every** env.
+
+Returns `409` if `name` already exists in the project, `400` if `value` doesn't validate against `schema`.
+
+**Use cases**
+
+- **Minimal create** — `name` + `schema`. Initial value defaults to `{}`.
+- **Seeded create** — supply a flat `value` to publish the same object on every env.
+- **Per-env seed** — supply a `{ env: value }` map under `value`, or pass the env keys `dev`/`staging`/`prod` directly (each overrides `value` for that env and is published at version 1).
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `name` | required | `string` | Stable config/killswitch key in `folder.name` form (two lowercase segments separated by a dot, e.g. `pricing.tiers`). Immutable after create. _(length 0–128; pattern `^(?:_default\|[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?)\.[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$`)_ |
+| `description` | optional | `string` | Optional free-form description shown in the dashboard. Max 512 chars. _(length 0–512)_ |
+| `folder` | optional | `any` | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
+| `schema` | required | `object` | JSON Schema (draft 2020-12) describing the shape of the config value. Top-level `type` must be `'object'`; every published value is validated against this schema. |
+| `value` | optional | `object` | Initial config value. Either a single JSON object applied to every env, or a `{ env: value }` map seeding per-env values. Must match `schema`. Defaults to `{}` on every env when omitted. |
+| `dev` | optional | `object` | Seed the **dev** env's initial value (version 1), overriding `value` for dev. Published immediately. Must match `schema`. |
+| `staging` | optional | `object` | Seed the **staging** env's initial value (version 1), overriding `value` for staging. Published immediately. Must match `schema`. |
+| `prod` | optional | `object` | Seed the **prod** env's initial value (version 1), overriding `value` for prod. Published immediately. Must match `schema`. |
+| `listToken` | optional | `string` | REQUIRED. The `listToken` returned by the most recent `release_configs_list` call. It proves you listed existing release configs and confirmed this one doesn't already exist before creating it. Call `release_configs_list` first if you don't have a fresh token. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `ALREADY_EXISTS` — A resource with this name already exists in the project.
+- `VALIDATION` — The request body failed structural (schema) validation.
+- `PLAN_LIMIT` — The action would exceed a plan quota (e.g. the tier's maximum experiments, metrics, or configs). Upgrade the plan or archive an existing resource.
+
+#### `release_configs_get`
+
+**Get one config**
+
+Returns config metadata plus the latest published values per env and any active draft values. Use this to fetch the JSON the editor renders.
+
+**Use case:** Fetch one config's current published values and any in-flight drafts.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `release_configs_list`
+
+**List dynamic configs**
+
+Returns a single page of configs ordered by `updated_at desc, id desc`. Each row includes the latest published `version` per env and any active drafts.
+
+**Use case:** Snapshot every config in the project — e.g. CI check that asserts no env is stuck on a stale default or that every config has a published value on prod.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `limit` | optional | `integer` | Page size (1–500). Defaults to 100. _(default `100`; 1–500)_ |
+| `cursor` | optional | `string` | Opaque cursor returned in the previous page's `next_cursor`. Omit for the first page. |
+| `q` | optional | `string` | Case-insensitive substring filter across the resource's human-readable text columns (e.g. `name`, `title`, `description`). OR-matched across those columns; omit to return everything. _(length 0–100)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+
+#### `release_configs_update`
+
+**Update a dynamic config**
+
+Partial update. When `value` is supplied it is **republished on every env** (new version per env). A per-env key (`dev`/`staging`/`prod`) publishes a new version to **only that env**, immediately, overriding `value` for it. When `schema` is supplied it replaces the current schema; every existing value is re-validated.
+
+**Use cases**
+
+- **Republish flat value** — `{ "value": {…} }` sets the same value on every env.
+- **Publish one env** — `{ "prod": {…} }` publishes a new version to prod only, instantly.
+- **Schema migration** — `{ "schema": {…} }` replaces the schema; existing values are re-validated.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `schema` | optional | `object` | Replacement schema. When supplied, the new schema is validated against every published value before it lands. |
+| `value` | optional | `object` | Flat value applied to **every** env. Publishes a new version per env. To publish one env only, pass that env's key (`dev`/`staging`/`prod`) instead. |
+| `dev` | optional | `object` | Publish a new version to the **dev** env only, immediately (no draft). Overrides `value` for dev. Must match the effective schema. |
+| `staging` | optional | `object` | Publish a new version to the **staging** env only, immediately (no draft). Overrides `value` for staging. Must match the effective schema. |
+| `prod` | optional | `object` | Publish a new version to the **prod** env only, immediately (no draft). Overrides `value` for prod. Must match the effective schema. |
+| `folder` | optional | `any` | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `release_configs_update_schema`
+
+**Update a config schema**
+
+Replaces a config's JSON Schema in place. Every existing published value is re-validated against the new schema before it lands; the update fails if any value no longer validates.
+
+**Use case:** Evolve a config's shape (add/remove a field) without republishing values.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `schema` | required | `object` | Replacement JSON Schema (draft 2020-12). Validated against every published value before it lands. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+## Metrics
+
+Metrics: the event-backed queries that drive tracking dashboards and
+experiment success / guardrail measurement.
+
+**Definition.** Each metric pins one source event (`event_name`), one
+aggregation, and (for `sum`/`avg`/quantile) a numeric value label. The
+query is expressed as the DSL string (`query`, e.g. `sum(purchase, amount)`)
+or its typed IR (`query_ir`) — supply exactly one.
+
+**Identity.** Keyed by a stable `name` (single segment or `folder.name`).
+Resolve endpoints accept the `id` or the `name`.
+
+**Deletion.** Archive (soft-delete). Blocked while the metric is attached
+to a running experiment — stop those first.
+
+### `metrics_archive`
+
+**Archive a metric**
+
+Soft-deletes (archives) the metric. Returns `409` if it is attached to a running experiment — stop those experiments first.
+
+**Use case:** Retire a metric once no running experiment depends on it (the user-facing verb is `archive`).
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `REFERENCED_IN_USE` — The resource cannot be archived/deleted while another resource still references it.
+
+### `metrics_create`
+
+**Create a metric**
+
+Creates an event-backed metric. Pass the query as the DSL string (`query`) **or**
+the typed IR (`query_ir`) — exactly one. `event_name` must equal the event the
+query references.
+
+Returns `409` if a metric with the same `name` already exists, and `422` if the
+query is invalid or references an unregistered event / label.
+
+**Use cases**
+
+- **Track an event** — `count(<event>)` for event counts.
+- **Sum a value** — `sum(<event>, <label>)` for revenue / quantity metrics.
+- **Experiment success metric** — create the metric, then attach its id to an experiment.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `name` | required | `string` | Stable metric key. Single segment or `folder.name`; lowercase letters, digits, `_`/`-`; max 128 chars. _(length 0–128; pattern `^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?)?$`)_ |
+| `display_name` | optional | `any` | What a human calls the metric — "Checkout revenue" beside the `checkout.revenue` that identifies it. Unlike `name` it is free text, it is editable, and nothing addresses the metric by it: the dashboard leads with it and falls back to `name` when it is absent, so a metric nobody named simply reads as its key. Send `null` to clear it. _(length 0–200)_ |
+| `folder` | optional | `any` | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
+| `event_name` | required | `string` | Source event the query reads from. _(length 1–∞)_ |
+| `query` | optional | `string` | Metric query DSL string, e.g. `sum(purchase, amount)`. The alternative to `query_ir`. Every label the query references — in filters, the value position, `by (…)`, or `without (…)` — must exist as a property on the tracked event's payload; a query over a label the event never carries validates fine but returns empty results. _(length 1–4096)_ |
+| `winsorize_pct` | optional | `integer` | Winsorise percentile (1–99) to clamp outliers. Defaults to 99. _(default `99`; 1–99)_ |
+| `default_min_effect_of_interest` | optional | `any` | Default minimum effect of interest (relative, 0–1) — the smallest change in this metric worth acting on, used as the power-planning baseline. Intrinsic to the metric; an experiment overrides it per-attachment with `min_effect_of_interest` when a specific decision has a different cost/risk bar. `null` to omit. _(default `null`)_ |
+| `direction` | optional | `"higher_better" \| "lower_better" \| "neutral"` | Desired direction of movement. `higher_better` (default), `lower_better`, or `neutral` (guardrail). _(default `"higher_better"`)_ |
+| `unit` | optional | `any` | Display unit (e.g. `ms`, `%`, `$`), or `null` when unitless. |
+| `display` | optional | `object` | How the metric's series is DRAWN, as opposed to what it measures. Both parts used to be DSL functions (`expected(q, seasonal)`, `forecast(q, …)`), which meant turning a band on minted a different metric; they are properties now, so every chart of the metric picks them up and nothing that JUDGES the metric — an alert rule, the experiment analyzer — reads them at all. |
+| `display.band` | optional | `object` | Shade the seasonal baseline around the series. The fit is the median of this hour of the week over the four weeks before the window, and it is the SAME fit an `anomaly` alert rule fires on — so the shaded region is exactly where such a rule would stay quiet, whether or not one exists. |
+| `display.band.method` | required | `"seasonal"` | — |
+| `display.band.sigma` | optional | `number` | Half-width of the band in sigma-equivalents. Omit for 3, the sigma an alert rule also defaults to. |
+| `display.forecast` | optional | `object` | Project the series past the end of the window. Projected buckets are marked, so a chart can draw an estimate differently from a measurement. |
+| `display.forecast.method` | required | `"linear" \| "seasonal"` | `linear` continues a least-squares slope over the window it is already reading. `seasonal` de-seasonalises against the four weeks before the window, fits the trend on the remainder and adds the hour-of-week term back — ask for it when the metric has a shape. |
+| `display.forecast.horizon` | optional | `integer` | Buckets to project. Omit for a quarter of the window, which is the same claim at every bucket width. _(1–500)_ |
+| `query_ir` | optional | `object` | Typed query IR — the structured alternative to the `query` DSL string. Exactly one of `query` / `query_ir` is supplied per metric body. |
+| `query_ir.agg` | required | `any` | Aggregation function applied to the source event. |
+| `query_ir.metric` | required | `string` | Source event name (must equal `event_name`). _(length 1–128)_ |
+| `query_ir.valueLabel` | optional | `string` | Numeric property summed/averaged for `sum`/`avg`/quantile aggregations. _(length 1–128)_ |
+| `query_ir.filters` | optional | `object[]` | Label filters on the event. _(default `[]`)_ |
+| `query_ir.groupBy` | optional | `object` | Optional group-by clause (ignored for experiment analysis). |
+| `query_ir.groupBy.op` | required | `"by" \| "without"` | `by` keeps the listed labels; `without` drops them. |
+| `query_ir.groupBy.labels` | required | `string[]` | Labels to group by (max 5). |
+| `listToken` | optional | `string` | REQUIRED. The `listToken` returned by the most recent `metrics_list` call. It proves you listed existing metrics and confirmed this one doesn't already exist before creating it. Call `metrics_list` first if you don't have a fresh token. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `ALREADY_EXISTS` — A resource with this name already exists in the project.
+- `EVENT_PENDING` — The referenced event is still pending review and cannot back a metric yet.
+- `REFERENCED_NOT_FOUND` — A referenced entity (universe, metric, gate, event) does not exist.
+- `VALIDATION` — The request body failed structural (schema) validation.
+- `PLAN_LIMIT` — The action would exceed a plan quota (e.g. the tier's maximum experiments, metrics, or configs). Upgrade the plan or archive an existing resource.
+
+### `metrics_grammar`
+
+**Print the metric query DSL grammar**
+
+Print the full metric query DSL reference — grammar, aggregation semantics, filter/group-by/ratio rules, and glossed examples — used to author `metrics create --query`.
+
+_Parameters_
+
+_No parameters._
+
+### `metrics_list`
+
+**List metrics**
+
+Returns every metric in the project (not paginated) — name, folder, source event, the typed `queryIr`, and the rendered query.
+
+**Use case:** Audit every metric defined in the project — for example to find the metric id to attach as an experiment's success metric.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `q` | optional | `string` | Case-insensitive substring filter across the resource's human-readable text columns (e.g. `name`, `title`, `description`). OR-matched across those columns; omit to return everything. _(length 0–100)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+
+### `metrics_series`
+
+**Get a metric's time series**
+
+Compiles the metric's typed IR into Analytics Engine SQL and returns the bucketed series over the requested window (near-real-time; ingest lag is seconds). The window bounds are epoch **seconds**; `to` must be strictly greater than `from`. The response echoes the SQL that produced the rows.
+
+Returns `422` when the stored definition can't compile (e.g. a label or event has gone away — re-save the metric), and `502`/`503` when the analytics upstream fails or isn't configured.
+
+**Use case:** Render the metric trend chart / sparkline, or pull raw bucketed values to feed an external dashboard.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `from` | required | `integer` | Window start, epoch seconds (inclusive). _(≥ 0)_ |
+| `to` | required | `integer` | Window end, epoch seconds (exclusive). Must be greater than `from`. _(≥ 0)_ |
+| `bucket` | optional | `integer` | Bucket width in seconds (60s–86400s/1d). Defaults to `3600` (hourly). Each returned point is floor-aligned to this width. _(default `3600`; 60–86400)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+### `metrics_show`
+
+**Get a metric**
+
+Fetch one metric by its id or name, including the rendered DSL query and the typed IR.
+
+**Use case:** Inspect a single metric's full definition before reusing it in an experiment or alert rule.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+### `metrics_unarchive`
+
+**Unarchive a metric**
+
+Reverses a soft-delete (archive), making the metric live again. Idempotent — unarchiving a metric that is already live succeeds with no effect.
+
+**Use case:** Undo an accidental archive (the metrics list "Undo" toast calls this).
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+### `metrics_update`
+
+**Update a metric**
+
+Update a metric's definition — folder, source event, query (`query` DSL or typed `query_ir`), winsorisation, minimum detectable effect, or direction. `name` is immutable. Provide at most one of `query` / `query_ir`.
+
+**Use case:** Refine a metric's query or guardrail direction without recreating it.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `display_name` | optional | `any` | What a human calls the metric — "Checkout revenue" beside the `checkout.revenue` that identifies it. Unlike `name` it is free text, it is editable, and nothing addresses the metric by it: the dashboard leads with it and falls back to `name` when it is absent, so a metric nobody named simply reads as its key. Send `null` to clear it. _(length 0–200)_ |
+| `folder` | optional | `any` | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
+| `event_name` | optional | `string` | Source event the query reads from. _(length 1–∞)_ |
+| `query` | optional | `string` | Metric query DSL string, e.g. `sum(purchase, amount)`. The alternative to `query_ir`. Every label the query references — in filters, the value position, `by (…)`, or `without (…)` — must exist as a property on the tracked event's payload; a query over a label the event never carries validates fine but returns empty results. _(length 1–4096)_ |
+| `winsorize_pct` | optional | `integer` | Winsorise percentile (1–99) to clamp outliers. Defaults to 99. _(default `99`; 1–99)_ |
+| `default_min_effect_of_interest` | optional | `any` | Default minimum effect of interest (relative, 0–1) — the smallest change in this metric worth acting on, used as the power-planning baseline. Intrinsic to the metric; an experiment overrides it per-attachment with `min_effect_of_interest` when a specific decision has a different cost/risk bar. `null` to omit. _(default `null`)_ |
+| `direction` | optional | `"higher_better" \| "lower_better" \| "neutral"` | Desired direction of movement. `higher_better` (default), `lower_better`, or `neutral` (guardrail). _(default `"higher_better"`)_ |
+| `unit` | optional | `any` | Display unit (e.g. `ms`, `%`, `$`), or `null` when unitless. |
+| `display` | optional | `object` | How the metric's series is DRAWN, as opposed to what it measures. Both parts used to be DSL functions (`expected(q, seasonal)`, `forecast(q, …)`), which meant turning a band on minted a different metric; they are properties now, so every chart of the metric picks them up and nothing that JUDGES the metric — an alert rule, the experiment analyzer — reads them at all. |
+| `display.band` | optional | `object` | Shade the seasonal baseline around the series. The fit is the median of this hour of the week over the four weeks before the window, and it is the SAME fit an `anomaly` alert rule fires on — so the shaded region is exactly where such a rule would stay quiet, whether or not one exists. |
+| `display.band.method` | required | `"seasonal"` | — |
+| `display.band.sigma` | optional | `number` | Half-width of the band in sigma-equivalents. Omit for 3, the sigma an alert rule also defaults to. |
+| `display.forecast` | optional | `object` | Project the series past the end of the window. Projected buckets are marked, so a chart can draw an estimate differently from a measurement. |
+| `display.forecast.method` | required | `"linear" \| "seasonal"` | `linear` continues a least-squares slope over the window it is already reading. `seasonal` de-seasonalises against the four weeks before the window, fits the trend on the remainder and adds the hour-of-week term back — ask for it when the metric has a shape. |
+| `display.forecast.horizon` | optional | `integer` | Buckets to project. Omit for a quarter of the window, which is the same claim at every bucket width. _(1–500)_ |
+| `query_ir` | optional | `object` | Typed query IR — the structured alternative to the `query` DSL string. Exactly one of `query` / `query_ir` is supplied per metric body. |
+| `query_ir.agg` | required | `any` | Aggregation function applied to the source event. |
+| `query_ir.metric` | required | `string` | Source event name (must equal `event_name`). _(length 1–128)_ |
+| `query_ir.valueLabel` | optional | `string` | Numeric property summed/averaged for `sum`/`avg`/quantile aggregations. _(length 1–128)_ |
+| `query_ir.filters` | optional | `object[]` | Label filters on the event. _(default `[]`)_ |
+| `query_ir.groupBy` | optional | `object` | Optional group-by clause (ignored for experiment analysis). |
+| `query_ir.groupBy.op` | required | `"by" \| "without"` | `by` keeps the listed labels; `without` drops them. |
+| `query_ir.groupBy.labels` | required | `string[]` | Labels to group by (max 5). |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+### Events
+
+Events: the catalog of event names (and their typed properties) that metric queries reference.
+
+**Auto-discovery.** The SDK's `/collect` ingest path records any unknown event name it receives as a `pending` row (`pending: 1`) so you can review it. Metrics defined on a pending event fail until it is approved.
+
+**Approval.** `POST /{id}/approve` promotes a pending event to usable (`pending: 0`), optionally declaring its folder/description/properties in the same call. Registering a brand-new event via `POST` that matches a pending name approves it instead of failing with a conflict.
+
+**Properties.** Each event can declare typed properties (`name`, `type` of `string|number|boolean`, `required`). On update/approve the `properties` array replaces the full set — there is no merge.
+
+**Deletion.** Soft-delete (the user-facing verb is `archive`). Blocked while any metric still references the event — delete those metrics first.
+
+#### `metrics_events_approve`
+
+**Approve a pending event**
+
+Promotes a pending (auto-discovered) event to usable so metrics can query it (`pending` → `0`).
+
+You may optionally declare the event's folder, description, or properties in the same call — the body is the same shape as update, and may be empty.
+
+**Use case:** Clear an auto-discovered event out of the pending queue so metrics defined on it start resolving.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `folder` | optional | `any` | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
+| `description` | optional | `string` | New description for the event. |
+| `properties` | optional | `object[]` | Replaces the full property set (no merge). Omit to leave properties unchanged. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `metrics_events_archive`
+
+**Archive an event**
+
+Soft-deletes (archives) the event. Returns `409` if any metric still references it — delete those metrics first.
+
+**Use case:** Retire an event from the catalog once no metric depends on it.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `REFERENCED_IN_USE` — The resource cannot be archived/deleted while another resource still references it.
+
+#### `metrics_events_create`
+
+**Register an event**
+
+Registers a new event name and (optionally) its typed properties. Only `name` is required.
+
+If the name matches an existing **pending** (auto-discovered) row, this approves that row instead of returning a conflict. Otherwise an already-registered name returns `409`.
+
+**Use cases**
+
+- **Register a known event** — `{ "name": "checkout_completed" }` so metrics can reference it.
+- **Declare typed properties** — supply `properties` to document the event's payload shape.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `name` | required | `string` | Event name. Starts with a letter, digit, or `_`; letters, digits, `_`, `-`, `.`; max 50 characters. The cap is the Analytics Engine index budget — 96 bytes total, less a 36-byte project UUID and a separator — and the API has always enforced 50 while this spec advertised 128. The charset is ASCII, so characters and bytes are the same count. Immutable after create — this is the handle metric queries reference. _(pattern `^[a-zA-Z0-9_][a-zA-Z0-9_\-.]{0,49}$`)_ |
+| `folder` | optional | `any` | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
+| `description` | optional | `string` | Optional human-readable description of the event. |
+| `properties` | optional | `object[]` | Typed properties declared on the event. Defaults to an empty list. _(default `[]`)_ |
+| `listToken` | optional | `string` | REQUIRED. The `listToken` returned by the most recent `metrics_events_list` call. It proves you listed existing metrics events and confirmed this one doesn't already exist before creating it. Call `metrics_events_list` first if you don't have a fresh token. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `ALREADY_EXISTS` — A resource with this name already exists in the project.
+- `VALIDATION` — The request body failed structural (schema) validation.
+- `PLAN_LIMIT` — The action would exceed a plan quota (e.g. the tier's maximum experiments, metrics, or configs). Upgrade the plan or archive an existing resource.
+
+#### `metrics_events_get`
+
+**Get an event**
+
+Returns one event's full detail. Resolves by exact id, unique id-prefix, or exact (unique) name.
+
+**Use case:** Inspect one event's declared properties and pending state by id or name.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `metrics_events_list`
+
+**List events**
+
+Returns every catalogued event in the project, including pending auto-discovered names. Each row carries its own `pending` flag, so the unapproved queue can be filtered client-side.
+
+**Use case:** Snapshot the event catalog — for example to review the pending auto-discovery queue before approving names, or to confirm which events your metrics can reference.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `q` | optional | `string` | Case-insensitive substring filter across the resource's human-readable text columns (e.g. `name`, `title`, `description`). OR-matched across those columns; omit to return everything. _(length 0–100)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+
+#### `metrics_events_update`
+
+**Update an event**
+
+Partial update of an event's folder, description, or properties. `name` is immutable.
+
+`properties` replaces the full set (no merge) — omit it to leave properties unchanged.
+
+**Use case:** Refile an event, update its description, or redeclare its typed properties.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `folder` | optional | `any` | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
+| `description` | optional | `string` | New description for the event. |
+| `properties` | optional | `object[]` | Replaces the full property set (no merge). Omit to leave properties unchanged. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+## Ops
+
+Operational queue: the unified table of bug reports, feature requests, and
+auto-filed error/alert tickets, all over `/api/admin/ops`. One `create`
+endpoint files either user type (`type: bug | feature_request`); list, get,
+update, and link-pr are unified across every type. Also exposes the
+`notify` escalation bell and the read-only Slack-channels list used to
+resolve alert-rule notification targets.
+
+**Handles.** A queue item is addressed by its per-project `number` (e.g. `7`)
+or its full id — the API resolves either.
+
+### `ops_ack`
+
+**Ack an item (start a run)**
+
+Acknowledge a queue item — a person or an AI agent declaring "I'm on this
+now". Opens a run: stamps who picked the item up and when, assigns them as
+owner, and moves the item into the matching working status
+(`investigating_by_ai` for an AI ack, `in_progress` for a human one). The
+dashboard renders the open run as a live working indicator (which agent +
+time since the run started).
+
+**AI ack.** Pass `agent` with your own agent type (`claude`, `cursor`,
+`copilot`, `jules`; `gemini` aliases `jules`) and, when you have one, the
+run's `sessionId` so the dashboard can deep-link to the session. If the
+project has no connected trigger connector of that type the call fails
+with `AGENT_NOT_CONNECTED` — list the available agents with `ops agents list` and use one of those (or connect the agent under Settings →
+Triggers).
+
+**Completion.** The run closes automatically on the loop's final actions —
+linking the fixing PR (`link-pr`), an ops-notify escalation, or a
+completion status change (`ready_for_qa`/`resolved`) — and the dashboard
+then shows the run result (final action, PR, duration, session link).
+A repeat ack supersedes the previous open run.
+
+**Use case:** Call this first when picking an item up, so the team sees
+who/what is working on it in real time.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `agent` | optional | `"claude" \| "cursor" \| "copilot" \| "jules" \| "gemini" \| "jarvis"` | The AI agent type acking on the item's behalf — pass your own type when you are a coding agent (Claude Code passes `claude`, Cursor `cursor`, Copilot `copilot`, Jules/Gemini `jules`). Omit entirely for a human ack by the authenticated caller. |
+| `sessionId` | optional | `string` | The agent-run session id (e.g. Claude's `session_01…`), so the dashboard can deep-link to the exact run page. Omit when the harness has no session id. _(length 0–300)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `AGENT_NOT_CONNECTED` — The named AI agent type has no connected trigger connector in this project — list the available agents (`ops agents list` / `GET /api/admin/agent-profiles`) and use one of those, or connect the agent under Settings → Triggers.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+### `ops_bug`
+
+**File a bug report.**
+
+Files one queue item — a bug report or a feature request — and fires the project's connectors (GitHub issue / Slack). `type` selects which; only the two user-fileable types are accepted (`error`/`alert` tickets are auto-filed by the platform). Returns the new id and per-project number.
+
+**Use cases**
+
+- **File a bug** — `{ "type": "bug", "title": "Checkout 500s on Safari", "stepsToReproduce": "…" }`.
+- **File a feature request** — `{ "type": "feature_request", "title": "Dark mode", "priority": "nice_to_have" }`.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `title` | required | `string` | One-line bug title (no leading/trailing whitespace). _(length 1–200; pattern `^\S(.*\S)?$`)_ |
+| `stepsToReproduce` | optional | `string` | How to reproduce the bug. _(default `""`; length 0–8000)_ |
+| `actualResult` | optional | `string` | What actually happened. _(default `""`; length 0–8000)_ |
+| `expectedResult` | optional | `string` | What was expected instead. _(default `""`; length 0–8000)_ |
+| `priority` | optional | `any` | Initial triage priority, or `null`. |
+| `status` | optional | `any` | Initial lifecycle status; defaults to `open` when omitted. |
+| `assigneeId` | optional | `any` | The `users.id` of the person to assign as owner at creation, or `null`. |
+| `subscribers` | optional | `string[]` | Emails of teammates to subscribe to this item's Slack pings at creation. _(default `[]`)_ |
+| `tags` | optional | `string[]` | Tag names to attach at creation (get-or-created by name, deduped case-insensitively). _(default `[]`)_ |
+| `reporterEmail` | optional | `any` | Email of the reporter, or `null`. |
+| `pageUrl` | optional | `any` | URL of the page the bug relates to, or `null`. |
+| `userAgent` | optional | `any` | Reporter's user-agent string, or `null`. |
+| `viewport` | optional | `any` | Reporter's viewport (e.g. `1280x720`), or `null`. |
+| `context` | optional | `any` | Arbitrary capture context, or `null`. |
+| `notify` | optional | `any` | Where this bug's completion notification lands. |
+| `listToken` | optional | `string` | REQUIRED. The `listToken` returned by the most recent `ops_list` call. It proves you listed existing ops and confirmed this one doesn't already exist before creating it. Call `ops_list` first if you don't have a fresh token. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `ALREADY_EXISTS` — A resource with this name already exists in the project.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+### `ops_create`
+
+**File a queue item (bug or feature request) — pass --type.**
+
+Files one queue item — a bug report or a feature request — and fires the project's connectors (GitHub issue / Slack). `type` selects which; only the two user-fileable types are accepted (`error`/`alert` tickets are auto-filed by the platform). Returns the new id and per-project number.
+
+**Use cases**
+
+- **File a bug** — `{ "type": "bug", "title": "Checkout 500s on Safari", "stepsToReproduce": "…" }`.
+- **File a feature request** — `{ "type": "feature_request", "title": "Dark mode", "priority": "nice_to_have" }`.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `type` | required | `"bug"` | Discriminator — files a bug. |
+| `title` | required | `string` | One-line bug title (no leading/trailing whitespace). _(length 1–200; pattern `^\S(.*\S)?$`)_ |
+| `stepsToReproduce` | optional | `string` | How to reproduce the bug. _(default `""`; length 0–8000)_ |
+| `actualResult` | optional | `string` | What actually happened. _(default `""`; length 0–8000)_ |
+| `expectedResult` | optional | `string` | What was expected instead. _(default `""`; length 0–8000)_ |
+| `priority` | optional | `any` | Initial triage priority, or `null`. |
+| `status` | optional | `any` | Initial lifecycle status; defaults to `open` when omitted. |
+| `assigneeId` | optional | `any` | The `users.id` of the person to assign as owner at creation, or `null`. |
+| `subscribers` | optional | `string[]` | Emails of teammates to subscribe to this item's Slack pings at creation. _(default `[]`)_ |
+| `tags` | optional | `string[]` | Tag names to attach at creation (get-or-created by name, deduped case-insensitively). _(default `[]`)_ |
+| `reporterEmail` | optional | `any` | Email of the reporter, or `null`. |
+| `pageUrl` | optional | `any` | URL of the page the bug relates to, or `null`. |
+| `userAgent` | optional | `any` | Reporter's user-agent string, or `null`. |
+| `viewport` | optional | `any` | Reporter's viewport (e.g. `1280x720`), or `null`. |
+| `context` | optional | `any` | Arbitrary capture context, or `null`. |
+| `notify` | optional | `any` | Where this bug's completion notification lands. |
+| `description` | optional | `string` | What the feature is. _(default `""`; length 0–8000)_ |
+| `useCase` | optional | `string` | Why it's needed / the use case. _(default `""`; length 0–8000)_ |
+| `listToken` | optional | `string` | REQUIRED. The `listToken` returned by the most recent `ops_list` call. It proves you listed existing ops and confirmed this one doesn't already exist before creating it. Call `ops_list` first if you don't have a fresh token. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `ALREADY_EXISTS` — A resource with this name already exists in the project.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+### `ops_feature`
+
+**File a feature request.**
+
+Files one queue item — a bug report or a feature request — and fires the project's connectors (GitHub issue / Slack). `type` selects which; only the two user-fileable types are accepted (`error`/`alert` tickets are auto-filed by the platform). Returns the new id and per-project number.
+
+**Use cases**
+
+- **File a bug** — `{ "type": "bug", "title": "Checkout 500s on Safari", "stepsToReproduce": "…" }`.
+- **File a feature request** — `{ "type": "feature_request", "title": "Dark mode", "priority": "nice_to_have" }`.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `title` | required | `string` | One-line feature-request title (no leading/trailing whitespace). _(length 1–200; pattern `^\S(.*\S)?$`)_ |
+| `description` | optional | `string` | What the feature is. _(default `""`; length 0–8000)_ |
+| `useCase` | optional | `string` | Why it's needed / the use case. _(default `""`; length 0–8000)_ |
+| `priority` | optional | `any` | Initial triage priority, or `null`. |
+| `status` | optional | `any` | Initial lifecycle status; defaults to `open` when omitted. |
+| `assigneeId` | optional | `any` | The `users.id` of the person to assign as owner at creation, or `null`. |
+| `subscribers` | optional | `string[]` | Emails of teammates to subscribe to this item's Slack pings at creation. _(default `[]`)_ |
+| `tags` | optional | `string[]` | Tag names to attach at creation (get-or-created by name, deduped case-insensitively). _(default `[]`)_ |
+| `reporterEmail` | optional | `any` | Email of the reporter, or `null`. |
+| `pageUrl` | optional | `any` | URL of the page the request relates to, or `null`. |
+| `userAgent` | optional | `any` | Reporter's user-agent string, or `null`. |
+| `context` | optional | `any` | Arbitrary capture context, or `null`. |
+| `notify` | optional | `any` | Where this request's completion notification lands. |
+| `listToken` | optional | `string` | REQUIRED. The `listToken` returned by the most recent `ops_list` call. It proves you listed existing ops and confirmed this one doesn't already exist before creating it. Call `ops_list` first if you don't have a fresh token. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `ALREADY_EXISTS` — A resource with this name already exists in the project.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+### `ops_fired_alerts_list`
+
+**List fired alerts**
+
+Returns the project's FIRED alerts as a **bare JSON array** (no pagination envelope), ordered by `createdAt desc`. Defaults to the currently-firing ones (`status=active`); pass a `status` to widen to resolved/dismissed history or `all`.
+
+A fired alert is an **instance** of an alert rule, and an instance IS its ops queue item — the same row `/api/admin/ops` returns with `type: "alert"`, viewed through the alert lens. One rule produces many instances over its life and at most one is open at a time: when the condition clears the instance closes, and the next firing is a NEW instance with its own id and history. That is why `severity` reads off the rule (the queue item carries it as `priority`) and why resolving the queue item and clearing the alert are one act, not two rows to keep in step.
+
+Instances are opened only by the platform — the UI's killswitch handlers plus the worker's analysis consumer and alerts cron — never filed by hand, so this surface is list + triage (via PATCH), with no create. The rules that *define* metric-threshold alerts live at `/api/admin/alert-rules`.
+
+**Use case:** Snapshot what is currently firing for an on-call view or the home Alerts block, or pull `status=all` to audit how a noisy rule has behaved over time.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `status` | optional | `"active" \| "resolved" \| "dismissed" \| "all"` | Filter by lifecycle state. Defaults to `active` (currently firing); `all` returns every status. _(default `"active"`)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+
+### `ops_fired_alerts_update`
+
+**Update a fired alert**
+
+Triage writes on one fired alert — the only mutations this surface allows. All body fields are optional (at least one required); only the fields present are changed.
+
+- **`status`** — flip between `active` / `resolved` / `dismissed`. `resolved` and `dismissed` stamp `resolvedAt` / `dismissedAt`; `active` re-opens and clears both. These write the underlying queue item's own status (`resolved` / `wont_fix` / `open`), so clearing an alert here and resolving it in the ops queue are the same act. A cleared instance is never revived: if the condition fires again it opens a NEW instance with its own id.
+- **`assigneeId`** — the PERSON owner (a `users.id`), or `null` to unassign.
+- **`agent`** — the AGENT owner: a connected trigger connector's id, or the built-in `"jarvis"` (**Enterprise plan only** — `403` otherwise), or `null` to clear. Person and agent halves are independent.
+
+Returns the updated row; `404` if the alert does not exist in the project.
+
+**Use cases**
+
+- **Wave off a known condition** — `{ "status": "dismissed" }` on an alert that needs no action.
+- **Hand it to someone** — `{ "assigneeId": "…" }` from the ops cockpit's Owner column.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `status` | optional | `"active" \| "resolved" \| "dismissed"` | New lifecycle state, written through to the queue item (`resolved` / `wont_fix` / `open`). `resolved` / `dismissed` stamp their timestamp; `active` re-opens and clears both. |
+| `assigneeId` | optional | `any` | PERSON owner — a `users.id`, or `null` to clear the assignment. |
+| `agent` | optional | `any` | AGENT owner — a connected trigger connector's id (`connectors.id`), the built-in `"jarvis"` (Enterprise plan only — rejected with `403` otherwise), or `null` to clear. Stored in `assigneeConnectorId` or `assigneeAgent` depending on the value; the two are mutually exclusive. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+### `ops_get`
+
+**Get one queue item**
+
+Fetch a single queue item by its per-project `number` or full id.
+
+**Use case:** Inspect one item's full detail before updating its status or linking a PR.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+### `ops_link_pr`
+
+**Link a fixing PR**
+
+Record the pull request that fixes a queue item (and clears the link with `prNumber: null`).
+
+**Use case:** Tie the fixing PR to the item so closing the PR can flip it to ready_for_qa.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `prNumber` | required | `any` | PR number to record on the item. `null` unlinks the PR. |
+| `prUrl` | optional | `string` | Explicit PR URL. Required for error/alert tickets (no GitHub issue to derive the URL from). _(format: uri)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+### `ops_list`
+
+**List the operational queue**
+
+Returns the unified ops queue (bugs, feature requests, errors, alerts, measurement plans) in work order — highest priority first, oldest first within a priority — so consumers work it top-down. Filter by `type` and/or `status`, and cap with `limit`. Human-gated holding states (items awaiting human sign-off in the dashboard) are never returned by `all`/default status.
+
+**Use case:** Pull the open queue to triage — e.g. every `bug` still `open` — before working items down one by one.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `type` | optional | `any` | Filter by item type, or `all` (the default). Every type a returned item can carry is filterable, including the auto-filed ones. _(default `"all"`)_ |
+| `status` | optional | `any` | Filter by lifecycle status, or `all` (the default). The human-gated holding state (`pending_approval`) is excluded from `all`/default and returned only when requested as the exact status. _(default `"all"`)_ |
+| `limit` | optional | `integer` | Max items to return (1–500). Defaults to 200. _(default `200`; 1–500)_ |
+| `owner` | optional | `string` | Narrow to items owned by one person OR one agent. Matches a person by `users.id`, email, or display name, and an agent by connector id, display name, or kebab-case handle — e.g. `owner=Claude` or `owner=alice@acme.dev`. Case-insensitive exact match, applied over the returned page. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+
+### `ops_notify`
+
+**Raise an attention notification**
+
+Raise a 'needs your attention' bell notification. Create-only and idempotent on `dedupeKey` — re-raising with the same key updates the one card instead of stacking duplicates. It never reads, marks read, or deletes the feed, so it is safe for restricted ops keys.
+
+**Use case:** Escalate work that can't land in code (a product decision, a credential only a human has, a resource only a human may edit), deduped so repeats don't spam the bell.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `title` | required | `string` | One-line headline of what's blocked. _(length 1–200)_ |
+| `summary` | required | `string` | One sentence: why it can't be fixed in code. Renders markdown. _(length 1–280)_ |
+| `steps` | optional | `string[]` | Ordered steps the human should take to unblock — self-contained (the human reads only this card, not the agent's transcript), 3–6 steps, each naming the exact file, command, env var, or dashboard page. Renders markdown. |
+| `href` | optional | `any` | Dashboard-relative deep link to the related item. `null` is accepted and treated as "no link". |
+| `dedupeKey` | optional | `string` | Stable per-escalation key (e.g. `feedback:7`) so re-runs dedupe to one row. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+### `ops_update`
+
+**Update a queue item**
+
+Update a queue item. The body is validated against the item's stored type: a `bug` accepts its content fields (title, steps-to-reproduce, actual/expected result) plus `status`/`priority`/`notify` and a GitHub PR link; a `feature_request` its content (title, description, use-case) plus the same triage fields; `error`/`alert`/`measure_plan` accept `status`/`priority`/`notify` only (their content is platform-owned). Pass at least one field.
+
+Completing an `error` ticket (status `resolved` or `ready_for_qa`) also resolves the tracked error it links to; the error reopens automatically if it recurs — so completing is safe pre-deploy.
+
+**Use cases**
+
+- **Start working an item** — `{ "status": "in_progress" }`.
+- **Hand off for review** — `{ "status": "ready_for_qa" }` once the fix landed (the mode PR-based loops use).
+- **Triage** — `{ "priority": "high" }`, content edits on bug/feature items.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `title` | optional | `string` | New bug title (no leading/trailing whitespace). _(length 1–200; pattern `^\S(.*\S)?$`)_ |
+| `stepsToReproduce` | optional | `string` | Updated reproduction steps. _(length 0–8000)_ |
+| `actualResult` | optional | `string` | Updated actual result. _(length 0–8000)_ |
+| `expectedResult` | optional | `string` | Updated expected result. _(length 0–8000)_ |
+| `status` | optional | `"open" \| "pending_approval" \| "investigating_by_ai" \| "in_progress" \| "blocked" \| "ready_for_qa" \| "resolved" \| "wont_fix"` | Lifecycle status of a queue item. The working flow is `open` → `in_progress` → `ready_for_qa` → `resolved` (or `wont_fix`, terminal from any earlier stage). `blocked` marks an item that can't progress until an external dependency clears — a working state a human sets and clears. `ready_for_qa` is what a developer sets once a fix lands; `resolved` is the QA sign-off, normally flipped in the dashboard after verification — set it directly from code only when the fix has been verified end-to-end. `investigating_by_ai` is a system-owned display state — set when the AI agent (Jarvis) picks an item up to investigate, never chosen by a human — so it is shown but not offered as a manual choice. `pending_approval` is the one human-gated holding state: it parks an item OUT of the work queue until a human promotes it to `open` in the dashboard, so `GET /api/admin/ops` excludes it under `status=all`/default and returns it only when requested as an exact `status`. It covers untriaged inbound that must never be auto-implemented — connector requests filed from a customer's connectors panel, and questions funnelled in from the "Stuck in onboarding?" assistant — where approving means flipping the status to `open`. Two earlier values were removed in favour of this single gate: `triage` (the onboarding-help bucket, now `pending_approval`) and `triaged` (a redundant "looked at but not started" step, now plain `open`). |
+| `priority` | optional | `any` | Triage priority, or `null` when not set (in an update, `null` clears it). |
+| `githubPrNumber` | optional | `any` | Link (or, when `null`, unlink) a GitHub pull request to this bug. |
+| `notify` | optional | `any` | Where this item's completion notification lands, or `null`. |
+| `description` | optional | `string` | Updated description. _(length 0–8000)_ |
+| `useCase` | optional | `string` | Updated use case. _(length 0–8000)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+### Alerts
+
+Alert rules: the metric-threshold definitions the analysis cron evaluates each run.
+
+**What fires.** Each rule binds a `metricId`, a `comparator` (`gt`/`gte`/`lt`/`lte`), and a `threshold`. On every cron pass the cron aggregates the metric over the trailing `windowHours` and raises an alert at `severity` when `value comparator threshold` holds.
+
+**Immutable metric.** The bound metric (and its aggregation) is fixed at create time — there is no update path for `metricId`. Tune `threshold`/`comparator`/`windowHours`/`severity`/`name`/`enabled` instead, or delete + recreate to repoint the rule at a different metric.
+
+**Delivery.** `notify` optionally targets a Slack channel and/or email for this rule; `null` falls back to the project's default notification settings. Slack targets require a connected Slack connector.
+
+#### `ops_alerts_archive`
+
+**Delete an alert rule**
+
+Deletes the alert rule. The cron stops evaluating it immediately. Use this (then create a new rule) to repoint alerting at a different metric, since `metricId` is immutable.
+
+**Use case:** Remove an alert rule that is no longer needed, or as the first half of repointing a rule at a different metric.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `ops_alerts_channels`
+
+**List Slack channels**
+
+List the project's connected Slack channels — used to resolve an alert rule's notification target.
+
+**Use case:** Populate a channel picker, or validate an alert rule's `--slack-channel` before saving.
+
+_Parameters_
+
+_No parameters._
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+
+#### `ops_alerts_create`
+
+**Create an alert rule**
+
+Creates a metric-threshold alert rule. `name`, `metricId`, `comparator`, and `threshold` are required; `windowHours` defaults to `24`, `severity` to `warn`, and `enabled` to `true`.
+
+Returns `404` if `metricId` does not resolve, and `400` for a metric with no scalar form over a window (e.g. retention metrics) — the cron can't evaluate those.
+
+**Use cases**
+
+- **Threshold alert** — warn when an error/latency metric crosses a value over a rolling window.
+- **Routed alert** — set `notify` to page a specific Slack channel or on-call email instead of the project default.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `name` | required | `string` | Human label for the rule, shown on the alert and the rules list. _(length 1–120)_ |
+| `metricId` | required | `string` | Id of the metric to evaluate. _(length 1–∞)_ |
+| `kind` | optional | `"normal" \| "anomaly" \| "outliers" \| "no_data" \| "composite"` | What the rule watches for. `normal` compares the metric's own value — against `threshold` via `comparator`, or against the [`rangeMin`, `rangeMax`] corridor it must stay inside. `anomaly` compares it against its own seasonal baseline in sigmas: the same fit a chart draws as the band, so a point outside the drawn band is exactly a breaching bucket, and one metric can back rules at several sigmas. `outliers` compares each `by()` group against its peers in the same bucket and is refused on a metric with no grouping. _(default `"normal"`)_ |
+| `comparator` | optional | `"gt" \| "gte" \| "lt" \| "lte"` | How the metric value is compared to the threshold. Read only by a `normal` rule with no range set. _(default `"gt"`)_ |
+| `threshold` | optional | `number` | Threshold the metric value is compared against. Required for a `normal` rule unless a range is given; ignored by every other kind. |
+| `rangeMin` | optional | `any` | Lower edge of the corridor the metric must stay inside. Setting either bound switches a `normal` rule off `comparator`/`threshold` and onto the range, which breaches on LEAVING it in either direction. One bound alone is a one-sided range. |
+| `rangeMax` | optional | `any` | Upper edge of the corridor the metric must stay inside. |
+| `sigma` | optional | `any` | How far from normal is too far, for `anomaly` and `outliers`, in sigma-equivalents. Omit (or `null`) for 3, which is also the half-width of the band a chart draws — so an unconfigured rule fires exactly where the picture says it would. |
+| `direction` | optional | `any` | Which side of the baseline an `anomaly` or `outliers` rule watches. Omit (or `null`) for either, which is what "is this unusual" means; name a side for a metric that is only bad in one direction. |
+| `sustained` | optional | `boolean` | Judge the window by ACCUMULATED departure instead of bucket by bucket. The ordinary check asks every bucket to be past `sigma`, which a slow regression never manages: a metric running 1.5σ worse than normal since Tuesday puts no single bucket past 3σ and pages nobody. A sustained rule adds up each bucket's excess over half a sigma and fires once the total passes twice `sigma` — four buckets at 2σ do it, a lone 3σ spike does not. `anomaly` and `outliers` only, and refused alongside `requiredBuckets`: the accumulated bar IS the evidence bar, and a second one counted in buckets would silently override it. _(default `false`)_ |
+| `windowHours` | optional | `integer` | Lookback window (hours) the metric is aggregated over. 1–720. _(default `24`; 1–720)_ |
+| `bucketMinutes` | optional | `any` | Width of the buckets the window is split into, in minutes. Omit (or `null`) to divide the window into 12 equal buckets. The rule is judged per bucket, so this is the resolution at which "sustained" is measured — a short bucket asks the condition to hold through finer detail. |
+| `requiredBuckets` | optional | `any` | How many buckets must breach before the rule fires. Omit (or `null`) to require every bucket that had data. Buckets with nothing in them are excluded before this is counted, so on a sparse metric `null` can mean a single bucket — set this to 2 or more where one lone sample must never page. |
+| `warnThreshold` | optional | `any` | The milder bound — a second level, in the same unit the kind judges in, that raises a quieter alert before the firing level is reached. Must be strictly milder than the level the rule fires at, or it could never fire on its own. Refused on a range rule and on a `sustained` one: neither condition is a single number, so there is nothing to substitute. |
+| `recoveryThreshold` | optional | `any` | What the metric must get back to before a live alert closes. Without it a metric sitting on its threshold pages and clears once per tick. Must be on the safe side of the firing level, or equal to it. Omit (or `null`) for no hysteresis. |
+| `groupAlerts` | optional | `boolean` | Fire one alert per `by()` group instead of one for the whole metric. The firing key becomes (rule, group), so each group raises, dedupes and recovers on its own. Refused on a metric with no `by()`, and on `no_data` — a group that went silent has no rows left to be missing from. _(default `false`)_ |
+| `maxGroups` | optional | `any` | How many groups this rule may alert on at once. Omit (or `null`) for 10. Past the cap the worst groups fire and the count of the rest is stated on each ticket — a group set is customer data, and an uncapped rule on `by(user_id)` would file a ticket per user. |
+| `noDataMinutes` | optional | `any` | For a `no_data` rule: how long the silence must last. Omit (or `null`) for 15 minutes. Five is the floor — below it, ordinary ingest lag empties the trailing bucket and reads as an outage. |
+| `delayMinutes` | optional | `any` | Hold the evaluated window back this far behind live, on top of the reader's own settle grace. For a metric assembled from a source that lands in batches, whose trailing buckets are legitimately incomplete for longer than the grace covers. |
+| `autoResolveMinutes` | optional | `any` | Close a live instance that has gone this long without a fresh verdict. A rule that cannot reach a verdict deliberately leaves its alert alone, which is right for a tick and wrong for a week. Never closes an instance that is currently breaching. Omit (or `null`) to never auto-resolve. |
+| `composite` | optional | `object` | What a `composite` rule is a boolean over. `rules` are sibling alert-rule ids in the same project and `op` is how their states combine. A child's state is what the current pass concluded about it, falling back to whether it has an open instance — so a composite still means something on a tick where a child could not be evaluated, which is exactly the tick a "two of these are broken at once" rule is for. One level deep: a child may not itself be composite. |
+| `composite.op` | required | `"and" \| "or"` | How the children's states combine. |
+| `composite.rules` | required | `string[]` | Ids of the alert rules to combine. Stored sorted and de-duplicated. |
+| `severity` | optional | `"danger" \| "warn" \| "info"` | Severity of the raised alert. A `warnThreshold` breach opens one step quieter than this. _(default `"warn"`)_ |
+| `enabled` | optional | `boolean` | Whether the rule is evaluated by the cron. _(default `true`)_ |
+| `notify` | optional | `any` | Delivery target for a notification; `null` = use the project default. |
+| `listToken` | optional | `string` | REQUIRED. The `listToken` returned by the most recent `ops_alerts_list` call. It proves you listed existing ops alerts and confirmed this one doesn't already exist before creating it. Call `ops_alerts_list` first if you don't have a fresh token. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `ALREADY_EXISTS` — A resource with this name already exists in the project.
+- `METRIC_NOT_FOUND` — The referenced metric does not exist or is not visible to the caller.
+- `REFERENCED_NOT_FOUND` — A referenced entity (universe, metric, gate, event) does not exist.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `ops_alerts_list`
+
+**List alert rules**
+
+Returns every alert rule in the project (not paginated). Each rule carries its bound `metricId`, the denormalised `metricName` (or `null` if the metric was removed), the comparator/threshold/window, severity, enabled flag, and delivery target.
+
+**Use case:** Audit which metrics have alerting configured — for example to confirm an on-call threshold is set before a launch.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `q` | optional | `string` | Case-insensitive substring filter across the resource's human-readable text columns (e.g. `name`, `title`, `description`). OR-matched across those columns; omit to return everything. _(length 0–100)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+
+#### `ops_alerts_update`
+
+**Update an alert rule**
+
+Partial update of a rule's tunable knobs. `metricId` is immutable — the metric also pins the aggregation, so a body carrying `metricId` is rejected with `409 IMMUTABLE_FIELD`; create a new rule bound to the other metric instead (rule deletion is dashboard-only).
+
+Pass `"notify": null` to revert the rule's delivery target back to the project default.
+
+**Use cases**
+
+- **Tune sensitivity** — change `threshold`/`comparator`/`windowHours` as the metric's baseline shifts.
+- **Pause without losing config** — `{ "enabled": false }` instead of deleting the rule.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `name` | optional | `string` | — _(length 1–120)_ |
+| `kind` | optional | `"normal" \| "anomaly" \| "outliers" \| "no_data" \| "composite"` | — |
+| `comparator` | optional | `"gt" \| "gte" \| "lt" \| "lte"` | — |
+| `threshold` | optional | `number` | — |
+| `rangeMin` | optional | `any` | Lower edge of the corridor; `null` drops it, returning the rule to comparator and threshold when both bounds are gone. |
+| `rangeMax` | optional | `any` | Upper edge of the corridor; `null` drops it. |
+| `sigma` | optional | `any` | Sigmas an `anomaly` or `outliers` rule fires at; `null` restores the default of 3. |
+| `direction` | optional | `any` | Which side an `anomaly` or `outliers` rule watches; `null` restores either. |
+| `sustained` | optional | `boolean` | Judge the window by accumulated departure rather than bucket by bucket. `anomaly` and `outliers` only; refused alongside `requiredBuckets`. |
+| `warnThreshold` | optional | `any` | The milder bound; `null` drops the warning level, leaving the rule with one. |
+| `recoveryThreshold` | optional | `any` | What the metric must get back to before a live alert closes; `null` drops the hysteresis. |
+| `groupAlerts` | optional | `boolean` | Fire one alert per `by()` group. Refused on a metric with no grouping. |
+| `maxGroups` | optional | `any` | How many groups may alert at once; `null` restores the default of 10. |
+| `noDataMinutes` | optional | `any` | How long a `no_data` rule's silence must last; `null` restores 15 minutes. |
+| `delayMinutes` | optional | `any` | How far behind live the window is held; `null` drops the delay. |
+| `autoResolveMinutes` | optional | `any` | Close a stale live instance after this long; `null` never auto-resolves. |
+| `composite` | optional | `object` | What a `composite` rule is a boolean over. `rules` are sibling alert-rule ids in the same project and `op` is how their states combine. A child's state is what the current pass concluded about it, falling back to whether it has an open instance — so a composite still means something on a tick where a child could not be evaluated, which is exactly the tick a "two of these are broken at once" rule is for. One level deep: a child may not itself be composite. |
+| `composite.op` | required | `"and" \| "or"` | How the children's states combine. |
+| `composite.rules` | required | `string[]` | Ids of the alert rules to combine. Stored sorted and de-duplicated. |
+| `windowHours` | optional | `integer` | — _(1–720)_ |
+| `bucketMinutes` | optional | `any` | Bucket width in minutes; `null` restores the default 12 buckets per window. |
+| `requiredBuckets` | optional | `any` | Buckets that must breach to fire; `null` restores "every bucket that had data". |
+| `severity` | optional | `"danger" \| "warn" \| "info"` | — |
+| `enabled` | optional | `boolean` | — |
+| `notify` | optional | `any` | Delivery target for a notification; `null` = use the project default. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `IMMUTABLE_FIELD` — A field that is immutable in the current state was modified (e.g. editing allocation while running).
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+### Agents
+
+Connected AI agents — one per authenticated trigger connector (Claude /
+Cursor / Copilot / Jules). The read-only roster behind agent assignment
+and the `ops ack` agent types: an AI ack (`ops ack <handle> --agent <type>`) requires the type to appear here, so this list is where an
+`AGENT_NOT_CONNECTED` error sends you.
+
+#### `ops_agents_list`
+
+**List connected AI agents**
+
+The project's connected AI agents — one per authenticated trigger
+connector (Claude / Cursor / Copilot / Jules). These are the agent types
+`ops ack` accepts and the agents a queue item can be assigned to.
+
+**Use case:** Discover which `agent` values an AI ack can use, e.g. after
+an `AGENT_NOT_CONNECTED` error.
+
+_Parameters_
+
+_No parameters._
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+
+### Comments
+
+Comments on a queue item — the discussion thread that hangs off any bug,
+feature request, or auto-filed error/alert ticket. Append a comment or read
+the thread; one level of threaded replies via `parentId`.
+
+**Mentions.** `@teammate` in a body raises an in-app notification for that
+person; `@shipeasy` asks Jarvis (the AI agent) to read the item and reply.
+Comments authored by Jarvis carry `authorType: system`.
+
+#### `ops_comments_create`
+
+**Comment on an item**
+
+Append a comment to a queue item's thread. The body is markdown (mentions
+like `@teammate` notify that person; `@shipeasy` asks Jarvis, the AI agent,
+to reply). Pass `parentId` to reply under an existing top-level comment
+(one level of threading — a reply to a reply attaches to the same parent).
+
+Create-only and append-only, so it is safe for restricted ops keys — the
+same channel the ops loop and Jarvis use to leave a note on an item.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `body` | required | `string` | The comment body as markdown. Mentions (`@teammate`, `@shipeasy`) are parsed from it. _(length 1–10000)_ |
+| `parentId` | optional | `any` | Reply under this top-level comment. Omit / `null` for a top-level comment. Replying to a reply attaches to the same top-level parent (threading is one level deep). |
+| `listToken` | optional | `string` | REQUIRED. The `listToken` returned by the most recent `ops_comments_list` call. It proves you listed existing ops comments and confirmed this one doesn't already exist before creating it. Call `ops_comments_list` first if you don't have a fresh token. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `ops_comments_list`
+
+**List an item's comments**
+
+List the comment thread on a queue item, oldest first. Each comment
+carries its author (a teammate email, or `system` for a comment authored by
+Jarvis — the AI agent), its markdown body, and `parentId` for the single
+level of threaded replies. Removed comments are omitted.
+
+**Use case:** Read the discussion on an item before replying or acting on it.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+### Investigations
+
+Investigation records on a queue item — the structured, read-only write-ups
+an AI agent produces while working it (findings / a blocking question / QA
+notes), plus the `working` run rows an ack or an AI hand-off opens. This is
+the AI-write seam the cockpit's detail panel renders: `list` reads what a
+previous run found, `create` appends a new record, and `update` fills in the
+`working` run record you were handed (findings, PR, confidence) as you work.
+
+#### `ops_investigations_create`
+
+**Record an investigation**
+
+Append one structured investigation record to a queue item — the AI-write
+seam the cockpit's detail panel renders read-only. Post your findings
+(`kind: investigated`), a blocking question for the team (`kind: question`), or how to verify the fix (`kind: ready_for_qa` with
+`qaNotes`). Append-only and create-only, so it is safe for restricted ops
+keys.
+
+**Use case:** After working an item, leave a findings write-up (summary,
+markdown findings, sources inspected, confidence) so the team — and the
+next agent run — sees what you learned.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `kind` | required | `"investigated" \| "detected" \| "question" \| "ready_for_qa" \| "working" \| "note"` | Which lifecycle stage the record documents. |
+| `summary` | optional | `string` | One-line summary of the record. _(length 0–2000)_ |
+| `findings` | optional | `string` | The full findings write-up (markdown). _(length 0–50000)_ |
+| `question` | optional | `string` | A blocking question for the team (markdown). _(length 0–10000)_ |
+| `qaNotes` | optional | `string` | How to verify the fix — QA notes (markdown). _(length 0–50000)_ |
+| `agent` | optional | `"jarvis" \| "claude" \| "cursor" \| "copilot" \| "jules"` | The agent type producing the record — pass your own type when you are a coding agent. |
+| `model` | optional | `string` | The model the agent ran on. _(length 0–200)_ |
+| `connectorId` | optional | `string` | The trigger-connector row id the agent ran through. _(length 0–200)_ |
+| `prNumber` | optional | `integer` | A PR the record references. |
+| `prUrl` | optional | `string` | HTML URL of that PR. _(length 0–2000; format: uri)_ |
+| `sources` | optional | `object[]` | The files/links inspected. |
+| `confidence` | optional | `"low" \| "medium" \| "high"` | Self-reported confidence in the record. |
+| `tokensUsed` | optional | `integer` | Tokens the run consumed. |
+| `durationMs` | optional | `integer` | Run duration in milliseconds. |
+| `visibility` | optional | `"draft" \| "published"` | Record visibility. Defaults to `published`; `draft` keeps it out of the panel. |
+| `startedAt` | optional | `string` | ISO-8601 timestamp the work started. |
+| `completedAt` | optional | `string` | ISO-8601 timestamp the work finished. |
+| `sessionId` | optional | `string` | The agent-run session id, so the dashboard can deep-link to the run. _(length 0–300)_ |
+| `listToken` | optional | `string` | REQUIRED. The `listToken` returned by the most recent `ops_investigations_list` call. It proves you listed existing ops investigations and confirmed this one doesn't already exist before creating it. Call `ops_investigations_list` first if you don't have a fresh token. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `ops_investigations_list`
+
+**List an item's investigation records**
+
+The structured, read-only investigation records on a queue item — the
+findings / blocking questions / QA notes an AI agent posted while working
+it, plus its `working` run rows. Returns `published` records only, newest
+first (max 50).
+
+**Use case:** Read what a previous agent run already found before starting
+your own investigation of the item.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `ops_investigations_update`
+
+**Update an investigation record**
+
+Update one existing investigation record in place — the write-back seam for
+the `working` run record you were handed when a run was launched. Fill in
+the `summary`/`findings`, attach the fixing PR, record your `confidence`
+and the `sources` you inspected, or flip its `kind` off `working` once the
+investigation is done. A partial patch: send only the fields you want to
+change. Safe for restricted ops keys (it never reads or deletes).
+
+**Use case:** A run started with an empty `working` record; as you work,
+PATCH it with your findings so the cockpit's detail panel fills in live —
+no need to append a second record.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `investigationId` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `kind` | optional | `"investigated" \| "detected" \| "question" \| "ready_for_qa" \| "working" \| "note"` | Reclassify the record's lifecycle stage (e.g. flip a `working` run into `investigated` once findings land). |
+| `summary` | optional | `string` | One-line summary of the record. _(length 0–2000)_ |
+| `findings` | optional | `string` | The full findings write-up (markdown). _(length 0–50000)_ |
+| `question` | optional | `string` | A blocking question for the team (markdown). _(length 0–10000)_ |
+| `qaNotes` | optional | `string` | How to verify the fix — QA notes (markdown). _(length 0–50000)_ |
+| `model` | optional | `string` | The model the agent ran on. _(length 0–200)_ |
+| `prNumber` | optional | `integer` | A PR the record references. |
+| `prUrl` | optional | `string` | HTML URL of that PR. _(length 0–2000; format: uri)_ |
+| `sources` | optional | `object[]` | The files/links inspected. |
+| `confidence` | optional | `"low" \| "medium" \| "high"` | Self-reported confidence in the record. |
+| `tokensUsed` | optional | `integer` | Tokens the run consumed. |
+| `durationMs` | optional | `integer` | Run duration in milliseconds. |
+| `visibility` | optional | `"draft" \| "published"` | Record visibility. `draft` keeps it out of the panel; `published` surfaces it. |
+| `completedAt` | optional | `string` | ISO-8601 timestamp the work finished. Set it (or flip `kind` off `working`) to mark a run record done. |
+| `sessionId` | optional | `string` | The agent-run session id, so the dashboard can deep-link to the run. _(length 0–300)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+### Trigger
+
+Recurring coding-agent triggers: the scheduled, unattended runs that burn
+down the ops queue in `--pr` mode (one PR per fixed item; nothing
+auto-merges). Shipeasy can fire four providers directly — Claude routines,
+Cursor cloud agents, Copilot cloud agents, and Google Jules (the Gemini
+path) — registered here as trigger connectors (idempotent per provider
+key). Other platforms (Codex, Windsurf, Cline, OpenClaw, OpenCode,
+Continue) schedule on their own surface — typically a GitHub Actions
+`schedule:` cron running the platform's headless CLI with the shared
+trigger prompt.
+
+#### `ops_trigger_create_claude`
+
+Register a Claude Code scheduled routine as the trigger connector. Creates (or idempotently updates) a coding-agent **trigger** connector — the recurring, unattended run that burns down the ops queue in `--pr` mode. Discriminated on `provider`; only the four Shipeasy-fireable providers are accepted (`claude_trigger`, `cursor_trigger`, `copilo…
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `name` | optional | `string` | Human-readable connector label. _(default `"Claude trigger"`; length 1–80)_ |
+| `events` | optional | `"bug.created" \| "feature_request.created"[]` | Events that auto-fire the routine. Defaults to empty so the trigger does not auto-fire paid runs until events are subscribed. _(default `[]`)_ |
+| `config` | required | `object` | Non-secret config for a Claude trigger. |
+| `config.routineId` | required | `string` | The Claude Code routine id this connector fires (the id recorded at setup). Idempotency key for the connector. _(length 1–∞)_ |
+| `config.fireText` | optional | `string` | Optional default prompt sent on a manual fire / when no event text applies. _(length 1–∞)_ |
+| `token` | optional | `string` | The routine's fire bearer token (secret). **Optional** — a tokenless trigger is recorded but not fireable until a token is added later. Encrypted into the credentials cipher; never persisted in `config` or returned. _(length 1–∞)_ |
+| `enabled` | optional | `boolean` | Whether the trigger is active on create. _(default `true`)_ |
+
+#### `ops_trigger_create_copilot`
+
+Register a GitHub Copilot cloud-agent trigger. Creates (or idempotently updates) a coding-agent **trigger** connector — the recurring, unattended run that burns down the ops queue in `--pr` mode. Discriminated on `provider`; only the four Shipeasy-fireable providers are accepted (`claude_trigger`, `cursor_trigger`, `copilo…
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `name` | optional | `string` | Human-readable connector label. _(default `"Copilot trigger"`; length 1–80)_ |
+| `events` | optional | `"bug.created" \| "feature_request.created"[]` | Events that auto-fire a Copilot agent task. Defaults to empty. _(default `[]`)_ |
+| `config` | required | `object` | Non-secret config for a Copilot trigger. |
+| `config.owner` | required | `string` | **First** GitHub repo owner. Together with `repo` forms the connector's idempotency key (`owner/repo`), and both mirror `repos[0]` when `repos` is supplied. _(length 1–∞)_ |
+| `config.repo` | required | `string` | GitHub repo name. _(length 1–∞)_ |
+| `config.baseRef` | optional | `string` | Optional base ref the agent branches from. Mirrors `repos[0].baseRef`. _(length 1–∞)_ |
+| `config.repos` | optional | `object[]` | Every repo this trigger runs against, each with its own base branch. GitHub's agent-tasks API is per-repo, so ONE fire starts one task per entry. Omit for a single-repo trigger, which is then described by `owner`/`repo`/`baseRef` alone; when supplied, the first entry must match them. |
+| `config.projectId` | required | `string` | Shipeasy project id the run targets. _(length 1–∞)_ |
+| `config.fireText` | optional | `string` | Optional standing instruction prepended to every run's prompt — the trigger's base prompt. Lets two triggers on different repos steer their runs differently without changing the `/shipeasy-ops-work` task block. _(length 1–∞)_ |
+| `token` | required | `string` | Copilot-licensed user PAT (secret). The ops key lives in the repo's GitHub "Agents" secret store and is never sent through Shipeasy. Encrypted; never returned. _(length 1–∞)_ |
+| `enabled` | optional | `boolean` | Whether the trigger is active on create. _(default `true`)_ |
+
+#### `ops_trigger_create_cursor`
+
+Register a Cursor cloud-agent trigger (cold-fire; Shipeasy launches the run). Creates (or idempotently updates) a coding-agent **trigger** connector — the recurring, unattended run that burns down the ops queue in `--pr` mode. Discriminated on `provider`; only the four Shipeasy-fireable providers are accepted (`claude_trigger`, `cursor_trigger`, `copilo…
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `name` | optional | `string` | Human-readable connector label. _(default `"Cursor trigger"`; length 1–80)_ |
+| `events` | optional | `"bug.created" \| "feature_request.created"[]` | Events that auto-fire a cold cloud-agent run. Defaults to empty. _(default `[]`)_ |
+| `config` | required | `object` | Non-secret config for a Cursor trigger. |
+| `config.repoUrl` | required | `string` | **First** repo the cloud agent runs against, e.g. `https://github.com/owner/repo`. Idempotency key for the connector, and always a mirror of `repos[0].url` when `repos` is supplied. _(format: uri)_ |
+| `config.startingRef` | optional | `string` | Optional git ref the run starts from. Mirrors `repos[0].startingRef`. Pinned onto the Cursor agent at creation, so changing it provisions a replacement agent. _(length 1–∞)_ |
+| `config.repos` | optional | `object[]` | Every repo this trigger runs against, each with its own starting branch — Cursor launches ONE agent across the whole set. Omit for a single-repo trigger, which is then described by `repoUrl`/`startingRef` alone; when supplied, the first entry must match them. Changing the set re-provisions the agent (its repos are pinned at creation). |
+| `config.projectId` | required | `string` | Shipeasy project id the run targets. _(length 1–∞)_ |
+| `config.agentId` | optional | `string` | Server-managed. The reusable Cursor cloud agent (`bc-…`) Shipeasy provisions once at connect and then starts every run on. A supplied value is ignored on create; if Cursor stops recognising the id (404), the next fire provisions a replacement and stores it here. _(length 1–∞)_ |
+| `config.fireText` | optional | `string` | Optional standing instruction prepended to every run's prompt — the trigger's base prompt. Lets two triggers on different repos steer their runs differently without changing the `/shipeasy-ops-work` task block. _(length 1–∞)_ |
+| `apiKey` | required | `string` | Cursor API key that launches the run (secret). Encrypted into the credentials cipher; never returned. _(length 1–∞)_ |
+| `opsKey` | required | `string` | Restricted Shipeasy ops key (secret). Sent as the Bearer for the Shipeasy MCP server handed to each run inline — never in the prompt text or the run env. Encrypted; never returned. _(length 1–∞)_ |
+| `enabled` | optional | `boolean` | Whether the trigger is active on create. _(default `true`)_ |
+
+#### `ops_trigger_create_jules`
+
+Register a Google Jules (Gemini) trigger. Creates (or idempotently updates) a coding-agent **trigger** connector — the recurring, unattended run that burns down the ops queue in `--pr` mode. Discriminated on `provider`; only the four Shipeasy-fireable providers are accepted (`claude_trigger`, `cursor_trigger`, `copilo…
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `name` | optional | `string` | Human-readable connector label. _(default `"Jules trigger"`; length 1–80)_ |
+| `events` | optional | `"bug.created" \| "feature_request.created"[]` | Events that auto-fire a Jules session. Defaults to empty. _(default `[]`)_ |
+| `config` | required | `object` | Non-secret config for a Jules trigger. |
+| `config.source` | required | `string` | Jules source for the connected repo, e.g. `sources/github/owner/repo`. Idempotency key for the connector. _(length 1–∞)_ |
+| `config.startingBranch` | optional | `string` | Optional branch the session starts from. _(length 1–∞)_ |
+| `config.projectId` | required | `string` | Shipeasy project id the run targets. _(length 1–∞)_ |
+| `config.fireText` | optional | `string` | Optional standing instruction prepended to every run's prompt — the trigger's base prompt. Lets two triggers on different repos steer their runs differently without changing the `/shipeasy-ops-work` task block. _(length 1–∞)_ |
+| `apiKey` | required | `string` | Jules API key that launches the session (secret). Encrypted into the credentials cipher; never returned. _(length 1–∞)_ |
+| `opsKey` | required | `string` | Restricted Shipeasy ops key, embedded in the prompt (Jules exposes no env channel) (secret). Encrypted; never returned. _(length 1–∞)_ |
+| `enabled` | optional | `boolean` | Whether the trigger is active on create. _(default `true`)_ |
+
+## Projects
+
+Projects: the account-level container every other resource is scoped to.
+
+**Account-level, not bound-project-level.** Both operations resolve from the caller's credential rather than the `.shipeasy`-bound project — `current` reads the project the auth header maps to, and `upsert` find-or-creates under the session's owner. Neither touches the local `.shipeasy` binding; recording the result there is a consumer side-effect layered on top.
+
+**Idempotent upsert.** A project is keyed by `(owner_email, domain)`. Calling `upsert` again with the same domain returns the existing project with `created: false`, so it is safe to run on every install.
+
+### `projects_current`
+
+**Show the current project**
+
+Returns the project the caller's auth header resolves to — plan, status, billing, and which modules are enabled. The server reads the project from the credential, so there is no id parameter. Powers `whoami`.
+
+**Use case:** Resolve who you are — the project, plan, and enabled modules tied to the current credential — without passing an id. Backs a registry-driven `whoami`.
+
+_Parameters_
+
+_No parameters._
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+
+### `projects_update`
+
+**Update the current project**
+
+Update the current project's settings — name, domain, slug, default environment, timezone, experiment-analysis knobs (statistical method, significance threshold, auto-rollback, minimum sample days), and the per-module enable flags. Partial: only the fields you send change.
+
+The project id in the path must match the project the caller's credential resolves to (a credential can only edit its own project). Changing `domain` re-stamps the allowed origin into every live SDK key.
+
+**Use case:** Rename a project, move its domain, toggle a module on/off, or tune the experiment-analysis defaults without leaving the CLI.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `name` | optional | `string` | New project name. _(length 1–120)_ |
+| `domain` | optional | `string` | Lowercase bare hostname (e.g. `acme.com`, `app.acme.com`, `*.acme.com`), or `*` to allow any origin. Full URLs with `https://` are not accepted. The project is keyed by `(owner_email, domain)`, so a second call with the same domain returns the existing project. _(length 1–2048; pattern `^(\*\|(\*\.)?[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+)$`)_ |
+| `slug` | optional | `string` | URL-safe identifier used in app URLs and SDK config. Lowercase letters, numbers, and hyphens; 2–48 chars; cannot start or end with a hyphen. The caller lowercases the raw slug before sending. _(length 2–48; pattern `^[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?$`)_ |
+| `defaultEnv` | optional | `"dev" \| "staging" \| "prod"` | Default environment new resources are scoped to. |
+| `timezone` | optional | `string` | IANA timezone the project's daily analysis runs in. _(length 1–64)_ |
+| `statMethod` | optional | `"sequential" \| "fixed" \| "bayesian"` | Statistical method the experiment analyzer uses. |
+| `sigThreshold` | optional | `"0.01" \| "0.05" \| "0.10"` | Significance threshold (alpha) for experiment analysis. |
+| `autoRollback` | optional | `boolean` | Whether a failing guardrail auto-rolls back the experiment. |
+| `minSampleDays` | optional | `integer` | Minimum number of days an experiment must run before it can be called. _(1–365)_ |
+| `moduleTranslations` | optional | `boolean` | Enable/disable the i18n/translations module. |
+| `moduleConfigs` | optional | `boolean` | Enable/disable the dynamic-configs module. |
+| `moduleGates` | optional | `boolean` | Enable/disable the feature-gates module. |
+| `moduleExperiments` | optional | `boolean` | Enable/disable the experiments module. |
+| `moduleFeedback` | optional | `boolean` | Enable/disable the feedback/ops module. |
+| `moduleUser` | optional | `boolean` | Enable/disable the user-management module. |
+| `moduleEvents` | optional | `boolean` | Enable/disable the events module. |
+| `minSampleSize` | optional | `integer` | Verdict power guard — minimum users per arm before a ship/hold verdict. _(2–1000000)_ |
+| `minRuntimeDays` | optional | `integer` | Minimum days an experiment must run before a verdict (peeking guard). _(0–365)_ |
+| `defaultPower` | optional | `number` | Target statistical power (1−β) feeding the realized-MDE calculation. _(0.5–0.99)_ |
+| `ciConfidence` | optional | `number` | Confidence level for the interval surfaced on results (any value in [0.5, 0.999], e.g. 0.90, 0.95, 0.975, 0.99). _(0.5–0.999)_ |
+| `defaultAllocationPct` | optional | `integer` | Default traffic allocation (basis points, 1000 = 10%) new experiments start with; overridable per experiment. _(1–10000)_ |
+| `defaultHoldout` | optional | `integer` | Default holdout carve-out (basis points) that seeds each new universe's holdout (0 = none). _(0–10000)_ |
+| `defaultWinsorizePct` | optional | `integer` | Default winsorization percentile new metrics start with; overridable per metric. _(1–99)_ |
+| `defaultMei` | optional | `any` | Default minimum effect of interest (relative, 0–1) new metrics start with; overridable per metric and per experiment. Null clears it. |
+| `cupedBaselineDays` | optional | `integer` | CUPED baseline window — days of pre-experiment history, frozen at start. _(1–365)_ |
+| `cupedMinOverlap` | optional | `number` | CUPED selection-bias guard — min share of users with a baseline, else skip. _(0.01–0.99)_ |
+| `cupedMinBaselineUsers` | optional | `integer` | CUPED — minimum users with a baseline before it runs at all. _(10–100000)_ |
+| `msprtTauMeiFactor` | optional | `number` | mSPRT prior width — τ = minimum effect of interest × this factor. _(0.1–2)_ |
+| `msprtTauSdFactor` | optional | `number` | mSPRT fallback prior width — τ = this × control SD when no MEI is set. _(0.05–1)_ |
+| `srmThreshold` | optional | `number` | SRM chi-square p-value below which the run is called invalid. _(0.0001–0.05)_ |
+| `errorAutocloseDays` | optional | `integer` | Days an `open` tracked error may go unseen before the nightly sweep auto-resolves it. `0` disables auto-close for this project. _(0–365)_ |
+| `errorTicketMinOccurrences` | optional | `integer` | Occurrence count a tracked error must cross before an `error` ticket is auto-filed into the ops queue. Requires a paid plan — the request is rejected with 403 on a plan without the `ops_auto_error_issues` entitlement. _(1–10000)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+### `projects_upsert`
+
+Find-or-create a Shipeasy project by domain (idempotent) and bind the cwd to it via .shipeasy. Use this on fresh installs BEFORE any other write tool — every other write tool refuses to run until .shipeasy exists. Re-running with the same domain returns the existing project unchanged.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `domain` | required | `string` | Hostname-like identifier for the project (e.g. shouks.app, acme.com). Primary key for upsert. |
+| `name` | optional | `string` | Human-readable project name. Defaults to the domain on first create; ignored on later upserts. |
+| `path` | optional | `string` | Directory to write .shipeasy in. Defaults to the MCP server's cwd. |
+| `bind` | optional | `boolean` | Write .shipeasy after upsert. Default true. Set false to skip binding. |
+
+### `whoami`
+
+**Show the current project**
+
+Returns the project the caller's auth header resolves to — plan, status, billing, and which modules are enabled. The server reads the project from the credential, so there is no id parameter. Powers `whoami`.
+
+**Use case:** Resolve who you are — the project, plan, and enabled modules tied to the current credential — without passing an id. Backs a registry-driven `whoami`.
+
+_Parameters_
+
+_No parameters._
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+
+## Errors
+
+Tracked production errors: the deduplicated, fingerprinted error stream the
+SDK + framework error sinks feed. Read-only list/get plus a status update
+(`open`/`resolved`/`ignored`), an auto-file-to-GitHub-issue action, and a
+time-series rollup. Errors are ingestion-only — there is no create route.
+
+### `errors_get`
+
+**Get a tracked error**
+
+Returns a single tracked error by its id, including the latest occurrence's stack, extras, and consequence, plus `occurrences` — the sampled per-instance detail rows behind the issue (newest first; exhaustive while the issue is small, thinned at volume, capped at 100). Returns `404` if no such error exists in the project.
+
+**Use case:** Drill into one issue — fetch its full stack and `seenUrls` to investigate, or walk `occurrences` to see how the failing message/stack varies across instances.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+### `errors_list`
+
+**List tracked errors**
+
+Returns a single page of tracked production errors as a **bare JSON array** (no pagination envelope), ordered by `lastSeenAt desc`. Filter with `status`, free-text-search with `q`, and cap the page with `limit`.
+
+Tracked errors are never filed by hand — an ingestion path (worker log drain / the `see()` SDK reporter) folds each occurrence into a row keyed by `fingerprint`, bumping `count` and `lastSeenAt`. This surface only reads them and (via PATCH) flips their `status`.
+
+**Use case:** Snapshot the project's open issues for a triage dashboard, or drive a CI gate that fails the build when any `open` error of `kind: uncaught` exists in `prod`.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `status` | optional | `"open" \| "resolved" \| "ignored" \| "all"` | Filter by triage state. `all` (the default) returns every status. _(default `"all"`)_ |
+| `q` | optional | `string` | Case-insensitive substring match against `message`, `errorType`, and `subject`. _(length 0–200)_ |
+| `limit` | optional | `integer` | Maximum number of rows to return (1–500). Defaults to 200. _(default `200`; 1–500)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+
+### `errors_resolve`
+
+**Resolve a tracked error**
+
+Marks one tracked error `resolved` — the single-purpose "close out" action. Takes no body; it is `PATCH /api/admin/errors/{id}` pinned to `{ "status": "resolved" }`, exposed so tooling can close an error without being handed the full open/resolved/ignored status machine. A resolved error reopens automatically (ingestion-side) if it recurs, so resolving is always safe: a premature resolve un-does itself on the next occurrence. Returns the updated row; `404` if the error does not exist.
+
+**Use case:** Close out a tracked error from an agent or script once its fix has shipped — e.g. after a deploy, resolve every open issue the change addressed and let recurrence reopen anything that wasn't actually fixed.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+### `errors_series`
+
+**Get an error's occurrence series**
+
+Returns a bucketed occurrence timeseries for one tracked error (by its fingerprint), read from the `shipeasy_errors` Analytics Engine dataset (near-real-time; ingest lag is seconds). The window bounds are epoch **seconds**; `to` must be strictly greater than `from`. The response echoes the SQL that produced the rows.
+
+**Use case:** Render the trend sparkline / occurrence chart on the error detail panel, or pull the raw bucketed counts to alert when an issue's rate spikes.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `from` | required | `integer` | Window start, epoch seconds (inclusive). _(≥ 0)_ |
+| `to` | required | `integer` | Window end, epoch seconds (exclusive). Must be greater than `from`. _(≥ 0)_ |
+| `bucket` | optional | `integer` | Bucket width in seconds (60s–86400s/1d). Defaults to `3600` (hourly). Each returned point is floor-aligned to this width. _(default `3600`; 60–86400)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+## Auth
+
+Device-flow (PKCE) authentication shared with the CLI — authenticate once and every mutating tool can write. The token is stored in `~/.config/shipeasy/config.json`.
+
+### `auth_check`
+
+Report whether ~/.config/shipeasy/config.json holds a valid CLI token. Returns \{ authenticated, project_id, base_url, user_email \}.
+
+_Parameters_
+
+_No parameters._
+
+### `auth_login`
+
+Launch the PKCE device-auth flow via `shipeasy login`. Opens a browser; blocks up to 5 minutes. Caller should render a 'waiting for browser…' spinner.
+
+_Parameters_
+
+_No parameters._
+
+### `auth_logout`
+
+Delete ~/.config/shipeasy/config.json — the ONE session shared by the `shipeasy` CLI and every MCP client on this machine. No network call. **This is not restorable from MCP**: re-authenticating needs a browser sign-in in a terminal (`shipeasy login`), which this transport cannot perform, so calling this strands the current task and every other tool until a human signs in again. Do NOT call it to 'reset' or troubleshoot a failing call — a 401/403 is fixed by signing in, not by deleting the credential first. Only call it when the user explicitly asked to sign out, and pass confirm: true to acknowledge that.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `confirm` | required | `boolean` | Must be true. Acknowledges that this deletes the machine-wide session and that only a human at a terminal can restore it. |
+
+## SDK docs
+
+Fetch SDK documentation — feature pages, nested snippets, and installable skills — from each SDK's published GitHub Pages docs.
+
+### `docs_get`
+
+**Fetch one SDK doc page or snippet**
+
+Fetch one feature page (`flags`, `experiments`, …) or nested snippet (`release/experiments`, …), substituting declared \{\{placeholders\}\} from caller args.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `sdk` | optional | `"typescript" \| "javascript" \| "node" \| "ts" \| "python" \| "go" \| "java" \| "kotlin" \| "php" \| "swift" \| "ruby"` | SDK language. Defaults to the `sdk` recorded in the nearest `.shipeasy` when omitted. |
+| `path` | required | `string` | Page key or snippet 'group/resource'. |
+| `framework` | optional | `string` | Framework hint (substitutes \{\{FRAMEWORK\}\}). |
+| `name` | optional | `string` | Resource name (substitutes \{\{RESOURCE_NAME\}\}). |
+
+### `docs_list`
+
+**List an SDK's documentation tree**
+
+Fetch an SDK's `/docs/manifest.json` and return the doc tree — feature pages, nested snippet groups, the optional setup-topic map, and whether an installable skill exists.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `sdk` | optional | `"typescript" \| "javascript" \| "node" \| "ts" \| "python" \| "go" \| "java" \| "kotlin" \| "php" \| "swift" \| "ruby"` | SDK language. Defaults to the `sdk` recorded in the nearest `.shipeasy` when omitted. |
+
+### `docs_skill`
+
+**Fetch an SDK's installable LLM skill**
+
+Fetch the SDK's `skill/SKILL.md` (frontmatter intact) so an agent can install it verbatim. The CLI `--install` writes it locally (a consumer fs side-effect).
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `sdk` | optional | `"typescript" \| "javascript" \| "node" \| "ts" \| "python" \| "go" \| "java" \| "kotlin" \| "php" \| "swift" \| "ruby"` | SDK language. Defaults to the `sdk` recorded in the nearest `.shipeasy` when omitted. |
+| `install` | optional | `boolean` | CLI only: write the skill to the local agent skills dir. |

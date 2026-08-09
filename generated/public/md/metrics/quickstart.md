@@ -1,0 +1,168 @@
+# Quickstart
+
+Source: https://docs.shipeasy.ai/metrics/quickstart
+
+> Create your first metric, log the events it depends on, and put an alert on it — five minutes, end to end.
+
+This walks you through the metric pipeline end to end: pick what to measure, log the underlying
+events, create the metric definition, and put a threshold alert on it. By the end you'll have a
+number you can watch while you ramp, and a rule that pages when it moves the wrong way.
+
+**Create a conversion metric**
+
+```bash
+shipeasy metrics create purchase_conversion --event-name purchase --query 'count_users(purchase)'
+```
+
+**Log the underlying event from your code**
+
+```bash
+flags.track(userId, 'purchase', { revenueCents })
+```
+
+**Raise a ticket when it drops**
+
+```bash
+shipeasy ops alerts create --name 'Conversion dropped' --metric-id <id> --comparator lt --threshold 0.03 --window-hours 24
+```
+
+**Watch the series on the dashboard**
+
+```bash
+shipeasy metrics series purchase_conversion
+```
+
+## 1. Pick what to measure
+
+Before you create anything, answer one question: **what number tells you the change worked?**
+
+For a checkout-flow rewrite: probably `purchase_conversion` — did exposed users buy? For a new
+paywall: probably `subscription_conversion` — did they sign up? For a homepage redesign:
+typically `session_engagement` — did they click past the fold?
+
+Pick one. Two is fine if they're closely related. Five means you haven't decided yet — go back and
+decide.
+
+The metric needs to be:
+
+- **Computable from events you already log** (or are willing to start logging).
+- **Specific to the change** — not "DAU," which moves for a hundred reasons.
+- **Reasonable to see** — on 1,000 users a day, a 1% move is inside the daily noise. Run `shipeasy metrics series <name>` first and look at how much the number already wanders before you decide what counts as a real move.
+
+## 2. Define the metric
+
+The simplest case — did event X happen for this user at least once?
+
+```bash
+shipeasy metrics create purchase_conversion \
+  --event-name purchase \
+  --query 'count_users(purchase)'
+```
+
+You now have a metric definition. It does nothing on its own; it tells the analysis pipeline how
+to aggregate the underlying events per user.
+
+For a revenue metric (sum the `revenueCents` property across `purchase` events per user):
+
+```bash
+shipeasy metrics create revenue_per_user \
+  --event-name purchase \
+  --query 'sum(purchase, revenueCents)'
+```
+
+For more aggregation types, see [Aggregations](https://docs.shipeasy.ai/metrics/aggregations).
+
+## 3. Log the underlying events
+
+The metric is a _rule_ for aggregating events. The events themselves come from your code:
+
+```ts title="app/checkout/success/page.tsx"
+import { flags } from "@shipeasy/sdk/server";
+
+export default async function CheckoutSuccess({ order }: { order: Order }) {
+  flags.track(order.userId, "purchase", {
+    revenueCents: order.totalCents,
+    currency: order.currency,
+    channel: order.acquisitionChannel,
+  });
+  return <ThankYou />;
+}
+```
+
+A few rules that matter:
+
+- **The first argument is the `userId`.** `flags.track` requires it as a positional arg — it is what makes `count_users` countable.
+- **Properties become filterable.** You can later add a metric like "organic-channel purchases" by filtering on `channel` inside the DSL selector (`count_users(purchase{channel="organic"})`).
+- **`track()` is fire-and-forget.** It returns void; the event flushes asynchronously. Don't `await` it expecting a delivery guarantee — it's analytics, not transactional state.
+
+Deploy this. Events start flowing. The metric definition will pick them up on the next analysis
+window (daily by default).
+
+## 4. Put an alert on it
+
+A metric you have to remember to look at is a metric nobody looks at. Give it a threshold and let
+it page:
+
+```bash
+# `--metric-id` takes the metric's id — `shipeasy metrics list` prints it
+# next to the name.
+shipeasy ops alerts create \
+  --name 'Conversion dropped' \
+  --metric-id <id> \
+  --comparator lt --threshold 0.03 \
+  --window-hours 24 --bucket-minutes 60
+```
+
+Add a second metric for the thing you must not break while you ramp:
+
+```bash
+shipeasy metrics create p95_page_load_ms \
+  --event-name page_view \
+  --query 'p95(page_view, loadTimeMs)'
+
+shipeasy ops alerts create \
+  --name 'Page load too slow' \
+  --metric-id <id> \
+  --comparator gt --threshold 1200 --window-hours 1
+```
+
+A firing rule opens an item in the ops queue with the series attached, so the regression arrives as
+a ticket rather than as a message somebody has to notice. Full options — anomaly rules, sustained
+departure, required buckets — are in [Alerts](https://docs.shipeasy.ai/metrics/alerts).
+
+## 5. Read the series
+
+`shipeasy metrics series purchase_conversion` prints the same buckets the dashboard charts and the
+alert evaluator reads, so what you see locally is what the rule is judging:
+
+```
+2026-08-06  4.8%
+2026-08-07  5.2%
+2026-08-08  5.1%
+```
+
+If the number is flat or missing, two checks:
+
+1. **Are events actually landing?** Open the **Events** tab and confirm non-trivial counts. Zero
+   means your `track()` call isn't running on the path you think it is.
+2. **Is the window long enough?** A 1-hour window on a low-volume event is mostly empty buckets.
+   Widen the window, or set `--required-buckets` so one lone sample can't page anyone.
+
+## Where to next
+
+- **[Aggregation types](https://docs.shipeasy.ai/metrics/aggregations)** — Conversion, count, sum, mean, ratio — what each does and when to pick it.
+
+- **[The metric DSL](https://docs.shipeasy.ai/metrics/grammar)** — The full grammar — every aggregation, filter and operator, and what the parser refuses.
+
+- **[Threshold alerts](https://docs.shipeasy.ai/metrics/alerts)** — Windows, buckets, anomaly rules, and the ticket a firing rule files for you.
+
+```
+
+```
+
+**Related**
+
+- [Aggregation types](https://docs.shipeasy.ai/metrics/aggregations) — Conversion, count, sum, mean, ratio
+- [Query DSL grammar](https://docs.shipeasy.ai/metrics/grammar) — Everything the query language allows
+- [Configure alerts](https://docs.shipeasy.ai/metrics/alerts) — Raise a threshold on what you just built
+- [Flow & dependencies](https://docs.shipeasy.ai/flags/flow) — Trace what feeds what

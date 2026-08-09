@@ -1,0 +1,41 @@
+# Dynamic configs
+
+Source: https://docs.shipeasy.ai/sdks/reference/go/configs
+
+> A dynamic config is a typed JSON value managed in the dashboard. Configs are not user-scoped — the bound Client exposes them for one-stop ergonomics but…
+
+> **Note**
+Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-go/pages/configs.md`](https://shipeasy-ai.github.io/sdk-go/pages/configs.md).
+
+A dynamic config is a typed JSON value managed in the dashboard. Configs are
+**not** user-scoped — the bound `Client` exposes them for one-stop ergonomics but
+forwards straight to the engine.
+
+## `GetConfig` — (value, ok)
+
+```go
+c := shipeasy.NewClient(acct)
+
+cfg, ok := c.GetConfig("billing_copy")
+if ok {
+    m := cfg.(map[string]any)  // configs are arbitrary JSON; type-assert
+    _ = m["cta"]
+}
+```
+
+`GetConfig` returns `(value any, ok bool)`. `ok` is `false` when the key is
+absent (or the engine isn't initialized). The value is whatever JSON the config
+holds — assert to the concrete type you stored (`string`, `float64`,
+`map[string]any`, `[]any`, …).
+
+## `GetConfigOr` — explicit default
+
+Returns the config value, or `def` when the key is absent:
+
+```go
+copy := c.GetConfigOr("billing_copy", map[string]any{"cta": "Buy"})
+```
+
+Configs are not user-scoped, so the bound `Client` is read the same way for any
+user — they're exposed on `Client` purely so flags, configs, kill switches,
+experiments and tracking all come off one handle.

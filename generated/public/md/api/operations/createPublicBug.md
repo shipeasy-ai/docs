@@ -1,0 +1,19 @@
+# File a bug
+
+Source: https://docs.shipeasy.ai/api/operations/createPublicBug
+
+> >-
+
+Files one bug onto a project's queue, awaiting human approval. This is the **public** intake: it authenticates with a *client* SDK key rather than an admin key, so it can be called from a CLI, an installer script, a devtools overlay, or any shipped code — the same places a client key already lives.
+
+Three gates decide whether a ticket is filed, and nothing else the caller sends can widen them:
+
+1. the key is a `client` key carrying the `tickets:public_create` scope,
+2. the key's project has public ticket creation enabled, and
+3. the item is filed as `pending_approval` — parked out of the work queue until a human promotes it in the dashboard.
+
+The project is the key's own project; there is no `X-Project-Id` to pass and no way to file into someone else's queue. Repeat submissions of the same title dedupe against the open ticket already tracking it, which returns `200` with `deduped: true` instead of filing again.
+
+This endpoint is served by the Shipeasy **edge worker** (`api.shipeasy.ai`), not the admin API — see `servers` below.
+
+**Use case:** `shipeasy setup` fails on a customer's machine and self-reports the failure with the user's consent — `{ "title": "Setup failed at Feature installs", "stepsToReproduce": "…", "actualResult": "…" }`.

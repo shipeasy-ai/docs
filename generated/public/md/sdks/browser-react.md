@@ -1,0 +1,160 @@
+# Browser & React
+
+Source: https://docs.shipeasy.ai/sdks/browser-react
+
+> The client build of @shipeasy/sdk — client-key init, identify, in-browser evaluation, the DevTools overlay, and SSR bootstrap.
+
+The client build (`@shipeasy/sdk/client`) runs in the browser. It manages an anonymous-id cookie, fetches an evaluation bundle on init, evaluates locally, and batches event uploads with `navigator.sendBeacon` on page hide.
+
+## Install
+
+```bash
+npm install @shipeasy/sdk
+```
+
+Same package as the server — bundlers pick the browser build automatically, or import `@shipeasy/sdk/client` explicitly.
+
+## Configure
+
+Initialise once at startup, with the **public client** key. The browser SDK requires the explicit `clientKey` call — there is no bootstrap-key auto-init. Pass an optional `attributes` transform that maps your user object onto the Shipeasy attribute map.
+
+```ts
+import { configure, Client } from "@shipeasy/sdk/client";
+
+configure({
+  clientKey: import.meta.env.VITE_SHIPEASY_CLIENT_KEY ?? "",
+  attributes: (u) => ({ user_id: u.id, plan: u.plan }),
+});
+```
+
+> **Client key, client only**
+
+Never put a server key in a browser bundle. The two key kinds aren't interchangeable. See
+<a href="/get-started/keys-and-environments">Keys & environments</a>.
+
+## Bind a client to the user
+
+Construct a `Client` from your user object and `await ready()` once — it fetches the evaluation bundle, merges browser context (`locale`, `timezone`, `path`, `referrer`, `screen_*`, `user_agent`) and the persisted `anonymous_id`, so gate rules can target by locale and holdouts can hash anonymous visitors out of the box.
+
+```ts
+const flags = new Client(user);
+await flags.ready();
+```
+
+## Read flags and configs
+
+The bound getters take **no** user argument — the bound context is implicit:
+
+```ts
+if (flags.getFlag("new_checkout")) {
+  // ship it
+}
+flags.getFlag("new_checkout", true); // default only when not-ready / not-found
+
+const cfg = flags.getConfig<{ max_uploads: number }>("upload_limits");
+```
+
+## Track an event
+
+```ts
+flags.track("checkout_viewed", { source: "nav" });
+```
+
+Fire-and-forget — events are batched and flushed with `sendBeacon` on page hide.
+
+## React is a thin wrapper
+
+> **Every API works in vanilla JS**
+
+React conveniences are a thin layer on top of the framework-agnostic API. There are no React-only
+methods — drop the SDK into an Astro island, an HTMX page, or a plain
+<code><script></code> and every primitive works without React.
+
+The browser SDK dispatches `se:override:change` whenever a re-poll updates the cached blob or the devtools overlay flips an override — wrap it in your framework's reactivity:
+
+```tsx
+import { useEffect, useState } from "react";
+import { configure, Client } from "@shipeasy/sdk/client";
+
+configure({
+  clientKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY ?? "",
+  attributes: (u) => ({ user_id: u.id, plan: u.plan }),
+});
+
+const flags = new Client(currentUser);
+
+function CheckoutButton() {
+  const [on, setOn] = useState(() => flags.getFlag("new_checkout"));
+  useEffect(() => {
+    const h = () => setOn(flags.getFlag("new_checkout"));
+    window.addEventListener("se:override:change", h);
+    return () => window.removeEventListener("se:override:change", h);
+  }, []);
+  return <button>{on ? "New flow" : "Old flow"}</button>;
+}
+```
+
+## SSR bootstrap & the anon cookie
+
+For Next.js / Remix / SvelteKit, the **server** `configure({ apiKey })` call evaluates the bundle and lands the same data on `window.__SE_BOOTSTRAP`. Configure the client with `configure({ clientKey })` and the bootstrap auto-hydrates before your first read — no flicker.
+
+Logged-out visitors bucket on a shared first-party `__se_anon_id` cookie, minted by middleware on HTML routes. Because the server and browser read the same cookie, a fractional rollout buckets a visitor **identically** on both sides. The cookie is non-`HttpOnly` by design so the browser SDK can read it.
+
+## DevTools overlay
+
+Press `Shift+Alt+S` on any page running the SDK (or append `?se=1`). The panel mounts in a Shadow DOM overlay and flips every gate / config / kill switch **for the current session only** — for QA, demos, and bug repro.
+
+```ts
+import { loadDevtools } from "@shipeasy/sdk/client";
+
+if (process.env.NODE_ENV !== "production") loadDevtools();
+```
+
+Full guide: [DevTools overlay](https://docs.shipeasy.ai/sdks/devtools-overlay).
+
+## Testing
+
+Swap `configure()` for `configureForTesting()` — zero network, no key, and your code keeps reading through the ordinary `new Client(user)`:
+
+```ts
+import { configureForTesting, Client, clearOverrides } from "@shipeasy/sdk/client";
+
+configureForTesting({ flags: { new_checkout: true } });
+
+new Client({ user_id: "u_1" }).getFlag("new_checkout"); // true — no network
+clearOverrides();
+```
+
+Browser override precedence: programmatic override > URL/devtools override (`?se_gate_…`) > the server's evaluation. See [Testing](https://docs.shipeasy.ai/sdks/testing).
+
+## Errors & feedback
+
+Two layers, both part of this SDK — no separate error package, no second key.
+
+**Auto-collected client errors.** The `autoCollect` errors group wraps `fetch` (5xx + network failures, each named to a specific endpoint) and ships `type:"error"` events to the [errors primitive](https://docs.shipeasy.ai/feedback/errors). It's **on by default** the moment you `configure({ clientKey })` — nothing to enable. It does **not** blanket-capture `window.onerror` / `unhandledrejection`. Opt out without losing vitals/engagement:
+
+```ts
+configure({ clientKey, autoCollect: { errors: false } });
+```
+
+**Handled exceptions with `see()`.** Report a caught exception with a one-sentence **consequence** so it folds into the same errors primitive:
+
+```ts
+import { see } from "@shipeasy/sdk/client";
+
+try {
+  await submitOrder(order);
+} catch (e) {
+  see(e).causes_the("checkout").to("use cached prices").extras({ order_id: order.id });
+}
+```
+
+Use `see.Violation("name")` for a non-exception problem and `see.ControlFlowException(e).because("…")` for expected control flow. Full grammar: [Error reporting with see()](https://docs.shipeasy.ai/feedback/error-reporting). The in-app bug/feature **report overlay** is the [devtools overlay](https://docs.shipeasy.ai/feedback/devtools) shown above.
+
+**Related**
+
+- [Shared evaluation model](https://docs.shipeasy.ai/sdks) — How every SDK buckets
+- [Node / TypeScript](https://docs.shipeasy.ai/sdks/node-typescript) — The server build
+- [DevTools overlay](https://docs.shipeasy.ai/sdks/devtools-overlay) — Local overrides
+- [Testing](https://docs.shipeasy.ai/sdks/testing) — forTesting + override*
+- [Keys & environments](https://docs.shipeasy.ai/get-started/keys-and-environments)

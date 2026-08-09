@@ -1,0 +1,113 @@
+# Drop-in script tag
+
+Source: https://docs.shipeasy.ai/sdks/script-loader
+
+> Add feature flags and configs to a no-build or static site with one <script> tag — evaluated at the edge, ready before first paint, no bundler required.
+
+For static sites, server-rendered pages, or anywhere you can't run a bundler, drop in `/sdk/boot.js`. Cloudflare's edge evaluates your flags for the visitor and returns the answers **inside** the script, so one request installs a fully-populated `window.shipeasy` before the browser paints. There is nothing to await and no flash of default values.
+
+## Add the tag
+
+```html
+<script>
+  (function () {
+    var m = document.cookie.match(/(?:^|; )__se_anon_id=([^;]*)/),
+      a = m ? m[1] : crypto.randomUUID();
+    if (!m)
+      document.cookie =
+        "__se_anon_id=" +
+        a +
+        ";path=/;max-age=31536000;samesite=lax" +
+        (location.protocol === "https:" ? ";secure" : "");
+    document.write(
+      '<script src="https://cdn.shipeasy.ai/sdk/boot.js' +
+        "?p=<project-id>&k=sdk_client_...&a=" +
+        encodeURIComponent(a) +
+        '"><\/script>',
+    );
+  })();
+</script>
+```
+
+`k=` is your **public client key** (`sdk_client_…`) — safe to embed in HTML. `p=` is your project id; `boot.js` checks it against the key's project and returns `400` on a mismatch, so a tag assembled from two different projects' values fails loudly instead of silently serving the wrong one.
+
+> **Why the preamble mints a cookie**
+
+`__se_anon_id` is the stable id the visitor is bucketed on. It has to be minted in the page
+because the cookie is first-party to **your** domain and is never sent to our CDN — `boot.js` can
+only learn it from the URL. Without a stable id a visitor re-buckets on every navigation, so a
+half-rolled-out feature flickers on and off as they browse.
+
+## Use the global
+
+Reads are synchronous. The data arrived with the script, so there is no `ready` promise to await:
+
+```html
+<script>
+  if (window.shipeasy.getFlag("new_checkout")) {
+    /* show the new checkout */
+  }
+
+  window.shipeasy.getConfig("checkout_copy");
+  window.shipeasy.getKillswitch("payments"); // or ("payments", "apple_pay")
+  window.shipeasy.track("checkout_started", { value: 49 });
+</script>
+```
+
+## Identify the visitor
+
+Append `u=` for a known user and `attrs=` for anything your gate rules target on — plan, cohort, tenant:
+
+```
+https://cdn.shipeasy.ai/sdk/boot.js?p=<project-id>&k=sdk_client_...
+  &u=user-123
+  &a=<anon-id>
+  &attrs=%7B%22plan%22%3A%22pro%22%7D
+```
+
+`attrs` is a URL-encoded JSON object. Country and the other geo attributes are filled in at the edge automatically, so you only need to pass what we can't derive.
+
+After a login you can re-evaluate without a page load:
+
+```js
+await window.shipeasy.identify({ user_id: "user-123", plan: "pro" });
+```
+
+## When to use it (and when not to)
+
+- **No-build & static sites** — Plain HTML, a CMS template, a landing page, or a server-rendered app where you just want a flag check in a script tag.
+
+- **Bundled apps** — A React/Vue/Svelte app or any project with a bundler should install <code>@shipeasy/sdk</code> directly — you get types, tree-shaking, <code>see()</code> error reporting, and the full client API.
+
+The script tag is the **browser client** under a different delivery mechanism: it reads flags and configs for the identified visitor. For server-side evaluation, use the server SDK with your **server** key — never put a server key in a `<script>` tag.
+
+One capability does not carry over: `see()`, our structured error reporting, needs the full client. On a script-tag page use your existing error tracking; on a bundled page, `import { see } from "@shipeasy/sdk"`.
+
+## Already rendering on a server?
+
+If you use one of our server SDKs, don't add this tag — emit the payload you have already evaluated. `bootstrapScriptTag()` renders a `/sdk/runtime.js` tag carrying the request's flags as `data-*` attributes, which costs **no** extra evaluation and installs the same `window.shipeasy`:
+
+```ts
+// Any server SDK: TypeScript, Python, Ruby, PHP, Go, Java, Kotlin
+const { bootstrap } = se.getBootstrapData();
+```
+
+```bash
+# Bundled projects: install the SDK instead of using the script tag
+npm install @shipeasy/sdk
+```
+
+> **If the tag appears to do nothing**
+
+Client keys enforce an allowed-origin list. When the requesting origin isn't on it, `boot.js`
+returns `403` — but a classic `<script>` makes an *opaque* request, so the browser reports only
+`ERR_BLOCKED_BY_ORB` and hides the status. `curl` won't reproduce it either, because requests
+with no `Origin` header are allowed by design. Re-request it with
+<code>fetch(url, &#123; mode: "cors" &#125;)</code> to see the real status, then add your domain
+to the key's allowed origins.
+
+**Related**
+
+- [Browser & React SDK](https://docs.shipeasy.ai/sdks/browser-react) — The full client SDK for bundled apps.
+- [Keys & environments](https://docs.shipeasy.ai/get-started/keys-and-environments) — Client key vs server key — never mix them.
+- [Identity & bucketing](https://docs.shipeasy.ai/get-started/identity-and-bucketing) — How the identified user drives targeting.

@@ -1,0 +1,188 @@
+# The devtools overlay
+
+Source: https://docs.shipeasy.ai/feedback/devtools
+
+> Mount the in-app devtools overlay so you and your team can file bugs and feature requests without leaving the product.
+
+The **devtools overlay** is the in-app panel behind every bug report and feature
+request. It mounts as an isolated, shadow-DOM floating rail on your own site,
+captures the page context for you, and posts straight into your project's feedback
+queue. The same overlay also surfaces your flags, configs and kill switches, so
+it doubles as a control panel while you're building.
+
+It ships as a standalone script that works on **any platform** — Next.js, Rails,
+Django, Laravel, static HTML — without requiring a server-side SDK or a build step.
+
+## Add the script tag
+
+Drop this into your HTML `<head>` (or your framework's equivalent):
+
+```html
+<script
+  src="https://cdn.shipeasy.ai/se-devtools.js"
+  data-client-api-key="YOUR_CLIENT_KEY"
+  data-project-id="YOUR_PROJECT_ID"
+></script>
+```
+
+Both attributes are **required**. If either is missing the script logs a clear
+`console.error` and exits without mounting anything.
+
+| Attribute             | Where to find it                                                    |
+| --------------------- | ------------------------------------------------------------------- |
+| `data-client-api-key` | Dashboard → Settings → API Keys → Client key (public, safe in HTML) |
+| `data-project-id`     | Dashboard → Settings → Project ID                                   |
+
+**Drop the script tag into <head>**
+
+```bash
+<script\n  src="https://cdn.shipeasy.ai/se-devtools.js"\n  data-client-api-key="YOUR_CLIENT_KEY"\n  data-project-id="YOUR_PROJECT_ID"\n></script>
+```
+
+Works in any HTML template regardless of backend language or framework.
+
+**Append ?se to any page**
+
+```bash
+http://localhost:3000/?se=1
+```
+
+The rail appears bottom-right. Toggle it any time with <strong>Shift+Alt+S</strong>.
+
+**Sign in once, then report**
+
+```bash
+// In the overlay: File a bug / Request a feature.
+```
+
+First open prompts a one-time sign-in popup. The report lands in your dashboard
+within seconds.
+
+> **Note**
+
+The overlay is loaded lazily — the script tag itself adds no visible weight to normal page loads.
+It only activates when `?se=1` is in the URL or the user presses `Shift+Alt+S`.
+
+### Next.js / TypeScript
+
+In a Next.js App Router root layout, read the keys from env:
+
+```tsx
+// app/layout.tsx
+export default async function RootLayout({ children }) {
+  return (
+    <html>
+      <head>
+        <script
+          src={
+            process.env.NODE_ENV !== "production"
+              ? "/se-devtools.js" // local build
+              : "https://cdn.shipeasy.ai/se-devtools.js"
+          }
+          data-client-api-key={process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY}
+          data-project-id={process.env.NEXT_PUBLIC_SHIPEASY_PROJECT_ID}
+        />
+      </head>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+Add to `.env.local` (or your CI secrets):
+
+```
+NEXT_PUBLIC_SHIPEASY_CLIENT_KEY=se_live_client_…
+NEXT_PUBLIC_SHIPEASY_PROJECT_ID=<your-project-id>
+```
+
+## Mount it unconditionally with init()
+
+For programmatic control — always-on internal tools, staging builds, demos — call
+`init()` directly from any JavaScript:
+
+```ts
+import { init as initDevtools } from "@shipeasy/devtools";
+
+initDevtools({ accentColor: "var(--brand)" });
+```
+
+`init()` is framework-agnostic — call it from a `useEffect`, `onMounted`, or a
+plain inline `<script>`. It is idempotent and tears itself down via `destroy()`.
+
+- `adminUrl` (string) — Admin endpoint the overlay talks to. Defaults to the script origin, then window.location.origin. Override for staging or a separate admin deploy.
+- `accentColor` (string) — Overrides the overlay --accent. Any CSS color or var(…) — pass var(--brand) to inherit the host page's brand.
+- `hideAdminLinks` (boolean) — Hides every deep link back into the Shipeasy dashboard. For white-labelled embeds. Can also be flipped at runtime by a feature flag.
+- `hideRail` (boolean) — Always mount expanded; the collapse button tears the overlay down instead of docking to an edge rail. Use when your page owns the open/close button.
+- `onClose` (() => void) — Called when the user closes the overlay while hideRail is set. Defaults to a full destroy().", }, seed: { type: "{ session, project, activePanel }", description: "Pre-seed auth and project state — demo mode. See below.
+
+## Signing in
+
+The overlay is team-facing and authenticated. On first open it pops a window to
+`{adminUrl}/devtools-auth`, you approve access, and it stores a **short-lived,
+browser-scoped admin token** in `sessionStorage` (valid ~10 minutes). Reports post
+to the admin endpoints (`POST /api/admin/bugs`, `/api/admin/feature-requests`) with
+that token — no cookies, no SDK key embedded in the page.
+
+> **Note**
+
+If the sign-in popup never returns or the overlay never appears, check that the
+`<script>` tag with both `data-client-api-key` and `data-project-id` is present
+in the page source. Open the browser console — a missing attribute logs a clear
+error.
+
+## What a report captures
+
+The bug form asks for a title, steps to reproduce, actual result, expected result,
+and an optional priority. On top of what the user types, the overlay attaches the
+page context automatically:
+
+- **Auto-attached context** — `pageUrl` (the current `location.href`), `userAgent`, and `viewport` (`width×height`) — so a report is reproducible without asking "where were you?"
+
+- **Screenshot & screen recording** — One click grabs a screenshot or a screen recording (with audio) via the browser's `getDisplayMedia()` and uploads it alongside the report.
+
+Feature requests use the same flow with a title, description, and use-case, plus
+the same auto-attached page context.
+
+## Demo mode
+
+Pass `seed` to skip the sign-in popup and preload a project — useful for marketing
+pages, screenshots, and tests. Seeded values are written to `sessionStorage` only
+when absent, so a real session is never clobbered:
+
+```ts
+initDevtools({
+  seed: {
+    session: { token: "demo", projectId: "proj_demo" },
+    project: { id: "proj_demo", name: "Acme", modules: { feedback: true } },
+    activePanel: "feedback",
+  },
+});
+```
+
+## Verify the install
+
+```bash
+# The overlay needs the Feedback module enabled — toggle it in
+# Settings → Modules in the dashboard, then verify from the CLI:
+shipeasy ops list --type bug   # expect [] or rows, never 403
+# then load any page with ?se=1 and confirm the rail appears
+```
+
+`/shipeasy:ops:install` runs these checks for you and drops the project pointer
+skills.
+
+## Where to next
+
+- **[Wire up the SDK](https://docs.shipeasy.ai/feedback/getting-started)** — The one `shipeasy()` boot the overlay rides on.
+
+- **[Error reporting with see()](https://docs.shipeasy.ai/feedback/error-reporting)** — Auto-capture and `see()` — a separate flow from the manual overlay.
+
+- **[Case studies](https://docs.shipeasy.ai/feedback/case-studies)** — Custom report buttons, Slack forwarding, roadmap voting.
+
+**Related**
+
+- [Getting started](https://docs.shipeasy.ai/feedback/getting-started) — The two-minute wiring
+- [Devtools overlay](https://docs.shipeasy.ai/sdks/devtools-overlay) — The same overlay, from the SDK side
+- [Edge cases](https://docs.shipeasy.ai/feedback/edge-cases) — Spam, dedup, PII, anonymous users
+- [QA a flag before you ramp](https://docs.shipeasy.ai/flags/case-studies/qa-with-devtools) — Overrides in the overlay

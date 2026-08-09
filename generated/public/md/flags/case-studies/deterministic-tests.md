@@ -1,0 +1,78 @@
+# Deterministic flags in CI and unit tests
+
+Source: https://docs.shipeasy.ai/flags/case-studies/deterministic-tests
+
+> Use configureForTesting() + overrides for unit tests and a captured snapshot for integration and CI — flag-gated code that never touches the network.
+
+A test that reads a flag over the network is flaky by construction: it depends on what the dashboard says _right now_, it fails in CI behind a firewall, and a teammate flipping a gate breaks an unrelated build. You want flag-gated code to be testable the way the rest of your code is — deterministic, offline, and explicit about what each case sets.
+
+The SDK gives you two levels: [`configureForTesting()` + overrides](https://docs.shipeasy.ai/sdks/testing) for unit tests, and [`configureForOffline()`](https://docs.shipeasy.ai/sdks/offline-snapshot) with a captured snapshot for integration and CI. Both **replace** the active configuration, so a suite can reconfigure freely between cases — and your code under test keeps reading through the ordinary `new Client(user)`.
+
+## Unit tests — configureForTesting() + overrides
+
+`configureForTesting()` swaps in a no-network configuration that's already "ready": nothing fetches, `track()` is a no-op, `assign()` logs no exposure, telemetry is off, and no SDK key is required. You seed each case explicitly:
+
+```ts
+import { configureForTesting, Client, clearOverrides } from "@shipeasy/sdk/server";
+
+configureForTesting({
+  flags: { new_checkout: true },
+  configs: { upload_limits: { max_uploads: 50 } },
+});
+
+const flags = new Client({ user_id: "u1" });
+flags.getFlag("new_checkout"); // true
+flags.getConfig("upload_limits"); // { max_uploads: 50 }
+flags.track("purchase"); // no-op — never hits the network
+
+clearOverrides(); // reset between cases
+```
+
+The browser is identical via `configureForTesting()` from `@shipeasy/sdk/client`.
+
+## Integration / CI — a captured snapshot
+
+When you want the **real** rule set — actual targeting, actual bucketing, real universes — without a live dependency, evaluate against a snapshot. A snapshot is just the two SDK wire bodies:
+
+```ts
+import { configureForOffline, Client } from "@shipeasy/sdk/server";
+
+// from a JSON file on disk (Node only)
+configureForOffline({ path: "./snapshot.json" });
+
+// …or from an object you already hold (works anywhere)
+// `snapshot` carries both SDK wire bodies — the second one is required even
+// when your tests only read flags and configs.
+configureForOffline({ snapshot: { flags, experiments } });
+
+const flags = new Client({ user_id: "u1" });
+flags.getFlag("new_checkout"); // real eval, no network
+flags.getConfig("upload_limits"); // real eval, no network
+```
+
+> **Two tools, they compose**
+
+Use <code>configureForTesting()</code> + <code>override*</code> to seed individual values; use a
+snapshot when you want the real rules evaluated offline. <code>override*</code> applies on top of
+a snapshot too, so you can take production rules and still force one specific case.
+
+## Rollout & measurement plan
+
+**Default to configureForTesting() for unit tests**
+
+Seed exactly the flags the unit under test reads. Each test states its own world.
+
+**Capture a snapshot for the integration suite**
+
+Save the bodies of <code>GET /sdk/flags</code> and <code>GET /sdk/experiments</code>; commit it
+so CI gets real evaluation with no network.
+
+**Refresh the snapshot on purpose**
+
+A stale snapshot is a known, reviewable diff — re-capture when the rules you depend on change.
+
+**Related**
+
+- [Testing](https://docs.shipeasy.ai/sdks/testing) — configureForTesting + the override API
+- [Offline & snapshots](https://docs.shipeasy.ai/sdks/offline-snapshot) — fromFile / fromSnapshot
+- [QA with devtools](https://docs.shipeasy.ai/flags/case-studies/qa-with-devtools) — Forcing state in the browser instead

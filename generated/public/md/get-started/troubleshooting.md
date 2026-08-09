@@ -1,0 +1,89 @@
+# Troubleshooting
+
+Source: https://docs.shipeasy.ai/get-started/troubleshooting
+
+> Common errors you may hit wiring up Shipeasy — what they mean and how to resolve them.
+
+A running list of the errors customers actually hit, what each one means, and the
+fix. If you run into something that isn't here, file it from the in-app feedback
+widget and we'll add it.
+
+## "Request Origin is not in the project's allowed list" (403)
+
+A browser request made with a **client key** was rejected because its `Origin`
+didn't match the project's configured domain. Client keys are public (they ship
+in your bundle), so the Worker only honours them when the request comes from a
+domain you've explicitly allowlisted — this is what stops a leaked client key
+being used from someone else's site.
+
+### Why you can hit this even after setting the domain
+
+The origin allowlist is **snapshotted onto each key when the key is minted**, not
+read live from your project settings on every request. So if you mint a client
+key first and _then_ change the domain (or fix a typo, or switch to a wildcard),
+existing keys keep the value they had at mint time and keep getting 403s — even
+though the dashboard shows the new domain.
+
+> **Fixed automatically on domain change**
+
+Updating a project's domain in **Settings → Domain** now re-stamps the new value onto every
+existing (non-revoked) key. If you're on an older deploy, or want an immediate unblock, use one of
+the fixes below.
+
+### How to resolve
+
+**Confirm the domain in Settings → Domain.** Use the bare host, no scheme and no path —
+`app.example.com`, not `https://app.example.com/`.
+
+**Re-save the domain** (even to the same value). This re-stamps the allowlist onto every
+existing key.
+
+**Or re-mint the client key.** A freshly minted key snapshots the current domain, so swapping in
+a new key is the fastest one-off unblock.
+
+### Domain matching rules
+
+| Configured value | Matches                                                        | Does **not** match |
+| ---------------- | -------------------------------------------------------------- | ------------------ |
+| `example.com`    | `example.com`, `www.example.com`                               | `app.example.com`  |
+| `*.example.com`  | `example.com` (apex), `app.example.com`, `any.sub.example.com` | `notexample.com`   |
+| `*`              | any origin                                                     | —                  |
+| _(empty)_        | any origin (no restriction)                                    | —                  |
+
+> **Wildcards cover the apex too**
+
+`*.example.com` matches both subdomains **and** the bare apex `example.com`, so you don't need a
+second entry for the root domain. Note that `localhost` and loopback origins are always allowed,
+and server-side / SSR calls (which send no `Origin` header) are never blocked by this check.
+
+## "Invalid or revoked SDK key" (401)
+
+The key in your `X-SDK-Key` / `Authorization` header isn't recognised. Usual
+causes:
+
+- **Wrong side.** A server key sent from the browser, or a client key used for a server-only read. Each entrypoint takes exactly one, separately-named key — see [Keys & environments](https://docs.shipeasy.ai/get-started/keys-and-environments).
+- **Revoked or expired.** Check the key list in **Settings → Keys**; mint a replacement if it's gone.
+- **Wrong project.** The key belongs to a different project than the resources you're querying.
+
+## Flags read `false` / configs read their default on the server during SSR
+
+If a `100%` rollout still evaluates to `false` during server rendering, the
+request probably reached the SDK without a stable unit id, so it was bucketed as
+anonymous and denied before the rollout check. Make sure an identity is passed
+(or rely on the anonymous-id cookie minted on HTML routes). See
+[Identity & bucketing](https://docs.shipeasy.ai/get-started/identity-and-bucketing).
+
+## Changes don't show up after publishing
+
+KV blobs are served from cache with an explicit purge on write, so a stale read
+is almost always a caching layer in front of you — not a lost write. Check, in
+order: your browser's cache (hard-reload), then your zone's Browser Cache TTL,
+then re-publish. Remember the SDK also polls on your plan's interval — a fresh
+read can be up to that old. See [Evaluation & caching](https://docs.shipeasy.ai/get-started/evaluation-and-caching).
+
+**Related**
+
+- [Keys & environments](https://docs.shipeasy.ai/get-started/keys-and-environments) — The cause of most wrong-value reads
+- [Evaluation & caching](https://docs.shipeasy.ai/get-started/evaluation-and-caching) — Why a change has not landed yet
+- [Evaluation reasons](https://docs.shipeasy.ai/sdks/reasons) — Ask the SDK why it answered that
+- [Edge cases](https://docs.shipeasy.ai/flags/edge-cases) — The ones that bite exactly once

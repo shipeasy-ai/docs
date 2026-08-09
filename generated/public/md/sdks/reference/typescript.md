@@ -1,0 +1,59 @@
+# Overview
+
+Source: https://docs.shipeasy.ai/sdks/reference/typescript
+
+> @shipeasy/sdk is the TypeScript / JavaScript SDK for the Shipeasy hosted platform — feature gates, runtime configs, kill switches, A/B experiments, metrics,…
+
+> **Note**
+Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-ts/pages/overview.md`](https://shipeasy-ai.github.io/sdk-ts/pages/overview.md).
+
+`@shipeasy/sdk` is the TypeScript / JavaScript SDK for the [Shipeasy](https://shipeasy.ai)
+hosted platform — feature gates, runtime configs, kill switches, A/B
+experiments, metrics, and i18n. It ships **two entrypoints** from one package:
+
+- `@shipeasy/sdk/server` — Node, Cloudflare Workers, Deno (authenticates with the **server** key).
+- `@shipeasy/sdk/client` — the browser (authenticates with the public
+  **client** key).
+
+The APIs are framework-agnostic: everything works from vanilla JS. React
+conveniences live in the separate `@shipeasy/sdk-react` wrapper.
+
+## Mental model: `configure()` once, then `new Client(user)`
+
+Configure the SDK **once** at app startup with your key and an optional
+`attributes` transform from your own user object to Shipeasy targeting
+attributes. Then evaluate **per user** with `new Client(user)`. The bound
+`Client` takes no user argument on its methods — the user is bound at
+construction.
+
+```ts
+import { configure, Client } from "@shipeasy/sdk/server"; // or /client
+
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY!,
+            attributes: (u: MyUser) => ({ user_id: u.id, plan: u.plan }) });
+
+const flags = new Client(currentUser);
+if (flags.getFlag("new_checkout")) { /* ship it */ }
+```
+
+## What `configure()` and `Client` do
+
+- **`configure({ apiKey })`** is the one-time setup call. It owns the key, the HTTP transport, the blob cache, and the poll lifecycle for the whole process — the first call wins, later calls are no-ops. Test/offline siblings: `configureForTesting()` and `configureForOffline()` (see [Testing](https://docs.shipeasy.ai/sdks/reference/typescript/testing)).
+- **`new Client(user)`** is a cheap, user-bound handle. It opens no connection and runs no poller — it just binds the resolved attribute bag once at construction. Construct one per user / per request. It exposes `getFlag`, `getFlagDetail`, `getConfig`, `universe(name).assign()`, `getKillswitch`, plus `track(event, props?)` — so reading an experiment (which auto-logs its exposure) **and** recording its conversion are end-to-end `Client`-only.
+
+That is the entire surface you wire up: configure once, then `new Client(user)`
+everywhere you evaluate.
+
+## Where to go next
+
+| Page | What it covers |
+| --- | --- |
+| [Installation](https://docs.shipeasy.ai/sdks/reference/typescript/installation) | install command, runtime versions, import lines |
+| [Configuration](https://docs.shipeasy.ai/sdks/reference/typescript/configuration) | `configure()`, `attributes`, env vars, SSR bootstrap |
+| [Flags](https://docs.shipeasy.ai/sdks/reference/typescript/flags) | `getFlag`, `getFlagDetail`, defaults |
+| [Configs](https://docs.shipeasy.ai/sdks/reference/typescript/configs) | `getConfig` typed values + defaults |
+| [Kill switches](https://docs.shipeasy.ai/sdks/reference/typescript/killswitches) | `getKillswitch` semantics |
+| [Error reporting](https://docs.shipeasy.ai/sdks/reference/typescript/error-reporting) | `see()` grammar |
+| [Testing](https://docs.shipeasy.ai/sdks/reference/typescript/testing) | `configureForTesting`/`configureForOffline`, `override*` |
+| [OpenFeature](https://docs.shipeasy.ai/sdks/reference/typescript/openfeature) | server + web providers |
+| [Advanced](https://docs.shipeasy.ai/sdks/reference/typescript/advanced) | manual exposure, private attrs, bucketBy, sticky |

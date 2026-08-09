@@ -1,0 +1,102 @@
+# Identity & bucketing
+
+Source: https://docs.shipeasy.ai/get-started/identity-and-bucketing
+
+> anonymous_id, user_id, identity stitching, bucketBy, and sticky bucketing — how Shipeasy decides which unit a flag buckets on.
+
+Every fractional rollout buckets on a **unit id**. Get the unit right and a visitor sees a consistent experience across SSR, the browser, and your backend — in every language. This page is the contract.
+
+## The unit: user_id, then anonymous_id
+
+When you don't pass an explicit unit, the SDK resolves it in this order:
+
+```
+unitId = user.user_id ?? user.anonymous_id
+```
+
+- **`user_id`** — your stable identifier for an authenticated user. It comes through the bound `Client` — `new Client({ user_id }).getFlag(name)` on the server, or the same `new Client(user)` on the browser.
+- **`anonymous_id`** — a stable id for a logged-out visitor so they still bucket consistently.
+
+The hash is identical across the whole stack, so **bucketing agrees everywhere as long as every surface feeds the same unit string for the same visitor.**
+
+## anonymous_id — a first-party cookie
+
+The anonymous unit lives in a single first-party cookie, `__se_anon_id`. It's an opaque stable UUID — treat it as opaque, never parse it.
+
+| Property | Value                                                       |
+| -------- | ----------------------------------------------------------- |
+| Name     | `__se_anon_id`                                              |
+| Value    | Opaque UUID (mint with `crypto.randomUUID()`)               |
+| Path     | `/` · SameSite `Lax` · 1-year max-age                       |
+| HttpOnly | **No** — the browser SDK must read it via `document.cookie` |
+
+Because it's a plain HTTP cookie, it's language-agnostic: any server runtime reads it off the request, any browser reads it off `document.cookie`. The cookie _is_ the interface — no SDK needs to know about any other SDK.
+
+### Minted by middleware on HTML routes
+
+Mint the cookie as early as possible so the **first** request already has an id and nothing flickers:
+
+**Edge / middleware (preferred)**
+
+On the first request, if the cookie is absent, generate a UUID, set it on the response **and** forward it onto the request so the same render sees it. For Next.js the SDK ships this drop-in: `export { middleware, config } from "@shipeasy/sdk/next"` (or `withShipeasy(existing)`). `shipeasy:setup` installs it. **You never set this cookie by hand** — installed code does it.
+
+**Server SDK on cookie-miss**
+
+If no middleware ran, the server SDK reads the cookie, mints one when absent, evaluates against it, and hands it to the bootstrap so the client persists the same value.
+
+**Client SDK (last resort)**
+
+The browser SDK mints and persists it if nothing upstream did. This is the only path that can cause a one-time first-paint flash for a *fractional* gate, because the very first server render had no id.
+
+> **SSR anonymous bucketing**
+
+A request can legitimately have **no** unit (an SSR render before any id is minted). The rule: a
+**100%** gate with no targeting is answerable without a unit, so it's **on** for everyone — but a
+**fractional** rollout needs a stable unit, so it's **off** until one exists. Targeting rules are
+always checked first, so targeting still wins. Minting the cookie at the edge is what removes the
+no-unit window. See [Evaluation & caching](https://docs.shipeasy.ai/get-started/evaluation-and-caching).
+
+## Identity stitching — alias on identify
+
+When an anonymous visitor logs in, tie the two ids together so analytics don't split the same person in two:
+
+```ts
+// Client SDK — call right after authentication
+flags.identify({
+  user_id: authenticatedUser.id,
+  anonymous_id: currentAnonId, // the UUID that did the anonymous bucketing
+});
+```
+
+This emits an `identify` (alias) event. The analysis pipeline resolves the alias before aggregation, so pre-login and post-login activity roll up to one user. **Bucketing is locked at first exposure** — once an `anonymous_id` is stitched to a `user_id`, the original group assignment is preserved and the user is _not_ re-bucketed. After login, live bucketing keys on `user_id`; the anon cookie stays around for logged-out surfaces.
+
+## bucketBy — bucket on something other than the user
+
+Sometimes the right unit isn't the individual. Roll a feature out to **20% of companies** (everyone at a company flips together) or bucket by **session** instead of user. That's `bucketBy`:
+
+```ts
+// Bucket this gate on company_id instead of user_id —
+// the whole company moves together.
+const flags = new Client({ user_id: userId, company_id: "acme-co" });
+flags.getFlag("new-billing-ui");
+```
+
+With `bucketBy: "company_id"`, the hash keys on the company attribute, so every user at `acme-co` lands in the same bucket. Common units: `company_id` (org-level rollout), `session_id` (per-session ramps), `device_id`. The named attribute just has to be present on the user you pass.
+
+> **bucketBy support is rolling out**
+
+`bucketBy` is fully wired for gate rollouts; full per-language coverage is still landing across
+the SDKs. Check [bucketBy](https://docs.shipeasy.ai/sdks/bucketby) for the current per-language status before you rely on
+it.
+
+## Sticky bucketing
+
+By default, bucketing is _stateless_ — recomputed from the hash every time, which is deterministic and needs no storage. **Sticky bucketing** instead **persists** a user's first assignment so they keep the same variant even if you later change allocation, weights, or the salt.
+
+Reach for it when re-bucketing mid-rollout would be jarring — e.g. you bump the salt and don't want users who already have the feature to lose it. Sticky state is shared between SSR and the browser through a first-party `__se_sticky` cookie, the same way `__se_anon_id` keeps anonymous bucketing in agreement.
+
+**Related**
+
+- [bucketBy](https://docs.shipeasy.ai/sdks/bucketby) — company / session / device units, per-language
+- [Attributes](https://docs.shipeasy.ai/get-started/attributes) — what you can pass on the user
+- [Targeting](https://docs.shipeasy.ai/flags/gates/targeting) — rules that run before bucketing

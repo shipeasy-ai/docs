@@ -28,11 +28,11 @@
  * Output is committed under `generated/`, then mirrored by
  * `scripts/sync-generated.ts`. See generated/README.md.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { listRoutes, loadCorpus, type Page } from "./lib/corpus";
-import { mdxToText } from "./lib/mdx-text";
+import { mdxToText, splitFrontmatter } from "./lib/mdx-text";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
@@ -96,6 +96,9 @@ if (!existsSync(join(CONTENT, "get-started/mcp-reference.mdx"))) {
 const SELF = "/get-started/llms";
 
 const pages = loadCorpus(CONTENT, NOT_INLINED).filter((p) => p.route !== SELF);
+
+/** Every page, reference trees included — one markdown file each, see below. */
+const mdPages = loadCorpus(CONTENT);
 const byRoute = new Map(pages.map((p) => [p.route, p]));
 
 const missing = SETUP_PATH.filter((r) => !byRoute.has(r));
@@ -292,11 +295,11 @@ description: Machine-readable bundles of this documentation — an index, the fu
 ---
 
 <Callout type="info" title="This page is generated">
-  So are the three files it describes. They are stitched from \`content/docs\` on every
-  regeneration, which is why they cannot drift from the pages you are reading
+  So is everything it describes. All of it is stitched from \`content/docs\` on every
+  regeneration, which is why it cannot drift from the pages you are reading
 </Callout>
 
-Point a coding agent at one of these instead of asking it to crawl the site. All three are plain text served from the docs root, need no auth, and are rebuilt whenever the documentation changes.
+Point a coding agent at one of these instead of asking it to crawl the site. Every one of them is plain text served from the docs root, needs no auth, and is rebuilt whenever the documentation changes.
 
 | Endpoint | What it is | Size |
 | --- | --- | --- |
@@ -311,6 +314,12 @@ ${endpoints
 **Answering questions about Shipeasy** — [\`/llms.txt\`](/llms.txt) first, then fetch the one or two pages it points at. Cheaper and sharper than loading the corpus.
 
 **Bulk ingestion** — [\`/llms-full.txt\`](/llms-full.txt), ${pages.length} pages in one request.
+
+## One page at a time
+
+Every page on this site is also served as plain markdown at \`/md/<path>.md\` — [\`/md/get-started/quickstart.md\`](/md/get-started/quickstart.md) for [the quickstart](/get-started/quickstart), ${mdPages.length} files in total, generated from the same conversion as the bundles above. The **Copy page** button under any page title copies exactly that file, and **Open in** hands the URL to an assistant.
+
+Reach for it when you know which page you want. The corpus is for when you do not.
 
 ## What is not in them
 
@@ -350,13 +359,53 @@ for (const [file, body] of outputs) {
 }
 
 mkdirSync(dirname(GEN_PAGE), { recursive: true });
-writeFileSync(
-  GEN_PAGE,
-  page.replace(/%%(\/[a-z.-]+)%%/g, (_, p: string) => sizes.get(p) ?? "—"),
-);
+const llmsPage = page.replace(/%%(\/[a-z.-]+)%%/g, (_, p: string) => sizes.get(p) ?? "—");
+writeFileSync(GEN_PAGE, llmsPage);
+
+/* --------------------------------------------------------- one file per page */
+
+/**
+ * The same conversion again, but one file per page under `/md/<route>.md` —
+ * what the "Copy Markdown" button on each page fetches, and what "View as
+ * Markdown" opens. Someone pasting a page into a model wants that page, not
+ * the 767 KB corpus, and the copy has to be the prose rather than the MDX: a
+ * model handed `<TileGrid>` and `<DecisionPicker>` spends its attention
+ * parsing our component names.
+ *
+ * Every page gets one, including the generated reference trees that the
+ * bundles above only link to — those are exactly the pages worth handing to a
+ * model whole. The bundles' own page is rendered from the string just written
+ * rather than from disk, so a run cannot pick up the previous run's byte
+ * counts and report drift.
+ */
+function pageMarkdown(p: Page, body: string): string {
+  const url = `${BASE}${p.route === "/" ? "" : p.route}`;
+  const head = [`# ${p.title}`, ``, `Source: ${url}`];
+  if (p.description) head.push(``, `> ${p.description}`);
+  return `${head.join("\n")}\n\n${absolutise(mdxToText(body))}\n`;
+}
+
+/** `/` → `md/index.md`, `/flags/gates/quickstart` → `md/flags/gates/quickstart.md`. */
+function mdPath(route: string): string {
+  return join(GEN_PUBLIC, "md", `${route === "/" ? "index" : route.slice(1)}.md`);
+}
+
+rmSync(join(GEN_PUBLIC, "md"), { recursive: true, force: true });
+for (const p of mdPages) {
+  const body = p.route === SELF ? splitFrontmatter(llmsPage).body : p.body;
+  const file = mdPath(p.route);
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(
+    file,
+    pageMarkdown(p, body)
+      .replace(/\n{3,}/g, "\n\n")
+      .trimEnd() + "\n",
+  );
+}
 
 console.log(
   `gen:llms: ${pages.length} pages stitched — ` +
     outputs.map(([f, b]) => `${f.split("/").pop()} ${kb(b)}`).join(", ") +
-    `, ${cliCommands.length}/${allCommands.length} CLI commands, ${mcpTools.length} MCP tools.`,
+    `, ${cliCommands.length}/${allCommands.length} CLI commands, ${mcpTools.length} MCP tools` +
+    `, ${mdPages.length} per-page markdown files.`,
 );

@@ -1,0 +1,217 @@
+# Snippets
+
+Source: https://docs.shipeasy.ai/sdks/reference/ruby/snippets
+
+> Minimal copy-paste blocks for flags, configs, kill switches and metric tracking.
+
+Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same leaves the `docs get` op returns.
+
+## release
+
+### release / flags
+
+Evaluate the feature gate `new_checkout` on a user-bound Client. Assumes
+`Shipeasy.configure` ran at startup — see Installation.
+
+### Basic check
+
+```ruby
+# construct once per callsite (cheap; binds the user + runs the attributes transform)
+flags = Shipeasy::Client.new(current_user)
+
+# get_flag(name, default: false)
+#   name    — the gate key (required)
+#   default — returned ONLY when the value can't be resolved (client not ready /
+#             gate absent); a gate that evaluates to false returns false
+if flags.get_flag("new_checkout", default: false)
+  # ship it
+end
+```
+
+### Why it resolved that way — `get_flag_detail`
+
+```ruby
+flags = Shipeasy::Client.new(current_user)
+
+# returns a FlagDetail (.value, .reason); reason ∈ RULE_MATCH / DEFAULT / OFF /
+# OVERRIDE / FLAG_NOT_FOUND / CLIENT_NOT_READY
+detail = flags.get_flag_detail("new_checkout")
+logger.info("flag=new_checkout value=#{detail.value} reason=#{detail.reason}")
+```
+
+### React to flag changes (long-running server)
+
+```ruby
+# requires configure(poll: true); fires after a poll fetches NEW data (200, not 304)
+unsubscribe = Shipeasy.on_change { reload_local_cache! }
+# ... later: unsubscribe.call
+```
+
+### release / configs
+
+Read the dynamic config `billing_copy` with a fallback default.
+
+> Assumes `Shipeasy.configure` ran at startup — see Installation.
+
+```ruby
+# construct once per callsite (cheap; binds the user)
+flags = Shipeasy::Client.new(current_user)
+
+# get_config(name, decode = nil, default: nil)
+#   name    — the config key
+#   decode  — optional proc run on a present value, e.g. ->(v) { v["max"] }
+#   default — returned only when the config key is absent
+value = flags.get_config("billing_copy", default: "blue")
+```
+
+### release / killswitches
+
+Read the kill switch `payments` (true = killed). Assumes
+`Shipeasy.configure` ran at startup — see Installation.
+
+### Whole switch
+
+```ruby
+# construct once per callsite (cheap; binds the user)
+flags = Shipeasy::Client.new(current_user)
+
+# get_killswitch(name, switch_key = nil)
+#   name       — the kill switch key (required)
+#   switch_key — optional named per-key switch to read
+if flags.get_killswitch("payments")
+  # killed → take the safe path
+end
+```
+
+### A named per-key switch
+
+```ruby
+flags = Shipeasy::Client.new(current_user)
+
+provider = "stripe"   # pass the thing you're about to do as the switch key
+
+# A configured switch returns its own boolean; an unconfigured key falls back to
+# the kill switch's top-level value.
+if flags.get_killswitch("payments", provider)
+  use_backup_processor
+end
+```
+
+## metrics
+
+### metrics / track
+
+Track a metric/conversion event from the bound Client. Metrics in the dashboard
+are computed from these events. Assumes `Shipeasy.configure` ran at startup —
+see Installation.
+
+### Track an event
+
+```ruby
+# construct once per callsite (cheap; binds the user)
+flags = Shipeasy::Client.new(current_user)
+
+# track(event_name, props = {})
+#   event_name — the event your metric is built on (required)
+#   props      — optional payload; numeric/string fields you can sum/filter on
+#                in a metric (private attributes are stripped before egress)
+flags.track("checkout_started", { amount: 49, currency: "usd" })
+```
+
+Fire-and-forget (never blocks your response) and a no-op under
+`configure_for_testing` / `configure_for_offline`. The unit is the bound user
+(`user_id`, else `anonymous_id`); with no unit the call is a no-op.
+
+### Track without properties
+
+```ruby
+flags = Shipeasy::Client.new(current_user)
+
+flags.track("checkout_started")   # props are optional
+```
+
+## ops
+
+### ops / see
+
+Report a caught, handled error (or a non-exception "violation") to Shipeasy with
+`see()` — fire-and-forget, never re-raises. Package-level, so it reports against
+the engine from `Shipeasy.configure`. Assumes `Shipeasy.configure` ran at
+startup — see Installation.
+
+### Report a handled exception
+
+```ruby
+begin
+  charge(order)
+rescue => e
+  # .causes_the(subject)   what the error affects (e.g. "checkout")
+  # .to(outcome)           the terminal — what you do about it; builds + fires once
+  Shipeasy.see(e).causes_the("checkout").to("use the backup processor")
+  fallback_charge(order)
+end
+```
+
+### Attach context with `.extras(...)`
+
+```ruby
+begin
+  charge(order)
+rescue => e
+  # .to(outcome, hash)     PREFERRED: fold the extras into the terminal. The
+  #                        consequence sentence stays whole and there is no
+  #                        ordering to remember.
+  Shipeasy.see(e).causes_the("checkout").to("use cached prices", { order_id: oid })
+
+  # .to fires synchronously here, so a trailing .extras AFTER .to is ignored
+  # with a warning (it never raises into the rescue block) — the extras are
+  # DROPPED. Use the inline form above, or Shipeasy.add_extras below.
+  # Shipeasy.see(e).causes_the("checkout").to("use cached prices").extras({ order_id: oid })
+
+  # NEVER: extras wedged between the subject and the outcome — it splits the
+  # consequence sentence in half and is hard to read.
+  # Shipeasy.see(e).causes_the("checkout").extras({ order_id: oid }).to("use cached prices")
+end
+```
+
+### Attach context from anywhere with `Shipeasy.add_extras(...)`
+
+Prefer this over the inline form whenever the context already exists *above*
+the rescue — it keeps the catch site a clean one-liner.
+
+```ruby
+# Buffer extras earlier in the request — from any layer, not just the rescue.
+# Every see() report that fires LATER in the same request carries them, so you
+# don't have to thread context down into the catch site. Fiber-local, so
+# concurrent requests never mix; the Rack middleware clears it per request
+# (Rails auto-mounts it — outside Rack, call Shipeasy.clear_extras yourself).
+Shipeasy.add_extras(order_id: order.id, tenant: tenant.slug)
+
+# ...deep in a service, later in the same request...
+begin
+  charge(order)
+rescue => e
+  # report carries order_id + tenant automatically; a chained .extras / .to
+  # extras of the same key wins over the ambient one.
+  Shipeasy.see(e).causes_the("checkout").to("use cached prices")
+end
+```
+
+### Report a non-exception violation
+
+```ruby
+# a bad state that isn't an exception — the name is a STABLE fingerprint; put
+# variable data in .extras, never the name. .to() is the terminal.
+Shipeasy.see_violation("missing_invoice").causes_the("billing").to("skip the dunning email")
+```
+
+### Mark an expected exception — report NOTHING
+
+```ruby
+begin
+  parse(token)
+rescue StopIteration => e
+  # transmits nothing; .because(...) / .extras() are local-debug only
+  Shipeasy.control_flow_exception(e).because("end of stream is expected")
+end
+```

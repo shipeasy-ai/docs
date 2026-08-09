@@ -1,0 +1,29 @@
+# Ack an item (start a run)
+
+Source: https://docs.shipeasy.ai/api/operations/ackOpsItem
+
+> >-
+
+Acknowledge a queue item — a person or an AI agent declaring "I'm on this
+now". Opens a run: stamps who picked the item up and when, assigns them as
+owner, and moves the item into the matching working status
+(`investigating_by_ai` for an AI ack, `in_progress` for a human one). The
+dashboard renders the open run as a live working indicator (which agent +
+time since the run started).
+
+**AI ack.** Pass `agent` with your own agent type (`claude`, `cursor`,
+`copilot`, `jules`; `gemini` aliases `jules`) and, when you have one, the
+run's `sessionId` so the dashboard can deep-link to the session. If the
+project has no connected trigger connector of that type the call fails
+with `AGENT_NOT_CONNECTED` — list the available agents with `ops agents
+list` and use one of those (or connect the agent under Settings →
+Triggers).
+
+**Completion.** The run closes automatically on the loop's final actions —
+linking the fixing PR (`link-pr`), an ops-notify escalation, or a
+completion status change (`ready_for_qa`/`resolved`) — and the dashboard
+then shows the run result (final action, PR, duration, session link).
+A repeat ack supersedes the previous open run.
+
+**Use case:** Call this first when picking an item up, so the team sees
+who/what is working on it in real time.

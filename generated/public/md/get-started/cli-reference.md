@@ -1,0 +1,2342 @@
+# CLI reference
+
+Source: https://docs.shipeasy.ai/get-started/cli-reference
+
+> Auto-generated reference for the `shipeasy` CLI — every command, argument, and flag, straight from the command definitions.
+
+Every command below is generated from the CLI's own command tree, so it always
+matches the installed binary. Run any command with `--help` for the same
+information in your terminal.
+
+New to the CLI? Start with the [CLI guide](https://docs.shipeasy.ai/get-started/cli) for installation,
+auth, and worked examples — this page is the exhaustive flag-by-flag reference.
+
+## `shipeasy login`
+
+Authenticate via PKCE device flow (no-op if already logged in)
+
+With no flags, `login` auto-detects the project: an explicit `--project` wins, otherwise the project bound via the nearest `.shipeasy` file (searched up from the cwd, like `.git`) — the browser flow then offers only that project. With neither, it opens the picker and writes `.shipeasy` on success.
+
+In CI, set `SHIPEASY_CLI_TOKEN` + `SHIPEASY_PROJECT_ID` instead — they act as the session, so `login` short-circuits as already-authenticated (no browser).
+
+```bash
+shipeasy login [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--force` | optional | Re-authenticate even if a valid session already exists |
+| `--project <id>` | optional | Scope login to one project (defaults to the .shipeasy-bound project) |
+
+Examples:
+
+```bash
+# Use the .shipeasy-bound project, else open the picker
+shipeasy login
+
+# Re-authenticate over a live session
+shipeasy login --force
+
+# Scope to one project explicitly
+shipeasy login --project proj_abc123
+
+# CI: env credentials act as the session, so this is a no-op
+SHIPEASY_CLI_TOKEN=… SHIPEASY_PROJECT_ID=… shipeasy login
+```
+
+## `shipeasy logout`
+
+Clear stored credentials
+
+```bash
+shipeasy logout [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--force` | optional | Log out even from inside a coding agent (see the refusal text) |
+
+Examples:
+
+```bash
+shipeasy logout
+
+# from inside a coding agent, when the user asked
+shipeasy logout --force
+```
+
+## `shipeasy bind`
+
+Bind the current directory to a Shipeasy project (writes .shipeasy)
+
+```bash
+shipeasy bind [options] [project_id]
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `project_id` | optional | — |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--name <name>` | optional | Optional human-readable project name to record |
+
+Examples:
+
+```bash
+# bind to the active session's project
+shipeasy bind
+
+shipeasy bind proj_abc123
+
+shipeasy bind proj_abc123 --name 'Acme Web'
+```
+
+## `shipeasy root`
+
+Print the project root — the nearest .shipeasy dir (walks up from cwd, like .git)
+
+The project root is **the folder that holds `.shipeasy`**, found by walking up from the cwd (like git finds `.git`). The nearest file wins, so a subproject's own `.shipeasy` shadows any ancestor and the walk stops there — one `.shipeasy` per project. Use this instead of `git rev-parse --show-toplevel` when you need the Shipeasy project boundary: it respects a subproject root and never overshoots to the git root above it. Exits non-zero (with guidance) when nothing is bound.
+
+```bash
+shipeasy root [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--json` | optional | Output the resolved root as JSON |
+
+Examples:
+
+```bash
+# print the nearest .shipeasy dir
+shipeasy root
+
+# root + project_id + sdk, machine-readable
+shipeasy root --json
+
+# cd to the project root
+cd "$(shipeasy root)"
+```
+
+## `shipeasy metrics`
+
+Metrics: the event-backed queries that drive tracking dashboards and experiment success / guardrail measurement.
+
+```bash
+shipeasy metrics [options] [command]
+```
+
+### `shipeasy metrics events`
+
+Events: the catalog of event names (and their typed properties) that metric queries reference.
+
+```bash
+shipeasy metrics events [options] [command]
+```
+
+#### `shipeasy metrics events list`
+
+List events
+
+```bash
+shipeasy metrics events list [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--q <value>` | optional | Case-insensitive substring filter across the resource's human-readable text columns (e.g. `name`, `title`, `description`). OR-matched across those columns; omit to return everything. |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy metrics events create`
+
+Register an event
+
+```bash
+shipeasy metrics events create [options] <name>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `name` | required | Event name. Starts with a letter, digit, or `_`; letters, digits, `_`, `-`, `.`; max 50 characters. The cap is the Analytics Engine index budget — 96 bytes total, less a 36-byte project UUID and a separator — and the API has always enforced 50 while this spec advertised 128. The charset is ASCII, so characters and bytes are the same count. Immutable after create — this is the handle metric queries reference. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--folder <value>` | optional | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
+| `--description <value>` | optional | Optional human-readable description of the event. |
+| `--properties <value>` | optional | Typed properties declared on the event. Defaults to an empty list. |
+
+#### `shipeasy metrics events get`
+
+Get an event
+
+```bash
+shipeasy metrics events get [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque event id (`evt_…`) or the event's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy metrics events update`
+
+Update an event
+
+```bash
+shipeasy metrics events update [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque event id (`evt_…`) or the event's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--folder <value>` | optional | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
+| `--description <value>` | optional | New description for the event. |
+| `--properties <value>` | optional | Replaces the full property set (no merge). Omit to leave properties unchanged. |
+
+#### `shipeasy metrics events archive`
+
+Archive an event
+
+```bash
+shipeasy metrics events archive [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque event id (`evt_…`) or the event's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy metrics events approve`
+
+Approve a pending event
+
+```bash
+shipeasy metrics events approve [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque event id (`evt_…`) or the event's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--folder <value>` | optional | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
+| `--description <value>` | optional | New description for the event. |
+| `--properties <value>` | optional | Replaces the full property set (no merge). Omit to leave properties unchanged. |
+
+### `shipeasy metrics list`
+
+List metrics
+
+```bash
+shipeasy metrics list [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--q <value>` | optional | Case-insensitive substring filter across the resource's human-readable text columns (e.g. `name`, `title`, `description`). OR-matched across those columns; omit to return everything. |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+### `shipeasy metrics create`
+
+Create a metric
+
+```bash
+shipeasy metrics create [options] <name>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `name` | required | Stable metric key. Single segment or `folder.name`; lowercase letters, digits, `_`/`-`; max 128 chars. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--display-name <value>` | optional | What a human calls the metric — "Checkout revenue" beside the `checkout.revenue` that identifies it. Unlike `name` it is free text, it is editable, and nothing addresses the metric by it: the dashboard leads with it and falls back to `name` when it is absent, so a metric nobody named simply reads as its key. Send `null` to clear it. |
+| `--folder <value>` | optional | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
+| `--event-name <value>` | optional | Source event the query reads from. |
+| `--query <value>` | optional | Metric query DSL string, e.g. `sum(purchase, amount)`. The alternative to `query_ir`. Every label the query references — in filters, the value position, `by (…)`, or `without (…)` — must exist as a property on the tracked event's payload; a query over a label the event never carries validates fine but returns empty results. |
+| `--winsorize-pct <value>` | optional | Winsorise percentile (1–99) to clamp outliers. Defaults to 99. |
+| `--default-min-effect-of-interest <value>` | optional | Default minimum effect of interest (relative, 0–1) — the smallest change in this metric worth acting on, used as the power-planning baseline. Intrinsic to the metric; an experiment overrides it per-attachment with `min_effect_of_interest` when a specific decision has a different cost/risk bar. `null` to omit. |
+| `--direction <value>` | optional | Desired direction of movement. `higher_better` (default), `lower_better`, or `neutral` (guardrail). |
+| `--unit <value>` | optional | Display unit (e.g. `ms`, `%`, `$`), or `null` when unitless. |
+| `--display <value>` | optional | How the metric's series is DRAWN, as opposed to what it measures. Both parts used to be DSL functions (`expected(q, seasonal)`, `forecast(q, …)`), which meant turning a band on minted a different metric; they are properties now, so every chart of the metric picks them up and nothing that JUDGES the metric — an alert rule, the experiment analyzer — reads them at all. |
+| `--query-ir <value>` | optional | Typed query IR — the structured alternative to the `query` DSL string. Exactly one of `query` / `query_ir` is supplied per metric body. |
+
+### `shipeasy metrics show`
+
+Get a metric
+
+```bash
+shipeasy metrics show [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque metric id (`met_…`) or the metric's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+### `shipeasy metrics update`
+
+Update a metric
+
+```bash
+shipeasy metrics update [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque metric id (`met_…`) or the metric's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--display-name <value>` | optional | What a human calls the metric — "Checkout revenue" beside the `checkout.revenue` that identifies it. Unlike `name` it is free text, it is editable, and nothing addresses the metric by it: the dashboard leads with it and falls back to `name` when it is absent, so a metric nobody named simply reads as its key. Send `null` to clear it. |
+| `--folder <value>` | optional | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
+| `--event-name <value>` | optional | Source event the query reads from. |
+| `--query <value>` | optional | Metric query DSL string, e.g. `sum(purchase, amount)`. The alternative to `query_ir`. Every label the query references — in filters, the value position, `by (…)`, or `without (…)` — must exist as a property on the tracked event's payload; a query over a label the event never carries validates fine but returns empty results. |
+| `--winsorize-pct <value>` | optional | Winsorise percentile (1–99) to clamp outliers. Defaults to 99. |
+| `--default-min-effect-of-interest <value>` | optional | Default minimum effect of interest (relative, 0–1) — the smallest change in this metric worth acting on, used as the power-planning baseline. Intrinsic to the metric; an experiment overrides it per-attachment with `min_effect_of_interest` when a specific decision has a different cost/risk bar. `null` to omit. |
+| `--direction <value>` | optional | Desired direction of movement. `higher_better` (default), `lower_better`, or `neutral` (guardrail). |
+| `--unit <value>` | optional | Display unit (e.g. `ms`, `%`, `$`), or `null` when unitless. |
+| `--display <value>` | optional | How the metric's series is DRAWN, as opposed to what it measures. Both parts used to be DSL functions (`expected(q, seasonal)`, `forecast(q, …)`), which meant turning a band on minted a different metric; they are properties now, so every chart of the metric picks them up and nothing that JUDGES the metric — an alert rule, the experiment analyzer — reads them at all. |
+| `--query-ir <value>` | optional | Typed query IR — the structured alternative to the `query` DSL string. Exactly one of `query` / `query_ir` is supplied per metric body. |
+
+### `shipeasy metrics archive`
+
+Archive a metric
+
+```bash
+shipeasy metrics archive [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque metric id (`met_…`) or the metric's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+### `shipeasy metrics unarchive`
+
+Unarchive a metric
+
+```bash
+shipeasy metrics unarchive [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque metric id (`met_…`) or the metric's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+### `shipeasy metrics series`
+
+Get a metric's time series
+
+```bash
+shipeasy metrics series [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque metric id (`met_…`). |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--from <value>` | optional | Window start, epoch seconds (inclusive). |
+| `--to <value>` | optional | Window end, epoch seconds (exclusive). Must be greater than `from`. |
+| `--bucket <value>` | optional | Bucket width in seconds (60s–86400s/1d). Defaults to `3600` (hourly). Each returned point is floor-aligned to this width. |
+
+### `shipeasy metrics grammar`
+
+Print the metric query DSL grammar
+
+```bash
+shipeasy metrics grammar [options]
+```
+
+## `shipeasy ops`
+
+Operational queue: the unified table of bug reports, feature requests, and auto-filed error/alert tickets, all over `/api/admin/ops`.
+
+```bash
+shipeasy ops [options] [command]
+```
+
+### `shipeasy ops agents`
+
+Connected AI agents — one per authenticated trigger connector (Claude / Cursor / Copilot / Jules).
+
+```bash
+shipeasy ops agents [options] [command]
+```
+
+#### `shipeasy ops agents list`
+
+List connected AI agents
+
+```bash
+shipeasy ops agents list [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+### `shipeasy ops alerts`
+
+Alert rules: the metric-threshold definitions the analysis cron evaluates each run.
+
+```bash
+shipeasy ops alerts [options] [command]
+```
+
+#### `shipeasy ops alerts channels`
+
+List Slack channels
+
+```bash
+shipeasy ops alerts channels [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy ops alerts list`
+
+List alert rules
+
+```bash
+shipeasy ops alerts list [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--q <value>` | optional | Case-insensitive substring filter across the resource's human-readable text columns (e.g. `name`, `title`, `description`). OR-matched across those columns; omit to return everything. |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy ops alerts create`
+
+Create an alert rule
+
+```bash
+shipeasy ops alerts create [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--name <value>` | optional | Human label for the rule, shown on the alert and the rules list. |
+| `--metric-id <value>` | optional | Id of the metric to evaluate. |
+| `--kind <value>` | optional | What the rule watches for. `normal` compares the metric's own value — against `threshold` via `comparator`, or against the [`rangeMin`, `rangeMax`] corridor it must stay inside. `anomaly` compares it against its own seasonal baseline in sigmas: the same fit a chart draws as the band, so a point outside the drawn band is exactly a breaching bucket, and one metric can back rules at several sigmas. `outliers` compares each `by()` group against its peers in the same bucket and is refused on a metric with no grouping. |
+| `--comparator <value>` | optional | How the metric value is compared to the threshold. Read only by a `normal` rule with no range set. |
+| `--threshold <value>` | optional | Threshold the metric value is compared against. Required for a `normal` rule unless a range is given; ignored by every other kind. |
+| `--range-min <value>` | optional | Lower edge of the corridor the metric must stay inside. Setting either bound switches a `normal` rule off `comparator`/`threshold` and onto the range, which breaches on LEAVING it in either direction. One bound alone is a one-sided range. |
+| `--range-max <value>` | optional | Upper edge of the corridor the metric must stay inside. |
+| `--sigma <value>` | optional | How far from normal is too far, for `anomaly` and `outliers`, in sigma-equivalents. Omit (or `null`) for 3, which is also the half-width of the band a chart draws — so an unconfigured rule fires exactly where the picture says it would. |
+| `--direction <value>` | optional | Which side of the baseline an `anomaly` or `outliers` rule watches. Omit (or `null`) for either, which is what "is this unusual" means; name a side for a metric that is only bad in one direction. |
+| `--sustained <value>` | optional | Judge the window by ACCUMULATED departure instead of bucket by bucket. The ordinary check asks every bucket to be past `sigma`, which a slow regression never manages: a metric running 1.5σ worse than normal since Tuesday puts no single bucket past 3σ and pages nobody. A sustained rule adds up each bucket's excess over half a sigma and fires once the total passes twice `sigma` — four buckets at 2σ do it, a lone 3σ spike does not. `anomaly` and `outliers` only, and refused alongside `requiredBuckets`: the accumulated bar IS the evidence bar, and a second one counted in buckets would silently override it. |
+| `--window-hours <value>` | optional | Lookback window (hours) the metric is aggregated over. 1–720. |
+| `--bucket-minutes <value>` | optional | Width of the buckets the window is split into, in minutes. Omit (or `null`) to divide the window into 12 equal buckets. The rule is judged per bucket, so this is the resolution at which "sustained" is measured — a short bucket asks the condition to hold through finer detail. |
+| `--required-buckets <value>` | optional | How many buckets must breach before the rule fires. Omit (or `null`) to require every bucket that had data. Buckets with nothing in them are excluded before this is counted, so on a sparse metric `null` can mean a single bucket — set this to 2 or more where one lone sample must never page. |
+| `--warn-threshold <value>` | optional | The milder bound — a second level, in the same unit the kind judges in, that raises a quieter alert before the firing level is reached. Must be strictly milder than the level the rule fires at, or it could never fire on its own. Refused on a range rule and on a `sustained` one: neither condition is a single number, so there is nothing to substitute. |
+| `--recovery-threshold <value>` | optional | What the metric must get back to before a live alert closes. Without it a metric sitting on its threshold pages and clears once per tick. Must be on the safe side of the firing level, or equal to it. Omit (or `null`) for no hysteresis. |
+| `--group-alerts <value>` | optional | Fire one alert per `by()` group instead of one for the whole metric. The firing key becomes (rule, group), so each group raises, dedupes and recovers on its own. Refused on a metric with no `by()`, and on `no_data` — a group that went silent has no rows left to be missing from. |
+| `--max-groups <value>` | optional | How many groups this rule may alert on at once. Omit (or `null`) for 10. Past the cap the worst groups fire and the count of the rest is stated on each ticket — a group set is customer data, and an uncapped rule on `by(user_id)` would file a ticket per user. |
+| `--no-data-minutes <value>` | optional | For a `no_data` rule: how long the silence must last. Omit (or `null`) for 15 minutes. Five is the floor — below it, ordinary ingest lag empties the trailing bucket and reads as an outage. |
+| `--delay-minutes <value>` | optional | Hold the evaluated window back this far behind live, on top of the reader's own settle grace. For a metric assembled from a source that lands in batches, whose trailing buckets are legitimately incomplete for longer than the grace covers. |
+| `--auto-resolve-minutes <value>` | optional | Close a live instance that has gone this long without a fresh verdict. A rule that cannot reach a verdict deliberately leaves its alert alone, which is right for a tick and wrong for a week. Never closes an instance that is currently breaching. Omit (or `null`) to never auto-resolve. |
+| `--composite <value>` | optional | What a `composite` rule is a boolean over. `rules` are sibling alert-rule ids in the same project and `op` is how their states combine. A child's state is what the current pass concluded about it, falling back to whether it has an open instance — so a composite still means something on a tick where a child could not be evaluated, which is exactly the tick a "two of these are broken at once" rule is for. One level deep: a child may not itself be composite. |
+| `--severity <value>` | optional | Severity of the raised alert. A `warnThreshold` breach opens one step quieter than this. |
+| `--enabled <value>` | optional | Whether the rule is evaluated by the cron. |
+| `--notify <value>` | optional | Delivery target for a notification; `null` = use the project default. |
+
+#### `shipeasy ops alerts update`
+
+Update an alert rule
+
+```bash
+shipeasy ops alerts update [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque alert-rule id (`ar_…`) or the rule's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--name <value>` | optional | — |
+| `--kind <value>` | optional | — |
+| `--comparator <value>` | optional | — |
+| `--threshold <value>` | optional | — |
+| `--range-min <value>` | optional | Lower edge of the corridor; `null` drops it, returning the rule to comparator and threshold when both bounds are gone. |
+| `--range-max <value>` | optional | Upper edge of the corridor; `null` drops it. |
+| `--sigma <value>` | optional | Sigmas an `anomaly` or `outliers` rule fires at; `null` restores the default of 3. |
+| `--direction <value>` | optional | Which side an `anomaly` or `outliers` rule watches; `null` restores either. |
+| `--sustained <value>` | optional | Judge the window by accumulated departure rather than bucket by bucket. `anomaly` and `outliers` only; refused alongside `requiredBuckets`. |
+| `--warn-threshold <value>` | optional | The milder bound; `null` drops the warning level, leaving the rule with one. |
+| `--recovery-threshold <value>` | optional | What the metric must get back to before a live alert closes; `null` drops the hysteresis. |
+| `--group-alerts <value>` | optional | Fire one alert per `by()` group. Refused on a metric with no grouping. |
+| `--max-groups <value>` | optional | How many groups may alert at once; `null` restores the default of 10. |
+| `--no-data-minutes <value>` | optional | How long a `no_data` rule's silence must last; `null` restores 15 minutes. |
+| `--delay-minutes <value>` | optional | How far behind live the window is held; `null` drops the delay. |
+| `--auto-resolve-minutes <value>` | optional | Close a stale live instance after this long; `null` never auto-resolves. |
+| `--composite <value>` | optional | What a `composite` rule is a boolean over. `rules` are sibling alert-rule ids in the same project and `op` is how their states combine. A child's state is what the current pass concluded about it, falling back to whether it has an open instance — so a composite still means something on a tick where a child could not be evaluated, which is exactly the tick a "two of these are broken at once" rule is for. One level deep: a child may not itself be composite. |
+| `--window-hours <value>` | optional | — |
+| `--bucket-minutes <value>` | optional | Bucket width in minutes; `null` restores the default 12 buckets per window. |
+| `--required-buckets <value>` | optional | Buckets that must breach to fire; `null` restores "every bucket that had data". |
+| `--severity <value>` | optional | — |
+| `--enabled <value>` | optional | — |
+| `--notify <value>` | optional | Delivery target for a notification; `null` = use the project default. |
+
+#### `shipeasy ops alerts archive`
+
+Delete an alert rule
+
+```bash
+shipeasy ops alerts archive [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque alert-rule id (`ar_…`) or the rule's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+### `shipeasy ops comments`
+
+Comments on a queue item — the discussion thread that hangs off any bug, feature request, or auto-filed error/alert ticket.
+
+```bash
+shipeasy ops comments [options] [command]
+```
+
+#### `shipeasy ops comments list`
+
+List an item's comments
+
+```bash
+shipeasy ops comments list [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy ops comments create`
+
+Comment on an item
+
+```bash
+shipeasy ops comments create [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--body <value>` | optional | The comment body as markdown. Mentions (`@teammate`, `@shipeasy`) are parsed from it. |
+| `--parent-id <value>` | optional | Reply under this top-level comment. Omit / `null` for a top-level comment. Replying to a reply attaches to the same top-level parent (threading is one level deep). |
+
+### `shipeasy ops fired-alerts`
+
+Fired alerts: the conditions the platform has actually raised — metric-rule crossings, armed kill switches, experiment SRM/peek guards, and guardrail breaches.
+
+```bash
+shipeasy ops fired-alerts [options] [command]
+```
+
+#### `shipeasy ops fired-alerts list`
+
+List fired alerts
+
+```bash
+shipeasy ops fired-alerts list [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--status <value>` | optional | Filter by lifecycle state. Defaults to `active` (currently firing); `all` returns every status. |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy ops fired-alerts update`
+
+Update a fired alert
+
+```bash
+shipeasy ops fired-alerts update [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque instance id — the same id as the `alert` ops item this instance is. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--status <value>` | optional | New lifecycle state, written through to the queue item (`resolved` / `wont_fix` / `open`). `resolved` / `dismissed` stamp their timestamp; `active` re-opens and clears both. |
+| `--assignee-id <value>` | optional | PERSON owner — a `users.id`, or `null` to clear the assignment. |
+| `--agent <value>` | optional | AGENT owner — a connected trigger connector's id (`connectors.id`), the built-in `"jarvis"` (Enterprise plan only — rejected with `403` otherwise), or `null` to clear. Stored in `assigneeConnectorId` or `assigneeAgent` depending on the value; the two are mutually exclusive. |
+
+### `shipeasy ops investigations`
+
+Investigation records on a queue item — the structured, read-only write-ups an AI agent produces while working it (findings / a blocking question / QA notes), plus the `working` run rows an ack or an AI hand-off opens.
+
+```bash
+shipeasy ops investigations [options] [command]
+```
+
+#### `shipeasy ops investigations list`
+
+List an item's investigation records
+
+```bash
+shipeasy ops investigations list [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy ops investigations create`
+
+Record an investigation
+
+```bash
+shipeasy ops investigations create [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--kind <value>` | optional | Which lifecycle stage the record documents. |
+| `--summary <value>` | optional | One-line summary of the record. |
+| `--findings <value>` | optional | The full findings write-up (markdown). |
+| `--question <value>` | optional | A blocking question for the team (markdown). |
+| `--qa-notes <value>` | optional | How to verify the fix — QA notes (markdown). |
+| `--agent <value>` | optional | The agent type producing the record — pass your own type when you are a coding agent. |
+| `--model <value>` | optional | The model the agent ran on. |
+| `--connector-id <value>` | optional | The trigger-connector row id the agent ran through. |
+| `--pr-number <value>` | optional | A PR the record references. |
+| `--pr-url <value>` | optional | HTML URL of that PR. |
+| `--sources <value>` | optional | The files/links inspected. |
+| `--confidence <value>` | optional | Self-reported confidence in the record. |
+| `--tokens-used <value>` | optional | Tokens the run consumed. |
+| `--duration-ms <value>` | optional | Run duration in milliseconds. |
+| `--visibility <value>` | optional | Record visibility. Defaults to `published`; `draft` keeps it out of the panel. |
+| `--started-at <value>` | optional | ISO-8601 timestamp the work started. |
+| `--completed-at <value>` | optional | ISO-8601 timestamp the work finished. |
+| `--session-id <value>` | optional | The agent-run session id, so the dashboard can deep-link to the run. |
+
+#### `shipeasy ops investigations update`
+
+Update an investigation record
+
+```bash
+shipeasy ops investigations update [options] <handle> <investigationId>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+| `investigationId` | required | The investigation record id (from `POST`/`GET .../investigation` or the `runId` an ack/launch returned). |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--kind <value>` | optional | Reclassify the record's lifecycle stage (e.g. flip a `working` run into `investigated` once findings land). |
+| `--summary <value>` | optional | One-line summary of the record. |
+| `--findings <value>` | optional | The full findings write-up (markdown). |
+| `--question <value>` | optional | A blocking question for the team (markdown). |
+| `--qa-notes <value>` | optional | How to verify the fix — QA notes (markdown). |
+| `--model <value>` | optional | The model the agent ran on. |
+| `--pr-number <value>` | optional | A PR the record references. |
+| `--pr-url <value>` | optional | HTML URL of that PR. |
+| `--sources <value>` | optional | The files/links inspected. |
+| `--confidence <value>` | optional | Self-reported confidence in the record. |
+| `--tokens-used <value>` | optional | Tokens the run consumed. |
+| `--duration-ms <value>` | optional | Run duration in milliseconds. |
+| `--visibility <value>` | optional | Record visibility. `draft` keeps it out of the panel; `published` surfaces it. |
+| `--completed-at <value>` | optional | ISO-8601 timestamp the work finished. Set it (or flip `kind` off `working`) to mark a run record done. |
+| `--session-id <value>` | optional | The agent-run session id, so the dashboard can deep-link to the run. |
+
+### `shipeasy ops trigger`
+
+Recurring coding-agent triggers: the scheduled, unattended runs that burn down the ops queue in `--pr` mode (one PR per fixed item; nothing auto-merges).
+
+```bash
+shipeasy ops trigger [options] [command]
+```
+
+#### `shipeasy ops trigger create`
+
+Create a recurring coding-agent trigger
+
+```bash
+shipeasy ops trigger create [options] [command] [provider]
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `provider` | optional | One of the subcommands below. |
+
+##### `shipeasy ops trigger create claude`
+
+Register a Claude Code scheduled routine as the trigger connector
+
+```bash
+shipeasy ops trigger create claude [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--name <value>` | optional | Human-readable connector label. |
+| `--events <value>` | optional | Events that auto-fire the routine. Defaults to empty so the trigger does not auto-fire paid runs until events are subscribed. |
+| `--config <value>` | optional | Non-secret config for a Claude trigger. |
+| `--token <value>` | optional | The routine's fire bearer token (secret). **Optional** — a tokenless trigger is recorded but not fireable until a token is added later. Encrypted into the credentials cipher; never persisted in `config` or returned. |
+| `--enabled <value>` | optional | Whether the trigger is active on create. |
+
+##### `shipeasy ops trigger create cursor`
+
+Register a Cursor cloud-agent trigger (cold-fire; Shipeasy launches the run)
+
+```bash
+shipeasy ops trigger create cursor [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--name <value>` | optional | Human-readable connector label. |
+| `--events <value>` | optional | Events that auto-fire a cold cloud-agent run. Defaults to empty. |
+| `--config <value>` | optional | Non-secret config for a Cursor trigger. |
+| `--api-key <value>` | optional | Cursor API key that launches the run (secret). Encrypted into the credentials cipher; never returned. |
+| `--ops-key <value>` | optional | Restricted Shipeasy ops key (secret). Sent as the Bearer for the Shipeasy MCP server handed to each run inline — never in the prompt text or the run env. Encrypted; never returned. |
+| `--enabled <value>` | optional | Whether the trigger is active on create. |
+
+##### `shipeasy ops trigger create copilot`
+
+Register a GitHub Copilot cloud-agent trigger
+
+```bash
+shipeasy ops trigger create copilot [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--name <value>` | optional | Human-readable connector label. |
+| `--events <value>` | optional | Events that auto-fire a Copilot agent task. Defaults to empty. |
+| `--config <value>` | optional | Non-secret config for a Copilot trigger. |
+| `--token <value>` | optional | Copilot-licensed user PAT (secret). The ops key lives in the repo's GitHub "Agents" secret store and is never sent through Shipeasy. Encrypted; never returned. |
+| `--enabled <value>` | optional | Whether the trigger is active on create. |
+
+##### `shipeasy ops trigger create jules`
+
+Register a Google Jules (Gemini) trigger
+
+```bash
+shipeasy ops trigger create jules [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--name <value>` | optional | Human-readable connector label. |
+| `--events <value>` | optional | Events that auto-fire a Jules session. Defaults to empty. |
+| `--config <value>` | optional | Non-secret config for a Jules trigger. |
+| `--api-key <value>` | optional | Jules API key that launches the session (secret). Encrypted into the credentials cipher; never returned. |
+| `--ops-key <value>` | optional | Restricted Shipeasy ops key, embedded in the prompt (Jules exposes no env channel) (secret). Encrypted; never returned. |
+| `--enabled <value>` | optional | Whether the trigger is active on create. |
+
+#### `shipeasy ops trigger prep`
+
+Mint the ops key + emit the RemoteTrigger create body for the agent to run
+
+Does the Shipeasy-side prep for a recurring trigger and emits the exact RemoteTrigger create body. It mints a restricted `ops` key (embedded in the routine prompt — the only hands-off channel, since routine env vars are UI-only), resolves the repo (origin remote) and cron (--frequency), and writes the body to a 0600 temp file (the key is never printed). It does NOT create the routine — the agent does, via the in-process RemoteTrigger tool, because the routines API token is not exposed to a standalone CLI.
+
+```bash
+shipeasy ops trigger prep [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--frequency <v>` | optional | Schedule: 4h \| 6h \| daily \| weekdays \| weekly \| \<raw 5-field cron> (default: `"4h"`) |
+| `--repo <url>` | optional | GitHub repo the routine checks out (default: origin remote) |
+| `--model <id>` | optional | Model for the cloud session (default: `"claude-sonnet-4-6"`) |
+| `--name <name>` | optional | Routine name (default: `"Shipeasy ops:work"`) |
+| `--dry-run` | optional | Don't mint the ops key or write files — just print the plan |
+| `--json` | optional | Print the RemoteTrigger create body as JSON to stdout (contains the key) |
+| `--project <id>` | optional | Project ID override |
+
+Examples:
+
+```bash
+# Every 4h against the origin repo
+shipeasy ops trigger prep
+
+# Daily, explicit repo
+shipeasy ops trigger prep --frequency daily --repo https://github.com/acme/web
+
+# Preview without minting
+shipeasy ops trigger prep --dry-run
+
+# Emit body as JSON (for scripting)
+shipeasy ops trigger prep --json
+```
+
+### `shipeasy ops list`
+
+List the operational queue
+
+```bash
+shipeasy ops list [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--type <value>` | optional | Filter by item type, or `all` (the default). Every type a returned item can carry is filterable, including the auto-filed ones. |
+| `--status <value>` | optional | Filter by lifecycle status, or `all` (the default). The human-gated holding state (`pending_approval`) is excluded from `all`/default and returned only when requested as the exact status. |
+| `--limit <value>` | optional | Max items to return (1–500). Defaults to 200. |
+| `--owner <value>` | optional | Narrow to items owned by one person OR one agent. Matches a person by `users.id`, email, or display name, and an agent by connector id, display name, or kebab-case handle — e.g. `owner=Claude` or `owner=alice@acme.dev`. Case-insensitive exact match, applied over the returned page. |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+### `shipeasy ops create`
+
+File a queue item (bug or feature request) — pass --type.
+
+```bash
+shipeasy ops create [options] <title>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `title` | required | One-line bug title (no leading/trailing whitespace). |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--type <value>` | optional | Discriminator — files a bug. |
+| `--steps-to-reproduce <value>` | optional | How to reproduce the bug. |
+| `--actual-result <value>` | optional | What actually happened. |
+| `--expected-result <value>` | optional | What was expected instead. |
+| `--priority <value>` | optional | Initial triage priority, or `null`. |
+| `--status <value>` | optional | Initial lifecycle status; defaults to `open` when omitted. |
+| `--assignee-id <value>` | optional | The `users.id` of the person to assign as owner at creation, or `null`. |
+| `--subscribers <value>` | optional | Emails of teammates to subscribe to this item's Slack pings at creation. |
+| `--tags <value>` | optional | Tag names to attach at creation (get-or-created by name, deduped case-insensitively). |
+| `--reporter-email <value>` | optional | Email of the reporter, or `null`. |
+| `--page-url <value>` | optional | URL of the page the bug relates to, or `null`. |
+| `--user-agent <value>` | optional | Reporter's user-agent string, or `null`. |
+| `--viewport <value>` | optional | Reporter's viewport (e.g. `1280x720`), or `null`. |
+| `--context <value>` | optional | Arbitrary capture context, or `null`. |
+| `--notify <value>` | optional | Where this bug's completion notification lands. |
+| `--description <value>` | optional | What the feature is. |
+| `--use-case <value>` | optional | Why it's needed / the use case. |
+
+### `shipeasy ops bug`
+
+File a bug report.
+
+```bash
+shipeasy ops bug [options] <title>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `title` | required | One-line bug title (no leading/trailing whitespace). |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--steps-to-reproduce <value>` | optional | How to reproduce the bug. |
+| `--actual-result <value>` | optional | What actually happened. |
+| `--expected-result <value>` | optional | What was expected instead. |
+| `--priority <value>` | optional | Initial triage priority, or `null`. |
+| `--status <value>` | optional | Initial lifecycle status; defaults to `open` when omitted. |
+| `--assignee-id <value>` | optional | The `users.id` of the person to assign as owner at creation, or `null`. |
+| `--subscribers <value>` | optional | Emails of teammates to subscribe to this item's Slack pings at creation. |
+| `--tags <value>` | optional | Tag names to attach at creation (get-or-created by name, deduped case-insensitively). |
+| `--reporter-email <value>` | optional | Email of the reporter, or `null`. |
+| `--page-url <value>` | optional | URL of the page the bug relates to, or `null`. |
+| `--user-agent <value>` | optional | Reporter's user-agent string, or `null`. |
+| `--viewport <value>` | optional | Reporter's viewport (e.g. `1280x720`), or `null`. |
+| `--context <value>` | optional | Arbitrary capture context, or `null`. |
+| `--notify <value>` | optional | Where this bug's completion notification lands. |
+
+### `shipeasy ops feature`
+
+File a feature request.
+
+```bash
+shipeasy ops feature [options] <title>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `title` | required | One-line feature-request title (no leading/trailing whitespace). |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--description <value>` | optional | What the feature is. |
+| `--use-case <value>` | optional | Why it's needed / the use case. |
+| `--priority <value>` | optional | Initial triage priority, or `null`. |
+| `--status <value>` | optional | Initial lifecycle status; defaults to `open` when omitted. |
+| `--assignee-id <value>` | optional | The `users.id` of the person to assign as owner at creation, or `null`. |
+| `--subscribers <value>` | optional | Emails of teammates to subscribe to this item's Slack pings at creation. |
+| `--tags <value>` | optional | Tag names to attach at creation (get-or-created by name, deduped case-insensitively). |
+| `--reporter-email <value>` | optional | Email of the reporter, or `null`. |
+| `--page-url <value>` | optional | URL of the page the request relates to, or `null`. |
+| `--user-agent <value>` | optional | Reporter's user-agent string, or `null`. |
+| `--context <value>` | optional | Arbitrary capture context, or `null`. |
+| `--notify <value>` | optional | Where this request's completion notification lands. |
+
+### `shipeasy ops get`
+
+Get one queue item
+
+```bash
+shipeasy ops get [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+### `shipeasy ops update`
+
+Update a queue item
+
+```bash
+shipeasy ops update [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--title <value>` | optional | New bug title (no leading/trailing whitespace). |
+| `--steps-to-reproduce <value>` | optional | Updated reproduction steps. |
+| `--actual-result <value>` | optional | Updated actual result. |
+| `--expected-result <value>` | optional | Updated expected result. |
+| `--status <value>` | optional | Lifecycle status of a queue item. The working flow is `open` → `in_progress` → `ready_for_qa` → `resolved` (or `wont_fix`, terminal from any earlier stage). `blocked` marks an item that can't progress until an external dependency clears — a working state a human sets and clears. `ready_for_qa` is what a developer sets once a fix lands; `resolved` is the QA sign-off, normally flipped in the dashboard after verification — set it directly from code only when the fix has been verified end-to-end. `investigating_by_ai` is a system-owned display state — set when the AI agent (Jarvis) picks an item up to investigate, never chosen by a human — so it is shown but not offered as a manual choice. `pending_approval` is the one human-gated holding state: it parks an item OUT of the work queue until a human promotes it to `open` in the dashboard, so `GET /api/admin/ops` excludes it under `status=all`/default and returns it only when requested as an exact `status`. It covers untriaged inbound that must never be auto-implemented — connector requests filed from a customer's connectors panel, and questions funnelled in from the "Stuck in onboarding?" assistant — where approving means flipping the status to `open`. Two earlier values were removed in favour of this single gate: `triage` (the onboarding-help bucket, now `pending_approval`) and `triaged` (a redundant "looked at but not started" step, now plain `open`). |
+| `--priority <value>` | optional | Triage priority, or `null` when not set (in an update, `null` clears it). |
+| `--github-pr-number <value>` | optional | Link (or, when `null`, unlink) a GitHub pull request to this bug. |
+| `--notify <value>` | optional | Where this item's completion notification lands, or `null`. |
+| `--description <value>` | optional | Updated description. |
+| `--use-case <value>` | optional | Updated use case. |
+
+### `shipeasy ops link-pr`
+
+Link a fixing PR
+
+```bash
+shipeasy ops link-pr [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--pr-number <value>` | optional | PR number to record on the item. `null` unlinks the PR. |
+| `--pr-url <value>` | optional | Explicit PR URL. Required for error/alert tickets (no GitHub issue to derive the URL from). |
+
+### `shipeasy ops ack`
+
+Ack an item (start a run)
+
+```bash
+shipeasy ops ack [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--agent <value>` | optional | The AI agent type acking on the item's behalf — pass your own type when you are a coding agent (Claude Code passes `claude`, Cursor `cursor`, Copilot `copilot`, Jules/Gemini `jules`). Omit entirely for a human ack by the authenticated caller. |
+| `--session-id <value>` | optional | The agent-run session id (e.g. Claude's `session_01…`), so the dashboard can deep-link to the exact run page. Omit when the harness has no session id. |
+
+### `shipeasy ops notify`
+
+Raise an attention notification
+
+```bash
+shipeasy ops notify [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--title <value>` | optional | One-line headline of what's blocked. |
+| `--summary <value>` | optional | One sentence: why it can't be fixed in code. Renders markdown. |
+| `--steps <value>` | optional | Ordered steps the human should take to unblock — self-contained (the human reads only this card, not the agent's transcript), 3–6 steps, each naming the exact file, command, env var, or dashboard page. Renders markdown. |
+| `--href <value>` | optional | Dashboard-relative deep link to the related item. `null` is accepted and treated as "no link". |
+| `--dedupe-key <value>` | optional | Stable per-escalation key (e.g. `feedback:7`) so re-runs dedupe to one row. |
+
+## `shipeasy projects`
+
+Projects: the account-level container every other resource is scoped to.
+
+```bash
+shipeasy projects [options] [command]
+```
+
+### `shipeasy projects current`
+
+Show the current project
+
+```bash
+shipeasy projects current [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+### `shipeasy projects upsert`
+
+Find-or-create a project by domain
+
+```bash
+shipeasy projects upsert [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--domain <value>` | optional | Lowercase bare hostname (e.g. `acme.com`, `app.acme.com`, `*.acme.com`), or `*` to allow any origin. Full URLs with `https://` are not accepted. The project is keyed by `(owner_email, domain)`, so a second call with the same domain returns the existing project. |
+| `--name <value>` | optional | Human-readable project name. Defaults to the domain on first create. |
+
+### `shipeasy projects update`
+
+Update the current project
+
+```bash
+shipeasy projects update [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque project id. Must match the caller's own project. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--name <value>` | optional | New project name. |
+| `--domain <value>` | optional | Lowercase bare hostname (e.g. `acme.com`, `app.acme.com`, `*.acme.com`), or `*` to allow any origin. Full URLs with `https://` are not accepted. The project is keyed by `(owner_email, domain)`, so a second call with the same domain returns the existing project. |
+| `--slug <value>` | optional | URL-safe identifier used in app URLs and SDK config. Lowercase letters, numbers, and hyphens; 2–48 chars; cannot start or end with a hyphen. The caller lowercases the raw slug before sending. |
+| `--default-env <value>` | optional | Default environment new resources are scoped to. |
+| `--timezone <value>` | optional | IANA timezone the project's daily analysis runs in. |
+| `--stat-method <value>` | optional | Statistical method the experiment analyzer uses. |
+| `--sig-threshold <value>` | optional | Significance threshold (alpha) for experiment analysis. |
+| `--auto-rollback <value>` | optional | Whether a failing guardrail auto-rolls back the experiment. |
+| `--min-sample-days <value>` | optional | Minimum number of days an experiment must run before it can be called. |
+| `--module-translations <value>` | optional | Enable/disable the i18n/translations module. |
+| `--module-configs <value>` | optional | Enable/disable the dynamic-configs module. |
+| `--module-gates <value>` | optional | Enable/disable the feature-gates module. |
+| `--module-experiments <value>` | optional | Enable/disable the experiments module. |
+| `--module-feedback <value>` | optional | Enable/disable the feedback/ops module. |
+| `--module-user <value>` | optional | Enable/disable the user-management module. |
+| `--module-events <value>` | optional | Enable/disable the events module. |
+| `--min-sample-size <value>` | optional | Verdict power guard — minimum users per arm before a ship/hold verdict. |
+| `--min-runtime-days <value>` | optional | Minimum days an experiment must run before a verdict (peeking guard). |
+| `--default-power <value>` | optional | Target statistical power (1−β) feeding the realized-MDE calculation. |
+| `--ci-confidence <value>` | optional | Confidence level for the interval surfaced on results (any value in [0.5, 0.999], e.g. 0.90, 0.95, 0.975, 0.99). |
+| `--default-allocation-pct <value>` | optional | Default traffic allocation (basis points, 1000 = 10%) new experiments start with; overridable per experiment. |
+| `--default-holdout <value>` | optional | Default holdout carve-out (basis points) that seeds each new universe's holdout (0 = none). |
+| `--default-winsorize-pct <value>` | optional | Default winsorization percentile new metrics start with; overridable per metric. |
+| `--default-mei <value>` | optional | Default minimum effect of interest (relative, 0–1) new metrics start with; overridable per metric and per experiment. Null clears it. |
+| `--cuped-baseline-days <value>` | optional | CUPED baseline window — days of pre-experiment history, frozen at start. |
+| `--cuped-min-overlap <value>` | optional | CUPED selection-bias guard — min share of users with a baseline, else skip. |
+| `--cuped-min-baseline-users <value>` | optional | CUPED — minimum users with a baseline before it runs at all. |
+| `--msprt-tau-mei-factor <value>` | optional | mSPRT prior width — τ = minimum effect of interest × this factor. |
+| `--msprt-tau-sd-factor <value>` | optional | mSPRT fallback prior width — τ = this × control SD when no MEI is set. |
+| `--srm-threshold <value>` | optional | SRM chi-square p-value below which the run is called invalid. |
+| `--error-autoclose-days <value>` | optional | Days an `open` tracked error may go unseen before the nightly sweep auto-resolves it. `0` disables auto-close for this project. |
+| `--error-ticket-min-occurrences <value>` | optional | Occurrence count a tracked error must cross before an `error` ticket is auto-filed into the ops queue. Requires a paid plan — the request is rejected with 403 on a plan without the `ops_auto_error_issues` entitlement. |
+
+## `shipeasy release`
+
+Feature delivery — flags, kill switches, dynamic configs, A/B experiments, and the universes they bucket in.
+
+```bash
+shipeasy release [options] [command]
+```
+
+### `shipeasy release configs`
+
+Dynamic configs: JSON-Schema-validated structured values delivered to SDKs and editable per environment with a draft/publish workflow.
+
+```bash
+shipeasy release configs [options] [command]
+```
+
+#### `shipeasy release configs list`
+
+List dynamic configs
+
+```bash
+shipeasy release configs list [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--limit <value>` | optional | Page size (1–500). Defaults to 100. |
+| `--cursor <value>` | optional | Opaque cursor returned in the previous page's `next_cursor`. Omit for the first page. |
+| `--q <value>` | optional | Case-insensitive substring filter across the resource's human-readable text columns (e.g. `name`, `title`, `description`). OR-matched across those columns; omit to return everything. |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy release configs create`
+
+Create a dynamic config
+
+```bash
+shipeasy release configs create [options] <name>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `name` | required | Stable config/killswitch key in `folder.name` form (two lowercase segments separated by a dot, e.g. `pricing.tiers`). Immutable after create. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--description <value>` | optional | Optional free-form description shown in the dashboard. Max 512 chars. |
+| `--folder <value>` | optional | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
+| `--schema <value>` | optional | JSON Schema (draft 2020-12) describing the shape of the config value. Top-level `type` must be `'object'`; every published value is validated against this schema. |
+| `--value <value>` | optional | Initial config value. Either a single JSON object applied to every env, or a `{ env: value }` map seeding per-env values. Must match `schema`. Defaults to `{}` on every env when omitted. |
+| `--dev <value>` | optional | Seed the **dev** env's initial value (version 1), overriding `value` for dev. Published immediately. Must match `schema`. |
+| `--staging <value>` | optional | Seed the **staging** env's initial value (version 1), overriding `value` for staging. Published immediately. Must match `schema`. |
+| `--prod <value>` | optional | Seed the **prod** env's initial value (version 1), overriding `value` for prod. Published immediately. Must match `schema`. |
+
+#### `shipeasy release configs get`
+
+Get one config
+
+```bash
+shipeasy release configs get [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque config id (`cfg_…`) or the config's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy release configs update`
+
+Update a dynamic config
+
+```bash
+shipeasy release configs update [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque config id (`cfg_…`) or the config's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--schema <value>` | optional | Replacement schema. When supplied, the new schema is validated against every published value before it lands. |
+| `--value <value>` | optional | Flat value applied to **every** env. Publishes a new version per env. To publish one env only, pass that env's key (`dev`/`staging`/`prod`) instead. |
+| `--dev <value>` | optional | Publish a new version to the **dev** env only, immediately (no draft). Overrides `value` for dev. Must match the effective schema. |
+| `--staging <value>` | optional | Publish a new version to the **staging** env only, immediately (no draft). Overrides `value` for staging. Must match the effective schema. |
+| `--prod <value>` | optional | Publish a new version to the **prod** env only, immediately (no draft). Overrides `value` for prod. Must match the effective schema. |
+| `--folder <value>` | optional | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
+
+#### `shipeasy release configs archive`
+
+Delete a dynamic config
+
+```bash
+shipeasy release configs archive [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque config id (`cfg_…`) or the config's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy release configs update-schema`
+
+Update a config schema
+
+```bash
+shipeasy release configs update-schema [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque config id (`cfg_…`) or the config's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--schema <value>` | optional | Replacement JSON Schema (draft 2020-12). Validated against every published value before it lands. |
+
+### `shipeasy release flags`
+
+Feature gates: boolean flags evaluated at runtime against project rules + a percentage rollout.
+
+```bash
+shipeasy release flags [options] [command]
+```
+
+#### `shipeasy release flags attributes`
+
+Targeting attributes: the auto-inferred schema of user-context keys the platform has observed in evaluation calls.
+
+```bash
+shipeasy release flags attributes [options] [command]
+```
+
+##### `shipeasy release flags attributes list`
+
+List targeting attributes
+
+```bash
+shipeasy release flags attributes list [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--q <value>` | optional | Case-insensitive substring filter across the resource's human-readable text columns (e.g. `name`, `title`, `description`). OR-matched across those columns; omit to return everything. |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+##### `shipeasy release flags attributes create`
+
+Declare a targeting attribute
+
+```bash
+shipeasy release flags attributes create [options] <name>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `name` | required | Attribute key (lowercase alphanumeric start, then letters/digits/`_`/`-`; max 64 chars). Immutable after create. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--type <value>` | optional | Declared value type of a targeting attribute. |
+| `--enum-values <value>` | optional | Allowed values when `type` is `enum` (required in that case — 422 otherwise); `null` for non-enum types. |
+| `--required <value>` | optional | Whether the attribute must be present on the evaluation context. |
+| `--description <value>` | optional | Optional human note shown in the dashboard. |
+| `--sdk-path <value>` | optional | Optional dotted path the SDK reads the value from. |
+
+##### `shipeasy release flags attributes get`
+
+Get a targeting attribute
+
+```bash
+shipeasy release flags attributes get [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | The attribute id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+##### `shipeasy release flags attributes update`
+
+Update a targeting attribute
+
+```bash
+shipeasy release flags attributes update [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | The attribute id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--type <value>` | optional | Declared value type of a targeting attribute. |
+| `--enum-values <value>` | optional | Replacement allowed values (for `enum`), or `null` to clear. |
+| `--required <value>` | optional | Whether the attribute must be present on the evaluation context. |
+| `--description <value>` | optional | Optional human note shown in the dashboard. |
+| `--sdk-path <value>` | optional | Optional dotted path the SDK reads the value from. |
+
+##### `shipeasy release flags attributes archive`
+
+Archive a targeting attribute
+
+```bash
+shipeasy release flags attributes archive [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | The attribute id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy release flags templates`
+
+Targeting-rule templates: reusable `{ attr, op, value }` rule definitions (country, email-domain, region presets, …).
+
+```bash
+shipeasy release flags templates [options] [command]
+```
+
+##### `shipeasy release flags templates list`
+
+List gate templates
+
+```bash
+shipeasy release flags templates list [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--q <value>` | optional | Case-insensitive substring filter across the resource's human-readable text columns (e.g. `name`, `title`, `description`). OR-matched across those columns; omit to return everything. |
+| `--query <value>` | optional | Deprecated alias for `q`, kept working for one release. Prefer `q`. |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+##### `shipeasy release flags templates create`
+
+Create a gate template
+
+```bash
+shipeasy release flags templates create [options] <name>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `name` | required | Human label. Unique per project. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--description <value>` | optional | One-liner shown in pickers and matched by the list `query` filter. |
+| `--category <value>` | optional | — |
+| `--icon-key <value>` | optional | Display-only icon hint. |
+| `--auto <value>` | optional | Mark the attribute as request-derived (resolved at the SDK edge). |
+| `--rules <value>` | optional | The rule definition captured by the template. |
+
+##### `shipeasy release flags templates get`
+
+Get one gate template
+
+```bash
+shipeasy release flags templates get [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Built-in slug (`country`) or customer template id (`gtpl_…`). |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+##### `shipeasy release flags templates update`
+
+Update a gate template
+
+```bash
+shipeasy release flags templates update [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Customer template id (`gtpl_…`) or its `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--name <value>` | optional | — |
+| `--description <value>` | optional | — |
+| `--category <value>` | optional | — |
+| `--icon-key <value>` | optional | — |
+| `--auto <value>` | optional | — |
+| `--rules <value>` | optional | — |
+
+##### `shipeasy release flags templates archive`
+
+Delete a gate template
+
+```bash
+shipeasy release flags templates archive [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Customer template id (`gtpl_…`) or its `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy release flags list`
+
+List feature gates
+
+```bash
+shipeasy release flags list [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--limit <value>` | optional | Page size (1–500). Defaults to 100. |
+| `--cursor <value>` | optional | Opaque cursor returned in the previous page's `next_cursor`. Omit for the first page. |
+| `--q <value>` | optional | Case-insensitive substring filter across the resource's human-readable text columns (e.g. `name`, `title`, `description`). OR-matched across those columns; omit to return everything. |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy release flags create`
+
+Create a feature gate
+
+```bash
+shipeasy release flags create [options] <name>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `name` | required | Stable gate key used by SDKs (`Shipeasy.checkGate(user, '<name>')`). Single segment or `folder.name`. Lowercase letters, digits, `_` or `-`; max 128 chars. Immutable after create — rename = delete + recreate. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--type <value>` | optional | Gate kind. `targeting` (default) is a normal flag with the full builder. `holdout` is a **restricted** flag — only a public rollout % and a whitelist are allowed; attribute rules and a gatekeeper stack are rejected. Used as an experiment's `holdout_gate`. |
+| `--enabled <value>` | optional | Master switch. Defaults to `true`. Set `false` to create the gate disabled (evaluates to `false` regardless of rules/rollout); flip on via `POST /{id}/enable` or PATCH. |
+| `--rollout-pct <value>` | optional | Initial rollout in **basis points** (0–10000 = 0%–100%) — `100` here means **1%**, not 100%. Use `rollout_percent` (0–100) below if you'd rather think in percent. Use `0` to create the gate dark and ramp via PATCH after deploy validation. |
+| `--rollout-percent <value>` | optional | Initial rollout as a **percentage** (0–100, fractional ok). Friendlier alias for `rollout_pct`; converted internally to basis points (e.g. `100` here = 10000 bp = 100%). If both `rollout_pct` and `rollout_percent` are set, `rollout_percent` wins. |
+| `--rules <value>` | optional | Targeting predicates. AND-combined. If non-empty, the gate returns `true` only for callers that satisfy every rule **and** fall under `rollout_pct`. |
+| `--salt <value>` | optional | Hash salt for percentage bucketing. Auto-generated if omitted. Provide explicitly to keep a gate's buckets stable across delete/recreate. **Immutable after create** — there is no PATCH for `salt` because changing it would re-bucket every caller. |
+| `--stack <value>` | optional | Optional gatekeeper stack. When provided, takes precedence over `rules` + `rollout_pct` at evaluation time. Omit (or pass `null`) for a flat gate. |
+| `--title <value>` | optional | Human-readable title shown in the dashboard. Free-form, no key format constraint. |
+| `--description <value>` | optional | Long-form description / runbook. Markdown is rendered in the dashboard. |
+| `--folder <value>` | optional | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
+| `--group <value>` | optional | Group label for dashboard organisation (e.g. team or product area). |
+| `--owner-email <value>` | optional | Owner contact. Displayed verbatim; not used for auth. |
+
+#### `shipeasy release flags get`
+
+Get one gate
+
+```bash
+shipeasy release flags get [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque gate id (`gat_…`) or the gate's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy release flags update`
+
+Update a feature gate
+
+```bash
+shipeasy release flags update [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque gate id (`gat_…`) or the gate's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--type <value>` | optional | Gate kind. Switching to `holdout` requires the gate carry only a public rollout % + whitelist (attribute rules / stack are rejected). |
+| `--rollout-pct <value>` | optional | New rollout in **basis points** (0–10000 = 0%–100%) — `100` here means **1%**. Use `rollout_percent` (0–100) below for percent. Omit both to leave unchanged. |
+| `--rollout-percent <value>` | optional | New rollout as a **percentage** (0–100). Friendlier alias for `rollout_pct`; converted internally. Wins over `rollout_pct` if both are supplied. Omit both to leave unchanged. |
+| `--rules <value>` | optional | Replaces the rule list wholesale. To add a value to an `in` rule, send the full new `rules` array with the augmented `value` (e.g. previous `['US','CA']` → `['US','CA','GB']`). |
+| `--enabled <value>` | optional | Master switch. `false` makes the gate evaluate to `false` for every caller regardless of `rollout_pct`, `rules`, or `stack` — use as kill switch. |
+| `--stack <value>` | optional | Replaces the gatekeeper stack wholesale. Send `null` to revert to flat `rules` + `rollout_pct` evaluation. |
+| `--title <value>` | optional | Human-readable title shown in the dashboard. Free-form, no key format constraint. |
+| `--description <value>` | optional | Long-form description / runbook. Markdown is rendered in the dashboard. |
+| `--folder <value>` | optional | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
+| `--group <value>` | optional | Group label for dashboard organisation (e.g. team or product area). |
+| `--owner-email <value>` | optional | Owner contact. Displayed verbatim; not used for auth. |
+
+#### `shipeasy release flags archive`
+
+Delete a feature gate
+
+```bash
+shipeasy release flags archive [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque gate id (`gat_…`) or the gate's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy release flags enable`
+
+Enable a gate
+
+```bash
+shipeasy release flags enable [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque gate id (`gat_…`) or the gate's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy release flags disable`
+
+Disable a gate
+
+```bash
+shipeasy release flags disable [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque gate id (`gat_…`) or the gate's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy release flags activity`
+
+List gate activity
+
+```bash
+shipeasy release flags activity [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque gate id (`gat_…`) or the gate's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--limit <value>` | optional | Max rows to return (1–100). Defaults to 20. |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy release flags whitelist`
+
+Read a gate's whitelist
+
+```bash
+shipeasy release flags whitelist [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque gate id (`gate_…`) or the gate's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy release flags whitelist-add`
+
+Add entries to a gate's whitelist
+
+```bash
+shipeasy release flags whitelist-add [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque gate id (`gate_…`) or the gate's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--attr <value>` | optional | Identity attribute to match on. Only honoured when the gate has no whitelist yet (this call creates it); passing an attribute that disagrees with an existing whitelist is a 409 rather than a silent re-key of the entries already there. |
+| `--entries <value>` | optional | Identities to admit. Already-listed entries are skipped, so the call is idempotent. |
+
+#### `shipeasy release flags whitelist-set`
+
+Replace a gate's whitelist
+
+```bash
+shipeasy release flags whitelist-set [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque gate id (`gate_…`) or the gate's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--attr <value>` | optional | Identity attribute to match on. Defaults to the whitelist's current attribute, or `email` when the gate has no whitelist yet. |
+| `--entries <value>` | optional | The complete whitelist after the call. Pass `[]` to remove the whitelist from the gate entirely. |
+
+#### `shipeasy release flags whitelist-remove`
+
+Remove entries from a gate's whitelist
+
+```bash
+shipeasy release flags whitelist-remove [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque gate id (`gate_…`) or the gate's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--entries <value>` | optional | Identities to stop admitting. Entries that aren't listed are skipped, so the call is idempotent. |
+
+### `shipeasy release killswitch`
+
+Killswitches: per-env boolean overrides for kill-style operational toggles.
+
+```bash
+shipeasy release killswitch [options] [command]
+```
+
+#### `shipeasy release killswitch list`
+
+List killswitches
+
+```bash
+shipeasy release killswitch list [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--limit <value>` | optional | Page size (1–500). Defaults to 100. |
+| `--cursor <value>` | optional | Opaque cursor returned in the previous page's `next_cursor`. Omit for the first page. |
+| `--q <value>` | optional | Case-insensitive substring filter across the resource's human-readable text columns (e.g. `name`, `title`, `description`). OR-matched across those columns; omit to return everything. |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy release killswitch create`
+
+Create a killswitch
+
+```bash
+shipeasy release killswitch create [options] <name>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `name` | required | Stable config/killswitch key in `folder.name` form (two lowercase segments separated by a dot, e.g. `pricing.tiers`). Immutable after create. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--description <value>` | optional | Optional free-form description shown in the dashboard. Max 512 chars. |
+| `--folder <value>` | optional | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
+| `--value <value>` | optional | Default value applied to every env at creation. Defaults to `false`. Use `true` to ship the killswitch pre-tripped. |
+| `--switches <value>` | optional | Initial per-switch overrides applied to every env. Empty/omitted leaves the killswitch with only the flat `value`. |
+
+#### `shipeasy release killswitch get`
+
+Get one killswitch
+
+```bash
+shipeasy release killswitch get [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque killswitch id (`ksw_…`) or the killswitch's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy release killswitch update`
+
+Update a killswitch
+
+```bash
+shipeasy release killswitch update [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque killswitch id (`ksw_…`) or the killswitch's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--description <value>` | optional | New description, or `null` to clear it. Max 512 chars. |
+| `--folder <value>` | optional | Optional folder name grouping items in the dashboard. Alphanumeric, `_` or `-` (no `/`). Part of the SDK lookup key (`<folder>/<name>`). |
+| `--value <value>` | optional | Flat value applied to every env. Publishes a new version per env when set. Omit to leave values unchanged. |
+| `--switches <value>` | optional | Replace the switches map wholesale on every env. To edit a single entry on a single env use `PUT /{id}/switch` instead. |
+
+#### `shipeasy release killswitch archive`
+
+Delete a killswitch
+
+```bash
+shipeasy release killswitch archive [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque killswitch id (`ksw_…`) or the killswitch's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy release killswitch set`
+
+Set one switch entry
+
+```bash
+shipeasy release killswitch set [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque killswitch id (`ksw_…`) or the killswitch's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--env <value>` | optional | Target environment. One of the project's configured envs (`dev`, `staging`, `prod`). |
+| `--switch-key <value>` | optional | Switch key to set. |
+| `--value <value>` | optional | New boolean value for this `switchKey` on this `env`. |
+
+#### `shipeasy release killswitch unset`
+
+Remove one switch entry
+
+```bash
+shipeasy release killswitch unset [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque killswitch id (`ksw_…`) or the killswitch's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--env <value>` | optional | Target environment. One of the project's configured envs (`dev`, `staging`, `prod`). |
+| `--switch-key <value>` | optional | Switch key to remove. |
+
+#### `shipeasy release killswitch set-value`
+
+Set the flat value on one env
+
+```bash
+shipeasy release killswitch set-value [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque killswitch id (`ksw_…`) or the killswitch's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--env <value>` | optional | Target environment. One of the project's configured envs (`dev`, `staging`, `prod`). |
+| `--value <value>` | optional | Flat boolean to publish on `env`. Publishes a new version on that env only. |
+
+#### `shipeasy release killswitch toggle`
+
+Toggle a killswitch or one of its switches
+
+```bash
+shipeasy release killswitch toggle [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | Stable opaque killswitch id (`ksw_…`) or the killswitch's `name`. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--switch-key <value>` | optional | Which target to flip. Omit (or `null`) to flip the killswitch's own flat `value`; name a switch key to flip that nested sub-switch instead, creating the entry if it doesn't exist yet. |
+| `--value <value>` | optional | The value to publish. Omit (or `null`) to flip whatever is stored now — read-modify-write in one call. Pass an explicit `true`/`false` to make the call idempotent, so a retry can't undo the first attempt. |
+| `--env <value>` | optional | Environment to publish on. Defaults to `prod` — the environment an incident response means when it says "kill it". |
+
+## `shipeasy whoami`
+
+Show the current project
+
+```bash
+shipeasy whoami [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+## `shipeasy setup`
+
+One-command onboarding for this repo. Logs you in and binds a project, detects and wires your coding agents (Claude Code plugin, or MCP + instruction files for Cursor/Codex/Copilot/Antigravity/Gemini), mints SDK keys, installs @shipeasy/sdk, and offers the devtools overlay + feature modules — then writes self-contained SDK-wiring steps to shipeasy-wiring.md for your agent to finish. Monorepo-aware and idempotent (safe to re-run). Run `shipeasy setup --help` for every flag; `shipeasy setup triggers` sets up the scheduled queue-fixing automation on its own.
+
+`setup` now runs the whole deterministic half of onboarding itself, without needing an AI to drive it:
+
+0. Preconditions (Node >= 20, git repo — offers `git init`).
+1. `detect`-powered monorepo scan; every target gets its own `.shipeasy`.
+2. Browser login, then binds the repo root AND each install target.
+3. Wires your coding agents — each through its own `mcp add --transport http` command where one exists (Claude, Copilot, Codex), else a merged config file — plus instruction files + universal AGENTS.md, installed in-repo by default (confirms interactively; offers user-global). At project scope even Claude stays in-repo (.mcp.json + ./.claude/skills); user scope takes the native Claude plugin. Base workflow skills go to every non-plugin agent via `npx skills add`.
+4. Mints env-locked server/client SDK keys.
+5. Runs the SDK package install per target and persists the keys to each target's gitignored env file.
+6-7. Offers devtools — the browser `<script>` overlay, or, for a React Native/Expo target, installs `@shipeasy/react-native-devtools` (+ its Expo peers) for the shake-to-open on-device panel; the surface comes from step 1's detection, not a question. Then the feature module enables (flags/i18n/ops).
+8. Verification gate — session, keys, and every target's binding.
+9. Trusts the folder in Claude when its `.mcp.json` server is still pending — opens one interactive session prefilled with `/exit`, so it closes itself the moment you accept the prompt.
+10. Authorizes the hosted MCP connection: entries written to a config that is private to your machine carry an `Authorization: Bearer` header (your CLI session key) and need no sign-in at all — which is why Copilot's entries go to its CLI config and VS Code's user profile, not the repo. Committable ones (`.mcp.json`, `.cursor/mcp.json`) never hold a credential, so those take the OAuth browser flow via each agent's own `mcp login`.
+11. Everything that needs codebase judgement (entry-point `configure(...)` wiring, idiomatic secret stores, overlay script injection) is written to `shipeasy-wiring.md` — complete, self-contained instructions any coding agent (Claude, Codex, Cursor, Copilot, or a human) can execute. Key values never appear in that file. Alongside it, the SDK doc pages for exactly what you enabled — installation always, plus the overlay, head-tag, flag, experiment, metrics, error and i18n pages you turned on — are pulled from each SDK's live docs into `shipeasy-wiring-docs/` and linked from the step that needs them, so the wiring an agent writes tracks the SDK as it ships today rather than whatever this CLI version remembers. Both are temporary — once every gate passes the agent asks whether to delete them and commit the wiring, and does neither unless you say yes.
+12. Offers to bootstrap the instrumentation a module enable can't produce on its own: with `ops` on, a session that finds this app's real failure paths and reports them through see(); with the release module on, one that names the product's critical moments and builds the event → metric → alert chain over them. Runs on your own harness with a written brief (skills, gates, and a stop-before-commit rule); `--no-bootstrap` skips it.
+13. Offers the automation trigger (scheduled queue burn-down as PRs).
+14. Opens the browser on the plan step — the two things setup will not decide for you: which plan you're on, and the Terms/Privacy agreements. Free needs no card; Pro/Business start a 14-day trial through Stripe. Completing that screen is what marks onboarding done for the account (an account that already finished it lands on Settings → Billing instead); `--no-plan` skips it.
+
+Idempotent — safe to re-run. In CI (non-TTY) it runs non-interactively with `SHIPEASY_CLI_TOKEN` + `SHIPEASY_PROJECT_ID`.
+
+```bash
+shipeasy setup [options] [command]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--yes` | optional | Non-interactive: accept defaults everywhere (bind, prod keys, run installs) |
+| `--agents <list>` | optional | Comma list to wire (claude,cursor,codex,copilot,antigravity,gemini) |
+| `--domain <domain>` | optional | Production domain (used when creating a new project at login) |
+| `--scope <scope>` | optional | MCP + skills scope: project (in-repo, default) \| user (global). Omit to be asked. |
+| `--env <env>` | optional | Environment the minted SDK keys read: dev \| staging \| prod |
+| `--devtools` | optional | Enable devtools without asking (browser \<script> and/or the React Native overlay, per detection) |
+| `--no-devtools` | optional | Skip devtools without asking |
+| `--features <list>` | optional | Module groups to enable non-interactively (flags,i18n,ops) |
+| `--skip-install` | optional | Don't run SDK package installs (they go into the wiring steps) |
+| `--no-agent-run` | optional | Don't offer to launch a coding agent on the wiring steps |
+| `--no-bootstrap` | optional | Skip the instrumentation session (see() error tracking + events/metrics/alerts) |
+| `--no-claude-run` | optional | (deprecated) alias of --no-agent-run |
+| `--triggers` | optional | Set up the automation trigger without asking (skips the yes/no gate) |
+| `--no-triggers` | optional | Skip the automation trigger step |
+| `--trigger-platform <id>` | optional | Preselect the trigger platform (claude\|codex\|cursor\|copilot\|gemini\|jules) |
+| `--plan` | optional | Open the plan step without asking (skips the yes/no gate) |
+| `--no-plan` | optional | Skip the plan step (onboarding stays unfinished until it's done) |
+| `--dry-run` | optional | Show what would change without writing files or calling the API |
+
+Examples:
+
+```bash
+# interactive: full onboarding, prompts as it goes
+shipeasy setup
+
+# non-interactive
+shipeasy setup --yes --env prod --features flags
+
+# preview without writing
+shipeasy setup --dry-run --no-agent-run
+
+# subset, skip overlay
+shipeasy setup --agents claude,cursor --no-devtools
+```
+
+### `shipeasy setup triggers`
+
+Set up an automation trigger — a scheduled agent that fixes queue items as PRs, unattended. Opens the hosted, guided setup for your platform.
+
+A trigger is a scheduled agent run that burns down your feedback queue (bugs, feature requests, auto-filed error/alert tickets) and opens one pull request per fixed item — nothing merges without you. This command explains it, has you pick the platform you code with (Claude Code, Codex, Cursor, Copilot, or Gemini/Jules), then opens the hosted, guided setup wizard preselected to that platform, which walks you through the platform-specific fields and secrets. `shipeasy setup` offers this same step inline.
+
+```bash
+shipeasy setup triggers [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--platform <id>` | optional | Preselect the platform (claude\|codex\|cursor\|copilot\|gemini\|jules) |
+| `--dry-run` | optional | Print the URL without opening a browser |
+
+Examples:
+
+```bash
+# interactive: pick a platform, open the wizard
+shipeasy setup triggers
+
+# preselect Claude Code
+shipeasy setup triggers --platform claude
+
+# just print the URL
+shipeasy setup triggers --dry-run
+```
+
+## `shipeasy report-issue`
+
+File a setup/onboarding bug to Shipeasy (filed as pending-approval). Meant for the setup agent when a step fails: it collects OS/Node/CLI version, your project id, language and frameworks, plus the failing step + error. REQUIRES the user's consent — pass --consent (agent, after asking) or answer the interactive prompt. Prints the exact payload first.
+
+```bash
+shipeasy report-issue [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--title <title>` | required | One-line summary, e.g. "Setup failed at Feature installs" |
+| `--step <step>` | optional | Which setup step failed |
+| `--error <error>` | optional | The error message / actual result |
+| `--description <text>` | optional | Freeform description of the problem |
+| `--reporter-email <email>` | optional | Optional contact email |
+| `--project <id>` | optional | Shipeasy project id the issue relates to (defaults to the bound one) |
+| `--language <lang>` | optional | Detected language (typescript, python, …) |
+| `--frameworks <list>` | optional | Comma list of detected frameworks |
+| `--consent` | optional | Confirm the USER agreed to send system/env info to Shipeasy. Required to send unattended. |
+| `--json` | optional | Print the exact payload and exit WITHOUT sending (dry preview) |
+
+Examples:
+
+```bash
+# agent files a report after the user agreed
+shipeasy report-issue --consent --title "Setup failed at Feature installs" --step "Feature installs" --error "enableModuleGroup(ops) 500"
+
+# preview the exact payload without sending
+shipeasy report-issue --title "Setup broke" --error "..." --json
+```
+
+## `shipeasy upgrade`
+
+Bring your Shipeasy install up to date: self-updates the CLI, refreshes the coding-agent wiring (Claude plugin / MCP registration) and the how-to skills from the marketplace, and offers to bump the @shipeasy/sdk dependency in each onboarded target. Idempotent and best-effort. Use `shipeasy upgrade skills` for the CLI + skills only.
+
+`upgrade` refreshes everything a Shipeasy install accumulates, in order:
+
+1. **CLI** — installs `@shipeasy/cli@latest` globally (npm by default; `--pm` for pnpm/yarn/bun). The new version applies to your NEXT command, not the running one.
+2. **Skills** — re-fetches the marketplace how-to skills from the repo and reinstalls them into your wired agents. Claude at user scope refreshes the native plugin (MCP + skills + slash commands in one); every other agent (and Claude in-repo) reinstalls via `skills add`. The WHOLE catalogue is installed — skills added to the library since your last setup land here, not just newer bytes for what you already have (`--only-installed` keeps it to what's on disk).
+3. **MCP** — re-asserts the hosted MCP registration (mcp.shipeasy.ai is a static remote, so there's nothing to bump — this just repairs a stale/local entry).
+4. **SDK** — detects each onboarded target and OFFERS to bump `@shipeasy/sdk` to its latest release (prompted; `--yes` accepts, `--skip-sdk` skips).
+
+Scope and agents auto-detect from the repo; override with `--scope` / `--agents`. `shipeasy upgrade skills` runs only steps 1–2.
+
+```bash
+shipeasy upgrade [options] [command]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--agents <list>` | optional | Restrict to these agents (claude,cursor,codex,copilot,antigravity,gemini) |
+| `--scope <scope>` | optional | Where skills/MCP live: project \| user (default: auto-detected) |
+| `--pm <pm>` | optional | Package manager for the global CLI update (npm\|pnpm\|yarn\|bun) |
+| `--skip-cli` | optional | Don't self-update the CLI |
+| `--skip-sdk` | optional | Don't offer the SDK dependency update |
+| `--only-installed` | optional | Refresh only the skills already on disk — don't add missing ones |
+| `--yes` | optional | Non-interactive: accept the SDK update without prompting |
+| `--dry-run` | optional | Show what would change without installing anything |
+
+Examples:
+
+```bash
+# CLI + agents + skills, then offer the SDK bump
+shipeasy upgrade
+
+# non-interactive: also accept the SDK update
+shipeasy upgrade --yes
+
+# global install, pnpm-managed CLI
+shipeasy upgrade --scope user --pm pnpm
+
+# preview without installing
+shipeasy upgrade --dry-run
+```
+
+### `shipeasy upgrade skills`
+
+Update the CLI itself and refresh your Shipeasy skills to the latest marketplace revision (re-fetched from the repo). Skips the MCP re-registration and the SDK bump that the full `shipeasy upgrade` also does.
+
+```bash
+shipeasy upgrade skills [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--agents <list>` | optional | Restrict to these agents (claude,cursor,codex,copilot,antigravity,gemini) |
+| `--scope <scope>` | optional | Where skills live: project \| user (default: auto-detected) |
+| `--pm <pm>` | optional | Package manager for the global CLI update (npm\|pnpm\|yarn\|bun) |
+| `--skip-cli` | optional | Refresh skills only — don't self-update the CLI |
+| `--only-installed` | optional | Refresh only the skills already on disk — don't add missing ones |
+| `--dry-run` | optional | Show what would change without installing anything |
+
+Examples:
+
+```bash
+# refresh the CLI + skills only
+shipeasy upgrade skills
+
+# skills only, leave the CLI as-is
+shipeasy upgrade skills --skip-cli
+
+# one agent, in-repo
+shipeasy upgrade skills --agents claude --scope project
+```
+
+## `shipeasy install`
+
+Enable a platform module group (flags | i18n | ops) and verify it
+
+Turns on a coherent group of project modules in one call, then verifies the admin read paths are reachable and prints next steps. Module groups:
+
+• flags — gates + configs + events + experiments (kill switches ride the
+  same KV blob; no separate flag).
+• i18n  — translations; also ensures the primary profile (--profile,
+  default en:prod) exists, since the server does not auto-create one.
+• ops   — feedback + events (the queue + production-error tickets). The
+  code wiring (devtools overlay, see() reporting) is language-specific
+  and lives in the `shipeasy-ops` + `shipeasy-see` skills.
+
+Requires an admin session (`shipeasy login`) and a bound project; an `ops` key cannot toggle modules.
+
+```bash
+shipeasy install [options] <module>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `module` | required | — |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--profile <name>` | optional | i18n only: primary profile to ensure exists (default: `"en:prod"`) |
+| `--json` | optional | Output as JSON |
+| `--project <id>` | optional | Project ID override |
+| `--no-skills` | optional | Enable the module only — don't install its how-to skills |
+
+Examples:
+
+```bash
+# Enable the whole flags + experimentation platform
+shipeasy install flags
+
+# Enable translations + ensure en:prod exists
+shipeasy install i18n
+
+# Use a different primary profile
+shipeasy install i18n --profile en:staging
+
+# Enable the feedback / ops queue
+shipeasy install ops
+```
+
+## `shipeasy docs`
+
+SDK docs: fetch a language SDK's published docs — its page tree, feature pages, code snippets, and installable agent skill.
+
+```bash
+shipeasy docs [options] [command]
+```
+
+### `shipeasy docs list`
+
+List an SDK's documentation tree
+
+```bash
+shipeasy docs list [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--sdk <value>` | optional | SDK language. Defaults to the `sdk` recorded in the nearest `.shipeasy` when omitted. |
+
+### `shipeasy docs get`
+
+Fetch one SDK doc page or snippet
+
+```bash
+shipeasy docs get [options] <path>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `path` | required | Page key or snippet 'group/resource'. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--sdk <value>` | optional | SDK language. Defaults to the `sdk` recorded in the nearest `.shipeasy` when omitted. |
+| `--framework <value>` | optional | Framework hint (substitutes \{\{FRAMEWORK\}\}). |
+| `--name <value>` | optional | Resource name (substitutes \{\{RESOURCE_NAME\}\}). |
+
+### `shipeasy docs skill`
+
+Fetch an SDK's installable LLM skill
+
+```bash
+shipeasy docs skill [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--sdk <value>` | optional | SDK language. Defaults to the `sdk` recorded in the nearest `.shipeasy` when omitted. |
+| `--install` | optional | CLI only: write the skill to the local agent skills dir. |
+| `--agent <name>` | optional | Install into one agent (skips the picker, e.g. claude-code, codex) |
+| `--global` | optional | Install into the user-global skills dir |
+| `--dir <path>` | optional | Write this exact skills dir instead of delegating to the skills CLI |
+
+## `shipeasy detect`
+
+Scan the repo for install targets and print a per-folder onboarding recommendation (language, install command, keys, secret store, docs handle, next skills).
+
+`detect` is the engine behind the setup skill's 'detect subprojects' step. With no args it walks the tree under the cwd (depth 4, pruning node_modules/vendor/build/etc.) and finds every project manifest (package.json, pyproject.toml, Gemfile, go.mod, pom.xml, build.gradle[.kts], composer.json, Package.swift). Pass explicit paths to scan only those folders.
+
+For each folder it reports the detected language + frameworks and a **recommendation**: the SDK install command, which keys to mint (server, plus client for browser frameworks), the idiomatic secret store, the `shipeasy docs get` line that pulls the version-correct install + `configure()` wiring for that language, and the feature-install skills to run next. Already-onboarded folders and JS workspace roots are flagged so they're skipped. Use `--json` to drive it programmatically.
+
+It also **writes what it detected** — the `language`, `sdk`, and `frameworks` — into each real target's own `.shipeasy` (non-destructively; `project_id` is never touched), recording one file per project and seeding the `sdk` that `shipeasy docs` defaults to. `--json` echoes the written paths under `recorded`.
+
+```bash
+shipeasy detect [options] [paths...]
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `paths...` | optional | — |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--json` | optional | Output the structured recommendation set as JSON |
+
+Examples:
+
+```bash
+# recommendations for every target under the cwd
+shipeasy detect
+
+# machine-readable, for the setup skill
+shipeasy detect --json
+
+# scan only these folders
+shipeasy detect apps/web apps/api
+```
+
+Returns (with --json):
+
+```json
+{
+  "status": "ok",
+  "root": "/repo",
+  "targets": [
+    {
+      "path": "/repo/apps/web",
+      "language": "typescript",
+      "frameworks": [
+        "nextjs",
+        "react"
+      ],
+      "package_manager": "pnpm",
+      "entry_points": [
+        "src/app/layout.tsx"
+      ],
+      "recommendation": {
+        "sdk": "typescript",
+        "action": "install",
+        "reason": "No Shipeasy SDK installed — install it, mint keys, wire the entry point.",
+        "install": "pnpm add @shipeasy/sdk",
+        "keys": [
+          "server",
+          "client"
+        ],
+        "secret_store": "<dir>/.env.local (gitignored)",
+        "docs": "shipeasy docs get --sdk typescript installation",
+        "next_skills": [
+          "shipeasy-flags",
+          "shipeasy-ops",
+          "shipeasy-i18n"
+        ]
+      }
+    }
+  ],
+  "recorded": [
+    "/repo/apps/web/.shipeasy"
+  ]
+}
+```
+
+## `shipeasy mcp`
+
+Manage the Shipeasy MCP server in AI-assistant configs
+
+```bash
+shipeasy mcp [options] [command]
+```
+
+### `shipeasy mcp install`
+
+Register the hosted Shipeasy MCP server (https://mcp.shipeasy.ai/mcp) with installed AI assistants
+
+```bash
+shipeasy mcp install [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--client <name>` | optional | Restrict to one agent (claude \| cursor \| codex \| copilot \| antigravity \| gemini \| all) (default: `"all"`) |
+| `--scope <scope>` | optional | user \| project (default: `"user"`) |
+| `--force` | optional | Replace an existing 'shipeasy' MCP entry without prompting |
+| `--dry-run` | optional | Print what would change without writing files |
+
+Examples:
+
+```bash
+shipeasy mcp install
+
+# only Claude, project config
+shipeasy mcp install --client claude --scope project
+
+# shells out to `codex mcp add`
+shipeasy mcp install --client codex
+
+# preview a forced replace
+shipeasy mcp install --force --dry-run
+```
+
+### `shipeasy mcp status`
+
+Show which AI-assistant configs have a Shipeasy MCP entry
+
+```bash
+shipeasy mcp status [options]
+```
+
+Examples:
+
+```bash
+shipeasy mcp status
+```
+
+### `shipeasy mcp uninstall`
+
+Remove the 'shipeasy' MCP entry from AI-assistant configs
+
+```bash
+shipeasy mcp uninstall [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--client <name>` | optional | Restrict to one agent (default: `"all"`) |
+| `--scope <scope>` | optional | user \| project \| both (default: `"both"`) |
+
+Examples:
+
+```bash
+shipeasy mcp uninstall
+
+shipeasy mcp uninstall --client cursor --scope user
+```
+
+## `shipeasy sdk`
+
+Manage SDK keys (server, client, admin, ops)
+
+```bash
+shipeasy sdk [options] [command]
+```
+
+### `shipeasy sdk keys`
+
+Manage SDK keys (server, client, admin, ops)
+
+```bash
+shipeasy sdk keys [options] [command]
+```
+
+#### `shipeasy sdk keys list`
+
+List SDK keys for the current project
+
+```bash
+shipeasy sdk keys list [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--json` | optional | Output as JSON |
+| `--project <id>` | optional | Project ID override |
+
+Examples:
+
+```bash
+shipeasy sdk keys list
+
+# Machine-readable output
+shipeasy sdk keys list --json
+```
+
+#### `shipeasy sdk keys create`
+
+Create a new SDK key. The raw token is shown ONCE — store it now.
+
+```bash
+shipeasy sdk keys create [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--type <type>` | required | Key type: server \| client \| admin \| ops |
+| `--env <env>` | optional | Environment the key is bound to: dev \| staging \| prod (required for server/client keys) |
+| `--name <name>` | optional | Human label for the key (shown in the dashboard + audit logs) |
+| `--scopes <list>` | optional | Comma list of permission scopes: experiments:read, gates:evaluate, events:write, configs:write, experiments:write, tickets:public_create |
+| `--json` | optional | Output as JSON |
+| `--project <id>` | optional | Project ID override |
+
+Examples:
+
+```bash
+# Server key for production (private, server-only)
+shipeasy sdk keys create --type server --env prod
+
+# Public client key for staging
+shipeasy sdk keys create --type client --env staging
+
+# Named client key scoped to file public bug reports (CLI /cli/report)
+shipeasy sdk keys create --type client --env prod --name "CLI main key" --scopes tickets:public_create
+
+# Restricted ops key for the trigger
+shipeasy sdk keys create --type ops
+```
+
+#### `shipeasy sdk keys revoke`
+
+Revoke a key by id (or id prefix; first match wins)
+
+```bash
+shipeasy sdk keys revoke [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | — |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--json` | optional | Output as JSON |
+| `--project <id>` | optional | Project ID override |
+
+Examples:
+
+```bash
+# Revoke by full id
+shipeasy sdk keys revoke 7f3a9c10-2b4d-4e6f-8a1b-0c2d3e4f5a6b
+
+# Revoke by id prefix (first match)
+shipeasy sdk keys revoke 7f3a9c10
+```

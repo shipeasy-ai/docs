@@ -1,0 +1,53 @@
+# Target on email or PII without it landing in analytics
+
+Source: https://docs.shipeasy.ai/flags/case-studies/private-attribute-targeting
+
+> Use privateAttributes to target on email or tier while stripping those fields from every event the SDK emits.
+
+You want to gate a beta on `email endsWith "@acme.com"`, or target by a billing tier. The targeting needs those attributes — but you do **not** want raw emails and account identifiers flowing into your events store, where they end up in analytics, exports, and every downstream pipe that reads exposures.
+
+[`privateAttributes`](https://docs.shipeasy.ai/sdks/private-attributes) gives you both: evaluate against the attribute locally, strip it before anything is sent.
+
+**Why it works.** Evaluation runs in your process against the in-memory rule set — a private attribute never has to leave the process to be matched on. Marking it private changes only what the SDK _transmits_: the field is removed from every exposure and track event before it hits `/collect`.
+
+## Declare the sensitive fields once
+
+```ts
+import { configure, Client } from "@shipeasy/sdk/server";
+
+configure({
+  apiKey: process.env.SHIPEASY_SERVER_KEY!,
+  privateAttributes: ["email", "ssn"],
+});
+```
+
+Now the same read targets on `email` but never serializes it into telemetry. Bind a `Client` to the user — the attributes you pass it are matched on, but the private ones never travel:
+
+```ts
+const flags = new Client({
+  user_id: "u_4f2a",
+  email: "ana@acme.com", // used for targeting…
+  plan: "pro", // normal attribute — stays in events
+});
+
+flags.getFlag("beta_program");
+// …email never lands in the exposure event
+```
+
+> **What stays and what goes**
+
+A <strong>private</strong> attribute is used for evaluation and stripped from events. A
+<strong>normal</strong> attribute is used for evaluation <em>and</em> kept in events. Put anything
+you wouldn't want in analytics — PII, billing ids, security flags — on the private list.
+
+## Rollout & measurement plan
+
+- **Default to private for anything identifying.** Email, phone, national id, internal account keys — if you'd hesitate to see it in a CSV export, mark it private.
+- **You can still target on it.** Matching is unchanged; only transmission is affected. A rule on `email endsWith "@acme.com"` works exactly the same.
+- **Keep the bucketing unit non-private.** `user_id` drives deterministic assignment and must travel — list the _attributes_ you target on, not the identifier you bucket on.
+
+**Related**
+
+- [Private attributes](https://docs.shipeasy.ai/sdks/private-attributes) — The full stay/strip contract
+- [Targeting rules](https://docs.shipeasy.ai/flags/gates/targeting) — Matching on attributes
+- [User attributes](https://docs.shipeasy.ai/get-started/attributes) — What you can target on

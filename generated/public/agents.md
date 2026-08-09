@@ -260,6 +260,13 @@ Use `import.meta.env.VITE_SHIPEASY_CLIENT_KEY` rather than `process.env.*` in Vi
 inline it at build time. Don't pass `process.env.SHIPEASY_SERVER_KEY` to the client build —
 that key belongs only on the server.
 
+**Related**
+
+- [Keys & environments](https://docs.shipeasy.ai/get-started/keys-and-environments) — Which key goes where
+- [SDKs](https://docs.shipeasy.ai/get-started/sdks) — Server build, browser build, native ports
+- [Authenticate](https://docs.shipeasy.ai/get-started/authenticate) — Sign in the CLI and your agent
+- [Troubleshooting](https://docs.shipeasy.ai/get-started/troubleshooting) — When the install does not take
+
 ---
 
 ## Authenticate
@@ -417,6 +424,13 @@ confirm, and the CLI in the SSH session completes when the poll succeeds.
 Run `shipeasy login` in a real terminal first. The MCP server reads the same
 `~/.shipeasy/credentials` file the CLI writes. Some agents launch with a stripped env — set `HOME`
 explicitly in your MCP config if the tool can't find the file.
+
+**Related**
+
+- [Keys & environments](https://docs.shipeasy.ai/get-started/keys-and-environments) — The keys your app uses, not the CLI
+- [CLI](https://docs.shipeasy.ai/get-started/cli) — What the session unlocks
+- [MCP server](https://docs.shipeasy.ai/get-started/mcp) — The same login, for your agent
+- [Team & permissions](https://docs.shipeasy.ai/get-started/team) — Who may publish to production
 
 ---
 
@@ -1190,6 +1204,13 @@ Pass an explicit `--project <id>` to `shipeasy login`, or set `SHIPEASY_PROJECT_
 Restart the AI assistant. MCP servers are loaded at process start; editing `mcp.json` while the
 assistant is running has no effect.
 
+**Related**
+
+- [MCP reference](https://docs.shipeasy.ai/get-started/mcp-reference) — Every tool, by group
+- [Install in your agent](https://docs.shipeasy.ai/get-started/agents) — Claude Code, Cursor, Windsurf and the rest
+- [Docs for agents](https://docs.shipeasy.ai/get-started/llms) — The docs as one file, for context
+- [Authenticate](https://docs.shipeasy.ai/get-started/authenticate) — How a tool call gets a project
+
 ---
 
 ## CLI
@@ -1419,6 +1440,13 @@ SHIPEASY_CLI_TOKEN="$CI_TOKEN" shipeasy ops bug "Smoke test failed on deploy" \
 Every read command accepts `--json`. Every write command exits non-zero on failure. The CLI is
 built to be scripted — drop it into a Makefile or a GitHub Actions step and it behaves the way
 you'd expect.
+
+**Related**
+
+- [CLI reference](https://docs.shipeasy.ai/get-started/cli-reference) — Every command, argument and flag
+- [Authenticate](https://docs.shipeasy.ai/get-started/authenticate) — One login for the CLI and every MCP tool
+- [MCP server](https://docs.shipeasy.ai/get-started/mcp) — The same operations, driven by an agent
+- [Scheduled triggers](https://docs.shipeasy.ai/get-started/triggers) — Run it unattended, on a cadence
 
 ---
 
@@ -1658,6 +1686,13 @@ instead.
 - **[QA + dogfood overrides](https://docs.shipeasy.ai/flags/gates/overrides)** — Force a feature flag on or off for specific user IDs without touching targeting or rollout.
 
 - **[Real scenarios](https://docs.shipeasy.ai/flags/case-studies)** — Worked examples — checkout rollout, beta allow-list, regional rollout.
+
+**Related**
+
+- [Rollouts & bucketing](https://docs.shipeasy.ai/flags/gates/rollouts) — What the percentage actually does
+- [Targeting rules](https://docs.shipeasy.ai/flags/gates/targeting) — Who is eligible in the first place
+- [Keys & environments](https://docs.shipeasy.ai/get-started/keys-and-environments) — Which key reads which environment
+- [Edge cases](https://docs.shipeasy.ai/flags/edge-cases) — Sticky bucketing, propagation, SSR flicker
 
 ---
 
@@ -1920,6 +1955,13 @@ any of it.
 
 - **[Measure, don't guess](https://docs.shipeasy.ai/metrics/quickstart)** — Once the value is remote, define a metric on the events it moves and watch it change.
 
+**Related**
+
+- [Dynamic values](https://docs.shipeasy.ai/flags/configs/values) — Types, defaults, and what changes without a deploy
+- [Targeting & rollouts](https://docs.shipeasy.ai/flags/configs/targeting) — Different values for different users
+- [Plan entitlements with a config](https://docs.shipeasy.ai/flags/case-studies/entitlements-with-configs) — One config instead of a flag sprawl
+- [Reacting to changes](https://docs.shipeasy.ai/sdks/onchange) — Invalidate a cache when a value flips
+
 ---
 
 ## Quickstart (flags/killswitches)
@@ -2089,6 +2131,13 @@ of your phone.
 
 - **[Worked example: paused emails](https://docs.shipeasy.ai/flags/case-studies#kill-emails)** — The walkthrough from the case-studies page, with more context on the incident.
 
+**Related**
+
+- [Patterns](https://docs.shipeasy.ai/flags/killswitches/patterns) — What belongs behind one, and what does not
+- [Maintenance mode](https://docs.shipeasy.ai/flags/case-studies/maintenance-mode) — The worked incident
+- [Which primitive?](https://docs.shipeasy.ai/flags/decision) — Killswitch vs flag vs config
+- [Evaluation & caching](https://docs.shipeasy.ai/get-started/evaluation-and-caching) — How fast a flip actually lands
+
 ---
 
 ## Quickstart (metrics)
@@ -2253,6 +2302,13 @@ If the number is flat or missing, two checks:
 
 ```
 
+**Related**
+
+- [Aggregation types](https://docs.shipeasy.ai/metrics/aggregations) — Conversion, count, sum, mean, ratio
+- [Query DSL grammar](https://docs.shipeasy.ai/metrics/grammar) — Everything the query language allows
+- [Configure alerts](https://docs.shipeasy.ai/metrics/alerts) — Raise a threshold on what you just built
+- [Flow & dependencies](https://docs.shipeasy.ai/flags/flow) — Trace what feeds what
+
 ---
 
 ## Getting started (feedback)
@@ -2319,6 +2375,13 @@ Or use the dashboard. Either way the records live in your project.
 - **[API reference](https://docs.shipeasy.ai/feedback/api)** — `POST /api/admin/bugs`, `POST /api/admin/feature-requests`, listing, status updates.
 
 - **[CLI commands](https://docs.shipeasy.ai/get-started/cli)** — Every `shipeasy feedback …` verb.
+
+**Related**
+
+- [The devtools overlay](https://docs.shipeasy.ai/feedback/devtools) — Filing without leaving the app
+- [Connectors](https://docs.shipeasy.ai/feedback/connectors) — Mirror reports into GitHub, Sheets or Slack
+- [Edge cases](https://docs.shipeasy.ai/feedback/edge-cases) — Spam, dedup, PII, anonymous users
+- [Feedback API](https://docs.shipeasy.ai/feedback/api) — The REST endpoints underneath
 
 ---
 
@@ -2432,6 +2495,13 @@ Automations, or a GitHub Actions `schedule:` job), so pause, run and inspect the
 Rule of thumb: if a provider can't be started from nothing by one authenticated HTTP call,
 Shipeasy can't fire it — it schedules on the provider's own platform instead.
 
+**Related**
+
+- [CLI](https://docs.shipeasy.ai/get-started/cli) — The command a trigger runs
+- [Install in your agent](https://docs.shipeasy.ai/get-started/agents) — The agent side of the same setup
+- [Configure alerts](https://docs.shipeasy.ai/metrics/alerts) — What files the work a trigger burns down
+- [Team & permissions](https://docs.shipeasy.ai/get-started/team) — What an unattended run may publish
+
 ---
 
 ## Troubleshooting
@@ -2517,6 +2587,13 @@ order: your browser's cache (hard-reload), then your zone's Browser Cache TTL,
 then re-publish. Remember the SDK also polls on your plan's interval — a fresh
 read can be up to that old. See [Evaluation & caching](https://docs.shipeasy.ai/get-started/evaluation-and-caching).
 
+**Related**
+
+- [Keys & environments](https://docs.shipeasy.ai/get-started/keys-and-environments) — The cause of most wrong-value reads
+- [Evaluation & caching](https://docs.shipeasy.ai/get-started/evaluation-and-caching) — Why a change has not landed yet
+- [Evaluation reasons](https://docs.shipeasy.ai/sdks/reasons) — Ask the SDK why it answered that
+- [Edge cases](https://docs.shipeasy.ai/flags/edge-cases) — The ones that bite exactly once
+
 ---
 
 # Reference
@@ -2540,7 +2617,7 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy mcp uninstall` — --client --scope
 - `shipeasy metrics`
 - `shipeasy metrics archive` — --data
-- `shipeasy metrics create` — --default-min-effect-of-interest --direction --display --event-name --folder --query --query-ir --unit --winsorize-pct
+- `shipeasy metrics create` — --default-min-effect-of-interest --direction --display --display-name --event-name --folder --query --query-ir --unit --winsorize-pct
 - `shipeasy metrics events`
 - `shipeasy metrics events approve` — --description --folder --properties
 - `shipeasy metrics events archive` — --data
@@ -2553,7 +2630,7 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy metrics series` — --bucket --from --to
 - `shipeasy metrics show` — --data
 - `shipeasy metrics unarchive` — --data
-- `shipeasy metrics update` — --default-min-effect-of-interest --direction --display --event-name --folder --query --query-ir --unit --winsorize-pct
+- `shipeasy metrics update` — --default-min-effect-of-interest --direction --display --display-name --event-name --folder --query --query-ir --unit --winsorize-pct
 - `shipeasy ops`
 - `shipeasy ops ack` — --agent --session-id
 - `shipeasy ops agents`
@@ -2561,9 +2638,9 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy ops alerts`
 - `shipeasy ops alerts archive` — --data
 - `shipeasy ops alerts channels` — --data
-- `shipeasy ops alerts create` — --bucket-minutes --comparator --direction --enabled --kind --metric-id --name --notify --range-max --range-min --required-buckets --severity --sigma --sustained --threshold --window-hours
+- `shipeasy ops alerts create` — --auto-resolve-minutes --bucket-minutes --comparator --composite --delay-minutes --direction --enabled --group-alerts --kind --max-groups --metric-id --name --no-data-minutes --notify --range-max --range-min --recovery-threshold --required-buckets --severity --sigma --sustained --threshold --warn-threshold --window-hours
 - `shipeasy ops alerts list` — --data --q
-- `shipeasy ops alerts update` — --bucket-minutes --comparator --direction --enabled --kind --name --notify --range-max --range-min --required-buckets --severity --sigma --sustained --threshold --window-hours
+- `shipeasy ops alerts update` — --auto-resolve-minutes --bucket-minutes --comparator --composite --delay-minutes --direction --enabled --group-alerts --kind --max-groups --name --no-data-minutes --notify --range-max --range-min --recovery-threshold --required-buckets --severity --sigma --sustained --threshold --warn-threshold --window-hours
 - `shipeasy ops bug` — --actual-result --assignee-id --context --expected-result --notify --page-url --priority --reporter-email --status --steps-to-reproduce --subscribers --tags --user-agent --viewport
 - `shipeasy ops comments`
 - `shipeasy ops comments create` — --body --parent-id

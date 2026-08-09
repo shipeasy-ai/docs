@@ -1,0 +1,78 @@
+# Shipeasy Python SDK — Overview
+
+Source: https://docs.shipeasy.ai/sdks/reference/python
+
+> shipeasy is the server SDK for Shipeasy — feature flags, remote configs, kill switches, A/B experiments, and metric tracking. It uses your server key and…
+
+> **Note**
+Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-python/pages/overview.md`](https://shipeasy-ai.github.io/sdk-python/pages/overview.md).
+
+`shipeasy` is the **server** SDK for Shipeasy — feature flags, remote configs,
+kill switches, A/B experiments, and metric tracking. It uses your **server key**
+and must never be embedded in a browser.
+
+## Mental model: `configure()` once, then `Client(user)` per request
+
+There are exactly two things to learn:
+
+1. **`configure()`** — call it **once** at process start with your server key and
+   an optional `attributes` transform (your user object → the Shipeasy attribute
+   map). This is the whole setup story.
+2. **`shipeasy.Client(user)`** — construct a cheap, **user-bound** handle per
+   request and read with **no user argument** (the user is bound at construction).
+
+```python
+import shipeasy
+
+shipeasy.configure(
+    api_key="sdk_server_...",
+    attributes=lambda u: {"user_id": u.id, "country": u.country, "plan": u.plan},
+)
+
+# construct once per callsite (cheap; binds the user)
+client = shipeasy.Client(current_user)
+
+if client.get_flag("new_checkout"):
+    ...
+config = client.get_config("billing_copy")
+a = client.universe("checkout").assign()  # ≤1 experiment; exposure logs on first get()
+if a.get("button_color") == "green":
+    ...
+client.track("purchase", {"amount": 49})  # on conversion
+```
+
+## What the bound `Client` does
+
+Everything you need per request is on `Client(user)` — no user argument on any
+call:
+
+- `get_flag(name, default=False)` · `get_flag_detail(name)`
+- `get_config(name, decode=None, default=None)`
+- `get_killswitch(name, switch_key=None)`
+- `universe(name).assign()` → `Assignment` (`.name` / `.group` / `.enrolled` / `.get(field, fallback=None, *, exposure=True)`); the first `get()` on an enrolled assignment logs one exposure (`exposure=False` peeks without logging)
+- `track(event, properties=None)`
+
+So an experiment is **end-to-end Client-only**. Constructing a `Client(user)`
+before `configure()` raises `RuntimeError`.
+
+## The configure family
+
+| call | when |
+| --- | --- |
+| [`configure(api_key=...)`](https://docs.shipeasy.ai/sdks/reference/python/configuration) | production — your server key |
+| [`configure_for_testing(...)`](https://docs.shipeasy.ai/sdks/reference/python/testing) | unit tests — no network, seed overrides |
+| [`configure_for_offline(...)`](https://docs.shipeasy.ai/sdks/reference/python/testing) | evaluate real rules from a snapshot / file |
+
+After any of them, you read the same way: `shipeasy.Client(user)`.
+
+## Feature pages
+
+- [installation](https://docs.shipeasy.ai/sdks/reference/python/installation) — `pip install shipeasy`, frameworks, `configure()`
+- [configuration](https://docs.shipeasy.ai/sdks/reference/python/configuration) — `configure()`, keys, `attributes`, one-shot vs poll, options
+- [flags](https://docs.shipeasy.ai/sdks/reference/python/flags) — `get_flag`, `get_flag_detail`, defaults
+- [configs](https://docs.shipeasy.ai/sdks/reference/python/configs) — `get_config`, typed decode, defaults
+- [killswitches](https://docs.shipeasy.ai/sdks/reference/python/killswitches) — `get_killswitch`
+- [error-reporting](https://docs.shipeasy.ai/sdks/reference/python/error-reporting) — `see()` structured reporting
+- [testing](https://docs.shipeasy.ai/sdks/reference/python/testing) — `configure_for_testing`, `configure_for_offline`, overrides
+- [openfeature](https://docs.shipeasy.ai/sdks/reference/python/openfeature) — `ShipeasyProvider`
+- [advanced](https://docs.shipeasy.ai/sdks/reference/python/advanced) — anon-id middleware, private attrs, sticky bucketing, manual exposure, SSR

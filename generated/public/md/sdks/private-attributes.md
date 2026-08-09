@@ -1,0 +1,67 @@
+# Private attributes
+
+Source: https://docs.shipeasy.ai/sdks/private-attributes
+
+> Mark attributes as private so they're used for targeting but never persisted or sent to the events store.
+
+Some attributes you target on are sensitive — an email, a customer tier, a national ID. You still want to _evaluate_ against them (target `email endsWith "@acme.com"`), but you don't want them leaving the process or landing in the events store. `privateAttributes` does exactly that.
+
+## Declare them once
+
+`privateAttributes` is an `Engine` construction option — list the attribute names when you build the engine (or pass them to `configure(...)`, which builds the shared engine for the bound-client flow). They're used locally for evaluation and stripped from every event the SDK emits:
+
+```ts
+import { configure } from "@shipeasy/sdk/server";
+
+configure({
+  apiKey: process.env.SHIPEASY_SERVER_KEY!,
+  attributes: (u) => ({ user_id: u.id, email: u.email, plan: u.plan }),
+  privateAttributes: ["email", "ssn"],
+});
+```
+
+```ts
+// signature
+privateAttributes?: string[];
+```
+
+The same option is available when you construct an `Engine` directly:
+
+```ts
+import { Engine } from "@shipeasy/sdk/server";
+
+const engine = new Engine({
+  apiKey: process.env.SHIPEASY_SERVER_KEY!,
+  privateAttributes: ["email", "ssn"],
+});
+```
+
+Now a rule can target `email`, but `email` and `ssn` are removed before any exposure or track event is sent to `/collect`. With the bound flow, the attributes come from your transform:
+
+```ts
+const flags = new Client(currentUser); // email is in the attribute map…
+flags.getFlag("beta_program");
+// …used for targeting, but never serialized into the exposure event
+```
+
+> **Evaluate locally, transmit nothing**
+
+Evaluation runs in your process against the in-memory rule set, so a private attribute never has
+to travel anywhere to be targeted on. Private attributes only ever affect what the SDK
+<em>sends</em> — the matching itself is unchanged.
+
+## What stays and what goes
+
+|                   | Targeting / evaluation | Sent to events store |
+| ----------------- | ---------------------- | -------------------- |
+| Normal attribute  | ✅ used                | ✅ included          |
+| Private attribute | ✅ used                | ❌ stripped          |
+
+Use it for anything you wouldn't want in analytics: PII, billing identifiers, security-sensitive flags.
+
+**Related**
+
+- [Use case: target on PII without leaking it](https://docs.shipeasy.ai/flags/case-studies/private-attribute-targeting) — Private attributes in practice
+- [User attributes](https://docs.shipeasy.ai/get-started/attributes) — What you can target on
+- [Targeting rules](https://docs.shipeasy.ai/flags/gates/targeting) — Matching on attributes
+- [Identity & bucketing](https://docs.shipeasy.ai/get-started/identity-and-bucketing)

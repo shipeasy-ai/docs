@@ -1,0 +1,24 @@
+# OpenFeature
+
+Source: https://docs.shipeasy.ai/sdks/reference/kotlin/openfeature
+
+> The Kotlin SDK does not ship an OpenFeature provider. There is no openfeature module, class, or dependency in this SDK. Evaluate flags directly with the…
+
+> **Note**
+Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-kotlin/pages/openfeature.md`](https://shipeasy-ai.github.io/sdk-kotlin/pages/openfeature.md).
+
+**The Kotlin SDK does not ship an OpenFeature provider.** There is no
+`openfeature` module, class, or dependency in this SDK. Evaluate flags directly
+with the native API:
+
+```kotlin
+val flags = Client(currentUser)
+flags.getFlag("new_checkout")          // → Boolean
+flags.getFlagDetail("new_checkout")    // → FlagDetail(value, reason)
+```
+
+`getFlagDetail` returns a value plus a stable `reason` (LaunchDarkly
+`variationDetail` parity) — the same information an OpenFeature `*Details`
+resolution would carry. If you need OpenFeature semantics, map your own
+`Provider` resolutions onto `getFlagDetail` yourself; see [Flags](https://docs.shipeasy.ai/sdks/reference/kotlin/flags) for
+the `Reason` constants.
