@@ -3,7 +3,7 @@ title: Patterns
 description: When a killswitch is the right answer — what to put behind one, fail-safe defaults, alerting, and the post-incident cleanup.
 ---
 
-<DocMeta status="Production ready" read="6 min read" updated="May 15, 2026" works="Server SDK" />
+<DocMeta status="Production ready" read="6 min read" works="Server SDK" />
 
 A killswitch is a flag with one job: be the lever you pull when something is on fire. That makes
 it the wrong tool for most things — most things don't need a 3am-grade pause button. This page is
@@ -148,3 +148,28 @@ tab pinned during incidents — it's the central console.
 Hovering on a killswitch shows its recent flip history. If a switch has been flipped 5 times in
 the last week, that's a signal that the underlying system needs a real fix, not just a kill
 button.
+
+<SeeAlso
+  links={[
+    {
+      href: "/flags/killswitches/quickstart",
+      title: "Killswitch quickstart",
+      note: "Wiring the first one",
+    },
+    {
+      href: "/flags/case-studies/maintenance-mode",
+      title: "Maintenance mode",
+      note: "A subsystem behind break-glass",
+    },
+    {
+      href: "/flags/case-studies/per-tenant-killswitch",
+      title: "Per-tenant killswitch",
+      note: "Disable one tenant, not everyone",
+    },
+    {
+      href: "/metrics/alerts",
+      title: "Configure alerts",
+      note: "Let the metric tell you to flip it",
+    },
+  ]}
+/>

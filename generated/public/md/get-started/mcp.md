@@ -83,14 +83,14 @@ That's why the MCP server is the recommended surface for any AI-driven setup. Th
 The server advertises its tools grouped by product area. The agent sees each one as
 `mcp__shipeasy__<name>`:
 
-| Group        | Tools                                                                   | What it covers                                                          |
-| ------------ | ----------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| **Release**  | `release_flags_*`, `release_configs_*`, `release_killswitch_*`           | Create, target, roll out, and kill features                             |
-| **Metrics**  | `metrics_*`, `metrics_events_*`                                         | Define metrics over your events, read a series, manage the event catalog |
-| **Ops**      | `ops_*`, `ops_alerts_*`, `ops_comments_*`, `ops_investigations_*`        | File and work the bug / feature / alert queue, hand items to agents      |
-| **Errors**   | `errors_*`                                                              | Read, group, and resolve reported production errors                     |
-| **Projects** | `projects_*`, `whoami`                                                  | Which project you're bound to, and its settings                         |
-| **Docs**     | `docs_list`, `docs_get`, `docs_skill`                                   | Fetch SDK docs and installable agent skills for any language            |
+| Group        | Tools                                                             | What it covers                                                           |
+| ------------ | ----------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| **Release**  | `release_flags_*`, `release_configs_*`, `release_killswitch_*`    | Create, target, roll out, and kill features                              |
+| **Metrics**  | `metrics_*`, `metrics_events_*`                                   | Define metrics over your events, read a series, manage the event catalog |
+| **Ops**      | `ops_*`, `ops_alerts_*`, `ops_comments_*`, `ops_investigations_*` | File and work the bug / feature / alert queue, hand items to agents      |
+| **Errors**   | `errors_*`                                                        | Read, group, and resolve reported production errors                      |
+| **Projects** | `projects_*`, `whoami`                                            | Which project you're bound to, and its settings                          |
+| **Docs**     | `docs_list`, `docs_get`, `docs_skill`                             | Fetch SDK docs and installable agent skills for any language             |
 
 > **The exhaustive list is generated**
 

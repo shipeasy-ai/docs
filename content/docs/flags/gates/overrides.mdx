@@ -3,12 +3,7 @@ title: Overrides
 description: Force a feature flag on or off for specific user IDs — for QA, dogfood, demos, and customer-specific repros. Bypasses targeting and rollout.
 ---
 
-<DocMeta
-  status="Production ready"
-  read="4 min read"
-  updated="May 15, 2026"
-  works="Server SDK · Browser SDK · CLI"
-/>
+<DocMeta status="Production ready" read="4 min read" works="Server SDK · Browser SDK · CLI" />
 
 An **override** is a per-user forced answer. It bypasses everything — targeting rules, rollout,
 killswitch, even `enabled = false`. Use it for the four cases below; don't reach for it as a
@@ -150,3 +145,28 @@ Every override change is recorded — who added it, who removed it, when, from w
 (dashboard, CLI, API). Find the audit trail under **Feature flag → History**. Particularly useful when a
 customer reports a feature they're "always seeing" — the history tells you whether they were
 overridden, by whom, and when.
+
+<SeeAlso
+  links={[
+    {
+      href: "/flags/gates/targeting",
+      title: "Targeting rules",
+      note: "Eligibility for everyone else",
+    },
+    {
+      href: "/flags/case-studies/qa-with-devtools",
+      title: "QA a flag before you ramp",
+      note: "Overrides from the browser overlay",
+    },
+    {
+      href: "/flags/case-studies/debug-missing-feature",
+      title: "Debug a missing feature",
+      note: "Why a user did not get it",
+    },
+    {
+      href: "/sdks/reasons",
+      title: "Evaluation reasons",
+      note: "How an override shows up in a detail read",
+    },
+  ]}
+/>

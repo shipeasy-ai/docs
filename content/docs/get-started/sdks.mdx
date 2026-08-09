@@ -6,7 +6,6 @@ description: One package, two builds — server and browser. Plus framework adap
 <DocMeta
   status="Production ready"
   read="9 min read"
-  updated="May 3, 2026"
   works="JS · TS · React · Vue · Svelte · Angular · RN · Ruby · Python · Go"
 />
 
@@ -243,5 +242,18 @@ Useful for QA, dogfooding new variants, walking a customer through what they sho
   cmds={[
     { label: "Install the SDK", cmd: "npm install @shipeasy/sdk" },
     { label: "Or start with the CLI", cmd: "npm install -g @shipeasy/cli" },
+  ]}
+/>
+
+<SeeAlso
+  links={[
+    { href: "/sdks", title: "SDK reference", note: "Every language, method by method" },
+    {
+      href: "/get-started/keys-and-environments",
+      title: "Keys & environments",
+      note: "Server key vs client key",
+    },
+    { href: "/sdks/browser-react", title: "Browser & React", note: "The client build in detail" },
+    { href: "/sdks/testing", title: "Testing", note: "Seed values instead of hitting the network" },
   ]}
 />

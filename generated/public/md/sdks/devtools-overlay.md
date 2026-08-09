@@ -22,10 +22,10 @@ affect other users. Close the session and you're back to the real evaluation.
 
 You can also force a specific resource straight from the URL — useful for sharing a repro link or scripting a QA flow:
 
-| Param                      | Effect                    |
-| -------------------------- | ------------------------- |
-| `?se_gate_<name>=true`     | Force a gate on/off       |
-| `?se_config_<key>=<value>` | Force a config value      |
+| Param                      | Effect               |
+| -------------------------- | -------------------- |
+| `?se_gate_<name>=true`     | Force a gate on/off  |
+| `?se_config_<key>=<value>` | Force a config value |
 
 These sit between programmatic overrides and the server's evaluation in [precedence](https://docs.shipeasy.ai/sdks/testing#overrides-on-a-real-client):
 

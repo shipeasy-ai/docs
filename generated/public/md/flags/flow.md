@@ -14,18 +14,18 @@ The graph is assembled server-side from your project's real lists — events, me
 
 The node types and the edges between them describe the data pipeline:
 
-| Node           | Edge into it         | What the edge means                                                                                            |
-| -------------- | -------------------- | -------------------------------------------------------------------------------------------------------------- |
-| **Event**      | —                    | A logged event (or an SDK auto-event like `__auto_lcp`).                                                       |
-| **Metric**     | `agg`                | The metric aggregates this event (`count`, `sum(value)`, `p95(value)`, a `ratio` of two events, …).            |
-| **Alert**      | `alert`              | An alert rule watches this metric, with its comparator/threshold/window shown on the edge (e.g. `> 200 · 1h`). |
+| Node       | Edge into it | What the edge means                                                                                            |
+| ---------- | ------------ | -------------------------------------------------------------------------------------------------------------- |
+| **Event**  | —            | A logged event (or an SDK auto-event like `__auto_lcp`).                                                       |
+| **Metric** | `agg`        | The metric aggregates this event (`count`, `sum(value)`, `p95(value)`, a `ratio` of two events, …).            |
+| **Alert**  | `alert`      | An alert rule watches this metric, with its comparator/threshold/window shown on the edge (e.g. `> 200 · 1h`). |
 
 > **Status is live**
 
-Alert nodes render as **firing**, **armed**, or **paused**. Metric and event nodes are enriched with live analytics — a 7-day sparkline, current
-value, and period delta on metrics, and a per-day volume on events. Enrichment is cached ~1 hour;
-the graph structure itself is rebuilt on every view, so newly-created resources appear
-immediately.
+Alert nodes render as **firing**, **armed**, or **paused**. Metric and event nodes are enriched
+with live analytics — a 7-day sparkline, current value, and period delta on metrics, and a per-day
+volume on events. Enrichment is cached ~1 hour; the graph structure itself is rebuilt on every
+view, so newly-created resources appear immediately.
 
 ## How nodes cluster
 
@@ -37,14 +37,14 @@ The point of Flow is to answer "what depends on this?" before you touch a metric
 
 **Find the node**
 
-Open **Flow** and locate the metric or event you're about to change. Drag to rearrange and
-hover to trace its edges.
+Open **Flow** and locate the metric or event you're about to change. Drag to rearrange and hover
+to trace its edges.
 
 **Read its downstream edges**
 
-Follow the edges *out* of the node. An `alert` edge means an alert rule is armed on that
-metric — renaming the event it aggregates, or changing the metric's query, moves the number the
-rule is comparing against, and a rule that was quiet can start (or stop) paging.
+Follow the edges *out* of the node. An `alert` edge means an alert rule is armed on that metric
+— renaming the event it aggregates, or changing the metric's query, moves the number the rule is
+comparing against, and a rule that was quiet can start (or stop) paging.
 
 **Check what feeds it**
 

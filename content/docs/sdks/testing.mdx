@@ -3,12 +3,7 @@ title: Testing
 description: Swap configure() for configureForTesting() and seed the values your code should see — unit-test flag-gated code without touching the network.
 ---
 
-<DocMeta
-  status="Production ready"
-  read="4 min read"
-  updated="July 20, 2026"
-  works="@shipeasy/sdk · server + client"
-/>
+<DocMeta status="Production ready" read="4 min read" works="@shipeasy/sdk · server + client" />
 
 Code that reads flags shouldn't need a live connection to test. Swap the live `configure()` for **`configureForTesting()`** — a drop-in sibling with **no network, ever** and no SDK key required. It seeds the values your code should see, and you read them back through the ordinary `new Client(user)`. In this mode the rules never fetch, `track()` is a no-op, `assign()` logs no exposure, and telemetry is off.
 
@@ -38,11 +33,11 @@ clearOverrides(); // reset every seeded override back to the empty-blob default
 
 `configureForTesting({ flags?, configs?, attributes? })`:
 
-| Field         | Shape                         | Effect                                                  |
-| ------------- | ----------------------------- | ------------------------------------------------------- |
-| `flags`       | `{ [name]: boolean }`         | forced `getFlag` results                                |
-| `configs`     | `{ [name]: value }`           | forced `getConfig` results                              |
-| `attributes`  | `(yourUser) => User`          | same transform as `configure()` (default identity)      |
+| Field        | Shape                 | Effect                                             |
+| ------------ | --------------------- | -------------------------------------------------- |
+| `flags`      | `{ [name]: boolean }` | forced `getFlag` results                           |
+| `configs`    | `{ [name]: value }`   | forced `getConfig` results                         |
+| `attributes` | `(yourUser) => User`  | same transform as `configure()` (default identity) |
 
 ## Package-level overrides
 

@@ -3,12 +3,7 @@ title: Flow & dependencies
 description: A live dependency graph of your events, metrics, and alerts — trace what feeds what before you change it.
 ---
 
-<DocMeta
-  status="Production ready"
-  read="4 min read"
-  updated="August 8, 2026"
-  works="Dashboard · per project"
-/>
+<DocMeta status="Production ready" read="4 min read" works="Dashboard · per project" />
 
 **Flow** is a live graph of how your instrumentation hangs together: events feed metrics, and metrics drive alerts. It lives in the dashboard at `/dashboard/<projectId>/flow`. Use it to see the blast radius of a change before you make it — which alerts watch a metric, and which event that metric is built on.
 
@@ -40,17 +35,17 @@ The graph is assembled server-side from your project's real lists — events, me
 
 The node types and the edges between them describe the data pipeline:
 
-| Node           | Edge into it         | What the edge means                                                                                            |
-| -------------- | -------------------- | -------------------------------------------------------------------------------------------------------------- |
-| **Event**      | —                    | A logged event (or an SDK auto-event like `__auto_lcp`).                                                       |
-| **Metric**     | `agg`                | The metric aggregates this event (`count`, `sum(value)`, `p95(value)`, a `ratio` of two events, …).            |
-| **Alert**      | `alert`              | An alert rule watches this metric, with its comparator/threshold/window shown on the edge (e.g. `> 200 · 1h`). |
+| Node       | Edge into it | What the edge means                                                                                            |
+| ---------- | ------------ | -------------------------------------------------------------------------------------------------------------- |
+| **Event**  | —            | A logged event (or an SDK auto-event like `__auto_lcp`).                                                       |
+| **Metric** | `agg`        | The metric aggregates this event (`count`, `sum(value)`, `p95(value)`, a `ratio` of two events, …).            |
+| **Alert**  | `alert`      | An alert rule watches this metric, with its comparator/threshold/window shown on the edge (e.g. `> 200 · 1h`). |
 
 <Callout type="info" title="Status is live">
-  Alert nodes render as **firing**, **armed**, or **paused**. Metric and event nodes are enriched with live analytics — a 7-day sparkline, current
-  value, and period delta on metrics, and a per-day volume on events. Enrichment is cached ~1 hour;
-  the graph structure itself is rebuilt on every view, so newly-created resources appear
-  immediately.
+  Alert nodes render as **firing**, **armed**, or **paused**. Metric and event nodes are enriched
+  with live analytics — a 7-day sparkline, current value, and period delta on metrics, and a per-day
+  volume on events. Enrichment is cached ~1 hour; the graph structure itself is rebuilt on every
+  view, so newly-created resources appear immediately.
 </Callout>
 
 ## How nodes cluster
@@ -63,13 +58,13 @@ The point of Flow is to answer "what depends on this?" before you touch a metric
 
 <Steps>
   <Step title="Find the node">
-    Open **Flow** and locate the metric or event you're about to change. Drag to rearrange and
-    hover to trace its edges.
+    Open **Flow** and locate the metric or event you're about to change. Drag to rearrange and hover
+    to trace its edges.
   </Step>
   <Step title="Read its downstream edges">
-    Follow the edges *out* of the node. An `alert` edge means an alert rule is armed on that
-    metric — renaming the event it aggregates, or changing the metric's query, moves the number the
-    rule is comparing against, and a rule that was quiet can start (or stop) paging.
+    Follow the edges *out* of the node. An `alert` edge means an alert rule is armed on that metric
+    — renaming the event it aggregates, or changing the metric's query, moves the number the rule is
+    comparing against, and a rule that was quiet can start (or stop) paging.
   </Step>
   <Step title="Check what feeds it">
     Follow the edges *in*. A metric's `agg` edge names the exact event and aggregation it reads — so

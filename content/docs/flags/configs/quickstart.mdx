@@ -3,12 +3,7 @@ title: Quickstart
 description: From zero to a feature behind a feature flag in production — install the SDK, create a feature flag, roll it out, kill-switch it, and watch it in the dashboard. Five minutes, end to end.
 ---
 
-<DocMeta
-  status="Tutorial"
-  read="8 min read"
-  updated="May 3, 2026"
-  works="Server SDK · Browser SDK · CLI"
-/>
+<DocMeta status="Tutorial" read="8 min read" works="Server SDK · Browser SDK · CLI" />
 
 This walks through the full flow end to end: install the SDK, create a feature flag, put a feature flag around your code, roll it out gradually, then kill-switch it. By the end you&apos;ll have a feature behind a feature flag in production, evaluated locally with no per-request network call, that you can flip from your phone.
 
@@ -353,5 +348,30 @@ No deploy. No restart. No backend round-trip on the read.
   cmds={[
     { label: "Install the MCP", cmd: "shipeasy mcp install" },
     { label: "Then ask your agent", cmd: "ship a flag for new checkout, default off" },
+  ]}
+/>
+
+<SeeAlso
+  links={[
+    {
+      href: "/flags/configs/values",
+      title: "Dynamic values",
+      note: "Types, defaults, and what changes without a deploy",
+    },
+    {
+      href: "/flags/configs/targeting",
+      title: "Targeting & rollouts",
+      note: "Different values for different users",
+    },
+    {
+      href: "/flags/case-studies/entitlements-with-configs",
+      title: "Plan entitlements with a config",
+      note: "One config instead of a flag sprawl",
+    },
+    {
+      href: "/sdks/onchange",
+      title: "Reacting to changes",
+      note: "Invalidate a cache when a value flips",
+    },
   ]}
 />

@@ -6,7 +6,6 @@ description: The `shipeasy` command — manage flags, configs, kill switches, me
 <DocMeta
   status="Production ready"
   read="8 min read"
-  updated="May 3, 2026"
   works="macOS · Linux · Windows · Docker · CI"
 />
 
@@ -305,5 +304,30 @@ SHIPEASY_CLI_TOKEN="$CI_TOKEN" shipeasy ops bug "Smoke test failed on deploy" \
   cmds={[
     { label: "Install the MCP", cmd: "shipeasy mcp install" },
     { label: "Then restart your agent", cmd: "# pick up the new MCP config" },
+  ]}
+/>
+
+<SeeAlso
+  links={[
+    {
+      href: "/get-started/cli-reference",
+      title: "CLI reference",
+      note: "Every command, argument and flag",
+    },
+    {
+      href: "/get-started/authenticate",
+      title: "Authenticate",
+      note: "One login for the CLI and every MCP tool",
+    },
+    {
+      href: "/get-started/mcp",
+      title: "MCP server",
+      note: "The same operations, driven by an agent",
+    },
+    {
+      href: "/get-started/triggers",
+      title: "Scheduled triggers",
+      note: "Run it unattended, on a cadence",
+    },
   ]}
 />

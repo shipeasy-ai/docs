@@ -30,12 +30,29 @@ You have a change to ship. Which Shipeasy primitive fits? Walk the tree.
 </Callout>
 
 <Callout type="warn" title="Reading a rollout percentage as a verdict">
-  A 50% rollout tells you who saw what, not whether it worked. If the question is "did this move
-  the number", define a [metric](/metrics/quickstart) over your own events and watch it across the
-  ramp — the flag decides exposure, the metric decides whether you keep going.
+  A 50% rollout tells you who saw what, not whether it worked. If the question is "did this move the
+  number", define a [metric](/metrics/quickstart) over your own events and watch it across the ramp
+  — the flag decides exposure, the metric decides whether you keep going.
 </Callout>
 
 <Callout type="warn" title="Using a feature flag when you should be using a killswitch">
   Page-at-3am feature flags blur incident response. Killswitches sit in their own list, default to
   "on", and don't have ramp percentages to fat-finger.
 </Callout>
+
+<SeeAlso
+  links={[
+    { href: "/flags/gates", title: "Feature flags", note: "Ramps, targeting, per-user overrides" },
+    { href: "/flags/configs", title: "Configs", note: "Typed values you change without a deploy" },
+    {
+      href: "/flags/killswitches",
+      title: "Killswitches",
+      note: "One switch, one job, for incidents",
+    },
+    {
+      href: "/flags/case-studies",
+      title: "Case studies",
+      note: "The same choice, made in real scenarios",
+    },
+  ]}
+/>

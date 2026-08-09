@@ -3,12 +3,7 @@ title: Route bug reports to Linear/Jira
 description: Forward triaged bug reports into your tracker with a webhook, and dedup so one bug never opens five issues.
 ---
 
-<DocMeta
-  status="Production ready"
-  read="5 min read"
-  updated="June 19, 2026"
-  works="Webhooks · Admin API"
-/>
+<DocMeta status="Production ready" read="5 min read" works="Webhooks · Admin API" />
 
 Your team lives in Linear (or Jira). Bug reports filed through the [devtools widget](/feedback/devtools) live in Shipeasy. You don't want a second triage surface — you want each real bug to become an issue in the tracker your engineers already work from, automatically, without spawning duplicates.
 
@@ -59,9 +54,7 @@ The webhook can retry, and a bug can be re-triaged. To make issue creation idemp
 async function createTrackerIssue(bug: FeedbackItem) {
   if (bug.externalRef) return; // already synced — webhook retry, do nothing
 
-  const issue = await linear.issueCreate({
-    /* … */
-  });
+  const issue = await linear.issueCreate({/* … */});
 
   // PATCH the feedback item via the Admin API to record the link
   await fetch(`https://shipeasy.ai/api/admin/feedback/${bug.id}`, {

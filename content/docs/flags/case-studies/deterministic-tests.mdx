@@ -3,12 +3,7 @@ title: Deterministic flags in CI and unit tests
 description: Use configureForTesting() + overrides for unit tests and a captured snapshot for integration and CI — flag-gated code that never touches the network.
 ---
 
-<DocMeta
-  status="Production ready"
-  read="4 min read"
-  updated="June 19, 2026"
-  works="@shipeasy/sdk · server + client"
-/>
+<DocMeta status="Production ready" read="4 min read" works="@shipeasy/sdk · server + client" />
 
 A test that reads a flag over the network is flaky by construction: it depends on what the dashboard says _right now_, it fails in CI behind a firewall, and a teammate flipping a gate breaks an unrelated build. You want flag-gated code to be testable the way the rest of your code is — deterministic, offline, and explicit about what each case sets.
 

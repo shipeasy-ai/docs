@@ -3,12 +3,7 @@ title: Disable one tenant or route without flipping the whole killswitch
 description: Use the killswitch per-key "switches" feature to set a named override on one tenant or route in one environment — without killing the feature for everyone.
 ---
 
-<DocMeta
-  status="Production ready"
-  read="3 min read"
-  updated="June 19, 2026"
-  works="Server SDK · CLI · Dashboard"
-/>
+<DocMeta status="Production ready" read="3 min read" works="Server SDK · CLI · Dashboard" />
 
 One tenant is hammering your export pipeline and degrading it for everyone else. You have a killswitch for exports — but flipping it stops exports for _all_ customers, which is a much bigger blast radius than the one account causing the problem. You want to pause exports for that single tenant and leave everyone else running.
 

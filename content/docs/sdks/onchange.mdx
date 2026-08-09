@@ -3,12 +3,7 @@ title: Reacting to changes
 description: onChange fires after a background poll picks up new rules — use it to invalidate caches or re-render when a flag flips.
 ---
 
-<DocMeta
-  status="Production ready"
-  read="3 min read"
-  updated="June 19, 2026"
-  works="@shipeasy/sdk · server + client"
-/>
+<DocMeta status="Production ready" read="3 min read" works="@shipeasy/sdk · server + client" />
 
 Reads are synchronous against an in-memory rule set that a background poll keeps fresh. `onChange` lets you react the moment that rule set swaps — for cache busting, re-rendering, or logging a config flip.
 

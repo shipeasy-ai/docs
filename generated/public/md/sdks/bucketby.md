@@ -26,10 +26,10 @@ Every teammate in `acme_corp` now hashes to the **same** group — the rollout s
 
 > **Configured on the resource, carried in the attribute map**
 
-<code>bucketBy</code> is set on the gate (in the dashboard, CLI, or API). Your job in
-code is to make sure the named attribute (e.g. <code>company_id</code>) is present in the
-attribute map your transform produces (or on the user object you pass to the low-level
-<code>Engine</code>) — if it's missing, that user falls back to individual bucketing.
+<code>bucketBy</code> is set on the gate (in the dashboard, CLI, or API). Your job in code is to
+make sure the named attribute (e.g. <code>company_id</code>) is present in the attribute map your
+transform produces (or on the user object you pass to the low-level <code>Engine</code>) — if it's
+missing, that user falls back to individual bucketing.
 
 ## Common units
 
@@ -45,9 +45,8 @@ attribute map your transform produces (or on the user object you pass to the low
 > **A company is one unit, not N users**
 
 Bucketing by company makes the decision account-level, so a 5% ramp of 200 accounts is ten
-accounts — the number moves in visible steps and one busy account can carry the whole metric.
-Read the [metric series](https://docs.shipeasy.ai/metrics/quickstart) with that in mind before concluding the ramp is
-safe.
+accounts — the number moves in visible steps and one busy account can carry the whole metric. Read
+the [metric series](https://docs.shipeasy.ai/metrics/quickstart) with that in mind before concluding the ramp is safe.
 
 **Related**
 

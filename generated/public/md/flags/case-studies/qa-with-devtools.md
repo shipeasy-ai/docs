@@ -24,10 +24,10 @@ affect other users. Close the session and you're back to the real evaluation.
 
 For QA flows, demos, and bug reports, force state straight from the URL — paste the link and the receiver lands in the same state:
 
-| Param                      | Effect                    |
-| -------------------------- | ------------------------- |
-| `?se_gate_<name>=true`     | Force a gate on/off       |
-| `?se_config_<key>=<value>` | Force a config value      |
+| Param                      | Effect               |
+| -------------------------- | -------------------- |
+| `?se_gate_<name>=true`     | Force a gate on/off  |
+| `?se_config_<key>=<value>` | Force a config value |
 
 For example, `https://app.example.com/checkout?se_gate_new_checkout=true` shows the QA reviewer the new checkout while it's still at 0% for real traffic.
 

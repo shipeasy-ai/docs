@@ -3,7 +3,7 @@ title: Configure alerts
 description: Turn an event into a metric, then raise a metric-threshold alert that files its own ticket when the metric crosses the line.
 ---
 
-<DocMeta status="Beta" read="6 min read" updated="June 12, 2026" works="Edge Worker · Cron" />
+<DocMeta status="Beta" read="6 min read" works="Edge Worker · Cron" />
 
 An **alert rule** watches one metric and fires when its value crosses a threshold
 over a window — "checkout errors `> 50` in the last hour", "active users `< 100`
@@ -305,3 +305,28 @@ buckets to be recorded at all.
     The `alert-rules` and `alerts` admin endpoints.
   </Card>
 </CardGrid>
+
+<SeeAlso
+  links={[
+    {
+      href: "/metrics/quickstart",
+      title: "Quickstart",
+      note: "Getting to a metric worth alerting on",
+    },
+    {
+      href: "/feedback/case-studies/alert-to-ticket-loop",
+      title: "Alert to auto-filed ticket",
+      note: "The loop, worked end to end",
+    },
+    {
+      href: "/get-started/triggers",
+      title: "Scheduled triggers",
+      note: "Hand the ticket to an agent",
+    },
+    {
+      href: "/flags/killswitches/patterns",
+      title: "Killswitch patterns",
+      note: "What to flip when it fires",
+    },
+  ]}
+/>

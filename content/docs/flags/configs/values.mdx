@@ -3,12 +3,7 @@ title: Dynamic values
 description: Typed config values — strings, numbers, booleans, JSON — that change instantly without a redeploy. Schema-validated, versioned.
 ---
 
-<DocMeta
-  status="Production ready"
-  read="8 min read"
-  updated="May 3, 2026"
-  works="Server SDK · Browser SDK"
-/>
+<DocMeta status="Production ready" read="8 min read" works="Server SDK · Browser SDK" />
 
 A **dynamic value** is a typed key/value pair stored on your project. Use one when the answer to <em>&quot;what should this be right now?&quot;</em> is not boolean — pricing, copy, limits, feature options, API endpoints, model names, anything you&apos;d otherwise hard-code as a constant or stash in an environment variable.
 
@@ -222,5 +217,30 @@ If your JSON is approaching the size limit, you&apos;re probably storing data th
   cmds={[
     { label: "Set a value", cmd: "shipeasy release configs update rate-limit --value 200" },
     { label: "Read the current value", cmd: "shipeasy release configs get rate-limit" },
+  ]}
+/>
+
+<SeeAlso
+  links={[
+    {
+      href: "/flags/configs/targeting",
+      title: "Targeting & rollouts",
+      note: "Vary a value by user",
+    },
+    {
+      href: "/sdks/onchange",
+      title: "Reacting to changes",
+      note: "Act on a value the moment it changes",
+    },
+    {
+      href: "/get-started/evaluation-and-caching",
+      title: "Evaluation & caching",
+      note: "When a new value reaches your process",
+    },
+    {
+      href: "/flags/case-studies/cache-invalidation-onchange",
+      title: "Invalidate a server cache",
+      note: "A config flip that drops a memo",
+    },
   ]}
 />

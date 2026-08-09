@@ -444,14 +444,14 @@ Shipeasy has exactly two kinds of SDK key. One per entrypoint, one configure cal
 
 ### One key per entrypoint
 
-|            | **Server key**                                        | **Client key**                         |
-| ---------- | ----------------------------------------------------- | -------------------------------------- |
-| Import     | `@shipeasy/sdk/server`                                | `@shipeasy/sdk/client`                 |
-| Field      | `apiKey`                                              | `clientKey`                            |
-| Visibility | **Secret** — never ships to a browser                 | **Public** — ships in your bundle      |
-| Reads      | Full rule set (gates, configs, kill switches)         | Only client-readable flags and configs |
-| Writes     | Events                                                | Events, rate-limited by domain         |
-| Env        | Bound to one env; may override per request            | **Locked** to its env                  |
+|            | **Server key**                                | **Client key**                         |
+| ---------- | --------------------------------------------- | -------------------------------------- |
+| Import     | `@shipeasy/sdk/server`                        | `@shipeasy/sdk/client`                 |
+| Field      | `apiKey`                                      | `clientKey`                            |
+| Visibility | **Secret** — never ships to a browser         | **Public** — ships in your bundle      |
+| Reads      | Full rule set (gates, configs, kill switches) | Only client-readable flags and configs |
+| Writes     | Events                                        | Events, rate-limited by domain         |
+| Env        | Bound to one env; may override per request    | **Locked** to its env                  |
 
 ```ts
 // Server (root layout / startup) — server key ONLY, passed as apiKey
@@ -1014,14 +1014,14 @@ That's why the MCP server is the recommended surface for any AI-driven setup. Th
 The server advertises its tools grouped by product area. The agent sees each one as
 `mcp__shipeasy__<name>`:
 
-| Group        | Tools                                                                   | What it covers                                                          |
-| ------------ | ----------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| **Release**  | `release_flags_*`, `release_configs_*`, `release_killswitch_*`           | Create, target, roll out, and kill features                             |
-| **Metrics**  | `metrics_*`, `metrics_events_*`                                         | Define metrics over your events, read a series, manage the event catalog |
-| **Ops**      | `ops_*`, `ops_alerts_*`, `ops_comments_*`, `ops_investigations_*`        | File and work the bug / feature / alert queue, hand items to agents      |
-| **Errors**   | `errors_*`                                                              | Read, group, and resolve reported production errors                     |
-| **Projects** | `projects_*`, `whoami`                                                  | Which project you're bound to, and its settings                         |
-| **Docs**     | `docs_list`, `docs_get`, `docs_skill`                                   | Fetch SDK docs and installable agent skills for any language            |
+| Group        | Tools                                                             | What it covers                                                           |
+| ------------ | ----------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| **Release**  | `release_flags_*`, `release_configs_*`, `release_killswitch_*`    | Create, target, roll out, and kill features                              |
+| **Metrics**  | `metrics_*`, `metrics_events_*`                                   | Define metrics over your events, read a series, manage the event catalog |
+| **Ops**      | `ops_*`, `ops_alerts_*`, `ops_comments_*`, `ops_investigations_*` | File and work the bug / feature / alert queue, hand items to agents      |
+| **Errors**   | `errors_*`                                                        | Read, group, and resolve reported production errors                      |
+| **Projects** | `projects_*`, `whoami`                                            | Which project you're bound to, and its settings                          |
+| **Docs**     | `docs_list`, `docs_get`, `docs_skill`                             | Fetch SDK docs and installable agent skills for any language             |
 
 > **The exhaustive list is generated**
 
@@ -2413,20 +2413,20 @@ launched and authenticated, differs. The low-level plumbing is still there if yo
 
 ### Three scheduler tiers
 
-| Tier                             | Platforms                                | Mechanism                                                                          |
-| -------------------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------- |
-| **A — Shipeasy fires it**        | `claude`, `cursor`, `copilot`, `jules`   | Shipeasy's own cron starts the run over HTTPS — your machine can be off            |
-| **B — scheduled on the platform**| `codex`                                  | the vendor's own scheduler or an Actions workflow starts it                        |
-| **C — headless + external cron** | `gemini` (and `codex`)                   | non-interactive run mode driven by system cron or a GitHub Actions `schedule:` job |
+| Tier                              | Platforms                              | Mechanism                                                                          |
+| --------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------- |
+| **A — Shipeasy fires it**         | `claude`, `cursor`, `copilot`, `jules` | Shipeasy's own cron starts the run over HTTPS — your machine can be off            |
+| **B — scheduled on the platform** | `codex`                                | the vendor's own scheduler or an Actions workflow starts it                        |
+| **C — headless + external cron**  | `gemini` (and `codex`)                 | non-interactive run mode driven by system cron or a GitHub Actions `schedule:` job |
 
-| `--platform` | Scheduler                                                                                | Launch / auth                                            |
-| ------------ | ----------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| `claude`     | `/schedule` cloud routine                                                                 | runs `ops:work --pr`; **registers a Shipeasy connector** |
-| `cursor`     | Shipeasy cron → `POST https://api.cursor.com/v1/agents`                                  | `autoCreatePR`; `CURSOR_API_KEY`                         |
-| `copilot`    | Shipeasy cron → GitHub coding-agent task via `.github/agents/shipeasy.agent.md`           | **Connect GitHub** (user-to-server token); PAT fallback  |
-| `jules`      | Shipeasy cron → Jules session                                                             | Jules API key                                            |
-| `codex`      | Codex Automations (local cron) or an Actions `schedule:` job                              | `codex exec --sandbox danger-full-access`                |
-| `gemini`     | Actions `schedule:` (run-gemini-cli)                                                      | `gemini -p --approval-mode=yolo`                         |
+| `--platform` | Scheduler                                                                       | Launch / auth                                            |
+| ------------ | ------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `claude`     | `/schedule` cloud routine                                                       | runs `ops:work --pr`; **registers a Shipeasy connector** |
+| `cursor`     | Shipeasy cron → `POST https://api.cursor.com/v1/agents`                         | `autoCreatePR`; `CURSOR_API_KEY`                         |
+| `copilot`    | Shipeasy cron → GitHub coding-agent task via `.github/agents/shipeasy.agent.md` | **Connect GitHub** (user-to-server token); PAT fallback  |
+| `jules`      | Shipeasy cron → Jules session                                                   | Jules API key                                            |
+| `codex`      | Codex Automations (local cron) or an Actions `schedule:` job                    | `codex exec --sandbox danger-full-access`                |
+| `gemini`     | Actions `schedule:` (run-gemini-cli)                                            | `gemini -p --approval-mode=yolo`                         |
 
 ### The run is identical everywhere
 
@@ -2468,9 +2468,9 @@ jobs:
 > **Note**
 
 Unattended runs use an auto-approve flag (`--approval-mode=yolo`, `--sandbox danger-full-access`,
-`--dangerously-skip-permissions`) that removes the human gate — run only in an isolated env. They also spend tokens/credits on every fire, so
-start with a weekly or daily cron and watch the first runs. PRs land for review; nothing
-auto-merges.
+`--dangerously-skip-permissions`) that removes the human gate — run only in an isolated env. They
+also spend tokens/credits on every fire, so start with a weekly or daily cron and watch the first
+runs. PRs land for review; nothing auto-merges.
 
 ### Connector registration — Shipeasy-fired vs. platform-scheduled
 

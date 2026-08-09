@@ -3,12 +3,7 @@ title: Multi-context bucketing (bucketBy)
 description: Bucket on company_id, session_id, or any attribute instead of user_id — so a rollout splits by account, not by individual user.
 ---
 
-<DocMeta
-  status="Production ready"
-  read="4 min read"
-  updated="June 19, 2026"
-  works="Gates"
-/>
+<DocMeta status="Production ready" read="4 min read" works="Gates" />
 
 By default Shipeasy buckets on `user_id ?? anonymous_id`: a 20% rollout means 20% of _users_. `bucketBy` changes the bucketing unit so you can roll out to 20% of **companies**, keep a whole **session** on one variant, or split by **device** — whatever attribute you hash on.
 
@@ -31,10 +26,10 @@ flags.getFlag("new-pricing-page");
 Every teammate in `acme_corp` now hashes to the **same** group — the rollout splits at the account boundary, not the user boundary. The hash is still deterministic and sticky: same company, same answer, every time.
 
 <Callout type="info" title="Configured on the resource, carried in the attribute map">
-  <code>bucketBy</code> is set on the gate (in the dashboard, CLI, or API). Your job in
-  code is to make sure the named attribute (e.g. <code>company_id</code>) is present in the
-  attribute map your transform produces (or on the user object you pass to the low-level{" "}
-  <code>Engine</code>) — if it's missing, that user falls back to individual bucketing.
+  <code>bucketBy</code> is set on the gate (in the dashboard, CLI, or API). Your job in code is to
+  make sure the named attribute (e.g. <code>company_id</code>) is present in the attribute map your
+  transform produces (or on the user object you pass to the low-level <code>Engine</code>) — if it's
+  missing, that user falls back to individual bucketing.
 </Callout>
 
 ## Common units
@@ -50,9 +45,8 @@ Every teammate in `acme_corp` now hashes to the **same** group — the rollout s
 
 <Callout type="warn" title="A company is one unit, not N users">
   Bucketing by company makes the decision account-level, so a 5% ramp of 200 accounts is ten
-  accounts — the number moves in visible steps and one busy account can carry the whole metric.
-  Read the [metric series](/metrics/quickstart) with that in mind before concluding the ramp is
-  safe.
+  accounts — the number moves in visible steps and one busy account can carry the whole metric. Read
+  the [metric series](/metrics/quickstart) with that in mind before concluding the ramp is safe.
 </Callout>
 
 <SeeAlso

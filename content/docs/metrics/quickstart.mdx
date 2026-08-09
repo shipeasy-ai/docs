@@ -3,7 +3,7 @@ title: Quickstart
 description: Create your first metric, log the events it depends on, and put an alert on it — five minutes, end to end.
 ---
 
-<DocMeta status="Tutorial" read="5 min read" updated="August 8, 2026" works="Server SDK · CLI" />
+<DocMeta status="Tutorial" read="5 min read" works="Server SDK · CLI" />
 
 This walks you through the metric pipeline end to end: pick what to measure, log the underlying
 events, create the metric definition, and put a threshold alert on it. By the end you'll have a
@@ -176,3 +176,24 @@ If the number is flat or missing, two checks:
 ```
 
 ```
+
+<SeeAlso
+  links={[
+    {
+      href: "/metrics/aggregations",
+      title: "Aggregation types",
+      note: "Conversion, count, sum, mean, ratio",
+    },
+    {
+      href: "/metrics/grammar",
+      title: "Query DSL grammar",
+      note: "Everything the query language allows",
+    },
+    {
+      href: "/metrics/alerts",
+      title: "Configure alerts",
+      note: "Raise a threshold on what you just built",
+    },
+    { href: "/flags/flow", title: "Flow & dependencies", note: "Trace what feeds what" },
+  ]}
+/>

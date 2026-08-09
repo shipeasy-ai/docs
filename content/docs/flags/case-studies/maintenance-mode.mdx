@@ -3,12 +3,7 @@ title: Maintenance mode with a killswitch
 description: Wrap a subsystem in a break-glass killswitch that defaults off and flips on in seconds during an incident.
 ---
 
-<DocMeta
-  status="Production ready"
-  read="4 min read"
-  updated="June 19, 2026"
-  works="Server SDK · CLI · Dashboard"
-/>
+<DocMeta status="Production ready" read="4 min read" works="Server SDK · CLI · Dashboard" />
 
 A payment provider is having an outage. Checkout is throwing, retries are stacking up, and your queue is backing up behind a dependency you don't control. You want one switch that takes the whole checkout subsystem into a graceful "we're down for maintenance" state — and one switch that takes it back, the moment the provider recovers.
 

@@ -8,14 +8,14 @@ Shipeasy has exactly two kinds of SDK key. One per entrypoint, one configure cal
 
 ## One key per entrypoint
 
-|            | **Server key**                                        | **Client key**                         |
-| ---------- | ----------------------------------------------------- | -------------------------------------- |
-| Import     | `@shipeasy/sdk/server`                                | `@shipeasy/sdk/client`                 |
-| Field      | `apiKey`                                              | `clientKey`                            |
-| Visibility | **Secret** — never ships to a browser                 | **Public** — ships in your bundle      |
-| Reads      | Full rule set (gates, configs, kill switches)         | Only client-readable flags and configs |
-| Writes     | Events                                                | Events, rate-limited by domain         |
-| Env        | Bound to one env; may override per request            | **Locked** to its env                  |
+|            | **Server key**                                | **Client key**                         |
+| ---------- | --------------------------------------------- | -------------------------------------- |
+| Import     | `@shipeasy/sdk/server`                        | `@shipeasy/sdk/client`                 |
+| Field      | `apiKey`                                      | `clientKey`                            |
+| Visibility | **Secret** — never ships to a browser         | **Public** — ships in your bundle      |
+| Reads      | Full rule set (gates, configs, kill switches) | Only client-readable flags and configs |
+| Writes     | Events                                        | Events, rate-limited by domain         |
+| Env        | Bound to one env; may override per request    | **Locked** to its env                  |
 
 ```ts
 // Server (root layout / startup) — server key ONLY, passed as apiKey

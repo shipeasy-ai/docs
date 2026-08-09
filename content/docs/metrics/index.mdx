@@ -3,7 +3,7 @@ title: Metrics
 description: Define what you measure — aggregations, filters, outlier handling, and ratio metrics over your own events.
 ---
 
-<DocMeta status="Production ready" read="6 min read" updated="August 8, 2026" works="Server SDK" />
+<DocMeta status="Production ready" read="6 min read" works="Server SDK" />
 
 A **metric** is a number computed from a set of events you log. It is the thing you watch while a flag ramps, and the thing an [alert rule](/metrics/alerts) compares against a threshold. Get the definition right and the rest of the observability story follows.
 
@@ -186,8 +186,8 @@ Ratio metrics use the **delta method** to compute variance correctly (the naive 
       type: '"up" | "down"',
       description: (
         <>
-          Which direction is "good". Used to colour trend cells and to pick a side for a
-          directional alert rule. Defaults to <code>up</code>.
+          Which direction is "good". Used to colour trend cells and to pick a side for a directional
+          alert rule. Defaults to <code>up</code>.
         </>
       ),
     },

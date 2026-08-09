@@ -3,12 +3,7 @@ title: Target on email or PII without it landing in analytics
 description: Use privateAttributes to target on email or tier while stripping those fields from every event the SDK emits.
 ---
 
-<DocMeta
-  status="Production ready"
-  read="3 min read"
-  updated="June 19, 2026"
-  works="@shipeasy/sdk · server + client"
-/>
+<DocMeta status="Production ready" read="3 min read" works="@shipeasy/sdk · server + client" />
 
 You want to gate a beta on `email endsWith "@acme.com"`, or target by a billing tier. The targeting needs those attributes — but you do **not** want raw emails and account identifiers flowing into your events store, where they end up in analytics, exports, and every downstream pipe that reads exposures.
 

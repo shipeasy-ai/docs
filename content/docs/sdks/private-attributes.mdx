@@ -3,12 +3,7 @@ title: Private attributes
 description: Mark attributes as private so they're used for targeting but never persisted or sent to the events store.
 ---
 
-<DocMeta
-  status="Production ready"
-  read="3 min read"
-  updated="June 19, 2026"
-  works="@shipeasy/sdk · server + client"
-/>
+<DocMeta status="Production ready" read="3 min read" works="@shipeasy/sdk · server + client" />
 
 Some attributes you target on are sensitive — an email, a customer tier, a national ID. You still want to _evaluate_ against them (target `email endsWith "@acme.com"`), but you don't want them leaving the process or landing in the events store. `privateAttributes` does exactly that.
 

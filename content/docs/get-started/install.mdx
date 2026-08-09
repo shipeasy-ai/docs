@@ -6,7 +6,6 @@ description: Add the Shipeasy SDK to your application, the CLI to your machine, 
 <DocMeta
   status="Production ready"
   read="6 min read"
-  updated="May 3, 2026"
   works="Node 20+ · Workers · Bun · Deno · Browser"
 />
 
@@ -46,8 +45,8 @@ Shipeasy ships as a small set of npm packages — install only the ones you need
       </>
     }
   >
-    The <code>shipeasy</code> command. Login, manage flags, configs and kill switches, work the ops queue,
-    install the MCP server.
+    The <code>shipeasy</code> command. Login, manage flags, configs and kill switches, work the ops
+    queue, install the MCP server.
   </Tile>
   <Tile
     href="#mcp"
@@ -400,5 +399,26 @@ If you depend on the SDK from a Cloudflare Worker built with `CLI`, no special c
   cmds={[
     { label: "Install the CLI", cmd: "npm install -g @shipeasy/cli" },
     { label: "Then log in", cmd: "shipeasy login" },
+  ]}
+/>
+
+<SeeAlso
+  links={[
+    {
+      href: "/get-started/keys-and-environments",
+      title: "Keys & environments",
+      note: "Which key goes where",
+    },
+    { href: "/get-started/sdks", title: "SDKs", note: "Server build, browser build, native ports" },
+    {
+      href: "/get-started/authenticate",
+      title: "Authenticate",
+      note: "Sign in the CLI and your agent",
+    },
+    {
+      href: "/get-started/troubleshooting",
+      title: "Troubleshooting",
+      note: "When the install does not take",
+    },
   ]}
 />

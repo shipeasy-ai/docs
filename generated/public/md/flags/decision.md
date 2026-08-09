@@ -27,9 +27,9 @@ boolean. Use a **config** — schema-validated, typed, supports more than two va
 
 > **Reading a rollout percentage as a verdict**
 
-A 50% rollout tells you who saw what, not whether it worked. If the question is "did this move
-the number", define a [metric](https://docs.shipeasy.ai/metrics/quickstart) over your own events and watch it across the
-ramp — the flag decides exposure, the metric decides whether you keep going.
+A 50% rollout tells you who saw what, not whether it worked. If the question is "did this move the
+number", define a [metric](https://docs.shipeasy.ai/metrics/quickstart) over your own events and watch it across the ramp
+— the flag decides exposure, the metric decides whether you keep going.
 
 > **Using a feature flag when you should be using a killswitch**
 

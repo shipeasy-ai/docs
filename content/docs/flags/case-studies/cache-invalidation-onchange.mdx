@@ -3,12 +3,7 @@ title: Invalidate a server cache the instant a config flips
 description: Use onChange to drop a memoized render or a derived config on the next poll, so a dashboard change takes effect without a restart.
 ---
 
-<DocMeta
-  status="Production ready"
-  read="3 min read"
-  updated="June 19, 2026"
-  works="@shipeasy/sdk · server + client"
-/>
+<DocMeta status="Production ready" read="3 min read" works="@shipeasy/sdk · server + client" />
 
 You memoize an expensive render — a navigation tree, a pricing table, a derived config object — and key it off a flag or dynamic config. It's fast, but now it's _stale_: someone flips the config in the dashboard and your long-lived server keeps serving the cached version until the next deploy. Flag reads are fresh on every poll; your derived cache isn't.
 

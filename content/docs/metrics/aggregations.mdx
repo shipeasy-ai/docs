@@ -3,7 +3,7 @@ title: Aggregation types
 description: Conversion, count, sum, mean, ratio — pick the right aggregation, set outlier handling, and avoid the variance traps that bite means and sums.
 ---
 
-<DocMeta status="Production ready" read="7 min read" updated="May 15, 2026" works="Server SDK" />
+<DocMeta status="Production ready" read="7 min read" works="Server SDK" />
 
 A **metric** is "events aggregated per user." The aggregation function turns each user's event
 stream into a single number the platform charts over time and alert rules compare. Pick
@@ -210,3 +210,16 @@ shipeasy metrics series purchase_conversion --from 2026-06-01 --to 2026-06-30 --
 Run `shipeasy metrics series` before you put a rule on a metric — the daily buckets show you the
 baseline rate and how much it already wanders, which is what a sane threshold has to sit outside
 of.
+
+<SeeAlso
+  links={[
+    { href: "/metrics/grammar", title: "Query DSL grammar", note: "The formal shape of a query" },
+    { href: "/metrics/quickstart", title: "Quickstart", note: "One metric, end to end" },
+    { href: "/metrics/alerts", title: "Configure alerts", note: "Put a threshold on the number" },
+    {
+      href: "/flags/flow",
+      title: "Flow & dependencies",
+      note: "What feeds the metric, and what it feeds",
+    },
+  ]}
+/>

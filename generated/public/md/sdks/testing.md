@@ -32,11 +32,11 @@ clearOverrides(); // reset every seeded override back to the empty-blob default
 
 `configureForTesting({ flags?, configs?, attributes? })`:
 
-| Field         | Shape                         | Effect                                                  |
-| ------------- | ----------------------------- | ------------------------------------------------------- |
-| `flags`       | `{ [name]: boolean }`         | forced `getFlag` results                                |
-| `configs`     | `{ [name]: value }`           | forced `getConfig` results                              |
-| `attributes`  | `(yourUser) => User`          | same transform as `configure()` (default identity)      |
+| Field        | Shape                 | Effect                                             |
+| ------------ | --------------------- | -------------------------------------------------- |
+| `flags`      | `{ [name]: boolean }` | forced `getFlag` results                           |
+| `configs`    | `{ [name]: value }`   | forced `getConfig` results                         |
+| `attributes` | `(yourUser) => User`  | same transform as `configure()` (default identity) |
 
 ## Package-level overrides
 

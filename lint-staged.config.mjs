@@ -13,9 +13,14 @@ export default {
   "*.{json,md,mdx,yaml,yml,css}": ["prettier --write"],
 
   // Content changed → MDX must still compile, every `shipeasy …` invocation in
-  // it must still exist in the CLI, and the agent bundles (which are stitched
-  // FROM this content) must be restitched and carried into the same commit.
-  // Without that last step every content edit shows up as drift on the next
-  // `pnpm verify:generated`.
-  "content/docs/**": () => ["pnpm type-check", "tsx scripts/gen-llms.ts", "git add generated/"],
+  // it must still exist in the CLI, each changed page records today as the day
+  // it changed, and the agent bundles (which are stitched FROM this content)
+  // must be restitched and carried into the same commit. Without that last step
+  // every content edit shows up as drift on the next `pnpm verify:generated`.
+  "content/docs/**": (files) => [
+    "pnpm type-check",
+    `tsx scripts/stamp-updated.ts ${files.map((f) => JSON.stringify(f)).join(" ")}`,
+    "tsx scripts/gen-llms.ts",
+    "git add generated/",
+  ],
 };

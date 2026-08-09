@@ -3,12 +3,7 @@ title: QA a flag before you ramp (and share a repro link)
 description: Use the devtools overlay (Shift+Alt+S / ?se=1) and ?se_gate_… URL overrides to QA a feature, demo a variant, and reproduce a bug — all session-scoped.
 ---
 
-<DocMeta
-  status="Production ready"
-  read="3 min read"
-  updated="June 19, 2026"
-  works="@shipeasy/sdk · client"
-/>
+<DocMeta status="Production ready" read="3 min read" works="@shipeasy/sdk · client" />
 
 A flag is built but sitting at 0%, and QA needs to verify it before you ramp. You don't want to flip the dashboard (that's everyone) and you don't want a special build (that's a deploy). You want to see the feature on your own screen, right now — and ideally hand a teammate a link that reproduces the exact state.
 
@@ -30,10 +25,10 @@ It mounts in a Shadow DOM overlay, lists every resource in your project's blob, 
 
 For QA flows, demos, and bug reports, force state straight from the URL — paste the link and the receiver lands in the same state:
 
-| Param                      | Effect                    |
-| -------------------------- | ------------------------- |
-| `?se_gate_<name>=true`     | Force a gate on/off       |
-| `?se_config_<key>=<value>` | Force a config value      |
+| Param                      | Effect               |
+| -------------------------- | -------------------- |
+| `?se_gate_<name>=true`     | Force a gate on/off  |
+| `?se_config_<key>=<value>` | Force a config value |
 
 For example, `https://app.example.com/checkout?se_gate_new_checkout=true` shows the QA reviewer the new checkout while it's still at 0% for real traffic.
 

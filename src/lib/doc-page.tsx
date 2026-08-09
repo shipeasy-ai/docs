@@ -6,6 +6,7 @@ import defaultMdxComponents from "fumadocs-ui/mdx";
 import { APIPage } from "@/lib/openapi";
 import { getPage } from "@/lib/source";
 import { isGeneratedPage } from "@/lib/generated-pages";
+import updated from "@/lib/updated.json";
 import { ogSlugToParam } from "@/lib/og";
 import { BASE_URL, pageUrl } from "@/lib/urls";
 import { Tab, Tabs } from "fumadocs-ui/components/tabs";
@@ -15,6 +16,7 @@ import { Mermaid } from "@/components/mermaid";
 import { AlertChartLive, ApiList } from "@/components/heavy";
 import { ApiProvider } from "@/components/api-context";
 import { ApiDocsPage } from "@/components/api-docs-page";
+import { PageActions } from "@/components/page-actions";
 import {
   AssistantCardScene,
   AssistantChooserScene,
@@ -72,6 +74,21 @@ const EDIT_BASE = "https://github.com/shipeasy-ai/docs/edit/main/content/docs";
 function rootUrl(slug: string[]): string {
   const first = slug[0];
   return first && getPage([first]) ? `/${first}` : "/";
+}
+
+// When this page last changed, from the map the pre-commit hook stamps
+// (`scripts/stamp-updated.ts`). Hand-typed dates went stale the moment someone
+// forgot one; nobody types this one. A page missing from the map is a page
+// added since the last stamp — it gets no date rather than a wrong one.
+function lastUpdate(slug: string[]): Date | undefined {
+  const day = (updated as Record<string, string>)[`/${slug.join("/")}`];
+  return day ? new Date(`${day}T00:00:00Z`) : undefined;
+}
+
+// This page as plain markdown — written per page by `pnpm gen:llms`, served
+// straight out of `public/md`. Kept in step with `mdPath()` in that script.
+function mdUrl(slug: string[]): string {
+  return `/md/${slug.length === 0 ? "index" : slug.join("/")}.md`;
 }
 
 function editHrefFor(page: Page): string | undefined {
@@ -191,6 +208,7 @@ export function DocPageView({ slug }: { slug: string[] }) {
       {!isRoot && page.data.description ? (
         <DocsDescription>{page.data.description}</DocsDescription>
       ) : null}
+      {!isRoot ? <PageActions markdownUrl={mdUrl(slug)} editHref={editHrefFor(page)} /> : null}
       <DocsBody>
         <MDX components={components} />
         {/* Rendered once per page (not in MDX) so every page carries it. */}
@@ -218,6 +236,7 @@ export function DocPageView({ slug }: { slug: string[] }) {
       // tab is the root of its own tree, so fumadocs has no url for it — hand
       // it the tab's own landing page when there is one.
       breadcrumb={isRoot ? { enabled: false } : { includeRoot: { url: rootUrl(slug) } }}
+      lastUpdate={isRoot ? undefined : lastUpdate(slug)}
     >
       {inner}
     </DocsPage>

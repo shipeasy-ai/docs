@@ -3,7 +3,7 @@ title: Error reporting with see()
 description: Report every handled exception with see() so it folds into the errors primitive with a product consequence.
 ---
 
-<DocMeta status="Beta" read="6 min read" updated="June 13, 2026" works="Server SDK · Browser SDK" />
+<DocMeta status="Beta" read="6 min read" works="Server SDK · Browser SDK" />
 
 `see()` is the error-reporting primitive in `@shipeasy/sdk`. You hand it a caught
 exception and a one-sentence **consequence** — what feature broke and how it
@@ -238,3 +238,16 @@ classDef sink fill:#131318,stroke:#2e2c38,color:#cbc9d6;
     The `errors` and `feedback` admin endpoints.
   </Card>
 </CardGrid>
+
+<SeeAlso
+  links={[
+    { href: "/feedback/errors", title: "Errors dashboard", note: "Where a reported error lands" },
+    { href: "/sdks/reasons", title: "Evaluation reasons", note: "The other thing worth reporting" },
+    {
+      href: "/feedback/case-studies/alert-to-ticket-loop",
+      title: "Alert to auto-filed ticket",
+      note: "Errors that open their own ticket",
+    },
+    { href: "/feedback/api", title: "Feedback API", note: "Report from a language with no SDK" },
+  ]}
+/>

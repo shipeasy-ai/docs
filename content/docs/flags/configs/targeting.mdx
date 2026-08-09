@@ -3,12 +3,7 @@ title: Targeting & rollouts
 description: Express &quot;show this to the right users&quot; with attribute rules, deterministic percentage rollouts, and per-feature-flag salts. The rules engine, in detail.
 ---
 
-<DocMeta
-  status="Production ready"
-  read="10 min read"
-  updated="May 3, 2026"
-  works="Server SDK · Browser SDK"
-/>
+<DocMeta status="Production ready" read="10 min read" works="Server SDK · Browser SDK" />
 
 A targeting rule on a feature flag is a predicate of the form **`attr op value`**. Multiple rules on a feature flag are **ANDed** together. To OR, use the `in` operator with an array, or split into separate feature flags and combine in code.
 
@@ -206,5 +201,30 @@ The dashboard&apos;s **Test evaluator** panel takes a JSON context and shows the
   cmds={[
     { label: "Set a rollout", cmd: "shipeasy release flags update my-flag --rollout-percent 25" },
     { label: "List flags", cmd: "shipeasy release flags list" },
+  ]}
+/>
+
+<SeeAlso
+  links={[
+    {
+      href: "/get-started/attributes",
+      title: "User attributes",
+      note: "What you can write a rule against",
+    },
+    {
+      href: "/flags/gates/targeting",
+      title: "Feature flag targeting",
+      note: "The same predicates on a boolean",
+    },
+    {
+      href: "/flags/gates/rollouts",
+      title: "Rollouts & bucketing",
+      note: "How the percentage is decided",
+    },
+    {
+      href: "/sdks/private-attributes",
+      title: "Private attributes",
+      note: "Target on PII without storing it",
+    },
   ]}
 />

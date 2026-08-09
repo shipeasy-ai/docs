@@ -53,9 +53,7 @@ The webhook can retry, and a bug can be re-triaged. To make issue creation idemp
 async function createTrackerIssue(bug: FeedbackItem) {
   if (bug.externalRef) return; // already synced — webhook retry, do nothing
 
-  const issue = await linear.issueCreate({
-    /* … */
-  });
+  const issue = await linear.issueCreate({/* … */});
 
   // PATCH the feedback item via the Admin API to record the link
   await fetch(`https://shipeasy.ai/api/admin/feedback/${bug.id}`, {

@@ -3,12 +3,7 @@ title: Debug why a user isn't seeing a feature
 description: Use getFlagDetail reasons to tell DEFAULT (rolled to 0%) from FLAG_NOT_FOUND (typo or stale bundle) from OFF (killed).
 ---
 
-<DocMeta
-  status="Production ready"
-  read="4 min read"
-  updated="June 19, 2026"
-  works="@shipeasy/sdk · server + client"
-/>
+<DocMeta status="Production ready" read="4 min read" works="@shipeasy/sdk · server + client" />
 
 A customer says the new dashboard isn't showing up. Through `getFlag` all you see is `false` — which tells you nothing about _why_. Did the gate roll out to 0%? Did someone mistype the name? Is the bundle stale? Is the gate killed? Every one of those reads as the same `false`, and you're left guessing.
 

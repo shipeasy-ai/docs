@@ -3,7 +3,7 @@ title: Authenticate
 description: One `shipeasy login` opens your browser, signs in the CLI and every MCP tool on your machine, and quietly refreshes itself for 30 days.
 ---
 
-<DocMeta status="Production ready" read="5 min read" updated="May 3, 2026" works="CLI · MCP · CI" />
+<DocMeta status="Production ready" read="5 min read" works="CLI · MCP · CI" />
 
 Shipeasy uses an OAuth-style PKCE device-auth flow. Run one command, click one link in your browser, and the CLI plus every MCP tool on your machine is signed in. There is no API key to copy, paste, or rotate — for interactive use.
 
@@ -128,8 +128,8 @@ API tokens skip the device-auth flow entirely. They&apos;re scoped to one projec
       required: true,
       description: (
         <>
-          Read-only. Lets the server SDK fetch the rule blobs and ship exposure events.
-          Cannot mutate.
+          Read-only. Lets the server SDK fetch the rule blobs and ship exposure events. Cannot
+          mutate.
         </>
       ),
     },
@@ -203,5 +203,22 @@ The credentials file is the only state the CLI writes. Project/env preferences l
   cmds={[
     { label: "Verify auth", cmd: "shipeasy whoami" },
     { label: "Bind a project", cmd: "shipeasy bind <project_id>" },
+  ]}
+/>
+
+<SeeAlso
+  links={[
+    {
+      href: "/get-started/keys-and-environments",
+      title: "Keys & environments",
+      note: "The keys your app uses, not the CLI",
+    },
+    { href: "/get-started/cli", title: "CLI", note: "What the session unlocks" },
+    { href: "/get-started/mcp", title: "MCP server", note: "The same login, for your agent" },
+    {
+      href: "/get-started/team",
+      title: "Team & permissions",
+      note: "Who may publish to production",
+    },
   ]}
 />

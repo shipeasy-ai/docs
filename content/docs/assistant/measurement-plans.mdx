@@ -3,12 +3,7 @@ title: Measurement plans
 description: When a change needs instrumentation it can't do itself, the assistant writes a measurement plan and files measure_plan tickets for an agent to implement.
 ---
 
-<DocMeta
-  status="Production ready"
-  read="4 min read"
-  updated="June 19, 2026"
-  works="In-dashboard assistant · ops:work"
-/>
+<DocMeta status="Production ready" read="4 min read" works="In-dashboard assistant · ops:work" />
 
 The assistant can create flags, configs, and metrics directly. What it _can't_ do from a chat is edit your codebase — wire the SDK, fire the right `track()` call, add the event. A **measurement plan** bridges that gap: the assistant designs the full measurement, creates the parts it can, and files the rest as tickets for an agent to implement.
 
@@ -25,8 +20,8 @@ When you ask the assistant to "measure whether X works", it produces a plan that
     you approve.
   </Step>
   <Step title="Instrumentation tickets">
-    The code changes it can't make itself — "fire <code>purchase</code> on checkout success",
-    "wrap the CTA in <code>getFlag('new_cta')</code>" — filed as <code>measure_plan</code>
+    The code changes it can't make itself — "fire <code>purchase</code> on checkout success", "wrap
+    the CTA in <code>getFlag('new_cta')</code>" — filed as <code>measure_plan</code>
     tickets.
   </Step>
 </Steps>

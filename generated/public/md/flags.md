@@ -17,8 +17,8 @@ Three primitives that share one SDK and one API key: feature flags for targeted 
 
 > **Not sure which to use?**
 
-See the [decision tree](https://docs.shipeasy.ai/flags/decision) — one diagram that maps "I want to do X" to
-the right primitive.
+See the [decision tree](https://docs.shipeasy.ai/flags/decision) — one diagram that maps "I want to do X" to the right
+primitive.
 
 ## How it works
 

@@ -38,13 +38,13 @@ project member), and tells you exactly what it did.
 It can do everything the dashboard assistant can — **read and change** your
 entire platform:
 
-| Ask @Shipeasy to…   | …and it will                                                             |
-| ------------------- | ------------------------------------------------------------------------ |
-| **Feature flags**   | create a flag, roll it out to a %, choose who sees it, turn it on/off    |
-| **Dynamic configs** | create a config, change what it returns                                  |
-| **Kill switches**   | create one, flip it on or off                                            |
-| **Alerts**          | tell you when a number gets too high or too low                          |
-| **Metrics**         | start tracking something people do                                       |
+| Ask @Shipeasy to…   | …and it will                                                            |
+| ------------------- | ----------------------------------------------------------------------- |
+| **Feature flags**   | create a flag, roll it out to a %, choose who sees it, turn it on/off   |
+| **Dynamic configs** | create a config, change what it returns                                 |
+| **Kill switches**   | create one, flip it on or off                                           |
+| **Alerts**          | tell you when a number gets too high or too low                         |
+| **Metrics**         | start tracking something people do                                      |
 | **Just ask**        | list what you have, check how a metric is moving, "what changed today?" |
 
 ### Create anything, just by asking
@@ -86,24 +86,24 @@ prod and the change is announced with a link:
 Every action writes straight back into Shipeasy, records an audit entry, stamps
 who did it, and recolours the card. Here's the full set:
 
-| Event                               | Card actions                                                       |
-| ----------------------------------- | ------------------------------------------------------------------ |
-| **Alert triggered**                 | `Resolve` · `Dismiss` · `Mute rule` (disables the rule that fired) |
-| **Error spiking** (from `see()`)    | `Resolve` · `Dismiss` · `Mute this error` (with a trend chart)     |
-| **Kill switch flipped**             | `Flip back` (one-click revert)                                     |
-| **Config published to prod**        | `Acknowledge`                                                      |
-| **Agent needs your attention**      | `Open the issue ↗` · `Acknowledge`                                 |
-| Weekly digest · New team member     | _(informational — link only)_                                      |
+| Event                            | Card actions                                                       |
+| -------------------------------- | ------------------------------------------------------------------ |
+| **Alert triggered**              | `Resolve` · `Dismiss` · `Mute rule` (disables the rule that fired) |
+| **Error spiking** (from `see()`) | `Resolve` · `Dismiss` · `Mute this error` (with a trend chart)     |
+| **Kill switch flipped**          | `Flip back` (one-click revert)                                     |
+| **Config published to prod**     | `Acknowledge`                                                      |
+| **Agent needs your attention**   | `Open the issue ↗` · `Acknowledge`                                 |
+| Weekly digest · New team member  | _(informational — link only)_                                      |
 
 Choose which of these post to Slack in **Settings → Notifications** (the Slack
 column is live once a connector exists).
 
 > **Privileged actions check your membership**
 
-Flipping a kill switch, publishing a config, and muting an alert rule go through
-the real admin path (so the change propagates) and verify **you're a member of the project**
-first. If you're not, only you see a quiet "ask an admin to invite you" — the shared card is
-untouched for everyone else.
+Flipping a kill switch, publishing a config, and muting an alert rule go through the real admin
+path (so the change propagates) and verify **you're a member of the project** first. If you're
+not, only you see a quiet "ask an admin to invite you" — the shared card is untouched for everyone
+else.
 
 ## Bugs & requests — the other inbound stream
 

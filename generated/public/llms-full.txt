@@ -1151,14 +1151,14 @@ Shipeasy has exactly two kinds of SDK key. One per entrypoint, one configure cal
 
 ### One key per entrypoint
 
-|            | **Server key**                                        | **Client key**                         |
-| ---------- | ----------------------------------------------------- | -------------------------------------- |
-| Import     | `@shipeasy/sdk/server`                                | `@shipeasy/sdk/client`                 |
-| Field      | `apiKey`                                              | `clientKey`                            |
-| Visibility | **Secret** — never ships to a browser                 | **Public** — ships in your bundle      |
-| Reads      | Full rule set (gates, configs, kill switches)         | Only client-readable flags and configs |
-| Writes     | Events                                                | Events, rate-limited by domain         |
-| Env        | Bound to one env; may override per request            | **Locked** to its env                  |
+|            | **Server key**                                | **Client key**                         |
+| ---------- | --------------------------------------------- | -------------------------------------- |
+| Import     | `@shipeasy/sdk/server`                        | `@shipeasy/sdk/client`                 |
+| Field      | `apiKey`                                      | `clientKey`                            |
+| Visibility | **Secret** — never ships to a browser         | **Public** — ships in your bundle      |
+| Reads      | Full rule set (gates, configs, kill switches) | Only client-readable flags and configs |
+| Writes     | Events                                        | Events, rate-limited by domain         |
+| Env        | Bound to one env; may override per request    | **Locked** to its env                  |
 
 ```ts
 // Server (root layout / startup) — server key ONLY, passed as apiKey
@@ -4339,14 +4339,14 @@ That's why the MCP server is the recommended surface for any AI-driven setup. Th
 The server advertises its tools grouped by product area. The agent sees each one as
 `mcp__shipeasy__<name>`:
 
-| Group        | Tools                                                                   | What it covers                                                          |
-| ------------ | ----------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| **Release**  | `release_flags_*`, `release_configs_*`, `release_killswitch_*`           | Create, target, roll out, and kill features                             |
-| **Metrics**  | `metrics_*`, `metrics_events_*`                                         | Define metrics over your events, read a series, manage the event catalog |
-| **Ops**      | `ops_*`, `ops_alerts_*`, `ops_comments_*`, `ops_investigations_*`        | File and work the bug / feature / alert queue, hand items to agents      |
-| **Errors**   | `errors_*`                                                              | Read, group, and resolve reported production errors                     |
-| **Projects** | `projects_*`, `whoami`                                                  | Which project you're bound to, and its settings                         |
-| **Docs**     | `docs_list`, `docs_get`, `docs_skill`                                   | Fetch SDK docs and installable agent skills for any language            |
+| Group        | Tools                                                             | What it covers                                                           |
+| ------------ | ----------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| **Release**  | `release_flags_*`, `release_configs_*`, `release_killswitch_*`    | Create, target, roll out, and kill features                              |
+| **Metrics**  | `metrics_*`, `metrics_events_*`                                   | Define metrics over your events, read a series, manage the event catalog |
+| **Ops**      | `ops_*`, `ops_alerts_*`, `ops_comments_*`, `ops_investigations_*` | File and work the bug / feature / alert queue, hand items to agents      |
+| **Errors**   | `errors_*`                                                        | Read, group, and resolve reported production errors                      |
+| **Projects** | `projects_*`, `whoami`                                            | Which project you're bound to, and its settings                          |
+| **Docs**     | `docs_list`, `docs_get`, `docs_skill`                             | Fetch SDK docs and installable agent skills for any language             |
 
 > **The exhaustive list is generated**
 
@@ -7170,20 +7170,20 @@ launched and authenticated, differs. The low-level plumbing is still there if yo
 
 ### Three scheduler tiers
 
-| Tier                             | Platforms                                | Mechanism                                                                          |
-| -------------------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------- |
-| **A — Shipeasy fires it**        | `claude`, `cursor`, `copilot`, `jules`   | Shipeasy's own cron starts the run over HTTPS — your machine can be off            |
-| **B — scheduled on the platform**| `codex`                                  | the vendor's own scheduler or an Actions workflow starts it                        |
-| **C — headless + external cron** | `gemini` (and `codex`)                   | non-interactive run mode driven by system cron or a GitHub Actions `schedule:` job |
+| Tier                              | Platforms                              | Mechanism                                                                          |
+| --------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------- |
+| **A — Shipeasy fires it**         | `claude`, `cursor`, `copilot`, `jules` | Shipeasy's own cron starts the run over HTTPS — your machine can be off            |
+| **B — scheduled on the platform** | `codex`                                | the vendor's own scheduler or an Actions workflow starts it                        |
+| **C — headless + external cron**  | `gemini` (and `codex`)                 | non-interactive run mode driven by system cron or a GitHub Actions `schedule:` job |
 
-| `--platform` | Scheduler                                                                                | Launch / auth                                            |
-| ------------ | ----------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| `claude`     | `/schedule` cloud routine                                                                 | runs `ops:work --pr`; **registers a Shipeasy connector** |
-| `cursor`     | Shipeasy cron → `POST https://api.cursor.com/v1/agents`                                  | `autoCreatePR`; `CURSOR_API_KEY`                         |
-| `copilot`    | Shipeasy cron → GitHub coding-agent task via `.github/agents/shipeasy.agent.md`           | **Connect GitHub** (user-to-server token); PAT fallback  |
-| `jules`      | Shipeasy cron → Jules session                                                             | Jules API key                                            |
-| `codex`      | Codex Automations (local cron) or an Actions `schedule:` job                              | `codex exec --sandbox danger-full-access`                |
-| `gemini`     | Actions `schedule:` (run-gemini-cli)                                                      | `gemini -p --approval-mode=yolo`                         |
+| `--platform` | Scheduler                                                                       | Launch / auth                                            |
+| ------------ | ------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `claude`     | `/schedule` cloud routine                                                       | runs `ops:work --pr`; **registers a Shipeasy connector** |
+| `cursor`     | Shipeasy cron → `POST https://api.cursor.com/v1/agents`                         | `autoCreatePR`; `CURSOR_API_KEY`                         |
+| `copilot`    | Shipeasy cron → GitHub coding-agent task via `.github/agents/shipeasy.agent.md` | **Connect GitHub** (user-to-server token); PAT fallback  |
+| `jules`      | Shipeasy cron → Jules session                                                   | Jules API key                                            |
+| `codex`      | Codex Automations (local cron) or an Actions `schedule:` job                    | `codex exec --sandbox danger-full-access`                |
+| `gemini`     | Actions `schedule:` (run-gemini-cli)                                            | `gemini -p --approval-mode=yolo`                         |
 
 ### The run is identical everywhere
 
@@ -7225,9 +7225,9 @@ jobs:
 > **Note**
 
 Unattended runs use an auto-approve flag (`--approval-mode=yolo`, `--sandbox danger-full-access`,
-`--dangerously-skip-permissions`) that removes the human gate — run only in an isolated env. They also spend tokens/credits on every fire, so
-start with a weekly or daily cron and watch the first runs. PRs land for review; nothing
-auto-merges.
+`--dangerously-skip-permissions`) that removes the human gate — run only in an isolated env. They
+also spend tokens/credits on every fire, so start with a weekly or daily cron and watch the first
+runs. PRs land for review; nothing auto-merges.
 
 ### Connector registration — Shipeasy-fired vs. platform-scheduled
 
@@ -9519,10 +9519,10 @@ Every teammate in `acme_corp` now hashes to the **same** group — the rollout s
 
 > **Configured on the resource, carried in the attribute map**
 
-<code>bucketBy</code> is set on the gate (in the dashboard, CLI, or API). Your job in
-code is to make sure the named attribute (e.g. <code>company_id</code>) is present in the
-attribute map your transform produces (or on the user object you pass to the low-level
-<code>Engine</code>) — if it's missing, that user falls back to individual bucketing.
+<code>bucketBy</code> is set on the gate (in the dashboard, CLI, or API). Your job in code is to
+make sure the named attribute (e.g. <code>company_id</code>) is present in the attribute map your
+transform produces (or on the user object you pass to the low-level <code>Engine</code>) — if it's
+missing, that user falls back to individual bucketing.
 
 ### Common units
 
@@ -9538,9 +9538,8 @@ attribute map your transform produces (or on the user object you pass to the low
 > **A company is one unit, not N users**
 
 Bucketing by company makes the decision account-level, so a 5% ramp of 200 accounts is ten
-accounts — the number moves in visible steps and one busy account can carry the whole metric.
-Read the [metric series](https://docs.shipeasy.ai/metrics/quickstart) with that in mind before concluding the ramp is
-safe.
+accounts — the number moves in visible steps and one busy account can carry the whole metric. Read
+the [metric series](https://docs.shipeasy.ai/metrics/quickstart) with that in mind before concluding the ramp is safe.
 
 **Related**
 
@@ -9715,11 +9714,11 @@ clearOverrides(); // reset every seeded override back to the empty-blob default
 
 `configureForTesting({ flags?, configs?, attributes? })`:
 
-| Field         | Shape                         | Effect                                                  |
-| ------------- | ----------------------------- | ------------------------------------------------------- |
-| `flags`       | `{ [name]: boolean }`         | forced `getFlag` results                                |
-| `configs`     | `{ [name]: value }`           | forced `getConfig` results                              |
-| `attributes`  | `(yourUser) => User`          | same transform as `configure()` (default identity)      |
+| Field        | Shape                 | Effect                                             |
+| ------------ | --------------------- | -------------------------------------------------- |
+| `flags`      | `{ [name]: boolean }` | forced `getFlag` results                           |
+| `configs`    | `{ [name]: value }`   | forced `getConfig` results                         |
+| `attributes` | `(yourUser) => User`  | same transform as `configure()` (default identity) |
 
 ### Package-level overrides
 
@@ -9782,10 +9781,10 @@ affect other users. Close the session and you're back to the real evaluation.
 
 You can also force a specific resource straight from the URL — useful for sharing a repro link or scripting a QA flow:
 
-| Param                      | Effect                    |
-| -------------------------- | ------------------------- |
-| `?se_gate_<name>=true`     | Force a gate on/off       |
-| `?se_config_<key>=<value>` | Force a config value      |
+| Param                      | Effect               |
+| -------------------------- | -------------------- |
+| `?se_gate_<name>=true`     | Force a gate on/off  |
+| `?se_config_<key>=<value>` | Force a config value |
 
 These sit between programmatic overrides and the server's evaluation in [precedence](https://docs.shipeasy.ai/sdks/testing#overrides-on-a-real-client):
 
@@ -10004,8 +10003,8 @@ Three primitives that share one SDK and one API key: feature flags for targeted 
 
 > **Not sure which to use?**
 
-See the [decision tree](https://docs.shipeasy.ai/flags/decision) — one diagram that maps "I want to do X" to
-the right primitive.
+See the [decision tree](https://docs.shipeasy.ai/flags/decision) — one diagram that maps "I want to do X" to the right
+primitive.
 
 ### How it works
 
@@ -10122,9 +10121,9 @@ boolean. Use a **config** — schema-validated, typed, supports more than two va
 
 > **Reading a rollout percentage as a verdict**
 
-A 50% rollout tells you who saw what, not whether it worked. If the question is "did this move
-the number", define a [metric](https://docs.shipeasy.ai/metrics/quickstart) over your own events and watch it across the
-ramp — the flag decides exposure, the metric decides whether you keep going.
+A 50% rollout tells you who saw what, not whether it worked. If the question is "did this move the
+number", define a [metric](https://docs.shipeasy.ai/metrics/quickstart) over your own events and watch it across the ramp
+— the flag decides exposure, the metric decides whether you keep going.
 
 > **Using a feature flag when you should be using a killswitch**
 
@@ -10156,18 +10155,18 @@ The graph is assembled server-side from your project's real lists — events, me
 
 The node types and the edges between them describe the data pipeline:
 
-| Node           | Edge into it         | What the edge means                                                                                            |
-| -------------- | -------------------- | -------------------------------------------------------------------------------------------------------------- |
-| **Event**      | —                    | A logged event (or an SDK auto-event like `__auto_lcp`).                                                       |
-| **Metric**     | `agg`                | The metric aggregates this event (`count`, `sum(value)`, `p95(value)`, a `ratio` of two events, …).            |
-| **Alert**      | `alert`              | An alert rule watches this metric, with its comparator/threshold/window shown on the edge (e.g. `> 200 · 1h`). |
+| Node       | Edge into it | What the edge means                                                                                            |
+| ---------- | ------------ | -------------------------------------------------------------------------------------------------------------- |
+| **Event**  | —            | A logged event (or an SDK auto-event like `__auto_lcp`).                                                       |
+| **Metric** | `agg`        | The metric aggregates this event (`count`, `sum(value)`, `p95(value)`, a `ratio` of two events, …).            |
+| **Alert**  | `alert`      | An alert rule watches this metric, with its comparator/threshold/window shown on the edge (e.g. `> 200 · 1h`). |
 
 > **Status is live**
 
-Alert nodes render as **firing**, **armed**, or **paused**. Metric and event nodes are enriched with live analytics — a 7-day sparkline, current
-value, and period delta on metrics, and a per-day volume on events. Enrichment is cached ~1 hour;
-the graph structure itself is rebuilt on every view, so newly-created resources appear
-immediately.
+Alert nodes render as **firing**, **armed**, or **paused**. Metric and event nodes are enriched
+with live analytics — a 7-day sparkline, current value, and period delta on metrics, and a per-day
+volume on events. Enrichment is cached ~1 hour; the graph structure itself is rebuilt on every
+view, so newly-created resources appear immediately.
 
 ### How nodes cluster
 
@@ -10179,14 +10178,14 @@ The point of Flow is to answer "what depends on this?" before you touch a metric
 
 **Find the node**
 
-Open **Flow** and locate the metric or event you're about to change. Drag to rearrange and
-hover to trace its edges.
+Open **Flow** and locate the metric or event you're about to change. Drag to rearrange and hover
+to trace its edges.
 
 **Read its downstream edges**
 
-Follow the edges *out* of the node. An `alert` edge means an alert rule is armed on that
-metric — renaming the event it aggregates, or changing the metric's query, moves the number the
-rule is comparing against, and a rule that was quiet can start (or stop) paging.
+Follow the edges *out* of the node. An `alert` edge means an alert rule is armed on that metric
+— renaming the event it aggregates, or changing the metric's query, moves the number the rule is
+comparing against, and a rule that was quiet can start (or stop) paging.
 
 **Check what feeds it**
 
@@ -13270,10 +13269,10 @@ affect other users. Close the session and you're back to the real evaluation.
 
 For QA flows, demos, and bug reports, force state straight from the URL — paste the link and the receiver lands in the same state:
 
-| Param                      | Effect                    |
-| -------------------------- | ------------------------- |
-| `?se_gate_<name>=true`     | Force a gate on/off       |
-| `?se_config_<key>=<value>` | Force a config value      |
+| Param                      | Effect               |
+| -------------------------- | -------------------- |
+| `?se_gate_<name>=true`     | Force a gate on/off  |
+| `?se_config_<key>=<value>` | Force a config value |
 
 For example, `https://app.example.com/checkout?se_gate_new_checkout=true` shows the QA reviewer the new checkout while it's still at 0% for real traffic.
 
@@ -15492,13 +15491,13 @@ project member), and tells you exactly what it did.
 It can do everything the dashboard assistant can — **read and change** your
 entire platform:
 
-| Ask @Shipeasy to…   | …and it will                                                             |
-| ------------------- | ------------------------------------------------------------------------ |
-| **Feature flags**   | create a flag, roll it out to a %, choose who sees it, turn it on/off    |
-| **Dynamic configs** | create a config, change what it returns                                  |
-| **Kill switches**   | create one, flip it on or off                                            |
-| **Alerts**          | tell you when a number gets too high or too low                          |
-| **Metrics**         | start tracking something people do                                       |
+| Ask @Shipeasy to…   | …and it will                                                            |
+| ------------------- | ----------------------------------------------------------------------- |
+| **Feature flags**   | create a flag, roll it out to a %, choose who sees it, turn it on/off   |
+| **Dynamic configs** | create a config, change what it returns                                 |
+| **Kill switches**   | create one, flip it on or off                                           |
+| **Alerts**          | tell you when a number gets too high or too low                         |
+| **Metrics**         | start tracking something people do                                      |
 | **Just ask**        | list what you have, check how a metric is moving, "what changed today?" |
 
 #### Create anything, just by asking
@@ -15540,24 +15539,24 @@ prod and the change is announced with a link:
 Every action writes straight back into Shipeasy, records an audit entry, stamps
 who did it, and recolours the card. Here's the full set:
 
-| Event                               | Card actions                                                       |
-| ----------------------------------- | ------------------------------------------------------------------ |
-| **Alert triggered**                 | `Resolve` · `Dismiss` · `Mute rule` (disables the rule that fired) |
-| **Error spiking** (from `see()`)    | `Resolve` · `Dismiss` · `Mute this error` (with a trend chart)     |
-| **Kill switch flipped**             | `Flip back` (one-click revert)                                     |
-| **Config published to prod**        | `Acknowledge`                                                      |
-| **Agent needs your attention**      | `Open the issue ↗` · `Acknowledge`                                 |
-| Weekly digest · New team member     | _(informational — link only)_                                      |
+| Event                            | Card actions                                                       |
+| -------------------------------- | ------------------------------------------------------------------ |
+| **Alert triggered**              | `Resolve` · `Dismiss` · `Mute rule` (disables the rule that fired) |
+| **Error spiking** (from `see()`) | `Resolve` · `Dismiss` · `Mute this error` (with a trend chart)     |
+| **Kill switch flipped**          | `Flip back` (one-click revert)                                     |
+| **Config published to prod**     | `Acknowledge`                                                      |
+| **Agent needs your attention**   | `Open the issue ↗` · `Acknowledge`                                 |
+| Weekly digest · New team member  | _(informational — link only)_                                      |
 
 Choose which of these post to Slack in **Settings → Notifications** (the Slack
 column is live once a connector exists).
 
 > **Privileged actions check your membership**
 
-Flipping a kill switch, publishing a config, and muting an alert rule go through
-the real admin path (so the change propagates) and verify **you're a member of the project**
-first. If you're not, only you see a quiet "ask an admin to invite you" — the shared card is
-untouched for everyone else.
+Flipping a kill switch, publishing a config, and muting an alert rule go through the real admin
+path (so the change propagates) and verify **you're a member of the project** first. If you're
+not, only you see a quiet "ask an admin to invite you" — the shared card is untouched for everyone
+else.
 
 ### Bugs & requests — the other inbound stream
 
@@ -15843,9 +15842,7 @@ The webhook can retry, and a bug can be re-triaged. To make issue creation idemp
 async function createTrackerIssue(bug: FeedbackItem) {
   if (bug.externalRef) return; // already synced — webhook retry, do nothing
 
-  const issue = await linear.issueCreate({
-    /* … */
-  });
+  const issue = await linear.issueCreate({/* … */});
 
   // PATCH the feedback item via the Admin API to record the link
   await fetch(`https://shipeasy.ai/api/admin/feedback/${bug.id}`, {
@@ -16375,8 +16372,8 @@ you approve.
 
 **Instrumentation tickets**
 
-The code changes it can't make itself — "fire <code>purchase</code> on checkout success",
-"wrap the CTA in <code>getFlag('new_cta')</code>" — filed as <code>measure_plan</code>
+The code changes it can't make itself — "fire <code>purchase</code> on checkout success", "wrap
+the CTA in <code>getFlag('new_cta')</code>" — filed as <code>measure_plan</code>
 tickets.
 
 ### How the tickets get implemented

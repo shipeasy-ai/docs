@@ -3,7 +3,7 @@ title: Quickstart
 description: Wire a killswitch around a risky subsystem in five minutes — so the 3am on-call has one switch to flip.
 ---
 
-<DocMeta status="Tutorial" read="4 min read" updated="May 15, 2026" works="Server SDK · CLI" />
+<DocMeta status="Tutorial" read="4 min read" works="Server SDK · CLI" />
 
 A killswitch is the lever you pull when something is on fire. This walkthrough takes you from zero
 to a wired-in killswitch around an outbound-email path. By the end, on-call can disable email
@@ -189,3 +189,24 @@ of your phone.
     The walkthrough from the case-studies page, with more context on the incident.
   </Tile>
 </TileGrid>
+
+<SeeAlso
+  links={[
+    {
+      href: "/flags/killswitches/patterns",
+      title: "Patterns",
+      note: "What belongs behind one, and what does not",
+    },
+    {
+      href: "/flags/case-studies/maintenance-mode",
+      title: "Maintenance mode",
+      note: "The worked incident",
+    },
+    { href: "/flags/decision", title: "Which primitive?", note: "Killswitch vs flag vs config" },
+    {
+      href: "/get-started/evaluation-and-caching",
+      title: "Evaluation & caching",
+      note: "How fast a flip actually lands",
+    },
+  ]}
+/>

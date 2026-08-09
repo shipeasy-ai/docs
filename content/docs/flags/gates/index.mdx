@@ -3,12 +3,7 @@ title: Feature flags
 description: Boolean feature flags with targeting rules, percentage rollouts, kill-switches, and per-user overrides — evaluated locally in your SDK with zero per-request cost.
 ---
 
-<DocMeta
-  status="Production ready"
-  read="9 min read"
-  updated="May 3, 2026"
-  works="Server SDK · Browser SDK"
-/>
+<DocMeta status="Production ready" read="9 min read" works="Server SDK · Browser SDK" />
 
 A **feature flag** is a single boolean answer for a single user. It is the unit of <em>&quot;should I do the new thing?&quot;</em> in your code. Feature flags are evaluated locally — the SDK keeps the bundle in process and the call is a hash table lookup, not a network round trip.
 

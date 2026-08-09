@@ -3,12 +3,7 @@ title: Drop-in script tag
 description: Add feature flags and configs to a no-build or static site with one <script> tag — evaluated at the edge, ready before first paint, no bundler required.
 ---
 
-<DocMeta
-  status="Production ready"
-  read="4 min read"
-  updated="July 26, 2026"
-  works="Any HTML page · no bundler"
-/>
+<DocMeta status="Production ready" read="4 min read" works="Any HTML page · no bundler" />
 
 For static sites, server-rendered pages, or anywhere you can't run a bundler, drop in `/sdk/boot.js`. Cloudflare's edge evaluates your flags for the visitor and returns the answers **inside** the script, so one request installs a fully-populated `window.shipeasy` before the browser paints. There is nothing to await and no flash of default values.
 

@@ -3,7 +3,7 @@ title: Query DSL grammar
 description: The complete formal grammar for the Shipeasy metric query DSL — aggregates, expressions, selectors, filters, group-by, and the full function set, with the limits and the deliberate refusals.
 ---
 
-<DocMeta status="Production ready" read="9 min read" updated="August 7, 2026" works="Server SDK" />
+<DocMeta status="Production ready" read="9 min read" works="Server SDK" />
 
 Every metric is backed by a query in the **metric query DSL**. A query is an _expression_:
 aggregates are the leaves, arithmetic composes them, and functions transform the resulting series.
@@ -322,3 +322,20 @@ shipeasy metrics create checkout_rate --event-name checkout_completed \
 
 `shipeasy metrics grammar` prints a reference in your terminal, and the same text is available to
 agents over MCP as `metrics_grammar`.
+
+<SeeAlso
+  links={[
+    {
+      href: "/metrics/aggregations",
+      title: "Aggregation types",
+      note: "Which aggregate to reach for",
+    },
+    { href: "/metrics/quickstart", title: "Quickstart", note: "The grammar in use" },
+    { href: "/metrics", title: "Metrics", note: "Filters, outlier handling, ratios" },
+    {
+      href: "/get-started/cli-reference",
+      title: "CLI reference",
+      note: "Authoring a query from the terminal",
+    },
+  ]}
+/>

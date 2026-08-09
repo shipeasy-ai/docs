@@ -21,8 +21,8 @@ you approve.
 
 **Instrumentation tickets**
 
-The code changes it can't make itself — "fire <code>purchase</code> on checkout success",
-"wrap the CTA in <code>getFlag('new_cta')</code>" — filed as <code>measure_plan</code>
+The code changes it can't make itself — "fire <code>purchase</code> on checkout success", "wrap
+the CTA in <code>getFlag('new_cta')</code>" — filed as <code>measure_plan</code>
 tickets.
 
 ## How the tickets get implemented

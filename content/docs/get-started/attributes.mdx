@@ -3,12 +3,7 @@ title: User attributes
 description: The shape of the eval context — pass everything you know about the user, and Shipeasy uses it for targeting, holdouts, and analysis breakdowns.
 ---
 
-<DocMeta
-  status="Production ready"
-  read="7 min read"
-  updated="May 3, 2026"
-  works="Server SDK · Browser SDK · Targeting"
-/>
+<DocMeta status="Production ready" read="7 min read" works="Server SDK · Browser SDK · Targeting" />
 
 A **user attribute** is any key/value pair you attach to a user when calling the SDK. Shipeasy uses attributes for three things:
 
@@ -381,6 +376,31 @@ You can set per-attribute retention in **Project → Privacy**; the default is p
     {
       label: "Roll out to 5%",
       cmd: "shipeasy release flags update new-checkout --rollout-percent 5",
+    },
+  ]}
+/>
+
+<SeeAlso
+  links={[
+    {
+      href: "/flags/gates/targeting",
+      title: "Targeting rules",
+      note: "What the attributes are for",
+    },
+    {
+      href: "/get-started/identity-and-bucketing",
+      title: "Identity & bucketing",
+      note: "The two ids, and which one sticks",
+    },
+    {
+      href: "/sdks/private-attributes",
+      title: "Private attributes",
+      note: "Target on it without persisting it",
+    },
+    {
+      href: "/flags/case-studies/private-attribute-targeting",
+      title: "Target on PII safely",
+      note: "The worked example",
     },
   ]}
 />

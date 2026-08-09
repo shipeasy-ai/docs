@@ -26,20 +26,20 @@ launched and authenticated, differs. The low-level plumbing is still there if yo
 
 ## Three scheduler tiers
 
-| Tier                             | Platforms                                | Mechanism                                                                          |
-| -------------------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------- |
-| **A — Shipeasy fires it**        | `claude`, `cursor`, `copilot`, `jules`   | Shipeasy's own cron starts the run over HTTPS — your machine can be off            |
-| **B — scheduled on the platform**| `codex`                                  | the vendor's own scheduler or an Actions workflow starts it                        |
-| **C — headless + external cron** | `gemini` (and `codex`)                   | non-interactive run mode driven by system cron or a GitHub Actions `schedule:` job |
+| Tier                              | Platforms                              | Mechanism                                                                          |
+| --------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------- |
+| **A — Shipeasy fires it**         | `claude`, `cursor`, `copilot`, `jules` | Shipeasy's own cron starts the run over HTTPS — your machine can be off            |
+| **B — scheduled on the platform** | `codex`                                | the vendor's own scheduler or an Actions workflow starts it                        |
+| **C — headless + external cron**  | `gemini` (and `codex`)                 | non-interactive run mode driven by system cron or a GitHub Actions `schedule:` job |
 
-| `--platform` | Scheduler                                                                                | Launch / auth                                            |
-| ------------ | ----------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| `claude`     | `/schedule` cloud routine                                                                 | runs `ops:work --pr`; **registers a Shipeasy connector** |
-| `cursor`     | Shipeasy cron → `POST https://api.cursor.com/v1/agents`                                  | `autoCreatePR`; `CURSOR_API_KEY`                         |
-| `copilot`    | Shipeasy cron → GitHub coding-agent task via `.github/agents/shipeasy.agent.md`           | **Connect GitHub** (user-to-server token); PAT fallback  |
-| `jules`      | Shipeasy cron → Jules session                                                             | Jules API key                                            |
-| `codex`      | Codex Automations (local cron) or an Actions `schedule:` job                              | `codex exec --sandbox danger-full-access`                |
-| `gemini`     | Actions `schedule:` (run-gemini-cli)                                                      | `gemini -p --approval-mode=yolo`                         |
+| `--platform` | Scheduler                                                                       | Launch / auth                                            |
+| ------------ | ------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `claude`     | `/schedule` cloud routine                                                       | runs `ops:work --pr`; **registers a Shipeasy connector** |
+| `cursor`     | Shipeasy cron → `POST https://api.cursor.com/v1/agents`                         | `autoCreatePR`; `CURSOR_API_KEY`                         |
+| `copilot`    | Shipeasy cron → GitHub coding-agent task via `.github/agents/shipeasy.agent.md` | **Connect GitHub** (user-to-server token); PAT fallback  |
+| `jules`      | Shipeasy cron → Jules session                                                   | Jules API key                                            |
+| `codex`      | Codex Automations (local cron) or an Actions `schedule:` job                    | `codex exec --sandbox danger-full-access`                |
+| `gemini`     | Actions `schedule:` (run-gemini-cli)                                            | `gemini -p --approval-mode=yolo`                         |
 
 ## The run is identical everywhere
 
@@ -81,9 +81,9 @@ jobs:
 > **Note**
 
 Unattended runs use an auto-approve flag (`--approval-mode=yolo`, `--sandbox danger-full-access`,
-`--dangerously-skip-permissions`) that removes the human gate — run only in an isolated env. They also spend tokens/credits on every fire, so
-start with a weekly or daily cron and watch the first runs. PRs land for review; nothing
-auto-merges.
+`--dangerously-skip-permissions`) that removes the human gate — run only in an isolated env. They
+also spend tokens/credits on every fire, so start with a weekly or daily cron and watch the first
+runs. PRs land for review; nothing auto-merges.
 
 ## Connector registration — Shipeasy-fired vs. platform-scheduled
 
