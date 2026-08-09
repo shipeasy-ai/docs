@@ -8,7 +8,7 @@ Source: https://docs.shipeasy.ai/sdks/go
 Generated from the Go SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk go overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-go/pages/overview.md`](https://shipeasy-ai.github.io/sdk-go/pages/overview.md). Edit it in the SDK repo, not here.
 
 `github.com/shipeasy-ai/sdk-go` is the **server-side** Go SDK for
-[Shipeasy](https://shipeasy.dev): feature flags ("gates"), dynamic configs,
+[Shipeasy](https://shipeasy.ai): feature flags ("gates"), dynamic configs,
 kill switches, A/B experiments, metric tracking, and structured error reporting.
 Evaluation is **local** against a cached copy of the edge blobs — there is no
 network call on the hot path.

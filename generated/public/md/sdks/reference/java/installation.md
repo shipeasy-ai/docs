@@ -20,20 +20,20 @@ Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-
 <dependency>
   <groupId>ai.shipeasy</groupId>
   <artifactId>shipeasy</artifactId>
-  <version>0.10.0</version>
+  <version>0.20.1</version>
 </dependency>
 ```
 
 ### Gradle (Kotlin DSL)
 
 ```kotlin
-implementation("ai.shipeasy:shipeasy:0.10.0")
+implementation("ai.shipeasy:shipeasy:0.20.1")
 ```
 
 ### Gradle (Groovy DSL)
 
 ```groovy
-implementation 'ai.shipeasy:shipeasy:0.10.0'
+implementation 'ai.shipeasy:shipeasy:0.20.1'
 ```
 
 ## Optional, `provided`-scope dependencies

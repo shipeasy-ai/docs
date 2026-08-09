@@ -3,7 +3,7 @@ title: "Node / TypeScript"
 description: "The canonical Shipeasy SDK — one package with a server and a browser build, local evaluation, configs, kill switches, and metric tracking."
 ---
 
-<DocMeta status="Production ready" read="5 min read" updated="July 30, 2026" works="Node 18+ · Cloudflare Workers · Deno · Next.js · Browsers" />
+<DocMeta status="Production ready" read="5 min read" updated="August 9, 2026" works="Node 18+ · Cloudflare Workers · Deno · Next.js · Browsers" />
 
 <Callout type="info">Generated from the TypeScript / JavaScript SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk typescript overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-ts/pages/overview.md`](https://shipeasy-ai.github.io/sdk-ts/pages/overview.md). Edit it in the SDK repo, not here.</Callout>
 
@@ -16,8 +16,9 @@ experiments, metrics, and i18n. It ships **two entrypoints** from one package:
 - `@shipeasy/sdk/client` — the browser (authenticates with the public
   **client** key).
 
-The APIs are framework-agnostic: everything works from vanilla JS. React
-conveniences live in the separate `@shipeasy/sdk-react` wrapper.
+The APIs are framework-agnostic: everything works from vanilla JS, which is why
+there is no React wrapper package to install — a component reads a flag the
+same way a route handler does.
 
 ## Install
 

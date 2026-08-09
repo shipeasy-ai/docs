@@ -3,7 +3,7 @@ title: "Swift"
 description: "The Shipeasy Swift SDK — a native client SDK on SwiftPM, authenticating with the public client key, for flags, configs, kill switches, and metric tracking."
 ---
 
-<DocMeta status="Production ready" read="5 min read" updated="July 27, 2026" works="iOS 15+ · macOS 12+ · tvOS 15+ · watchOS 8+ · SwiftPM" />
+<DocMeta status="Production ready" read="5 min read" updated="August 9, 2026" works="iOS 15+ · macOS 12+ · tvOS 15+ · watchOS 8+ · SwiftPM" />
 
 <Callout type="info">Generated from the Swift SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk swift overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-swift/pages/overview.md`](https://shipeasy-ai.github.io/sdk-swift/pages/overview.md). Edit it in the SDK repo, not here.</Callout>
 
@@ -16,7 +16,7 @@ to embed in a shipped app), evaluates one device user server-side over
 ## Install
 
 ```bash
-.package(url: "https://github.com/shipeasy-ai/sdk-swift.git", from: "1.0.0")
+.package(url: "https://github.com/shipeasy-ai/sdk-swift.git", from: "3.0.0")
 ```
 
 Full wiring — frameworks, options, env vars — is in [Installation](/sdks/reference/swift/installation).
@@ -50,7 +50,7 @@ first `identify`, reads return the supplied defaults.
 The **persisted device `anonymous_id`** is the whole point of the client SDK: it
 survives cold starts so a logged-out visitor buckets identically into every
 fractional rollout and experiment on every launch. See
-[configuration](/sdks/reference/swift/configuration) and [advanced](/sdks/reference/swift/advanced#anonymous-id-persistence-anonymousstore).
+[configuration](/sdks/reference/swift/configuration) and [advanced](/sdks/reference/swift/advanced#anonymous-id-persistence--anonymousstore).
 
 ## The things you use
 

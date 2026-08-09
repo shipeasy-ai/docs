@@ -21,7 +21,7 @@ every other page assumes it has already run once at app launch.
 Add the package to your `Package.swift` dependencies:
 
 ```bash
-.package(url: "https://github.com/shipeasy-ai/sdk-swift.git", from: "1.0.0")
+.package(url: "https://github.com/shipeasy-ai/sdk-swift.git", from: "3.0.0")
 ```
 
 ### SwiftPM — `Package.swift`
@@ -30,7 +30,7 @@ The full dependency + target wiring:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/shipeasy-ai/sdk-swift.git", from: "1.0.0"),
+    .package(url: "https://github.com/shipeasy-ai/sdk-swift.git", from: "3.0.0"),
 ]
 ```
 
@@ -133,7 +133,7 @@ configureClient(clientKey: "pk_live_…", store: KeychainAnonStore())
 
 `get`/`set` are synchronous and best-effort — a throwing or slow backing store
 degrades gracefully and never crashes a read. See
-[advanced](https://docs.shipeasy.ai/sdks/reference/swift/advanced#anonymous-id-persistence-anonymousstore) for the full detail.
+[advanced](https://docs.shipeasy.ai/sdks/reference/swift/advanced#anonymous-id-persistence--anonymousstore) for the full detail.
 
 ---
 

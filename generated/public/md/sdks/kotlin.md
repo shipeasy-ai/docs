@@ -16,7 +16,7 @@ path.
 ## Install
 
 ```kotlin
-implementation("ai.shipeasy:shipeasy-kotlin:0.10.0")
+implementation("ai.shipeasy:shipeasy-kotlin:0.21.1")
 ```
 
 Full wiring — frameworks, options, env vars — is in [Installation](https://docs.shipeasy.ai/sdks/reference/kotlin/installation).

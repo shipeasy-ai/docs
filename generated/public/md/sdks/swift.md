@@ -16,7 +16,7 @@ to embed in a shipped app), evaluates one device user server-side over
 ## Install
 
 ```bash
-.package(url: "https://github.com/shipeasy-ai/sdk-swift.git", from: "1.0.0")
+.package(url: "https://github.com/shipeasy-ai/sdk-swift.git", from: "3.0.0")
 ```
 
 Full wiring — frameworks, options, env vars — is in [Installation](https://docs.shipeasy.ai/sdks/reference/swift/installation).
@@ -50,7 +50,7 @@ first `identify`, reads return the supplied defaults.
 The **persisted device `anonymous_id`** is the whole point of the client SDK: it
 survives cold starts so a logged-out visitor buckets identically into every
 fractional rollout and experiment on every launch. See
-[configuration](https://docs.shipeasy.ai/sdks/reference/swift/configuration) and [advanced](https://docs.shipeasy.ai/sdks/reference/swift/advanced#anonymous-id-persistence-anonymousstore).
+[configuration](https://docs.shipeasy.ai/sdks/reference/swift/configuration) and [advanced](https://docs.shipeasy.ai/sdks/reference/swift/advanced#anonymous-id-persistence--anonymousstore).
 
 ## The things you use
 

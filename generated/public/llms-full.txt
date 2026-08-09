@@ -7626,8 +7626,9 @@ experiments, metrics, and i18n. It ships **two entrypoints** from one package:
 - `@shipeasy/sdk/client` — the browser (authenticates with the public
   **client** key).
 
-The APIs are framework-agnostic: everything works from vanilla JS. React
-conveniences live in the separate `@shipeasy/sdk-react` wrapper.
+The APIs are framework-agnostic: everything works from vanilla JS, which is why
+there is no React wrapper package to install — a component reads a flag the
+same way a route handler does.
 
 ### Install
 
@@ -7971,7 +7972,7 @@ The Shipeasy Go server SDK — context-aware client, local evaluation, configs, 
 Generated from the Go SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk go overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-go/pages/overview.md`](https://shipeasy-ai.github.io/sdk-go/pages/overview.md). Edit it in the SDK repo, not here.
 
 `github.com/shipeasy-ai/sdk-go` is the **server-side** Go SDK for
-[Shipeasy](https://shipeasy.dev): feature flags ("gates"), dynamic configs,
+[Shipeasy](https://shipeasy.ai): feature flags ("gates"), dynamic configs,
 kill switches, A/B experiments, metric tracking, and structured error reporting.
 Evaluation is **local** against a cached copy of the edge blobs — there is no
 network call on the hot path.
@@ -8669,7 +8670,7 @@ network call per evaluation.
 <dependency>
   <groupId>ai.shipeasy</groupId>
   <artifactId>shipeasy</artifactId>
-  <version>0.10.0</version>
+  <version>0.20.1</version>
 </dependency>
 ```
 
@@ -8840,7 +8841,7 @@ path.
 ### Install
 
 ```kotlin
-implementation("ai.shipeasy:shipeasy-kotlin:0.10.0")
+implementation("ai.shipeasy:shipeasy-kotlin:0.21.1")
 ```
 
 Full wiring — frameworks, options, env vars — is in [Installation](https://docs.shipeasy.ai/sdks/reference/kotlin/installation).
@@ -9203,7 +9204,7 @@ to embed in a shipped app), evaluates one device user server-side over
 ### Install
 
 ```bash
-.package(url: "https://github.com/shipeasy-ai/sdk-swift.git", from: "1.0.0")
+.package(url: "https://github.com/shipeasy-ai/sdk-swift.git", from: "3.0.0")
 ```
 
 Full wiring — frameworks, options, env vars — is in [Installation](https://docs.shipeasy.ai/sdks/reference/swift/installation).
@@ -9237,7 +9238,7 @@ first `identify`, reads return the supplied defaults.
 The **persisted device `anonymous_id`** is the whole point of the client SDK: it
 survives cold starts so a logged-out visitor buckets identically into every
 fractional rollout and experiment on every launch. See
-[configuration](https://docs.shipeasy.ai/sdks/reference/swift/configuration) and [advanced](https://docs.shipeasy.ai/sdks/reference/swift/advanced#anonymous-id-persistence-anonymousstore).
+[configuration](https://docs.shipeasy.ai/sdks/reference/swift/configuration) and [advanced](https://docs.shipeasy.ai/sdks/reference/swift/advanced#anonymous-id-persistence--anonymousstore).
 
 ### The things you use
 
