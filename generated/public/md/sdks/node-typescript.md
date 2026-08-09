@@ -5,7 +5,7 @@ Source: https://docs.shipeasy.ai/sdks/node-typescript
 > The canonical Shipeasy SDK — one package with a server and a browser build, local evaluation, configs, kill switches, and metric tracking.
 
 > **Note**
-Generated from the TypeScript / JavaScript SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk typescript overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-ts`](https://shipeasy-ai.github.io/sdk-ts). Edit it in the SDK repo, not here.
+Generated from the TypeScript / JavaScript SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk typescript overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-ts/pages/overview.md`](https://shipeasy-ai.github.io/sdk-ts/pages/overview.md). Edit it in the SDK repo, not here.
 
 `@shipeasy/sdk` is the TypeScript / JavaScript SDK for the [Shipeasy](https://shipeasy.ai)
 hosted platform — feature gates, runtime configs, kill switches, A/B

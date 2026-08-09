@@ -4,7 +4,7 @@ import type { InferPageType } from "fumadocs-core/source";
 import { DocsPage, DocsBody, DocsTitle, DocsDescription } from "fumadocs-ui/page";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import { APIPage } from "@/lib/openapi";
-import { getPage } from "@/lib/source";
+import { getPage, getPages, source } from "@/lib/source";
 import { isGeneratedPage } from "@/lib/generated-pages";
 import updated from "@/lib/updated.json";
 import { ogSlugToParam } from "@/lib/og";
@@ -260,6 +260,87 @@ export function DocPageView({ slug }: { slug: string[] }) {
   );
 }
 
+/**
+ * Titles that more than one page uses. Ten pages here were indistinguishable in
+ * a browser tab and in a search result — five called "Quickstart", five called
+ * "Overview" — because the thing that tells them apart lives in the nav, and a
+ * search result has no nav. Those get their section prepended; every other page
+ * keeps the short title, since qualifying a name that is already unique only
+ * spends characters Google will truncate.
+ */
+// url → the folder names above it, outermost first. Read off the page tree
+// rather than by resolving parent slugs, because a section is not required to
+// have a landing page — `/get-started` has none, so `getPage(["get-started"])`
+// is undefined while the sidebar still shows "Get started" above every page in
+// it.
+const SECTIONS: Map<string, string[]> = (() => {
+  const out = new Map<string, string[]>();
+  type Node = { type: string; name?: unknown; url?: string; children?: Node[] };
+
+  const walk = (nodes: Node[], trail: string[]) => {
+    for (const node of nodes) {
+      if (node.type === "page" && node.url) out.set(node.url, trail);
+      else if (node.children) {
+        const name = typeof node.name === "string" ? node.name : null;
+        walk(node.children, name ? [...trail, name] : trail);
+      }
+    }
+  };
+
+  walk(source.pageTree.children as Node[], []);
+  return out;
+})();
+
+// url → the title to put in the tab and the search result. Unique names are
+// left alone: qualifying one only spends characters Google will truncate. A
+// shared name takes the fewest enclosing sections that separate it from its
+// namesakes — one for the five "Quickstart" pages, two for the five
+// per-language "Overview" pages.
+const TITLES: Map<string, string> = (() => {
+  const byTitle = new Map<string, { url: string; sections: string[] }[]>();
+  for (const p of getPages()) {
+    const title = (p.data as { title?: string }).title;
+    if (!title) continue;
+    const group = byTitle.get(title) ?? [];
+    group.push({ url: p.url, sections: SECTIONS.get(p.url) ?? [] });
+    byTitle.set(title, group);
+  }
+
+  // A section named the same as the page it contains adds nothing — `/sdks`
+  // sits in a tab called "SDKs", and "SDKs — SDKs" is not a disambiguation.
+  const qualify = (title: string, sections: string[], depth: number) =>
+    [
+      title,
+      ...sections
+        .slice(-depth)
+        .reverse()
+        .filter((s) => s !== title),
+    ].join(" — ");
+
+  const out = new Map<string, string>();
+  for (const [title, group] of byTitle) {
+    if (group.length === 1) {
+      out.set(group[0].url, title);
+      continue;
+    }
+    const deepest = Math.max(...group.map((g) => g.sections.length));
+    for (let depth = 1; depth <= Math.max(deepest, 1); depth++) {
+      const names = group.map((g) => qualify(title, g.sections, depth));
+      // Stop at the first depth that separates every page in the group, or at
+      // the deepest one — two pages can genuinely share a whole path shape.
+      if (new Set(names).size === group.length || depth === deepest) {
+        group.forEach((g, i) => out.set(g.url, names[i]));
+        break;
+      }
+    }
+  }
+  return out;
+})();
+
+function pageTitle(page: Page, slug: string[]): string {
+  return TITLES.get(`/${slug.join("/")}`) ?? page.data.title;
+}
+
 // Per-page metadata (title, description, canonical, OG/Twitter). The home hub
 // ("/") inherits the rich root metadata from `app/layout.tsx`, so callers pass
 // an empty slug to get `{}`.
@@ -272,22 +353,23 @@ export function docMetadata(slug: string[]): Metadata {
   const url = pageUrl(slug);
   const description = page.data.description ?? undefined;
   const ogImage = `${BASE_URL}/og/${ogSlugToParam(slug)}`;
+  const title = pageTitle(page, slug);
 
   return {
-    title: page.data.title,
+    title,
     description,
     openGraph: {
-      title: page.data.title,
+      title,
       // Fall back to the page title so a page without its own description still
       // gets a meaningful OG description instead of inheriting the generic root
       // one.
-      description: description ?? page.data.title,
+      description: description ?? title,
       url,
-      images: [{ url: ogImage, width: 1200, height: 630, alt: page.data.title }],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
     },
     twitter: {
-      title: page.data.title,
-      description: description ?? page.data.title,
+      title,
+      description: description ?? title,
       images: [ogImage],
     },
     alternates: {

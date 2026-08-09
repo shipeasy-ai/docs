@@ -99,3 +99,90 @@ if (bad.length) {
   process.exit(1);
 }
 console.log("check-links: all resolve.");
+
+/* ------------------------------------------------------------------ external */
+
+/**
+ * `--external` additionally HEADs every off-site link. Off by default and out
+ * of the pre-push hook on purpose: it needs the network, and a third party
+ * being briefly down is not a reason to block a docs commit.
+ *
+ * It is worth running by hand, though. Two thirds of the external links here
+ * point at `shipeasy-ai.github.io` — the SDK repos' own published pages, which
+ * rename when an SDK reorganises its docs and take our links with them. That
+ * rot is invisible from inside this repo.
+ */
+if (!process.argv.includes("--external")) {
+  console.log("check-links: external links not checked — pass --external to sweep them.");
+  process.exit(0);
+}
+
+const external = new Map<string, string>(); // url → first place it appears
+for (const file of walk(CONTENT, ".mdx")) {
+  const src = readFileSync(file, "utf8");
+  const rel = relative(ROOT, file);
+  let inFence = false;
+
+  src.split("\n").forEach((line, i) => {
+    // A URL inside a code fence is an example, not a link: every `curl` sample
+    // here names an endpoint that answers 401 without a key, and every config
+    // snippet names somebody's imaginary host. Sweeping those reported thirty
+    // dead links, twenty-five of which were the docs working as intended.
+    if (/^\s*(```|~~~)/.test(line)) {
+      inFence = !inFence;
+      return;
+    }
+    if (inFence) return;
+
+    const urls = [
+      ...[...line.matchAll(/\]\((https?:\/\/[^)\s]+)\)/g)].map((m) => m[1]),
+      ...[...line.matchAll(/href=["'](https?:\/\/[^"']+)["']/g)].map((m) => m[1]),
+    ];
+    for (const raw of urls) {
+      const url = raw.replace(/[.,;:]+$/, "");
+      // Placeholders are not somewhere to send a request.
+      if (/localhost|127\.0\.0\.1|example\.(com|org)|acme|\.local|[<{…]/.test(url)) continue;
+      if (!external.has(url)) external.set(url, `${rel}:${i + 1}`);
+    }
+  });
+}
+
+/** HEAD, falling back to GET — some hosts answer 405 to a HEAD they serve. */
+async function reachable(url: string): Promise<number> {
+  for (const method of ["HEAD", "GET"] as const) {
+    try {
+      const res = await fetch(url, { method, redirect: "follow" });
+      if (res.status !== 405 || method === "GET") return res.status;
+    } catch {
+      return 0;
+    }
+  }
+  return 0;
+}
+
+// `tsx` compiles this file to CJS, where top-level await is unavailable.
+async function sweepExternal(): Promise<void> {
+  const urls = [...external.keys()];
+  const dead: string[] = [];
+  const CONCURRENCY = 8;
+
+  await Promise.all(
+    Array.from({ length: CONCURRENCY }, async () => {
+      for (let url = urls.shift(); url !== undefined; url = urls.shift()) {
+        const status = await reachable(url);
+        if (status === 0 || status >= 400) {
+          dead.push(`  ${external.get(url)}  ${status || "no reply"}  ${url}`);
+        }
+      }
+    }),
+  );
+
+  console.log(`check-links: ${external.size} external links checked.`);
+  if (dead.length) {
+    console.error(`\n${dead.length} dead or unreachable:\n${dead.sort().join("\n")}\n`);
+    process.exit(1);
+  }
+  console.log("check-links: external links all resolve.");
+}
+
+void sweepExternal();

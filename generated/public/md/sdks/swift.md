@@ -5,7 +5,7 @@ Source: https://docs.shipeasy.ai/sdks/swift
 > The Shipeasy Swift SDK — a native client SDK on SwiftPM, authenticating with the public client key, for flags, configs, kill switches, and metric tracking.
 
 > **Note**
-Generated from the Swift SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk swift overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-swift`](https://shipeasy-ai.github.io/sdk-swift). Edit it in the SDK repo, not here.
+Generated from the Swift SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk swift overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-swift/pages/overview.md`](https://shipeasy-ai.github.io/sdk-swift/pages/overview.md). Edit it in the SDK repo, not here.
 
 `Shipeasy` is the **native client** Swift SDK for [Shipeasy](https://shipeasy.ai) —
 feature flags, dynamic configs, kill switches, and A/B experiments for an

@@ -50,12 +50,13 @@ The marketplace-owned pages are **pushed** here rather than pulled — that repo
 
 ## Gates
 
-| Command                 | Catches                                                                   |
-| ----------------------- | ------------------------------------------------------------------------- |
-| `pnpm type-check`       | MDX that won't compile, and `shipeasy …` invocations the CLI doesn't have |
-| `pnpm check-links`      | internal links into a hole (needs `pnpm build` first)                     |
-| `pnpm verify:generated` | a hand-edited generated file, or an upstream source that moved            |
-| `pnpm lint`             | the usual                                                                 |
+| Command                     | Catches                                                                                                                |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `pnpm type-check`           | MDX that won't compile, and `shipeasy …` invocations the CLI doesn't have                                              |
+| `pnpm check-links`          | internal links into a hole (needs `pnpm build` first)                                                                  |
+| `pnpm check-links:external` | off-site links that have rotted — needs the network, so it is not in any hook. Run it when an SDK reorganises its docs |
+| `pnpm verify:generated`     | a hand-edited generated file, or an upstream source that moved                                                         |
+| `pnpm lint`                 | the usual                                                                                                              |
 
 `pre-commit` runs `type-check` on changed content; `pre-push` runs the full build
 plus the link sweep. Enable them with `pnpm install` (its `prepare` sets

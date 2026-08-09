@@ -5,7 +5,7 @@ Source: https://docs.shipeasy.ai/sdks/ruby
 > The Shipeasy Ruby gem — fork-safe singleton, Rails railtie, local evaluation, configs, kill switches, and metric tracking.
 
 > **Note**
-Generated from the Ruby SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk ruby overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-ruby`](https://shipeasy-ai.github.io/sdk-ruby). Edit it in the SDK repo, not here.
+Generated from the Ruby SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk ruby overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-ruby/pages/overview.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/overview.md). Edit it in the SDK repo, not here.
 
 `shipeasy-sdk` is the server-side Ruby gem for the [Shipeasy](https://shipeasy.ai)
 hosted service: feature gates (flags), dynamic configs, kill switches, A/B

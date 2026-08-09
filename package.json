@@ -25,7 +25,8 @@
     "verify:generated": "tsx scripts/verify-generated.ts",
     "deploy": "pnpm build && wrangler deploy",
     "preview": "pnpm build && wrangler dev",
-    "check-links": "tsx scripts/check-links.ts"
+    "check-links": "tsx scripts/check-links.ts",
+    "check-links:external": "tsx scripts/check-links.ts --external"
   },
   "dependencies": {
     "@shipeasy/openapi": "^3.2.0",

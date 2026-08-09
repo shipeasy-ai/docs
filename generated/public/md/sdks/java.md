@@ -5,7 +5,7 @@ Source: https://docs.shipeasy.ai/sdks/java
 > The Shipeasy Java server SDK — configure once, bind a Client per request, servlet anon filter, local evaluation, configs, kill switches, and metric tracking.
 
 > **Note**
-Generated from the Java SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk java overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-java`](https://shipeasy-ai.github.io/sdk-java). Edit it in the SDK repo, not here.
+Generated from the Java SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk java overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-java/pages/overview.md`](https://shipeasy-ai.github.io/sdk-java/pages/overview.md). Edit it in the SDK repo, not here.
 
 `shipeasy` (`ai.shipeasy:shipeasy`) is the **server-side Java SDK** for
 [Shipeasy](https://shipeasy.ai) — feature flags, dynamic configs, kill switches,

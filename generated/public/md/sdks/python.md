@@ -5,7 +5,7 @@ Source: https://docs.shipeasy.ai/sdks/python
 > The Shipeasy Python server SDK — local evaluation, configs, WSGI/ASGI anon middleware, and metric tracking.
 
 > **Note**
-Generated from the Python SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk python overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-python`](https://shipeasy-ai.github.io/sdk-python). Edit it in the SDK repo, not here.
+Generated from the Python SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk python overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-python/pages/overview.md`](https://shipeasy-ai.github.io/sdk-python/pages/overview.md). Edit it in the SDK repo, not here.
 
 `shipeasy` is the **server** SDK for Shipeasy — feature flags, remote configs,
 kill switches, A/B experiments, and metric tracking. It uses your **server key**

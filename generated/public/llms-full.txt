@@ -7616,7 +7616,7 @@ Source: https://docs.shipeasy.ai/sdks/node-typescript
 The canonical Shipeasy SDK — one package with a server and a browser build, local evaluation, configs, kill switches, and metric tracking.
 
 > **Note**
-Generated from the TypeScript / JavaScript SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk typescript overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-ts`](https://shipeasy-ai.github.io/sdk-ts). Edit it in the SDK repo, not here.
+Generated from the TypeScript / JavaScript SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk typescript overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-ts/pages/overview.md`](https://shipeasy-ai.github.io/sdk-ts/pages/overview.md). Edit it in the SDK repo, not here.
 
 `@shipeasy/sdk` is the TypeScript / JavaScript SDK for the [Shipeasy](https://shipeasy.ai)
 hosted platform — feature gates, runtime configs, kill switches, A/B
@@ -7968,7 +7968,7 @@ Source: https://docs.shipeasy.ai/sdks/go
 The Shipeasy Go server SDK — context-aware client, local evaluation, configs, kill switches, and metric tracking.
 
 > **Note**
-Generated from the Go SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk go overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-go`](https://shipeasy-ai.github.io/sdk-go). Edit it in the SDK repo, not here.
+Generated from the Go SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk go overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-go/pages/overview.md`](https://shipeasy-ai.github.io/sdk-go/pages/overview.md). Edit it in the SDK repo, not here.
 
 `github.com/shipeasy-ai/sdk-go` is the **server-side** Go SDK for
 [Shipeasy](https://shipeasy.dev): feature flags ("gates"), dynamic configs,
@@ -8188,7 +8188,7 @@ Source: https://docs.shipeasy.ai/sdks/python
 The Shipeasy Python server SDK — local evaluation, configs, WSGI/ASGI anon middleware, and metric tracking.
 
 > **Note**
-Generated from the Python SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk python overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-python`](https://shipeasy-ai.github.io/sdk-python). Edit it in the SDK repo, not here.
+Generated from the Python SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk python overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-python/pages/overview.md`](https://shipeasy-ai.github.io/sdk-python/pages/overview.md). Edit it in the SDK repo, not here.
 
 `shipeasy` is the **server** SDK for Shipeasy — feature flags, remote configs,
 kill switches, A/B experiments, and metric tracking. It uses your **server key**
@@ -8436,7 +8436,7 @@ Source: https://docs.shipeasy.ai/sdks/ruby
 The Shipeasy Ruby gem — fork-safe singleton, Rails railtie, local evaluation, configs, kill switches, and metric tracking.
 
 > **Note**
-Generated from the Ruby SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk ruby overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-ruby`](https://shipeasy-ai.github.io/sdk-ruby). Edit it in the SDK repo, not here.
+Generated from the Ruby SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk ruby overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-ruby/pages/overview.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/overview.md). Edit it in the SDK repo, not here.
 
 `shipeasy-sdk` is the server-side Ruby gem for the [Shipeasy](https://shipeasy.ai)
 hosted service: feature gates (flags), dynamic configs, kill switches, A/B
@@ -8655,7 +8655,7 @@ Source: https://docs.shipeasy.ai/sdks/java
 The Shipeasy Java server SDK — configure once, bind a Client per request, servlet anon filter, local evaluation, configs, kill switches, and metric tracking.
 
 > **Note**
-Generated from the Java SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk java overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-java`](https://shipeasy-ai.github.io/sdk-java). Edit it in the SDK repo, not here.
+Generated from the Java SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk java overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-java/pages/overview.md`](https://shipeasy-ai.github.io/sdk-java/pages/overview.md). Edit it in the SDK repo, not here.
 
 `shipeasy` (`ai.shipeasy:shipeasy`) is the **server-side Java SDK** for
 [Shipeasy](https://shipeasy.ai) — feature flags, dynamic configs, kill switches,
@@ -8829,7 +8829,7 @@ Source: https://docs.shipeasy.ai/sdks/kotlin
 The Shipeasy Kotlin SDK — pure-JVM core plus an Android client artifact, local evaluation, configs, kill switches, and metric tracking.
 
 > **Note**
-Generated from the Kotlin SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk kotlin overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-kotlin`](https://shipeasy-ai.github.io/sdk-kotlin). Edit it in the SDK repo, not here.
+Generated from the Kotlin SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk kotlin overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-kotlin/pages/overview.md`](https://shipeasy-ai.github.io/sdk-kotlin/pages/overview.md). Edit it in the SDK repo, not here.
 
 `shipeasy-kotlin` (`ai.shipeasy:shipeasy-kotlin`) is the **server-side** Shipeasy
 SDK for the JVM (and Android-compatible). It evaluates feature flags (gates),
@@ -9007,7 +9007,7 @@ Source: https://docs.shipeasy.ai/sdks/php
 The Shipeasy PHP server SDK — PHP-FPM friendly per-request init, local evaluation, configs, kill switches, and metric tracking.
 
 > **Note**
-Generated from the PHP SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk php overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-php`](https://shipeasy-ai.github.io/sdk-php). Edit it in the SDK repo, not here.
+Generated from the PHP SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk php overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-php/pages/overview.md`](https://shipeasy-ai.github.io/sdk-php/pages/overview.md). Edit it in the SDK repo, not here.
 
 `shipeasy/shipeasy` is the **PHP server SDK** for Shipeasy — feature flags
 (gates), dynamic configs, kill switches, A/B experiments, metric tracking,
@@ -9192,7 +9192,7 @@ Source: https://docs.shipeasy.ai/sdks/swift
 The Shipeasy Swift SDK — a native client SDK on SwiftPM, authenticating with the public client key, for flags, configs, kill switches, and metric tracking.
 
 > **Note**
-Generated from the Swift SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk swift overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-swift`](https://shipeasy-ai.github.io/sdk-swift). Edit it in the SDK repo, not here.
+Generated from the Swift SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk swift overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-swift/pages/overview.md`](https://shipeasy-ai.github.io/sdk-swift/pages/overview.md). Edit it in the SDK repo, not here.
 
 `Shipeasy` is the **native client** Swift SDK for [Shipeasy](https://shipeasy.ai) —
 feature flags, dynamic configs, kill switches, and A/B experiments for an

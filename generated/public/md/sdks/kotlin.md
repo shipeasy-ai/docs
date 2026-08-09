@@ -5,7 +5,7 @@ Source: https://docs.shipeasy.ai/sdks/kotlin
 > The Shipeasy Kotlin SDK — pure-JVM core plus an Android client artifact, local evaluation, configs, kill switches, and metric tracking.
 
 > **Note**
-Generated from the Kotlin SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk kotlin overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-kotlin`](https://shipeasy-ai.github.io/sdk-kotlin). Edit it in the SDK repo, not here.
+Generated from the Kotlin SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk kotlin overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-kotlin/pages/overview.md`](https://shipeasy-ai.github.io/sdk-kotlin/pages/overview.md). Edit it in the SDK repo, not here.
 
 `shipeasy-kotlin` (`ai.shipeasy:shipeasy-kotlin`) is the **server-side** Shipeasy
 SDK for the JVM (and Android-compatible). It evaluates feature flags (gates),

@@ -5,7 +5,7 @@ Source: https://docs.shipeasy.ai/sdks/php
 > The Shipeasy PHP server SDK — PHP-FPM friendly per-request init, local evaluation, configs, kill switches, and metric tracking.
 
 > **Note**
-Generated from the PHP SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk php overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-php`](https://shipeasy-ai.github.io/sdk-php). Edit it in the SDK repo, not here.
+Generated from the PHP SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk php overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-php/pages/overview.md`](https://shipeasy-ai.github.io/sdk-php/pages/overview.md). Edit it in the SDK repo, not here.
 
 `shipeasy/shipeasy` is the **PHP server SDK** for Shipeasy — feature flags
 (gates), dynamic configs, kill switches, A/B experiments, metric tracking,

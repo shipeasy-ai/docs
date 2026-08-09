@@ -566,9 +566,12 @@ function emitLanding(sdk: Sdk, m: Manifest, docs: SdkDocs) {
     docs.updated ? ` updated=${JSON.stringify(docs.updated)}` : ""
   } works=${JSON.stringify(sdk.works)} />\n\n`;
 
+  // `sdk.pages` is a directory on GitHub Pages with no index — linking the bare
+  // prefix 404s. Point at the file this page was actually built from.
+  const rawUrl = `${sdk.pages}/pages/overview.md`;
   const banner =
     `<Callout type="info">Generated from the ${sdk.name} SDK repo's own \`/docs/\` — the same Markdown ` +
-    `\`shipeasy docs get --sdk ${m.sdk} overview\` returns, served raw at [\`${sdk.pages}\`](${sdk.pages}). ` +
+    `\`shipeasy docs get --sdk ${m.sdk} overview\` returns, served raw at [\`${rawUrl}\`](${rawUrl}). ` +
     `Edit it in the SDK repo, not here.</Callout>\n\n`;
 
   const seeAlso =
