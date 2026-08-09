@@ -38,26 +38,24 @@ The home hub is `content/docs/index.mdx`, rendered directly at `/` (see
 
 ## The footer convention (required on every leaf page)
 
-Every leaf page ends with this trio, in this order:
+One block, at the very end of the page:
 
 ```mdx
 <SeeAlso links={[{ href: "/path", title: "Page title", note: "why it's related" }]} />
-
-<DocNav
-  prev={{ href: "/prev", title: "Prev title" }}
-  next={{ href: "/next", title: "Next title" }}
-/>
-
-<DocFeedback editHref="https://github.com/shipeasy-ai/docs/edit/main/content/docs/<path>.mdx" />
 ```
 
-- `<DocNav>` prev/next follow the **sidebar order** in the section's `meta.json`.
-- `<SeeAlso>` is for _cross-tab_ relationships the linear prev/next can't express.
-- Hub/index pages use `<TileGrid>` / `<CardGrid>` / `<JourneyPath>` instead of `<DocNav>`.
+- `<SeeAlso>` is for the relationships the linear prev/next can't express — the
+  deep-dive, the reference, the worked example, the page in another tab.
+- Hub/index pages use `<TileGrid>` / `<CardGrid>` / `<JourneyPath>` instead.
+- Don't hand-place prev/next, the feedback row, the copy-as-markdown buttons or
+  the updated date. `DocPageView` renders all four on every page, so they can't
+  be forgotten and can't be doubled. Prev/next follows the **sidebar order** in
+  the section's `meta.json`; the date comes from `generated/data/updated.json`,
+  which the pre-commit hook stamps — never type a date into a page.
 
 ## Components
 
-All components are registered globally in `src/app/[[...slug]]/page.tsx` (no MDX
+All components are registered globally in `src/lib/doc-page.tsx` (no MDX
 imports). Defined in `src/components/mdx.tsx`, styled in `src/app/theme.css`.
 
 | Component | Use |
@@ -65,7 +63,7 @@ imports). Defined in `src/components/mdx.tsx`, styled in `src/app/theme.css`.
 | `<Hero eyebrow title subtitle primaryHref primaryLabel secondaryHref secondaryLabel />` | Top of a tab/section landing page |
 | `<JourneyPath title goal steps={[{href,label,title}]} />` | Goal → ordered sequence of pages (home hub + product indexes) |
 | `<SeeAlso title links={[{href,title,note}]} />` | Related-links footer block |
-| `<DocNav prev next />` / `<DocFeedback editHref />` / `<DocMeta status read updated works />` | Leaf-page chrome |
+| `<DocMeta status read works />` | Leaf-page chrome (the date is not yours to set — see above) |
 | `<Callout type="info                                                                          | success                                                       | warn | danger" title>` | Asides |
 | `<Steps><Step title>` | Ordered walkthroughs |
 | `<Quickstart title time><QuickstartStep num label title cmd>` | 3-up quickstart grid |

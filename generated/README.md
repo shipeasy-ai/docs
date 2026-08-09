@@ -4,10 +4,15 @@ Nothing in this folder is hand-authored. Every file is emitted by a generator
 and copied into place by `scripts/sync-generated.ts` before `next dev` /
 `next build` runs.
 
-Most sources of truth live in **another repo**. The exception is the agent
-bundles at the bottom of the table, which are stitched from this repo's own
-`content/docs` — so a content edit makes them stale, and the pre-commit hook
-regenerates them.
+Most sources of truth live in **another repo**. The exception is the rows at
+the bottom of the table — the agent bundles, the per-page markdown and the
+updated-date map — which come from this repo's own `content/docs`, so a content
+edit makes them stale and the pre-commit hook regenerates them in the same
+commit.
+
+`data/updated.json` is the odd one: its source is not a file but an event —
+committing a change to a page. Nothing recomputes it from scratch, so it is the
+one thing here that cannot be rebuilt by re-running a generator.
 
 If a page here is wrong, fixing it here is pointless — the next regeneration
 overwrites it. Fix the source, then regenerate.
@@ -26,6 +31,8 @@ overwrites it. Fix the source, then regenerate.
 | `public/llms-full.txt`                     | `public/llms-full.txt`                | `content/docs/**` (this repo)                                      | `pnpm gen:llms` (here, + pre-commit)                |
 | `public/agents.md`                         | `public/agents.md`                    | `content/docs/**` + `cli-commands.json` + the MCP reference        | `pnpm gen:llms` (here, + pre-commit)                |
 | `content/get-started/llms.mdx`             | `content/docs/get-started/llms.mdx`   | the three files above                                              | `pnpm gen:llms` (here, + pre-commit)                |
+| `public/md/**`                             | `public/md/**`                        | `content/docs/**` (this repo) — one file per page                  | `pnpm gen:llms` (here, + pre-commit)                |
+| `data/updated.json`                        | `src/lib/updated.json`                | the act of committing a content change                             | `scripts/stamp-updated.ts` (pre-commit)             |
 
 The two `marketplace`-owned targets are **pushed here**, not pulled: the
 generator in that repo writes straight into a local checkout of this one (its
