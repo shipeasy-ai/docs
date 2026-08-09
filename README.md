@@ -73,11 +73,11 @@ Cloudflare Workers Builds deploys the `shipeasy-docs` Worker on every push to
 `main` — there is no deploy workflow in this repo, and there must not be one.
 `wrangler.jsonc` serves `out/` as Workers Assets on `docs.shipeasy.ai`.
 
-|        |                                                         |
-| ------ | ------------------------------------------------------- |
-| Build  | `pnpm install --frozen-lockfile && pnpm build`          |
-| Deploy | `pnpm exec wrangler deploy`                             |
-| Root   | `/` — no path filters; every push here is a docs change |
+|        |                                                                           |
+| ------ | ------------------------------------------------------------------------- |
+| Build  | `pnpm run build` — Cloudflare runs `pnpm install --frozen-lockfile` first |
+| Deploy | `pnpm exec wrangler deploy` — **not** `npx`, which floats the version     |
+| Root   | `/`, branch `main`, paths `*` — every push here is a docs change          |
 
 Out of band: `pnpm deploy` from a checkout does the same two steps.
 
