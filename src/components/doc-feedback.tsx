@@ -42,7 +42,16 @@ async function beacon(payload: { page: string; helpful: boolean; comment?: strin
   }
 }
 
-export function DocFeedback({ page, editHref }: { page: string; editHref?: string }) {
+export function DocFeedback({
+  page,
+  editHref,
+  updated,
+}: {
+  page: string;
+  editHref?: string;
+  /** Pre-formatted on the server — see `lastUpdate()` in `lib/doc-page.tsx`. */
+  updated?: string;
+}) {
   const [state, setState] = useState<State>("idle");
   const [comment, setComment] = useState("");
   const [commentSent, setCommentSent] = useState(false);
@@ -100,6 +109,8 @@ export function DocFeedback({ page, editHref }: { page: string; editHref?: strin
             {state === "up" ? "👍 Yes" : "👎 Not quite"}
           </span>
         )}
+
+        {updated ? <span className="se-feedback-updated">Updated {updated}</span> : null}
 
         {editHref ? (
           <a className="se-feedback-edit" href={editHref} target="_blank" rel="noopener">

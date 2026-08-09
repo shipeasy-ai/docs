@@ -2691,6 +2691,15 @@ button[aria-label="Open Sidebar"] {
 .se-feedback-chip.up {
   border-color: color-mix(in srgb, var(--se-accent) 45%, var(--se-line-2));
 }
+/* Pushed right along with the edit link — page provenance sits together, away
+   from the vote buttons. Whichever of the two exists takes the margin. */
+.se-feedback-updated {
+  margin-left: auto;
+  color: var(--se-fg-4);
+}
+.se-feedback-updated + .se-feedback-edit {
+  margin-left: 0;
+}
 .se-feedback-edit {
   margin-left: auto;
   display: inline-flex;

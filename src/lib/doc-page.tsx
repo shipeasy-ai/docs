@@ -80,9 +80,21 @@ function rootUrl(slug: string[]): string {
 // (`scripts/stamp-updated.ts`). Hand-typed dates went stale the moment someone
 // forgot one; nobody types this one. A page missing from the map is a page
 // added since the last stamp — it gets no date rather than a wrong one.
-function lastUpdate(slug: string[]): Date | undefined {
+//
+// Formatted here, on the server, in a fixed locale. Fumadocs' own
+// `lastUpdate` renders the date in an effect to dodge a locale hydration
+// mismatch, which leaves "Last updated on" with nothing after it in the static
+// HTML — and the HTML is what a crawler and an agent read.
+const DAY = new Intl.DateTimeFormat("en-US", {
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+function lastUpdate(slug: string[]): string | undefined {
   const day = (updated as Record<string, string>)[`/${slug.join("/")}`];
-  return day ? new Date(`${day}T00:00:00Z`) : undefined;
+  return day ? DAY.format(new Date(`${day}T00:00:00Z`)) : undefined;
 }
 
 // This page as plain markdown — written per page by `pnpm gen:llms`, served
@@ -212,7 +224,13 @@ export function DocPageView({ slug }: { slug: string[] }) {
       <DocsBody>
         <MDX components={components} />
         {/* Rendered once per page (not in MDX) so every page carries it. */}
-        {!isRoot ? <DocFeedback page={slug.join("/")} editHref={editHrefFor(page)} /> : null}
+        {!isRoot ? (
+          <DocFeedback
+            page={slug.join("/")}
+            editHref={editHrefFor(page)}
+            updated={lastUpdate(slug)}
+          />
+        ) : null}
       </DocsBody>
     </>
   );
@@ -236,7 +254,6 @@ export function DocPageView({ slug }: { slug: string[] }) {
       // tab is the root of its own tree, so fumadocs has no url for it — hand
       // it the tab's own landing page when there is one.
       breadcrumb={isRoot ? { enabled: false } : { includeRoot: { url: rootUrl(slug) } }}
-      lastUpdate={isRoot ? undefined : lastUpdate(slug)}
     >
       {inner}
     </DocsPage>
