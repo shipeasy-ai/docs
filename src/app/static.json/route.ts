@@ -46,6 +46,11 @@ export const { staticGET: GET } = createFromSource(source, {
       url: page.url,
       title: page.data.title,
       description: page.data.description,
+      // The product a page belongs to, so a search can be narrowed to it. Five
+      // pages are called "Quickstart" and every product has an "Overview" — the
+      // filter is how you say which one you meant. `SEARCH_TAGS` in
+      // `src/components/search-dialog.tsx` is the list the reader picks from.
+      tag: page.url.split("/")[1] ?? "",
       structuredData: isGeneratedPage(page.path)
         ? { headings: structuredData.headings, contents: [] }
         : structuredData,

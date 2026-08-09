@@ -6,6 +6,7 @@ import { DocsLayout } from "fumadocs-ui/layouts/docs";
 import { RootProvider } from "fumadocs-ui/provider/next";
 import { source } from "@/lib/source";
 import { Logo } from "@/components/logo";
+import SearchDialog from "@/components/search-dialog";
 
 const BASE_URL = "https://docs.shipeasy.ai";
 
@@ -62,7 +63,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <RootProvider
           theme={{ enabled: false, defaultTheme: "dark", forcedTheme: "dark" }}
-          search={{ options: { type: "static", api: "/static.json" } }}
+          search={{ options: { type: "static", api: "/static.json" }, SearchDialog }}
         >
           <DocsLayout
             tree={source.pageTree}
