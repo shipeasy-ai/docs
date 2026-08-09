@@ -1,15 +1,8 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import spec from "@shipeasy/openapi/openapi.json";
+import { useApi } from "./api-context";
 
 type Method = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 type Lang = "curl" | "js" | "python";
@@ -390,29 +383,6 @@ function RenderDescription({ text }: { text: string }) {
       })}
     </>
   );
-}
-
-/* ───── Context ───── */
-interface ApiCtx {
-  apiKey: string;
-  setApiKey: (v: string) => void;
-  projectId: string;
-  setProjectId: (v: string) => void;
-}
-const ApiContext = createContext<ApiCtx | null>(null);
-
-export function ApiProvider({ children }: { children: ReactNode }) {
-  const [apiKey, setApiKey] = useState("");
-  const [projectId, setProjectId] = useState("");
-  return (
-    <ApiContext.Provider value={{ apiKey, setApiKey, projectId, setProjectId }}>
-      {children}
-    </ApiContext.Provider>
-  );
-}
-function useApi(): ApiCtx {
-  const ctx = useContext(ApiContext);
-  return ctx ?? { apiKey: "", setApiKey: () => {}, projectId: "", setProjectId: () => {} };
 }
 
 /* ───── Shiki highlighter (lazy, single instance) ───── */

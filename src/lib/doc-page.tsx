@@ -5,11 +5,16 @@ import { DocsPage, DocsBody, DocsTitle, DocsDescription } from "fumadocs-ui/page
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import { APIPage } from "@/lib/openapi";
 import { getPage } from "@/lib/source";
+import { isGeneratedPage } from "@/lib/generated-pages";
 import { ogSlugToParam } from "@/lib/og";
 import { BASE_URL, pageUrl } from "@/lib/urls";
 import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 import { Mermaid } from "@/components/mermaid";
-import { AlertChartLive } from "@/components/alert-chart-live";
+// Client-side `ssr: false` boundaries — see the module's own note on why the
+// two heaviest components cannot be imported straight into the shared map.
+import { AlertChartLive, ApiList } from "@/components/heavy";
+import { ApiProvider } from "@/components/api-context";
+import { ApiDocsPage } from "@/components/api-docs-page";
 import {
   AssistantCardScene,
   AssistantChooserScene,
@@ -27,8 +32,6 @@ import {
   SlackNotifyScene,
 } from "@/components/doc-scenes";
 import { TypeTable } from "fumadocs-ui/components/type-table";
-import { ApiList, ApiProvider } from "@/components/api-list";
-import { ApiDocsPage } from "@/components/api-docs-page";
 import {
   Callout,
   Card,
@@ -58,9 +61,23 @@ import {
 
 type Page = InferPageType<typeof import("@/lib/source").source>;
 
-// "Edit this page" target — the source MDX in the monorepo. `page.path` is the
-// virtual path relative to the content dir (e.g. "sdks/node-typescript.mdx").
-const EDIT_BASE = "https://github.com/shipeasy-ai/shipeasy2/edit/main/apps/docs/content/docs";
+// "Edit this page" target — the source MDX in this repo. `page.path` is the
+// virtual path relative to the content dir (e.g. "flags/gates/quickstart.mdx").
+// Generated pages get no link: their file here is a gitignored mirror, so the
+// URL would 404 and an edit to it would be overwritten by the next `pnpm gen`.
+const EDIT_BASE = "https://github.com/shipeasy-ai/docs/edit/main/content/docs";
+
+// Where the first breadcrumb crumb points: the product tab's own landing page
+// (`/flags`, `/metrics`, …) when one exists, otherwise the docs home.
+function rootUrl(slug: string[]): string {
+  const first = slug[0];
+  return first && getPage([first]) ? `/${first}` : "/";
+}
+
+function editHrefFor(page: Page): string | undefined {
+  if (!page.path || isGeneratedPage(page.path)) return undefined;
+  return `${EDIT_BASE}/${page.path}`;
+}
 
 // JSON-LD for a doc page: a TechArticle node plus a BreadcrumbList walking the
 // slug prefixes (each segment resolved to its page title). Rendered as a single
@@ -177,12 +194,7 @@ export function DocPageView({ slug }: { slug: string[] }) {
       <DocsBody>
         <MDX components={components} />
         {/* Rendered once per page (not in MDX) so every page carries it. */}
-        {!isRoot ? (
-          <DocFeedback
-            page={slug.join("/")}
-            editHref={page.path ? `${EDIT_BASE}/${page.path}` : undefined}
-          />
-        ) : null}
+        {!isRoot ? <DocFeedback page={slug.join("/")} editHref={editHrefFor(page)} /> : null}
       </DocsBody>
     </>
   );
@@ -196,7 +208,17 @@ export function DocPageView({ slug }: { slug: string[] }) {
   }
 
   return (
-    <DocsPage toc={page.data.toc} tableOfContent={isRoot ? { enabled: false } : undefined}>
+    <DocsPage
+      toc={page.data.toc}
+      tableOfContent={isRoot ? { enabled: false } : undefined}
+      // Fumadocs' default breadcrumb renders the containing folder alone — one
+      // grey word with nothing to click. The full trail is what tells a reader
+      // in a 295-page site where they landed from a search result, and it
+      // mirrors the BreadcrumbList already in the JSON-LD above. The product
+      // tab is the root of its own tree, so fumadocs has no url for it — hand
+      // it the tab's own landing page when there is one.
+      breadcrumb={isRoot ? { enabled: false } : { includeRoot: { url: rootUrl(slug) } }}
+    >
       {inner}
     </DocsPage>
   );

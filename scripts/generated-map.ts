@@ -66,18 +66,12 @@ export const MIRRORS: Mirror[] = [
 /**
  * The SDK language landing pages (`/sdks/<lang>`) are generated too, but they
  * sit among authored SDK pages rather than in a tree of their own, so they get
- * an explicit list instead of a directory mirror.
+ * an explicit list instead of a directory mirror. The list is shared with the
+ * app (`src/lib/generated-pages.ts`), which needs the same answer to decide
+ * whether a page can carry an "Edit this page" link.
  */
-export const SDK_LANDINGS = [
-  "node-typescript",
-  "python",
-  "go",
-  "java",
-  "kotlin",
-  "php",
-  "swift",
-  "ruby",
-] as const;
+export { SDK_LANDINGS } from "../src/lib/generated-pages";
+import { SDK_LANDINGS } from "../src/lib/generated-pages";
 
 for (const landing of SDK_LANDINGS) {
   MIRRORS.push({

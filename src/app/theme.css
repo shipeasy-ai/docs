@@ -2789,6 +2789,19 @@ button[aria-label="Open Sidebar"] {
 }
 
 /* ════════════════════════════════════════════════════════════════════════
+   LAZY PLACEHOLDER — holds the space for a component that loads after
+   hydration (the API endpoint list, the live alert chart), so the prose under
+   it does not jump once the chunk lands. Components: src/components/heavy.tsx
+   ════════════════════════════════════════════════════════════════════════ */
+
+.se-lazy-placeholder {
+  border: 1px solid var(--se-line);
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--se-bg-1), var(--se-bg));
+  opacity: 0.6;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
    DOC SCENES — inline "kind-of-screenshot" illustrations + the devtools hero.
    Built only from `--se-*` tokens so both themes work; animation is pure CSS
    (no JS) and freezes to a sensible static state under prefers-reduced-motion.
