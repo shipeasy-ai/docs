@@ -1075,14 +1075,21 @@ _Parameters_
 | `display.forecast` | optional | `object` | Project the series past the end of the window. Projected buckets are marked, so a chart can draw an estimate differently from a measurement. |
 | `display.forecast.method` | required | `"linear" \| "seasonal"` | `linear` continues a least-squares slope over the window it is already reading. `seasonal` de-seasonalises against the four weeks before the window, fits the trend on the remainder and adds the hour-of-week term back — ask for it when the metric has a shape. |
 | `display.forecast.horizon` | optional | `integer` | Buckets to project. Omit for a quarter of the window, which is the same claim at every bucket width. _(1–500)_ |
-| `query_ir` | optional | `object` | Typed query IR — the structured alternative to the `query` DSL string. Exactly one of `query` / `query_ir` is supplied per metric body. |
-| `query_ir.agg` | required | `any` | Aggregation function applied to the source event. |
-| `query_ir.metric` | required | `string` | Source event name (must equal `event_name`). _(length 1–128)_ |
-| `query_ir.valueLabel` | optional | `string` | Numeric property summed/averaged for `sum`/`avg`/quantile aggregations. _(length 1–128)_ |
-| `query_ir.filters` | optional | `object[]` | Label filters on the event. _(default `[]`)_ |
-| `query_ir.groupBy` | optional | `object` | Optional group-by clause (ignored for experiment analysis). |
-| `query_ir.groupBy.op` | required | `"by" \| "without"` | `by` keeps the listed labels; `without` drops them. |
-| `query_ir.groupBy.labels` | required | `string[]` | Labels to group by (max 5). |
+| `query_ir` | optional | `object` | A metric definition as a typed expression tree — the structured alternative to the `query` DSL string, and what the API stores. Exactly one of `query` / `query_ir` is supplied per metric body; `query` is the same definition written as text, and is the spelling to prefer.
+Until 2026-08-10 this documented a single aggregation (`{agg, metric, filters}`, with `ratio` as a special case). That shape no longer exists — stored metrics were migrated and the code that read it was deleted — so a body sending it is rejected. Send the `query` string instead, or the tree below. |
+| `query_ir.v` | required | `integer` | Storage version of the definition. `2` is the only one. |
+| `query_ir.expr` | required | `object` | The expression tree: aggregate leaves (`{node: "agg", event, agg, filters, valueLabel?}`), arithmetic over them (`{node: "binary", op, left, right}`), scalars, and function calls (`{node: "call", fn, arg, params?}`). A ratio is ordinary division of two leaves.
+Deliberately opaque here rather than mirrored node by node: the grammar belongs to the query language, a second copy of it in this spec would drift from the one the server enforces, and the server validates every tree by planning it before the metric saves. `GET /api/admin/metrics` returns the grammar itself; the `query` string is the same tree in the form humans and the CLI write. |
+| `query_ir.groupBy` | optional | `object` | How the series is split. On the envelope rather than in `expr` because every leaf of one expression shares it. |
+| `query_ir.groupBy.op` | required | `"by" \| "without"` | `by` names the output dimensions; `without` names the ones to drop. |
+| `query_ir.groupBy.labels` | required | `string[]` | Labels the grouping names. |
+| `query_ir.display` | optional | `object` | How the metric's series is DRAWN, as opposed to what it measures. Both parts used to be DSL functions (`expected(q, seasonal)`, `forecast(q, …)`), which meant turning a band on minted a different metric; they are properties now, so every chart of the metric picks them up and nothing that JUDGES the metric — an alert rule, the experiment analyzer — reads them at all. |
+| `query_ir.display.band` | optional | `object` | Shade the seasonal baseline around the series. The fit is the median of this hour of the week over the four weeks before the window, and it is the SAME fit an `anomaly` alert rule fires on — so the shaded region is exactly where such a rule would stay quiet, whether or not one exists. |
+| `query_ir.display.band.method` | required | `"seasonal"` | — |
+| `query_ir.display.band.sigma` | optional | `number` | Half-width of the band in sigma-equivalents. Omit for 3, the sigma an alert rule also defaults to. |
+| `query_ir.display.forecast` | optional | `object` | Project the series past the end of the window. Projected buckets are marked, so a chart can draw an estimate differently from a measurement. |
+| `query_ir.display.forecast.method` | required | `"linear" \| "seasonal"` | `linear` continues a least-squares slope over the window it is already reading. `seasonal` de-seasonalises against the four weeks before the window, fits the trend on the remainder and adds the hour-of-week term back — ask for it when the metric has a shape. |
+| `query_ir.display.forecast.horizon` | optional | `integer` | Buckets to project. Omit for a quarter of the window, which is the same claim at every bucket width. _(1–500)_ |
 | `listToken` | optional | `string` | REQUIRED. The `listToken` returned by the most recent `metrics_list` call. It proves you listed existing metrics and confirmed this one doesn't already exist before creating it. Call `metrics_list` first if you don't have a fresh token. |
 
 _Errors_ — beyond the [common errors](#errors):
@@ -1213,14 +1220,21 @@ _Parameters_
 | `display.forecast` | optional | `object` | Project the series past the end of the window. Projected buckets are marked, so a chart can draw an estimate differently from a measurement. |
 | `display.forecast.method` | required | `"linear" \| "seasonal"` | `linear` continues a least-squares slope over the window it is already reading. `seasonal` de-seasonalises against the four weeks before the window, fits the trend on the remainder and adds the hour-of-week term back — ask for it when the metric has a shape. |
 | `display.forecast.horizon` | optional | `integer` | Buckets to project. Omit for a quarter of the window, which is the same claim at every bucket width. _(1–500)_ |
-| `query_ir` | optional | `object` | Typed query IR — the structured alternative to the `query` DSL string. Exactly one of `query` / `query_ir` is supplied per metric body. |
-| `query_ir.agg` | required | `any` | Aggregation function applied to the source event. |
-| `query_ir.metric` | required | `string` | Source event name (must equal `event_name`). _(length 1–128)_ |
-| `query_ir.valueLabel` | optional | `string` | Numeric property summed/averaged for `sum`/`avg`/quantile aggregations. _(length 1–128)_ |
-| `query_ir.filters` | optional | `object[]` | Label filters on the event. _(default `[]`)_ |
-| `query_ir.groupBy` | optional | `object` | Optional group-by clause (ignored for experiment analysis). |
-| `query_ir.groupBy.op` | required | `"by" \| "without"` | `by` keeps the listed labels; `without` drops them. |
-| `query_ir.groupBy.labels` | required | `string[]` | Labels to group by (max 5). |
+| `query_ir` | optional | `object` | A metric definition as a typed expression tree — the structured alternative to the `query` DSL string, and what the API stores. Exactly one of `query` / `query_ir` is supplied per metric body; `query` is the same definition written as text, and is the spelling to prefer.
+Until 2026-08-10 this documented a single aggregation (`{agg, metric, filters}`, with `ratio` as a special case). That shape no longer exists — stored metrics were migrated and the code that read it was deleted — so a body sending it is rejected. Send the `query` string instead, or the tree below. |
+| `query_ir.v` | required | `integer` | Storage version of the definition. `2` is the only one. |
+| `query_ir.expr` | required | `object` | The expression tree: aggregate leaves (`{node: "agg", event, agg, filters, valueLabel?}`), arithmetic over them (`{node: "binary", op, left, right}`), scalars, and function calls (`{node: "call", fn, arg, params?}`). A ratio is ordinary division of two leaves.
+Deliberately opaque here rather than mirrored node by node: the grammar belongs to the query language, a second copy of it in this spec would drift from the one the server enforces, and the server validates every tree by planning it before the metric saves. `GET /api/admin/metrics` returns the grammar itself; the `query` string is the same tree in the form humans and the CLI write. |
+| `query_ir.groupBy` | optional | `object` | How the series is split. On the envelope rather than in `expr` because every leaf of one expression shares it. |
+| `query_ir.groupBy.op` | required | `"by" \| "without"` | `by` names the output dimensions; `without` names the ones to drop. |
+| `query_ir.groupBy.labels` | required | `string[]` | Labels the grouping names. |
+| `query_ir.display` | optional | `object` | How the metric's series is DRAWN, as opposed to what it measures. Both parts used to be DSL functions (`expected(q, seasonal)`, `forecast(q, …)`), which meant turning a band on minted a different metric; they are properties now, so every chart of the metric picks them up and nothing that JUDGES the metric — an alert rule, the experiment analyzer — reads them at all. |
+| `query_ir.display.band` | optional | `object` | Shade the seasonal baseline around the series. The fit is the median of this hour of the week over the four weeks before the window, and it is the SAME fit an `anomaly` alert rule fires on — so the shaded region is exactly where such a rule would stay quiet, whether or not one exists. |
+| `query_ir.display.band.method` | required | `"seasonal"` | — |
+| `query_ir.display.band.sigma` | optional | `number` | Half-width of the band in sigma-equivalents. Omit for 3, the sigma an alert rule also defaults to. |
+| `query_ir.display.forecast` | optional | `object` | Project the series past the end of the window. Projected buckets are marked, so a chart can draw an estimate differently from a measurement. |
+| `query_ir.display.forecast.method` | required | `"linear" \| "seasonal"` | `linear` continues a least-squares slope over the window it is already reading. `seasonal` de-seasonalises against the four weeks before the window, fits the trend on the remainder and adds the hour-of-week term back — ask for it when the metric has a shape. |
+| `query_ir.display.forecast.horizon` | optional | `integer` | Buckets to project. Omit for a quarter of the window, which is the same claim at every bucket width. _(1–500)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
