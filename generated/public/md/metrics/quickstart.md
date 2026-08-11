@@ -11,7 +11,7 @@ number you can watch while you ramp, and a rule that pages when it moves the wro
 **Create a conversion metric**
 
 ```bash
-shipeasy metrics create purchase_conversion --event-name purchase --query 'count_users(purchase)'
+shipeasy metrics create purchase_conversion --event-name purchase --query 'count(purchase) / count(session_start)'
 ```
 
 **Log the underlying event from your code**
@@ -51,13 +51,16 @@ The metric needs to be:
 
 ## 2. Define the metric
 
-The simplest case — did event X happen for this user at least once?
+The simplest case — how often did event X happen, out of the chances it had?
 
 ```bash
 shipeasy metrics create purchase_conversion \
   --event-name purchase \
-  --query 'count_users(purchase)'
+  --query 'count(purchase) / count(session_start)'
 ```
+
+On a chart that is the conversion rate. In an experiment it collapses per user
+to a `0` or a `1` — did they purchase, among the users who started a session.
 
 You now have a metric definition. It does nothing on its own; it tells the analysis pipeline how
 to aggregate the underlying events per user.
@@ -91,8 +94,8 @@ export default async function CheckoutSuccess({ order }: { order: Order }) {
 
 A few rules that matter:
 
-- **The first argument is the `userId`.** `flags.track` requires it as a positional arg — it is what makes `count_users` countable.
-- **Properties become filterable.** You can later add a metric like "organic-channel purchases" by filtering on `channel` inside the DSL selector (`count_users(purchase{channel="organic"})`).
+- **The first argument is the `userId`.** `flags.track` requires it as a positional arg — it is what lets the analysis pipeline collapse events to one value PER USER.
+- **Properties become filterable.** You can later add a metric like "organic-channel purchases" by filtering on `channel` inside the DSL selector (`count(purchase{channel="organic"})`).
 - **`track()` is fire-and-forget.** It returns void; the event flushes asynchronously. Don't `await` it expecting a delivery guarantee — it's analytics, not transactional state.
 
 Deploy this. Events start flowing. The metric definition will pick them up on the next analysis

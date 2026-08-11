@@ -189,8 +189,8 @@ if (Math.random() < 0.1) flags.track("page_view");
 ```
 
 When client-side sampling lands, the worker will scale `count` /
-`sum` metrics by `1/sample` automatically — `count_users` (binary per
-user) is unaffected.
+`sum` metrics by `1/sample` automatically. A rate is unaffected either
+way: both sides are sampled the same, so the quotient survives.
 
 ## PII rules
 

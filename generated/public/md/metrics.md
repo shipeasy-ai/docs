@@ -21,7 +21,7 @@ Conversion is the simplest and statistically the friendliest — the variance is
 
 ### When the metric is "no event"
 
-For `count_users` (the binary "did it happen?" aggregation), a user with zero matching events contributes `0`. For `avg`, the DSL averages across all exposed users — non-purchasers contribute `0` and pull the mean down. To answer "average among buyers only" instead, express it as a ratio (`ratio(sum(purchase, revenueCents), count_users(purchase))`) or compute the per-buyer cohort metric offline.
+For a rate, a user with no matching numerator event contributes `0`. For `avg`, the DSL averages across all exposed users — non-purchasers contribute `0` and pull the mean down. To answer "average among buyers only" instead, express it as a division (`sum(purchase, revenueCents) / count(purchase)`) or compute the per-buyer cohort metric offline.
 
 ## Creating a metric
 
@@ -31,9 +31,9 @@ generates when you pick aggregation, source event, and filters in the
 most common shapes:
 
 ```bash
-# binary conversion on `purchase`
+# conversion on `purchase` — a rate, per user a 0 or a 1
 shipeasy metrics create purchase_conversion \
-  --event-name purchase --query 'count_users(purchase)'
+  --event-name purchase --query 'count(purchase) / count(session_start)'
 
 # revenue per user (includes non-buyers as $0)
 shipeasy metrics create revenue_per_user \
@@ -59,25 +59,25 @@ the event's `properties` payload _before_ the aggregation:
 ```bash
 shipeasy metrics create organic_purchase \
   --event-name purchase \
-  --query 'count_users(purchase{channel="organic"})'
+  --query 'count(purchase{channel="organic"})'
 ```
 
-Now `organic_purchase` only counts users with at least one
-`purchase` event whose `channel` property equals `"organic"`. Compose
-multiple filters inside the same `{}` with commas — they're ANDed.
-Operators are `=` (equal), `!=` (not equal), `=~` (regex match),
-`!~` (regex non-match). Common shapes:
+Now `organic_purchase` only counts `purchase` events whose `channel` property
+equals `"organic"`. Compose multiple predicates inside the same `{}` with commas
+— they're ANDed, and `or` groups them. The operators are `=`, `=~` (a **glob**,
+not a regex), the order comparisons `>` `>=` `<` `<=` on numeric labels, a value
+set with `in (...)`, and `label:*` for "the label is set at all". There is one
+negation and it goes in front of a predicate: `not tier="free"`. Common shapes:
 
 ```bash
 # Web purchases only (exclude mobile app)
-'count_users(purchase{platform="web"})'
+'count(purchase{platform="web"})'
 
-# Orders priced above $10 (string-coerced, server compares numerically
-# when the source event declares the label as numeric)
-'sum(purchase{value=~"^[1-9][0-9]+$"}, value)'
+# Orders above $10 — numeric label, value written BARE
+'sum(purchase{value > 10}, value)'
 
 # Multiple conditions — commas inside {} are ANDed
-'count_users(purchase{platform="web", country="US"})'
+'count(purchase{platform="web", country="US"})'
 ```
 
 ## Outliers
@@ -112,11 +112,12 @@ two selector arms in the DSL:
 ```bash
 shipeasy metrics create click_through_rate \
   --event-name click \
-  --query 'ratio(count(click), count(impression))'
+  --query 'count(click) / count(impression)'
 ```
 
-The two ratio arms must each be `count` or `count_users` — the DSL doesn't
-allow `sum`/`avg` in ratio position.
+As an **experiment** metric both sides must be `count`, because the per-user
+collapse asks "did the numerator happen, among the denominator-eligible users".
+On a chart any expression divides.
 
 Ratio metrics use the **delta method** to compute variance correctly (the naive ratio-of-means understates variance, which makes an anomaly rule fire on noise). The dashboard shows the numerator and denominator alongside the ratio so the math is auditable.
 

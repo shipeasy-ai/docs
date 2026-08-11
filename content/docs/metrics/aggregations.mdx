@@ -12,30 +12,39 @@ swing your result.
 
 ## The five types
 
-| Type         | Per-user value                                | Best for                         | Variance behaviour                     |
-| ------------ | --------------------------------------------- | -------------------------------- | -------------------------------------- |
-| `conversion` | `1` if event happened at least once, else `0` | Did they buy? Did they retain?   | Bounded `p(1-p)` — friendliest.        |
-| `count`      | Number of events                              | Page views, sessions, clicks     | Long-tailed; outliers possible.        |
-| `sum`        | Sum of a numeric property                     | Revenue, time spent, items added | Heavy-tailed; outliers a real problem. |
-| `mean`       | Average of a numeric property                 | Order value, session length      | Same as sum, plus zero-handling.       |
-| `ratio`      | Numerator-event / denominator-event           | CTR, conversion per visit        | Delta-method variance — special.       |
+| Type    | Per-user value                          | Best for                         | Variance behaviour                     |
+| ------- | --------------------------------------- | -------------------------------- | -------------------------------------- |
+| rate    | `1` if the numerator happened, else `0` | Did they buy? Did they retain?   | Bounded `p(1-p)` — friendliest.        |
+| `count` | Number of events                        | Page views, sessions, clicks     | Long-tailed; outliers possible.        |
+| `sum`   | Sum of a numeric property               | Revenue, time spent, items added | Heavy-tailed; outliers a real problem. |
+| `mean`  | Average of a numeric property           | Order value, session length      | Same as sum, plus zero-handling.       |
+| `p`     | A percentile of a numeric property      | Latency, payload size            | Charted exactly; averaged per user.    |
 
-## Conversion
+## Conversion — write it as a rate
 
-The simplest and statistically the friendliest. Per user: did the event happen at least once
-during the analysis window?
+The simplest and statistically the friendliest, and it is a **division**: how many did the thing,
+out of how many could have.
 
 ```bash
 shipeasy metrics create purchase_conversion \
   --event-name purchase \
-  --query 'count_users(purchase)'
+  --query 'count(purchase) / count(session_start)'
 ```
 
-Each user contributes a `0` or `1`. The metric mean is the fraction who converted. Variance is
-bounded by `p(1-p)`, which caps at `0.25`. Power calculations are cheap; the t-test behaves; you
-can't have an outlier.
+On a chart that is the rate over each bucket. In an experiment it collapses per user to a `0` or
+a `1` — did the numerator happen, among the users eligible for the denominator — so the metric
+mean is the fraction who converted, variance is bounded by `p(1-p)` capping at `0.25`, power
+calculations are cheap and no single user can be an outlier.
 
-Use this whenever the question is yes/no.
+Use it whenever the question is yes/no.
+
+<Callout type="warn">
+  There is no single-event conversion aggregation. `count_users(purchase)` used to be one and was
+  removed: Analytics Engine samples rows under load and weights the survivors, and a distinct count
+  cannot be reweighted — sampling reweights rows, not sets — so it under-reported by the sample
+  interval with no way to correct it. A rate has no such problem, because both sides are sampled the
+  same way. Metrics stored before the removal still chart; new ones are written as rates.
+</Callout>
 
 ## Count
 
@@ -54,8 +63,9 @@ long-tailed counts, consider:
 
 - Tightening the **winsorize** percentile (`--winsorize 95` instead of
   the 99 default) to clamp the heavy tail.
-- Switching to `count_users(session_start)` (did they have at least 1
-  session?) if the count distinction doesn't drive your decision.
+- Switching to a rate (`count(session_start) / count(app_open)` — did they
+  start a session at all?) if the count distinction doesn't drive your
+  decision.
 
 ## Sum
 
@@ -91,17 +101,23 @@ as `0`, or be dropped from the denominator entirely? Today the DSL's
 buyers only" question instead, define two metrics and divide via the
 `ratio` aggregation, or compute the per-buyer average offline.
 
-## Ratio
+## Rate
 
-Per user: numerator-event count divided by denominator-event count.
-Express it with `ratio(...)` between two count arms — `count` or
-`count_users` are the only arm aggregations supported.
+Per user: numerator-event count divided by denominator-event count. Division is
+ordinary — write `a / b`. (`ratio(a, b)` is the same thing spelled as a
+function, and still parses.)
 
 ```bash
 shipeasy metrics create click_through_rate \
   --event-name click \
-  --query 'ratio(count(click), count(impression))'
+  --query 'count(click) / count(impression)'
 ```
+
+As an **experiment** metric both sides must be `count`: the per-user collapse
+turns the rate into "did the numerator happen, among the denominator-eligible
+users", and that question only has an answer when both sides count events. On a
+chart there is no such restriction — `sum(order, amount) / count(session)`
+draws fine.
 
 Use ratios for inherently-ratio questions: clicks per impression, conversions per visit, errors
 per request. **Don't** compute the ratio yourself and store it as a `mean` — the math is
@@ -155,25 +171,29 @@ applied to the event's `properties` payload before aggregation:
 ```bash
 shipeasy metrics create organic_purchase \
   --event-name purchase \
-  --query 'count_users(purchase{channel="organic"})'
+  --query 'count(purchase{channel="organic"})'
 ```
 
 Now only `purchase` events with `channel == "organic"` count. Multiple
-predicates inside `{}` are ANDed (commas separate them). String values must
-be double-quoted in the DSL; `=~` does regex match for numeric / pattern
-filters.
+predicates inside `{}` are ANDed (commas separate them, and `or` groups them).
+String values must be double-quoted in the DSL. `=~` matches a **glob**, not a
+regex: `*` is any run of characters, `?` is exactly one, and the pattern matches
+the whole value.
 
 Common shapes:
 
 ```bash
 # Web only (exclude mobile app purchases)
-'count_users(purchase{platform="web"})'
+'count(purchase{platform="web"})'
 
-# Geographic slice
-'count_users(purchase{country=~"^(US|CA|GB)$"})'
+# Geographic slice — a value set, not a regex
+'count(purchase{country in ("US", "CA", "GB")})'
+
+# Everything EXCEPT free tier — one negation, in front of the predicate
+'count(purchase{not tier="free"})'
 
 # Multiple — ANDed inside the same {}
-'count_users(purchase{platform="web", country="US"})'
+'count(purchase{platform="web", country="US"})'
 ```
 
 Filters run cheaply during aggregation. You can have many metrics that

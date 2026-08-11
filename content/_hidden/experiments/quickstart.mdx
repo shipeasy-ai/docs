@@ -12,7 +12,7 @@ This walks through a complete experiment end to end: a button-label test on the 
     num={1}
     label="METRIC"
     title="Define the conversion"
-    cmd="shipeasy metrics create purchase_conversion --event-name purchase --query 'count_users(purchase)'"
+    cmd="shipeasy metrics create purchase_conversion --event-name purchase --query 'count(purchase) / count(session_start)'"
   />
   <QuickstartStep
     num={2}
@@ -37,12 +37,12 @@ This walks through a complete experiment end to end: a button-label test on the 
 
 <Steps>
   <Step title="Define the conversion metric">
-    A **metric** wraps an event type and an aggregation function. For "did this user buy?" we use `count_users` over the `purchase` event (the binary did-it-happen-at-least-once aggregation).
+    A **metric** wraps an event type and an aggregation function. For "did this user buy?" we use a rate — purchases over sessions — which collapses per user to a `0` or a `1` in an experiment.
 
     ```bash
     shipeasy metrics create purchase_conversion \
       --event-name purchase \
-      --query 'count_users(purchase)'
+      --query 'count(purchase) / count(session_start)'
     ```
 
     Or in the dashboard: **Experiments → Metrics → New metric**.
