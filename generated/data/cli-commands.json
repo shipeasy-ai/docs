@@ -573,6 +573,7 @@
       ],
       "options": [
         "--agent",
+        "--launch",
         "--session-id"
       ]
     },
