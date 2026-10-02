@@ -965,7 +965,10 @@
       "options": [
         "--data",
         "--limit",
+        "--offset",
         "--owner",
+        "--priority",
+        "--scope",
         "--status",
         "--type"
       ]
