@@ -12623,7 +12623,7 @@ The ratio metric uses the **delta method** — variance is computed jointly on n
 denominator means, accounting for their covariance. The confidence band the dashboard draws around
 the series is honest under this. Mean-of-ratios is not.
 
-See [Metrics — aggregation types](https://docs.shipeasy.ai/metrics/aggregations#ratio) for the formal
+See [Metrics — aggregation types](https://docs.shipeasy.ai/metrics/aggregations#rate) for the formal
 treatment of why ratios need special handling.
 
 ---
