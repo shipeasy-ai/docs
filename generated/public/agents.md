@@ -2536,7 +2536,7 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy metrics unarchive` — --data
 - `shipeasy metrics update` — --default-min-effect-of-interest --direction --display --display-name --event-name --folder --query --query-ir --unit --winsorize-pct
 - `shipeasy ops`
-- `shipeasy ops ack` — --agent --session-id
+- `shipeasy ops ack` — --agent --launch --session-id
 - `shipeasy ops agents`
 - `shipeasy ops agents list` — --data
 - `shipeasy ops alerts`
@@ -2560,7 +2560,7 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy ops investigations list` — --data
 - `shipeasy ops investigations update` — --completed-at --confidence --duration-ms --findings --kind --model --pr-number --pr-url --qa-notes --question --session-id --sources --summary --tokens-used --visibility
 - `shipeasy ops link-pr` — --pr-number --pr-url
-- `shipeasy ops list` — --data --limit --owner --status --type
+- `shipeasy ops list` — --data --limit --offset --owner --priority --scope --status --type
 - `shipeasy ops notify` — --dedupe-key --href --steps --summary --title
 - `shipeasy ops trigger`
 - `shipeasy ops trigger create`

@@ -1421,6 +1421,11 @@ project has no connected trigger connector of that type the call fails
 with `AGENT_NOT_CONNECTED` — list the available agents with `ops agents list` and use one of those (or connect the agent under Settings →
 Triggers).
 
+**Launching.** When the named agent has a connected trigger and you pass
+no `sessionId`, the ack also fires that trigger — a new provider run
+starts working the item. Pass `launch: false` to only claim the item and
+record the run (you are doing the work yourself), without starting one.
+
 **Completion.** The run closes automatically on the loop's final actions —
 linking the fixing PR (`link-pr`), an ops-notify escalation, or a
 completion status change (`ready_for_qa`/`resolved`) — and the dashboard
@@ -1437,6 +1442,7 @@ _Parameters_
 | `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 | `agent` | optional | `"claude" \| "cursor" \| "copilot" \| "jules" \| "gemini" \| "jarvis"` | The AI agent type acking on the item's behalf — pass your own type when you are a coding agent (Claude Code passes `claude`, Cursor `cursor`, Copilot `copilot`, Jules/Gemini `jules`). Omit entirely for a human ack by the authenticated caller. |
 | `sessionId` | optional | `string` | The agent-run session id (e.g. Claude's `session_01…`), so the dashboard can deep-link to the exact run page. Omit when the harness has no session id. _(length 0–300)_ |
+| `launch` | optional | `boolean` | Whether an AI ack may FIRE the agent's connected trigger. Default `true`: an ack naming a connected agent, with no `sessionId`, starts a new provider run of that agent. Pass `false` to only record the ack — claim the item and open the run record — without starting anything, e.g. when you ARE that agent working the item yourself and have no session id to pass. Ignored on a human ack. _(default `true`)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -1659,7 +1665,11 @@ _Errors_ — beyond the [common errors](#errors):
 
 **List the operational queue**
 
-Returns the unified ops queue (bugs, feature requests, errors, alerts, measurement plans) in work order — highest priority first, oldest first within a priority — so consumers work it top-down. Filter by `type` and/or `status`, and cap with `limit`. Human-gated holding states (items awaiting human sign-off in the dashboard) are never returned by `all`/default status.
+Returns the unified ops queue (bugs, feature requests, errors, alerts, measurement plans) in work order — highest priority first, oldest first within a priority — so consumers work it top-down. Every filter is applied in SQL before paging, and filters combine with AND. Human-gated holding states (items awaiting human sign-off in the dashboard) are never returned by `all`/default status.
+
+**Filters:** `type` (one item type), `status` (one lifecycle status), `priority` (one triage priority), `owner` (one person or agent), and `scope=ready` — the items ready to be picked up right now: `open`, with nobody working them (no open run), and either unowned or reopened (sent back to `open` after an earlier run finished).
+
+**Paging:** `limit` is the page size and `offset` the number of items to skip. The order is stable, so walk the queue with `offset += limit`; a page shorter than `limit` is the last one.
 
 **Use case:** Pull the open queue to triage — e.g. every `bug` still `open` — before working items down one by one.
 
@@ -1669,8 +1679,11 @@ _Parameters_
 | --- | --- | --- | --- |
 | `type` | optional | `any` | Filter by item type, or `all` (the default). Every type a returned item can carry is filterable, including the auto-filed ones. _(default `"all"`)_ |
 | `status` | optional | `any` | Filter by lifecycle status, or `all` (the default). The human-gated holding state (`pending_approval`) is excluded from `all`/default and returned only when requested as the exact status. _(default `"all"`)_ |
-| `limit` | optional | `integer` | Max items to return (1–500). Defaults to 200. _(default `200`; 1–500)_ |
-| `owner` | optional | `string` | Narrow to items owned by one person OR one agent. Matches a person by `users.id`, email, or display name, and an agent by connector id, display name, or kebab-case handle — e.g. `owner=Claude` or `owner=alice@acme.dev`. Case-insensitive exact match, applied over the returned page. |
+| `priority` | optional | `any` | Filter by triage priority, or `all` (the default). Items with no priority set are returned only under `all`. _(default `"all"`)_ |
+| `scope` | optional | `"all" \| "ready"` | `ready` narrows to the items ready to be picked up right now: status `open`, no open run (nobody has acked it and is still working), and either unowned (no person and no agent) or reopened (sent back to `open` after an earlier run finished). Leave `status` unset with it. `all` (the default) applies no such narrowing. _(default `"all"`)_ |
+| `limit` | required | `integer` | Page size — max items to return (1–500). A page shorter than `limit` is the last one. _(1–500)_ |
+| `offset` | optional | `integer` | Number of items to skip before the page starts. Defaults to 0. The order is stable, so `offset += limit` walks the queue page by page. _(default `0`; 0–100000)_ |
+| `owner` | optional | `string` | Narrow to items owned by one person OR one agent. Matches a person by `users.id`, email, or display name, and an agent by connector id, display name, or kebab-case handle — e.g. `owner=Claude` or `owner=alice@acme.dev`. Case-insensitive exact match. |
 
 _Errors_ — beyond the [common errors](#errors):
 
