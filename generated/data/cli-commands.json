@@ -2184,6 +2184,79 @@
       ]
     },
     {
+      "path": "shipeasy tags",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy tags get",
+      "aliases": [],
+      "args": [
+        {
+          "name": "entityType",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "entityId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy tags list",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data",
+        "--q"
+      ]
+    },
+    {
+      "path": "shipeasy tags set",
+      "aliases": [],
+      "args": [
+        {
+          "name": "entityType",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "entityId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--tags"
+      ]
+    },
+    {
+      "path": "shipeasy tags update",
+      "aliases": [],
+      "args": [
+        {
+          "name": "entityType",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "entityId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--add",
+        "--remove"
+      ]
+    },
+    {
       "path": "shipeasy upgrade",
       "aliases": [
         "update"
