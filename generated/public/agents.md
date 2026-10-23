@@ -2626,6 +2626,11 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy sdk keys revoke` — --json --project
 - `shipeasy setup` — --agents --devtools --domain --dry-run --env --features --no-agent-run --no-bootstrap --no-claude-run --no-devtools --no-plan --no-triggers --plan --scope --skip-install --trigger-platform --triggers --yes
 - `shipeasy setup triggers` — --dry-run --platform
+- `shipeasy tags`
+- `shipeasy tags get` — --data
+- `shipeasy tags list` — --data --q
+- `shipeasy tags set` — --tags
+- `shipeasy tags update` — --add --remove
 - `shipeasy upgrade` — --agents --dry-run --only-installed --pm --scope --skip-cli --skip-sdk --yes
 - `shipeasy upgrade skills` — --agents --dry-run --only-installed --pm --scope --skip-cli
 - `shipeasy whoami` — --data
@@ -2709,6 +2714,10 @@ Parameters and error codes: https://docs.shipeasy.ai/get-started/mcp-reference
 - `errors_list`
 - `errors_resolve`
 - `errors_series`
+- `tags_get`
+- `tags_list`
+- `tags_set`
+- `tags_update`
 - `auth_check`
 - `auth_login`
 - `auth_logout`
