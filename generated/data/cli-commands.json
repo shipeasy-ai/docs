@@ -986,6 +986,83 @@
       ]
     },
     {
+      "path": "shipeasy ops questions",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy ops questions answer",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "questionId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--other",
+        "--selected"
+      ]
+    },
+    {
+      "path": "shipeasy ops questions ask",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--agent",
+        "--delivery",
+        "--questions",
+        "--run-id"
+      ]
+    },
+    {
+      "path": "shipeasy ops questions cancel",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "questionId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy ops questions list",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data",
+        "--status"
+      ]
+    },
+    {
       "path": "shipeasy ops trigger",
       "aliases": [],
       "args": [],
