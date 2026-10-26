@@ -25,7 +25,7 @@ export const metadata: Metadata = {
       "Developer docs for Shipeasy: feature flags, kill switches, runtime configs, metrics and alerts. Install via MCP in 12 seconds.",
     images: [
       {
-        url: "https://shipeasy.ai/opengraph-image",
+        url: "https://shipeasy.ai/opengraph-image.png",
         width: 1200,
         height: 630,
         alt: "Shipeasy Docs",
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     title: "Shipeasy Docs — Feature Flags, Configs & Metrics",
     description:
       "Developer docs for feature flags, kill switches, runtime configs, metrics and alerts. Served from the edge.",
-    images: ["https://shipeasy.ai/opengraph-image"],
+    images: ["https://shipeasy.ai/opengraph-image.png"],
     creator: "@shipeasyai",
   },
   robots: {

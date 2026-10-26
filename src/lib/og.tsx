@@ -40,7 +40,7 @@ export function renderOgImage(title: string, section: string): ImageResponse {
       style={{
         width: 1200,
         height: 630,
-        background: "#080808",
+        background: "#15121a",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
@@ -64,29 +64,39 @@ export function renderOgImage(title: string, section: string): ImageResponse {
       <div
         style={{
           position: "absolute",
-          top: -200,
-          left: -100,
-          width: 700,
-          height: 700,
+          top: -260,
+          right: -160,
+          width: 820,
+          height: 820,
           borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(0,220,180,0.12) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(169,137,255,0.22) 0%, transparent 68%)",
         }}
       />
 
-      {/* Brand mark + name */}
+      {/* Brand mark + name — the purple mark, transcribed from the monorepo's
+          marketing/brand/shipeasy-logo-512.svg (gradient ring around a dark tile) */}
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
         <div
           style={{
-            width: 44,
-            height: 44,
-            borderRadius: 10,
-            background: "linear-gradient(135deg, #00dca0 0%, #00b4d8 100%)",
+            width: 52,
+            height: 52,
+            borderRadius: 14,
+            background: "linear-gradient(135deg, #a78bfa 0%, #0a0a0b 45%, #a78bfa 100%)",
+            border: "1px solid rgba(196,181,253,0.5)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          <div style={{ width: 20, height: 20, borderRadius: 3, background: "#080808" }} />
+          <div
+            style={{
+              width: 29,
+              height: 29,
+              borderRadius: 4,
+              background: "#0a0a0b",
+              border: "1px solid rgba(167,139,250,0.4)",
+            }}
+          />
         </div>
         <span style={{ fontSize: 26, fontWeight: 600, color: "#ffffff", letterSpacing: "-0.02em" }}>
           Shipeasy Docs
@@ -99,7 +109,7 @@ export function renderOgImage(title: string, section: string): ImageResponse {
           style={{
             fontSize: 22,
             fontWeight: 600,
-            color: "#00dca0",
+            color: "#a989ff",
             letterSpacing: "0.04em",
             textTransform: "uppercase",
           }}
