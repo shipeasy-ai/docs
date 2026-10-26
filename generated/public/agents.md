@@ -2562,6 +2562,11 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy ops link-pr` — --pr-number --pr-url
 - `shipeasy ops list` — --data --limit --offset --owner --priority --scope --status --type
 - `shipeasy ops notify` — --dedupe-key --href --steps --summary --title
+- `shipeasy ops questions`
+- `shipeasy ops questions answer` — --other --selected
+- `shipeasy ops questions ask` — --agent --delivery --questions --run-id
+- `shipeasy ops questions cancel` — --data
+- `shipeasy ops questions list` — --data --status
 - `shipeasy ops trigger`
 - `shipeasy ops trigger create`
 - `shipeasy ops trigger create claude` — --config --enabled --events --name --token
@@ -2702,6 +2707,10 @@ Parameters and error codes: https://docs.shipeasy.ai/get-started/mcp-reference
 - `ops_investigations_create`
 - `ops_investigations_list`
 - `ops_investigations_update`
+- `ops_questions_answer`
+- `ops_questions_ask`
+- `ops_questions_cancel`
+- `ops_questions_list`
 - `ops_trigger_create_claude`
 - `ops_trigger_create_copilot`
 - `ops_trigger_create_cursor`

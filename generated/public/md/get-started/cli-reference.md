@@ -689,6 +689,85 @@ shipeasy ops investigations update [options] <handle> <investigationId>
 | `--completed-at <value>` | optional | ISO-8601 timestamp the work finished. Set it (or flip `kind` off `working`) to mark a run record done. |
 | `--session-id <value>` | optional | The agent-run session id, so the dashboard can deep-link to the run. |
 
+### `shipeasy ops questions`
+
+Structured questions an agent asks the team about a queue item — the `AskUserQuestion` shape: a short `header`, the `question`, 2–4 `options` (label + description), and `multiSelect` for checkboxes instead of radios.
+
+```bash
+shipeasy ops questions [options] [command]
+```
+
+#### `shipeasy ops questions list`
+
+List an item's questions
+
+```bash
+shipeasy ops questions list [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--status <value>` | optional | Filter by question status, or `all` (the default). |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy ops questions ask`
+
+Ask the team questions about an item
+
+```bash
+shipeasy ops questions ask [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--questions <value>` | optional | 1–4 questions to ask at once. |
+| `--run-id <value>` | optional | The run (investigation record id) you are working the item under — the `runId` an ack or a launch handed you. Ties the questions to that run so a `resume` delivery continues it. |
+| `--agent <value>` | optional | The agent type asking — pass your own type when you are a coding agent. Defaults to the run's agent. |
+| `--delivery <value>` | optional | How the answer gets back to the asker — `resume` re-fires the asking run's trigger connector on the item once every question that run asked is answered; `poll` fires nothing and the asker reads `GET .../questions`. |
+
+#### `shipeasy ops questions answer`
+
+Answer a question
+
+```bash
+shipeasy ops questions answer [options] <handle> <questionId>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+| `questionId` | required | The question id (from `ask` or `list`). |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--selected <value>` | optional | The option labels picked — exactly one for a single-select question (unless answering only with `other`), one or more for `multiSelect`. |
+| `--other <value>` | optional | A free-text "Other" answer. |
+
+#### `shipeasy ops questions cancel`
+
+Withdraw a question
+
+```bash
+shipeasy ops questions cancel [options] <handle> <questionId>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+| `questionId` | required | The question id (from `ask` or `list`). |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
 ### `shipeasy ops trigger`
 
 Recurring coding-agent triggers: the scheduled, unattended runs that burn down the ops queue in `--pr` mode (one PR per fixed item; nothing auto-merges).
@@ -822,7 +901,7 @@ shipeasy ops list [options]
 | Option | | Description |
 | --- | --- | --- |
 | `--type <value>` | optional | Filter by item type, or `all` (the default). Every type a returned item can carry is filterable, including the auto-filed ones. |
-| `--status <value>` | optional | Filter by lifecycle status, or `all` (the default). The human-gated holding state (`pending_approval`) is excluded from `all`/default and returned only when requested as the exact status. |
+| `--status <value>` | optional | Filter by one lifecycle status, `unresolved` for every status that is not `resolved` or `wont_fix`, or `all` for every status. Defaults to `all` over HTTP; the CLI and MCP tool default to `unresolved`, so pass `all` there to include resolved and won't-fix items. The human-gated holding state (`pending_approval`) is excluded from `unresolved` and `all`, and returned only when requested as the exact status. (default: `"unresolved"`) |
 | `--priority <value>` | optional | Filter by triage priority, or `all` (the default). Items with no priority set are returned only under `all`. |
 | `--scope <value>` | optional | `ready` narrows to the items ready to be picked up right now: status `open`, no open run (nobody has acked it and is still working), and either unowned (no person and no agent) or reopened (sent back to `open` after an earlier run finished). Leave `status` unset with it. `all` (the default) applies no such narrowing. |
 | `--limit <value>` | optional | Page size — max items to return (1–500). A page shorter than `limit` is the last one. |

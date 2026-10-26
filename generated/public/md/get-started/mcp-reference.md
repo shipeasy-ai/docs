@@ -1667,7 +1667,7 @@ _Errors_ — beyond the [common errors](#errors):
 
 Returns the unified ops queue (bugs, feature requests, errors, alerts, measurement plans) in work order — highest priority first, oldest first within a priority — so consumers work it top-down. Every filter is applied in SQL before paging, and filters combine with AND. Human-gated holding states (items awaiting human sign-off in the dashboard) are never returned by `all`/default status.
 
-**Filters:** `type` (one item type), `status` (one lifecycle status), `priority` (one triage priority), `owner` (one person or agent), and `scope=ready` — the items ready to be picked up right now: `open`, with nobody working them (no open run), and either unowned or reopened (sent back to `open` after an earlier run finished).
+**Filters:** `type` (one item type), `status` (one lifecycle status, or `unresolved` — everything not yet `resolved`/`wont_fix`), `priority` (one triage priority), `owner` (one person or agent), and `scope=ready` — the items ready to be picked up right now: `open`, with nobody working them (no open run), and either unowned or reopened (sent back to `open` after an earlier run finished).
 
 **Paging:** `limit` is the page size and `offset` the number of items to skip. The order is stable, so walk the queue with `offset += limit`; a page shorter than `limit` is the last one.
 
@@ -1678,7 +1678,7 @@ _Parameters_
 | Parameter | | Type | Description |
 | --- | --- | --- | --- |
 | `type` | optional | `any` | Filter by item type, or `all` (the default). Every type a returned item can carry is filterable, including the auto-filed ones. _(default `"all"`)_ |
-| `status` | optional | `any` | Filter by lifecycle status, or `all` (the default). The human-gated holding state (`pending_approval`) is excluded from `all`/default and returned only when requested as the exact status. _(default `"all"`)_ |
+| `status` | optional | `any` | Filter by one lifecycle status, `unresolved` for every status that is not `resolved` or `wont_fix`, or `all` for every status. Defaults to `all` over HTTP; the CLI and MCP tool default to `unresolved`, so pass `all` there to include resolved and won't-fix items. The human-gated holding state (`pending_approval`) is excluded from `unresolved` and `all`, and returned only when requested as the exact status. _(default `"unresolved"`)_ |
 | `priority` | optional | `any` | Filter by triage priority, or `all` (the default). Items with no priority set are returned only under `all`. _(default `"all"`)_ |
 | `scope` | optional | `"all" \| "ready"` | `ready` narrows to the items ready to be picked up right now: status `open`, no open run (nobody has acked it and is still working), and either unowned (no person and no agent) or reopened (sent back to `open` after an earlier run finished). Leave `status` unset with it. `all` (the default) applies no such narrowing. _(default `"all"`)_ |
 | `limit` | required | `integer` | Page size — max items to return (1–500). A page shorter than `limit` is the last one. _(1–500)_ |
@@ -2017,7 +2017,9 @@ Append one structured investigation record to a queue item — the AI-write
 seam the cockpit's detail panel renders read-only. Post your findings
 (`kind: investigated`), a blocking question for the team (`kind: question`), or how to verify the fix (`kind: ready_for_qa` with
 `qaNotes`). Append-only and create-only, so it is safe for restricted ops
-keys.
+keys. For a decision between options you can name, ask a structured
+question instead (`ops questions ask`) — it is answerable in one tap and
+the answer comes back to your run.
 
 **Use case:** After working an item, leave a findings write-up (summary,
 markdown findings, sources inspected, confidence) so the team — and the
@@ -2119,6 +2121,141 @@ _Errors_ — beyond the [common errors](#errors):
 - `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
 - `NOT_FOUND` — The resource does not exist or is not visible to the caller.
 - `VALIDATION` — The request body failed structural (schema) validation.
+
+### Questions
+
+Structured questions an agent asks the team about a queue item — the
+`AskUserQuestion` shape: a short `header`, the `question`, 2–4 `options`
+(label + description), and `multiSelect` for checkboxes instead of radios.
+Every question also accepts a free-text "Other" answer. Open questions sit
+at the very top of the item's detail panel and mark the row in the queue.
+
+**Asking.** `ask` posts 1–4 questions at once. Several agents (or several
+runs) may have questions open on the same item at the same time.
+
+**Getting the answer back.** `delivery: resume` (the default for a run
+launched through a trigger connector) re-fires that same agent on the
+item once every question its run asked is answered, continuing the same
+run record with the answers in the prompt. `delivery: poll` (the default
+for a live, connector-less session such as Claude Code in a terminal)
+fires nothing — call `list` until the status reads `completed`.
+
+#### `ops_questions_answer`
+
+**Answer a question**
+
+Answer one open question on a queue item — pick option labels in
+`selected` (exactly one unless the question is `multiSelect`) and/or
+write a free-text `other`. The question moves to `completed`. When it was
+the last open question of a `resume` run, that agent is re-fired on the
+item with every answer. A person's action: never allow-listed for
+restricted ops keys.
+
+**Use case:** Unblock an agent from the CLI instead of the dashboard.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `questionId` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `selected` | optional | `string[]` | The option labels picked — exactly one for a single-select question (unless answering only with `other`), one or more for `multiSelect`. |
+| `other` | optional | `string` | A free-text "Other" answer. _(length 0–10000)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `INVALID_TRANSITION` — The requested lifecycle transition is not allowed from the current state.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `ops_questions_ask`
+
+**Ask the team questions about an item**
+
+Ask 1–4 structured questions about a queue item — the way to get a
+decision from a person when the implementation needs one. Each question
+is the `AskUserQuestion` shape: a short `header` chip, the full
+`question`, 2–4 `options` (`label` + `description`), and `multiSelect`
+(checkboxes instead of radios). The person can always answer "Other" in
+free text, so never add an "Other" option yourself. The questions render
+at the very top of the item's detail panel and mark the row in the queue.
+
+**Delivery.** `resume` re-fires your trigger-connector run on the item
+once every question it asked is answered, continuing the same run record
+with the answers in the prompt — stop after asking. `poll` fires nothing;
+poll `GET .../questions` instead. Omitted, it is `resume` when `runId`
+names a run launched through a trigger connector, else `poll`.
+
+**Use case:** Blocked on a product decision (which behaviour to keep,
+which of two fixes to ship) — ask instead of guessing, then wait for the
+answer.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `questions` | required | `object[]` | 1–4 questions to ask at once. |
+| `runId` | optional | `string` | The run (investigation record id) you are working the item under — the `runId` an ack or a launch handed you. Ties the questions to that run so a `resume` delivery continues it. _(length 0–200)_ |
+| `agent` | optional | `"jarvis" \| "claude" \| "cursor" \| "copilot" \| "jules"` | The agent type asking — pass your own type when you are a coding agent. Defaults to the run's agent. |
+| `delivery` | optional | `"resume" \| "poll"` | How the answer gets back to the asker — `resume` re-fires the asking run's trigger connector on the item once every question that run asked is answered; `poll` fires nothing and the asker reads `GET .../questions`. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `ops_questions_cancel`
+
+**Withdraw a question**
+
+Withdraw one open question you asked — it no longer needs an answer
+(you found it out yourself, or the item moved on). The question moves to
+`cancelled` and leaves the detail panel. Withdrawing the last open
+question of a run delivers nothing.
+
+**Use case:** You asked, then answered it yourself from the code — take
+it off the person's plate.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `questionId` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `INVALID_TRANSITION` — The requested lifecycle transition is not allowed from the current state.
+
+#### `ops_questions_list`
+
+**List an item's questions**
+
+The structured questions asked on a queue item, with their answers —
+newest first (max 100). Pull this to read the answers to questions you
+asked: an answered question reads `status: completed` and carries
+`answer.selected` (the option labels picked) and `answer.other` (the
+free-text "Other" reply, or `null`).
+
+**Use case:** You asked with `delivery: poll` from a live session — poll
+this until your questions read `completed`, then continue with the answers.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `status` | optional | `any` | Filter by question status, or `all` (the default). _(default `"all"`)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
 
 ### Trigger
 
