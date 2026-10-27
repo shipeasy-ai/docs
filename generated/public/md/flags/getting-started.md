@@ -35,10 +35,12 @@ Feature flags, configs, and killswitches all share this single `apiKey`.
 **Create your first feature flag**
 
 ```bash
-shipeasy release flags create checkout-v2 --rollout-percent 5
+shipeasy release flags create checkout-v2 --rollout-percent 0
 ```
 
-Changes you make are visible to your SDK worldwide in under a second.
+At 0% the flag is shipped dark: off for everyone, live in your rule set. Raise it later with
+`shipeasy release flags update checkout-v2 --rollout-percent 25`. Changes are visible to your SDK
+worldwide in under a second.
 
 **Put a feature flag around code in your app**
 

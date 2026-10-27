@@ -5,7 +5,7 @@ description: Fingerprint-grouped error issues with a status workflow, occurrence
 
 <DocMeta status="Production ready" read="4 min read" works="Dashboard · per project" />
 
-The **Errors** page (`/dashboard/<projectId>/errors`) is where the errors reported by [`see()`](/feedback/error-reporting) land. Each distinct issue is grouped by **fingerprint** — so a thousand occurrences of the same problem are one row, not a thousand — and shown with its consequence sentence, occurrence trend, and triage state.
+The **Errors** page (**Errors** in the sidebar, `/dashboard/<projectId>/errors`) is where the errors reported by [`see()`](/feedback/error-reporting) land. Each distinct issue is grouped by **fingerprint** — so a thousand occurrences of the same problem are one row, not a thousand — and shown with its consequence sentence, occurrence trend, and triage state.
 
 <Callout type="info" title="This is the read side of see()">
   This page *displays* errors. Producing them is the SDK's job — wrap a catch with
@@ -59,9 +59,19 @@ numbers are per-project settings — change them under **Settings → Ops**
 
 When code does `see(err)` and re-throws, the outer report links to the inner one as a **caused-by** chain rather than double-counting. The detail panel surfaces the upstream issue, so you can trace a wrapped error back to its root cause without it inflating your counts.
 
+## Error lifecycle [#error-lifecycle]
+
+Two numbers decide when an error closes itself and when it becomes a ticket. Both live under
+**Settings → Ops → Error lifecycle**:
+
+| Setting                     | Default        | What it does                                                                                                                                               |
+| --------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Auto-close quiet errors** | 3 days         | Resolves an open error once it has gone unseen this long. It reopens by itself when it happens again. `0` turns auto-close off.                            |
+| **Open a ticket after**     | 10 occurrences | How many times an error has to happen before it is filed into the queue on Home as a ticket. Tuning it needs a paid plan; every plan files at the default. |
+
 ## Filing an issue from an error
 
-Each row has a **File an issue** action. It creates an `error`-type ticket in [Feedback](/feedback/getting-started), pre-filled from the tracked error and linked back to it — once filed, the row shows a `#42` chip instead of the file button. From there a [connector](/feedback/connectors) can mirror it to GitHub. Worker-side auto-filing uses the same link, so manually-filed and auto-filed tickets de-duplicate.
+Each row has a **File an issue** action. It creates an `error`-type ticket on **Home**, the project's ops queue, pre-filled from the tracked error and linked back to it — once filed, the row shows a `#42` chip instead of the file button. From there a [connector](/feedback/connectors) can mirror it to GitHub. Worker-side auto-filing uses the same link, so manually-filed and auto-filed tickets de-duplicate.
 
 <SeeAlso
   links={[
@@ -77,7 +87,7 @@ Each row has a **File an issue** action. It creates an `error`-type ticket in [F
     },
     {
       href: "/feedback/getting-started",
-      title: "Feedback overview",
+      title: "Bugs & requests",
       note: "Where filed error tickets live.",
     },
   ]}

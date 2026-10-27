@@ -7,12 +7,12 @@ Source: https://docs.shipeasy.ai/feedback/error-reporting
 `see()` is the error-reporting primitive in `@shipeasy/sdk`. You hand it a caught
 exception and a one-sentence **consequence** — what feature broke and how it
 degraded — and the SDK ships a structured issue to your project. Issues group by
-fingerprint, surface in the dashboard **Errors** tab, and auto-file a ticket once
+fingerprint, surface on the **Errors** page, and auto-file a ticket once
 they cross a threshold.
 
 There is no separate error SDK and no second API key. `see()` rides the same
-`shipeasy()` boot as flags, configs, and kill switches — the server uses the
-server key, the browser uses the client key.
+`configure()` call as flags, configs, and kill switches — the server passes its
+server key, the browser its client key.
 
 ## The shape
 
@@ -133,9 +133,11 @@ tail attaches local debug context (kept on the mark, never sent).
    (with a timeseries in Analytics Engine). Recurrences bump the count; a resolved
    issue reopens automatically when it happens again.
 3. **Auto-file a ticket.** When an issue's count crosses the threshold (**10**
-   occurrences), Shipeasy files a feedback ticket of type **error**, with
+   occurrences by default), Shipeasy files a ticket of type **error**, with
    priority scaled by the error kind (network failures rank above caught ones).
-   It dedupes by fingerprint, so one issue files at most one open ticket.
+   It dedupes by fingerprint, so one issue files at most one open ticket. Change
+   the threshold under **Settings → Ops → Error lifecycle** (see
+   [Error lifecycle](https://docs.shipeasy.ai/feedback/errors#error-lifecycle)).
 4. **Triage.** The ticket joins your bugs and feature requests in the unified
    queue, where `/shipeasy:ops:work` can burn it down like any other item.
 

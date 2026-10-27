@@ -30,7 +30,7 @@ existing keys keep the value they had at mint time and keep getting 403s — eve
 though the dashboard shows the new domain.
 
 <Callout type="info" title="Fixed automatically on domain change">
-  Updating a project's domain in **Settings → Domain** now re-stamps the new value onto every
+  Updating a project's domain in **Settings → General** now re-stamps the new value onto every
   existing (non-revoked) key. If you're on an older deploy, or want an immediate unblock, use one of
   the fixes below.
 </Callout>
@@ -39,7 +39,7 @@ though the dashboard shows the new domain.
 
 <Steps>
   <Step>
-    **Confirm the domain in Settings → Domain.** Use the bare host, no scheme and no path —
+    **Confirm the domain in Settings → General.** Use the bare host, no scheme and no path —
     `app.example.com`, not `https://app.example.com/`.
   </Step>
   <Step>
@@ -75,7 +75,7 @@ causes:
 - **Wrong side.** A server key sent from the browser, or a client key used for a
   server-only read. Each entrypoint takes exactly one, separately-named key — see
   [Keys & environments](/get-started/keys-and-environments).
-- **Revoked or expired.** Check the key list in **Settings → Keys**; mint a
+- **Revoked or expired.** Check the key list in **SDK keys**; mint a
   replacement if it's gone.
 - **Wrong project.** The key belongs to a different project than the resources
   you're querying.

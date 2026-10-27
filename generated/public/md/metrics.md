@@ -6,22 +6,29 @@ Source: https://docs.shipeasy.ai/metrics
 
 A **metric** is a number computed from a set of events you log. It is the thing you watch while a flag ramps, and the thing an [alert rule](https://docs.shipeasy.ai/metrics/alerts) compares against a threshold. Get the definition right and the rest of the observability story follows.
 
-## Aggregation types
+## Aggregation functions
 
-Shipeasy ships four aggregation functions. Each one collapses a user's event stream into a single number per analysis window:
+A metric query reads one event and reduces it with an **aggregation function**. Shipeasy has eleven, and the **New metric** form's _Aggregate_ dropdown offers exactly these:
 
-| Type         | What it computes per user                     | Use it for                        | Variance                               |
-| ------------ | --------------------------------------------- | --------------------------------- | -------------------------------------- |
-| `conversion` | 1 if the event happened at least once, else 0 | Did they buy? Did they retain?    | Bounded `p(1-p)` — the friendliest.    |
-| `count`      | Number of events                              | Sessions, page views, clicks.     | Long-tailed; outliers possible.        |
-| `sum`        | Sum of a numeric event property               | Revenue, time spent, items added. | Heavy-tailed; outliers a real problem. |
-| `mean`       | Average of a numeric event property           | Order value, session length.      | Same as `sum`, plus zero-handling.     |
+| In the dropdown | In the DSL | What it computes                         | Needs a value property |
+| --------------- | ---------- | ---------------------------------------- | ---------------------- |
+| count           | `count`    | Number of events                         | No                     |
+| sum             | `sum`      | Sum of a numeric property                | Yes                    |
+| average         | `avg`      | Mean of a numeric property               | Yes                    |
+| minimum         | `min`      | Smallest value of a numeric property     | Yes                    |
+| maximum         | `max`      | Largest value of a numeric property      | Yes                    |
+| std dev         | `stddev`   | Standard deviation of a numeric property | Yes                    |
+| p50             | `p50`      | Median of a numeric property             | Yes                    |
+| p75             | `p75`      | 75th percentile                          | Yes                    |
+| p90             | `p90`      | 90th percentile                          | Yes                    |
+| p95             | `p95`      | 95th percentile                          | Yes                    |
+| p99             | `p99`      | 99th percentile                          | Yes                    |
 
-Conversion is the simplest and statistically the friendliest — the variance is bounded by `p(1-p)`, so power calculations are cheap and the t-test behaves. Means and sums need more samples and benefit from outlier handling (see below).
+The dashboard says **average**; the query language spells it `avg`. Any other percentile is written `p(97.5, event, property)`, and `p999` is accepted as shorthand for the 99.9th. A _rate_ — conversion, error rate — is not a twelfth function: it is a division of two counts, `count(purchase) / count(session_start)`. Arithmetic, grouping and time functions on top of these are in the [grammar](https://docs.shipeasy.ai/metrics/grammar); [Aggregation functions](https://docs.shipeasy.ai/metrics/aggregations) says when to reach for which.
 
-### When the metric is "no event"
+### When there is no matching event
 
-For a rate, a user with no matching numerator event contributes `0`. For `avg`, the DSL averages across all exposed users — non-purchasers contribute `0` and pull the mean down. To answer "average among buyers only" instead, express it as a division (`sum(purchase, revenueCents) / count(purchase)`) or compute the per-buyer cohort metric offline.
+For a rate, a bucket with no matching numerator event contributes `0`. For `avg`, the average runs over the events that exist, so a bucket with no events has no average rather than a zero. To answer "average among buyers only" explicitly, write it as a division (`sum(purchase, revenueCents) / count(purchase)`).
 
 ## Creating a metric
 
@@ -31,24 +38,24 @@ generates when you pick aggregation, source event, and filters in the
 most common shapes:
 
 ```bash
-# conversion on `purchase` — a rate, per user a 0 or a 1
+# conversion on `purchase` — a rate
 shipeasy metrics create purchase_conversion \
   --event-name purchase --query 'count(purchase) / count(session_start)'
 
-# revenue per user (includes non-buyers as $0)
-shipeasy metrics create revenue_per_user \
+# revenue
+shipeasy metrics create revenue \
   --event-name purchase --query 'sum(purchase, value)'
 
-# average order value (averaged across buyers only)
+# average order value
 shipeasy metrics create avg_order_value \
   --event-name purchase --query 'avg(purchase, value)'
 
-# sessions per user
+# sessions
 shipeasy metrics create sessions \
   --event-name session_start --query 'count(session_start)'
 ```
 
-Or in the dashboard: **Metrics → New metric**.
+Or in the dashboard: open **Metrics** and click **New metric**.
 
 ## Filtering events into a metric
 
@@ -82,21 +89,21 @@ negation and it goes in front of a predicate: `not tier="free"`. Common shapes:
 
 ## Outliers
 
-For `sum` and `mean`, a single $50,000 enterprise purchase can swing the mean for thousands of users. Shipeasy supports two outlier handlers per metric:
+For `sum` and `avg`, a single $50,000 enterprise purchase can swing the number for a whole day. Shipeasy supports two outlier handlers per metric:
 
-- **Winsorise** at a configurable percentile (default `p99`). Anything above is clamped to the p99 value of the combined sample. Default for `sum` and `mean`.
+- **Winsorise** at a configurable percentile (1–99, default 99). Anything above is clamped to the value at that percentile. Default for `sum` and `avg`.
 - **Cap** at an absolute value. Use this when there's a domain-specific ceiling (e.g. a maximum plausible session length).
 
 ```bash
-# Winsorise at p99 (this is the CLI default; --winsorize 99 is implicit)
-shipeasy metrics create revenue_per_user \
+# Winsorise at p99 (the default; --winsorize-pct 99 is implicit)
+shipeasy metrics create revenue \
   --event-name purchase --query 'sum(purchase, value)' \
-  --winsorize 99
+  --winsorize-pct 99
 
-# Cap at p95 instead
-shipeasy metrics create revenue_per_user \
+# Clamp at p95 instead
+shipeasy metrics create revenue \
   --event-name purchase --query 'sum(purchase, value)' \
-  --winsorize 95
+  --winsorize-pct 95
 ```
 
 Winsorising is the default and is rarely wrong. The trade-off: clamping reduces variance (good — a
@@ -106,8 +113,7 @@ understating a real move in the tail (rare).
 ## Ratio metrics
 
 Some questions are inherently ratios — _"clicks per impression"_,
-_"conversion per visit"_. Express them with the `over` keyword between
-two selector arms in the DSL:
+_"conversion per visit"_. Write them as a division of two aggregates:
 
 ```bash
 shipeasy metrics create click_through_rate \
@@ -115,23 +121,20 @@ shipeasy metrics create click_through_rate \
   --query 'count(click) / count(impression)'
 ```
 
-As an **experiment** metric both sides must be `count`, because the per-user
-collapse asks "did the numerator happen, among the denominator-eligible users".
-On a chart any expression divides.
-
-Ratio metrics use the **delta method** to compute variance correctly (the naive ratio-of-means understates variance, which makes an anomaly rule fire on noise). The dashboard shows the numerator and denominator alongside the ratio so the math is auditable.
+Any two expressions divide, so a ratio can mix `count`, `sum` and the rest —
+`sum(order, amount) / count(session)` draws fine. The dashboard shows the numerator and
+denominator alongside the ratio so the math is auditable.
 
 ## API · `metrics.create`
 
-- `name` (string) — Stable identifier. Used in result rows and the CLI.
-- `type` — Aggregation function applied per user.
-- `event` (string) — Event name to aggregate. For `ratio`, use `numerator_event` +  `denominator_event` instead.
-- `property` (string) — Numeric property on the event to aggregate. Required for `sum` and  `mean`.
-- `filter` (Rule[]) — Same shape as a feature flag rule. Only events matching all rules are aggregated.
-- `winsorise` — Percentile clip for `sum`/`mean`. Default `p99`.
-- `cap` (number) — Absolute clip. Mutually exclusive with winsorise.
-- `zero_handling` — How to count exposed users with no matching event. Default `include` (treats them as 0).
-- `direction` — Which direction is "good". Used to colour trend cells and to pick a side for a directional alert rule. Defaults to `up`.
+- `name` (string) — Stable key, single segment or folder.name. Lowercase letters, digits, _ and -. Immutable after create.
+- `event_name` (string) — Source event the query reads from.
+- `query` (string) — The metric DSL, e.g. `sum(purchase, amount)`. Every aggregation function in the table above, plus arithmetic and grouping, is available — see the  grammar.
+- `display_name` (string) — What a human calls the metric. Free text and editable; the name stays the key.
+- `folder` (string) — Optional folder grouping metrics in the dashboard.
+- `winsorize_pct` (integer (1–99)) — Clamp outliers to this percentile for sum and avg. Defaults to 99.
+- `direction` — Which way is good. Colours trend cells and picks a side for a directional alert rule.
+- `unit` (string) — Display unit, for example ms, % or $.
 
 ## Where to next
 

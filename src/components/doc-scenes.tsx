@@ -256,7 +256,7 @@ export function MetricPulseScene() {
           <span className="se-met-val">
             5.2<span className="u">%</span>
           </span>
-          <span className="se-met-lift">▲ +8.3% vs previous 7 days</span>
+          <span className="se-met-lift">▲ +8.3% vs last week</span>
           <svg className="se-met-spark" viewBox="0 0 200 56" preserveAspectRatio="none">
             <polyline
               className="se-met-line"
@@ -267,7 +267,7 @@ export function MetricPulseScene() {
         <div className="se-met-feed">
           <span className="se-met-k">event stream · user u_42</span>
           <div className="se-met-ev">
-            <span className="t">10:07</span> page_view <span className="g v1">/pricing</span>
+            <span className="t">10:07</span> page_view
           </div>
           <div className="se-met-ev">
             <span className="t">10:09</span> click
@@ -321,7 +321,7 @@ export function AssistantReadScene() {
               <code>legacy_checkout</code> — fully rolled out, no rule references it
             </li>
             <li>
-              <code>dark_mode</code> — at 100% since March, fully rolled out
+              <code>dark_mode</code> — at 100% since March, rollout finished
             </li>
             <li>
               <code>beta_banner</code> — superseded by <code>nux_banner</code>
@@ -399,65 +399,7 @@ export function AssistantChooserScene({ multi = false }: { multi?: boolean }) {
 
 /* Write tool — the confirmation card. The assistant proposes a resource; it
    renders read-only (name inline-editable) and only mutates on Confirm. */
-export function AssistantCardScene({ kind = "gate" }: { kind?: "gate" | "experiment" }) {
-  if (kind === "experiment") {
-    return (
-      <SceneFrame
-        label="write · confirm"
-        caption="An experiment proposal: groups, weights, allocation, and the success + guardrail metrics — editable, applied only on Confirm."
-      >
-        <div className="se-asst-card">
-          <div className="se-asst-card-head">
-            <span className="se-asst-card-ico">⧉</span>
-            <span className="se-asst-card-kind">Create experiment</span>
-          </div>
-          <div className="se-asst-card-name">new-checkout-flow</div>
-          <div className="se-asst-rows">
-            <div className="se-asst-row">
-              <span className="se-asst-row-k">Groups</span>
-              <div className="se-asst-groups">
-                <span className="se-asst-grp" style={{ width: "34%" }}>
-                  control · 34
-                </span>
-                <span className="se-asst-grp v" style={{ width: "33%" }}>
-                  variant_a · 33
-                </span>
-                <span className="se-asst-grp v2" style={{ width: "33%" }}>
-                  variant_b · 33
-                </span>
-              </div>
-            </div>
-            <div className="se-asst-row">
-              <span className="se-asst-row-k">Allocation</span>
-              <span className="se-asst-row-v">10% of the universe</span>
-            </div>
-            <div className="se-asst-row">
-              <span className="se-asst-row-k">Goal</span>
-              <span className="se-asst-row-v">
-                ↑ <code>checkout_completed</code> · count_users
-              </span>
-            </div>
-            <div className="se-asst-row">
-              <span className="se-asst-row-k">Guardrails</span>
-              <span className="se-asst-chips">
-                <span className="se-asst-chip">avg(latency_ms)</span>
-                <span className="se-asst-chip">error_shown</span>
-                <span className="se-asst-chip">refund</span>
-              </span>
-            </div>
-          </div>
-          <p className="se-asst-card-hint">
-            Tweak the title and the highlighted controls here. To change anything else, ask in the
-            chat and the assistant revises the plan.
-          </p>
-          <div className="se-asst-card-actions">
-            <span className="se-asst-btn primary">Confirm</span>
-            <span className="se-asst-btn ghost">Cancel</span>
-          </div>
-        </div>
-      </SceneFrame>
-    );
-  }
+export function AssistantCardScene(_props: { kind?: "gate" } = {}) {
   return (
     <SceneFrame
       label="write · confirm"
@@ -512,13 +454,13 @@ export function AssistantPlanScene({ resolved = false }: { resolved?: boolean })
       n: 1,
       label: "Create metric checkout_conversion_rate",
       kind: "instant" as const,
-      detail: "count_users(checkout_completed) / count_users(checkout_started)",
+      detail: "count(checkout_completed) / count(checkout_started)",
     },
     {
       n: 2,
-      label: "Create feature flag new-checkout-flow",
+      label: "Create alert rule checkout-conversion-drop",
       kind: "instant" as const,
-      detail: "rollout 50% · goal ↑ checkout_conversion_rate",
+      detail: "fires when checkout_conversion_rate stays below 3% over 24h",
     },
     {
       n: 3,
@@ -700,15 +642,7 @@ export function SlackFeedbackScene({ state = "open" }: { state?: "open" | "pr" |
 export function SlackNotifyScene({
   kind = "alert",
 }: {
-  kind?:
-    | "alert"
-    | "alert-resolved"
-    | "error"
-    | "significance"
-    | "guardrail"
-    | "killswitch"
-    | "config"
-    | "attention";
+  kind?: "alert" | "alert-resolved" | "error" | "killswitch" | "config" | "attention";
 }) {
   if (kind === "error") {
     return (
@@ -748,26 +682,6 @@ export function SlackNotifyScene({
       </SceneFrame>
     );
   }
-  if (kind === "guardrail") {
-    return (
-      <SceneFrame
-        label="notification · guardrail"
-        caption="A guardrail metric moved the wrong way. Stop the experiment on the spot, or acknowledge to mark it seen."
-      >
-        <SlackShell tone="amber">
-          <div className="se-slack-h">🛡️ A safety check slipped on the new checkout test</div>
-          <div className="se-slack-detail">
-            Checkout is 8.1% slower for the new version than the old one.
-          </div>
-          <a className="se-slack-link">View in dashboard</a>
-          <div className="se-slack-actions">
-            <span className="se-slack-btn">Stop the test</span>
-            <span className="se-slack-btn">Acknowledge</span>
-          </div>
-        </SlackShell>
-      </SceneFrame>
-    );
-  }
   if (kind === "config") {
     return (
       <SceneFrame
@@ -803,27 +717,6 @@ export function SlackNotifyScene({
           <a className="se-slack-link">Open the issue ↗</a>
           <div className="se-slack-actions">
             <span className="se-slack-btn">Acknowledge</span>
-          </div>
-        </SlackShell>
-      </SceneFrame>
-    );
-  }
-  if (kind === "significance") {
-    return (
-      <SceneFrame
-        label="notification · experiment"
-        caption="An experiment reached significance. Ship the winning group, stop, or keep running — Ship and Stop go through the admin path and check your project membership first."
-      >
-        <SlackShell tone="blue">
-          <div className="se-slack-h">📈 The new checkout test has a clear winner</div>
-          <div className="se-slack-detail">
-            The new version is winning on completed checkouts — up 12.4% vs the old one.
-          </div>
-          <a className="se-slack-link">View in dashboard</a>
-          <div className="se-slack-actions">
-            <span className="se-slack-btn primary">Ship the new version</span>
-            <span className="se-slack-btn">Stop the test</span>
-            <span className="se-slack-btn">Keep running</span>
           </div>
         </SlackShell>
       </SceneFrame>
@@ -872,7 +765,7 @@ export function SlackAssistantScene({
   you = "Dana",
   initial = "D",
   label = "@Shipeasy · chat",
-  caption = "Mention @Shipeasy in any channel and ask in plain language — it reads and changes your flags, configs, kill switches, experiments, and metrics, acting as you.",
+  caption = "Mention @Shipeasy in any channel and ask in plain language — it reads and changes your flags, configs, kill switches, and metrics, acting as you.",
 }: {
   prompt?: string;
   reply?: string;
@@ -920,7 +813,7 @@ export function SlackAssistantScene({
  *  to show the assistant's range. Each row is `[you, assistant]`. */
 export function SlackAssistantThreadScene({
   label = "@Shipeasy · create anything",
-  caption = "One place to run the whole platform: ask @Shipeasy in plain language and it creates and changes flags, configs, kill switches, experiments, alerts, and metrics — acting as you.",
+  caption = "One place to run the whole platform: ask @Shipeasy in plain language and it creates and changes flags, configs, kill switches, alerts, and metrics — acting as you.",
   turns,
 }: {
   label?: string;

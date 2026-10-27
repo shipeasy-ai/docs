@@ -2,7 +2,7 @@
 
 Source: https://docs.shipeasy.ai/get-started/attributes
 
-> The shape of the eval context — pass everything you know about the user, and Shipeasy uses it for targeting, holdouts, and analysis breakdowns.
+> The shape of the eval context — pass everything you know about the user, and Shipeasy uses it for targeting, rollouts, and metric breakdowns.
 
 A **user attribute** is any key/value pair you attach to a user when calling the SDK. Shipeasy uses attributes for three things:
 
@@ -46,9 +46,9 @@ Shipeasy bucketing uses `user_id ?? anonymous_id` — so a user gets a stable as
 
 > **`user_id` is required for deterministic bucketing**
 
-Without a stable id, every evaluation gets a fresh random bucket — rollouts oscillate, metric
-variants flip between page loads, and analysis falls apart. Pass `user_id` as soon as you have it;
-pass `anonymous_id` for the pre-login window.
+Without a stable id, every evaluation gets a fresh random bucket — rollouts oscillate, flag
+answers flip between page loads, and metric breakdowns fall apart. Pass `user_id` as soon as you
+have it; pass `anonymous_id` for the pre-login window.
 
 ## Custom attributes
 
@@ -91,11 +91,17 @@ Most projects benefit from a few standard fields. Set them up once and your futu
 
 - **[B2B hierarchy](#org)** — `account_id`, `org_id`, `role`. For B2B, bucket rollouts by `account_id` so all teammates see the same variant.
 
-## Registering attributes in the dashboard
+## Registering attributes
 
-Go to **Project → User attributes → Register** and declare the attributes you plan to send. Registration is **optional** but unlocks two things:
+Attributes your SDK sends are discovered automatically. To declare one ahead of time — with a type, or an enum of allowed values — register it from the CLI or the API:
 
-1. The dashboard rule builder can autocomplete attribute names and validate types.
+```bash
+shipeasy release flags attributes create plan --type enum --enum-values free,pro,team
+```
+
+Registration is **optional** but unlocks two things:
+
+1. The rule builder can autocomplete attribute names and validate types.
 2. Registered attributes become the labels you can filter and slice a metric series by.
 
 Unregistered attributes still work — they just won't appear in pickers.
@@ -174,7 +180,7 @@ A handful of fields are auto-treated:
 - `ip` (string) — Coarsened to country + region. Full IP is dropped before write.
 - `user_id` (string) — Stored as-is. Use a UUID, not an email.
 
-You can set per-attribute retention in **Project → Privacy**; the default is plan-derived and shown there. Past the window, exposure rows are aggregated and the per-user attribute payload is dropped.
+Retention of per-user attribute payloads is plan-derived; the [pricing page](https://shipeasy.ai/pricing) states it.
 
 ## Troubleshooting
 

@@ -4,7 +4,7 @@ Source: https://docs.shipeasy.ai/assistant/cards-and-plans
 
 > How the assistant turns an intent into an editable card you confirm — and how plan cards split instant resources from ship-code work.
 
-When the assistant decides a change should happen, it never just does it. It renders the change as an **editable card**. You review, tweak the fields, and confirm — only then does the mutation run. This is the whole safety model of [write mode](https://docs.shipeasy.ai/assistant/read-vs-write).
+When the assistant decides a change should happen, it doesn't just do it. It renders the change as an **editable card**. You review, tweak the fields, and confirm — only then does the change run. Anything the dashboard can't apply is filed as a ticket instead (see the split below). This is the whole safety model of [write mode](https://docs.shipeasy.ai/assistant/read-vs-write).
 
 ## Confirmation cards
 
@@ -45,7 +45,7 @@ carry a free-text "Something else…" escape hatch.
 
 For anything bigger than a single resource, the `suggest_plan` tool renders a **plan card** — an ordered set of steps. A plan separates two kinds of work:
 
-- **Instant resources** — flags, configs, metrics the assistant can create directly via confirmation cards.
+- **Instant resources** — flags, configs, metrics the assistant can create directly via confirmation cards. If a step turns out not to be creatable from the dashboard, it is filed as a ticket rather than created.
 - **Ship-code work** — changes that need a developer or a coding agent (wiring the SDK, instrumenting an event). These are filed as tickets for [`ops:work`](https://docs.shipeasy.ai/feedback) or an external agent via the [MCP server](https://docs.shipeasy.ai/get-started/mcp), not executed in the chat.
 
 This is why the assistant can scope an entire rollout — the flag, the metric that watches it, the alert that pages — even though it only writes the parts that are safe to write from a chat.

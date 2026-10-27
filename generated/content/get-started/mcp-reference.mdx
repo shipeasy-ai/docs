@@ -33,7 +33,7 @@ All error codes:
 | `BAD_REQUEST` | Malformed request (bad JSON, missing project scope). |
 | `UNAUTHORIZED` | Missing or invalid admin SDK key. |
 | `FORBIDDEN` | Key is valid but not allowed to act on this project. |
-| `PLAN_REQUIRED` | The requested feature requires a higher plan tier (e.g. sequential testing, custom alpha, holdout, group count). |
+| `PLAN_REQUIRED` | The requested feature requires a higher plan tier. |
 | `NOT_FOUND` | The resource does not exist or is not visible to the caller. |
 | `ALREADY_EXISTS` | A resource with this name already exists in the project. |
 | `INVALID_TRANSITION` | The requested lifecycle transition is not allowed from the current state. |
@@ -41,17 +41,10 @@ All error codes:
 | `READ_ONLY` | The resource is a read-only built-in (e.g. a built-in gate-rule template) and cannot be modified or deleted. |
 | `REFERENCED_IN_USE` | The resource cannot be archived/deleted while another resource still references it. |
 | `VALIDATION` | The request body failed structural (schema) validation. |
-| `REFERENCED_NOT_FOUND` | A referenced entity (universe, metric, gate, event) does not exist. |
-| `GROUPS_WEIGHT_SUM` | Experiment group weights must sum to 10000 (basis points). |
+| `REFERENCED_NOT_FOUND` | A referenced entity (metric, gate, event) does not exist. |
 | `EVENT_PENDING` | The referenced event is still pending review and cannot back a metric yet. |
 | `INTERNAL` | Unexpected server error. |
-| `PLAN_LIMIT` | The action would exceed a plan quota (e.g. the tier's maximum experiments, metrics, or configs). Upgrade the plan or archive an existing resource. |
-| `EXPERIMENT_NO_GOAL_METRIC` | The experiment has no goal metric set, which the requested action requires. |
-| `EXPERIMENT_ARCHIVED_RESTART` | An archived experiment cannot be restarted. |
-| `EXPERIMENT_RESTORE_INVALID` | The experiment cannot be restored from its current state. |
-| `EXPERIMENT_NOT_RUNNING` | The action requires the experiment to be running. |
-| `EXPERIMENT_RUNNING_ARCHIVE` | A running experiment cannot be archived — stop it first. |
-| `EXPERIMENT_IMMUTABLE_FIELD` | A field that is immutable while the experiment is running was modified. |
+| `PLAN_LIMIT` | The action would exceed a plan quota (e.g. the tier's maximum metrics or configs). Upgrade the plan or archive an existing resource. |
 | `METRIC_NOT_FOUND` | The referenced metric does not exist or is not visible to the caller. |
 | `METRIC_UNKNOWN_ID` | The supplied metric id is malformed or not recognised. |
 | `AGENT_NOT_CONNECTED` | The named AI agent type has no connected trigger connector in this project — list the available agents (`ops agents list` / `GET /api/admin/agent-profiles`) and use one of those, or connect the agent under Settings → Triggers. |
@@ -60,7 +53,7 @@ Hand-written tools (`projects_upsert` and auth) layer the `.shipeasy` bind or th
 
 ## Release
 
-Feature delivery — flags, kill switches, dynamic configs, A/B experiments, and the universes they bucket in.
+Feature delivery — flags, kill switches, dynamic configs.
 
 ### Flags
 
@@ -76,7 +69,7 @@ Feature gates: boolean flags evaluated at runtime against project rules + a perc
 
 **Rollout basis points.** `rollout_pct` is in **basis points**, not percent. `0` = 0%, `100` = 1%, `5000` = 50%, `10000` = 100%. This allows sub-1% precision (e.g. `7` = 0.07%).
 
-**Lifecycle.** Create dark (`rollout_pct: 0`) → attach rules → ramp via PATCH → flip kill-switch via `disable`/`enable` → delete once retired. Deletion is blocked while a running experiment references the gate as a targeting gate.
+**Lifecycle.** Create dark (`rollout_pct: 0`) → attach rules → ramp via PATCH → flip kill-switch via `disable`/`enable` → delete once retired.
 
 #### `release_flags_activity`
 
@@ -102,7 +95,7 @@ _Errors_ — beyond the [common errors](#errors):
 
 **Delete a feature gate**
 
-Soft-deletes the gate. Returns 409 if the gate is still referenced by a running experiment as a targeting gate — stop the experiment first.
+Soft-deletes the gate.
 
 **Use case:** Tear down a gate after a feature has fully shipped and the rollout flag is no longer needed.
 
@@ -141,7 +134,6 @@ _Parameters_
 | Parameter | | Type | Description |
 | --- | --- | --- | --- |
 | `name` | required | `string` | Stable gate key used by SDKs (`Shipeasy.checkGate(user, '<name>')`). Single segment or `folder.name`. Lowercase letters, digits, `_` or `-`; max 128 chars. Immutable after create — rename = delete + recreate. _(length 0–128; pattern `^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?)?$`)_ |
-| `type` | optional | `"targeting" \| "holdout"` | Gate kind. `targeting` (default) is a normal flag with the full builder. `holdout` is a **restricted** flag — only a public rollout % and a whitelist are allowed; attribute rules and a gatekeeper stack are rejected. Used as an experiment's `holdout_gate`. _(default `"targeting"`)_ |
 | `enabled` | optional | `boolean` | Master switch. Defaults to `true`. Set `false` to create the gate disabled (evaluates to `false` regardless of rules/rollout); flip on via `POST /{id}/enable` or PATCH. _(default `true`)_ |
 | `rollout_pct` | optional | `integer` | Initial rollout in **basis points** (0–10000 = 0%–100%) — `100` here means **1%**, not 100%. Use `rollout_percent` (0–100) below if you'd rather think in percent. Use `0` to create the gate dark and ramp via PATCH after deploy validation. _(default `0`; 0–10000)_ |
 | `rollout_percent` | optional | `number` | Initial rollout as a **percentage** (0–100, fractional ok). Friendlier alias for `rollout_pct`; converted internally to basis points (e.g. `100` here = 10000 bp = 100%). If both `rollout_pct` and `rollout_percent` are set, `rollout_percent` wins. _(0–100)_ |
@@ -160,7 +152,7 @@ _Errors_ — beyond the [common errors](#errors):
 - `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
 - `ALREADY_EXISTS` — A resource with this name already exists in the project.
 - `VALIDATION` — The request body failed structural (schema) validation.
-- `PLAN_LIMIT` — The action would exceed a plan quota (e.g. the tier's maximum experiments, metrics, or configs). Upgrade the plan or archive an existing resource.
+- `PLAN_LIMIT` — The action would exceed a plan quota (e.g. the tier's maximum metrics or configs). Upgrade the plan or archive an existing resource.
 
 #### `release_flags_disable`
 
@@ -263,7 +255,6 @@ _Parameters_
 | Parameter | | Type | Description |
 | --- | --- | --- | --- |
 | `id` | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
-| `type` | optional | `"targeting" \| "holdout"` | Gate kind. Switching to `holdout` requires the gate carry only a public rollout % + whitelist (attribute rules / stack are rejected). |
 | `rollout_pct` | optional | `integer` | New rollout in **basis points** (0–10000 = 0%–100%) — `100` here means **1%**. Use `rollout_percent` (0–100) below for percent. Omit both to leave unchanged. _(0–10000)_ |
 | `rollout_percent` | optional | `number` | New rollout as a **percentage** (0–100). Friendlier alias for `rollout_pct`; converted internally. Wins over `rollout_pct` if both are supplied. Omit both to leave unchanged. _(0–100)_ |
 | `rules` | optional | `object[]` | Replaces the rule list wholesale. To add a value to an `in` rule, send the full new `rules` array with the augmented `value` (e.g. previous `['US','CA']` → `['US','CA','GB']`). |
@@ -496,7 +487,7 @@ _Errors_ — beyond the [common errors](#errors):
 Targeting attributes: the auto-inferred schema of user-context keys the
 platform has observed in evaluation calls. Read-only — populated by the
 SDK hot path, surfaced here so you can see which keys (and value types)
-are available when writing gate/experiment targeting rules.
+are available when writing gate targeting rules.
 
 ##### `release_flags_attributes_archive`
 
@@ -521,7 +512,7 @@ _Errors_ — beyond the [common errors](#errors):
 
 **Declare a targeting attribute**
 
-Declare a targeting attribute the SDK reports and gates/experiments can target. `type: enum` requires `enum_values`.
+Declare a targeting attribute the SDK reports and gates can target. `type: enum` requires `enum_values`.
 
 **Use case:** Register a `plan` or `country` attribute so targeting rules can reference it.
 
@@ -566,7 +557,7 @@ _Errors_ — beyond the [common errors](#errors):
 
 **List targeting attributes**
 
-Returns every auto-inferred targeting attribute in the project — the `name` and (when known) the value `type` — for building gate/experiment targeting rules.
+Returns every auto-inferred targeting attribute in the project — the `name` and (when known) the value `type` — for building gate targeting rules.
 
 **Use case:** Discover which user-context keys are available before authoring a targeting rule, instead of guessing attribute names.
 
@@ -666,7 +657,7 @@ _Errors_ — beyond the [common errors](#errors):
 - `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
 - `ALREADY_EXISTS` — A resource with this name already exists in the project.
 - `VALIDATION` — The request body failed structural (schema) validation.
-- `PLAN_LIMIT` — The action would exceed a plan quota (e.g. the tier's maximum experiments, metrics, or configs). Upgrade the plan or archive an existing resource.
+- `PLAN_LIMIT` — The action would exceed a plan quota (e.g. the tier's maximum metrics or configs). Upgrade the plan or archive an existing resource.
 
 #### `release_killswitch_get`
 
@@ -912,7 +903,7 @@ _Errors_ — beyond the [common errors](#errors):
 - `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
 - `ALREADY_EXISTS` — A resource with this name already exists in the project.
 - `VALIDATION` — The request body failed structural (schema) validation.
-- `PLAN_LIMIT` — The action would exceed a plan quota (e.g. the tier's maximum experiments, metrics, or configs). Upgrade the plan or archive an existing resource.
+- `PLAN_LIMIT` — The action would exceed a plan quota (e.g. the tier's maximum metrics or configs). Upgrade the plan or archive an existing resource.
 
 #### `release_configs_get`
 
@@ -1007,7 +998,6 @@ _Errors_ — beyond the [common errors](#errors):
 ## Metrics
 
 Metrics: the event-backed queries that drive tracking dashboards and
-experiment success / guardrail measurement.
 
 **Definition.** Each metric pins one source event (`event_name`), one
 aggregation, and (for `sum`/`avg`/quantile) a numeric value label. The
@@ -1018,15 +1008,14 @@ or its typed IR (`query_ir`) — supply exactly one.
 Resolve endpoints accept the `id` or the `name`.
 
 **Deletion.** Archive (soft-delete). Blocked while the metric is attached
-to a running experiment — stop those first.
 
 ### `metrics_archive`
 
 **Archive a metric**
 
-Soft-deletes (archives) the metric. Returns `409` if it is attached to a running experiment — stop those experiments first.
+Soft-deletes (archives) the metric.
 
-**Use case:** Retire a metric once no running experiment depends on it (the user-facing verb is `archive`).
+**Use case:** Retire a metric once nothing uses it any more (the user-facing verb is `archive`).
 
 _Parameters_
 
@@ -1055,7 +1044,6 @@ query is invalid or references an unregistered event / label.
 
 - **Track an event** — `count(<event>)` for event counts.
 - **Sum a value** — `sum(<event>, <label>)` for revenue / quantity metrics.
-- **Experiment success metric** — create the metric, then attach its id to an experiment.
 
 _Parameters_
 
@@ -1067,10 +1055,9 @@ _Parameters_
 | `event_name` | required | `string` | Source event the query reads from. _(length 1–∞)_ |
 | `query` | optional | `string` | Metric query DSL string, e.g. `sum(purchase, amount)`. The alternative to `query_ir`. Every label the query references — in filters, the value position, `by (…)`, or `without (…)` — must exist as a property on the tracked event's payload; a query over a label the event never carries validates fine but returns empty results. _(length 1–4096)_ |
 | `winsorize_pct` | optional | `integer` | Winsorise percentile (1–99) to clamp outliers. Defaults to 99. _(default `99`; 1–99)_ |
-| `default_min_effect_of_interest` | optional | `any` | Default minimum effect of interest (relative, 0–1) — the smallest change in this metric worth acting on, used as the power-planning baseline. Intrinsic to the metric; an experiment overrides it per-attachment with `min_effect_of_interest` when a specific decision has a different cost/risk bar. `null` to omit. _(default `null`)_ |
 | `direction` | optional | `"higher_better" \| "lower_better" \| "neutral"` | Desired direction of movement. `higher_better` (default), `lower_better`, or `neutral` (guardrail). _(default `"higher_better"`)_ |
 | `unit` | optional | `any` | Display unit (e.g. `ms`, `%`, `$`), or `null` when unitless. |
-| `display` | optional | `object` | How the metric's series is DRAWN, as opposed to what it measures. Both parts used to be DSL functions (`expected(q, seasonal)`, `forecast(q, …)`), which meant turning a band on minted a different metric; they are properties now, so every chart of the metric picks them up and nothing that JUDGES the metric — an alert rule, the experiment analyzer — reads them at all. |
+| `display` | optional | `object` | How the metric's series is DRAWN, as opposed to what it measures. |
 | `display.band` | optional | `object` | Shade the seasonal baseline around the series. The fit is the median of this hour of the week over the four weeks before the window, and it is the SAME fit an `anomaly` alert rule fires on — so the shaded region is exactly where such a rule would stay quiet, whether or not one exists. |
 | `display.band.method` | required | `"seasonal"` | — |
 | `display.band.sigma` | optional | `number` | Half-width of the band in sigma-equivalents. Omit for 3, the sigma an alert rule also defaults to. |
@@ -1085,7 +1072,7 @@ Deliberately opaque here rather than mirrored node by node: the grammar belongs 
 | `query_ir.groupBy` | optional | `object` | How the series is split. On the envelope rather than in `expr` because every leaf of one expression shares it. |
 | `query_ir.groupBy.op` | required | `"by" \| "without"` | `by` names the output dimensions; `without` names the ones to drop. |
 | `query_ir.groupBy.labels` | required | `string[]` | Labels the grouping names. |
-| `query_ir.display` | optional | `object` | How the metric's series is DRAWN, as opposed to what it measures. Both parts used to be DSL functions (`expected(q, seasonal)`, `forecast(q, …)`), which meant turning a band on minted a different metric; they are properties now, so every chart of the metric picks them up and nothing that JUDGES the metric — an alert rule, the experiment analyzer — reads them at all. |
+| `query_ir.display` | optional | `object` | How the metric's series is DRAWN, as opposed to what it measures. |
 | `query_ir.display.band` | optional | `object` | Shade the seasonal baseline around the series. The fit is the median of this hour of the week over the four weeks before the window, and it is the SAME fit an `anomaly` alert rule fires on — so the shaded region is exactly where such a rule would stay quiet, whether or not one exists. |
 | `query_ir.display.band.method` | required | `"seasonal"` | — |
 | `query_ir.display.band.sigma` | optional | `number` | Half-width of the band in sigma-equivalents. Omit for 3, the sigma an alert rule also defaults to. |
@@ -1099,9 +1086,9 @@ _Errors_ — beyond the [common errors](#errors):
 - `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
 - `ALREADY_EXISTS` — A resource with this name already exists in the project.
 - `EVENT_PENDING` — The referenced event is still pending review and cannot back a metric yet.
-- `REFERENCED_NOT_FOUND` — A referenced entity (universe, metric, gate, event) does not exist.
+- `REFERENCED_NOT_FOUND` — A referenced entity (metric, gate, event) does not exist.
 - `VALIDATION` — The request body failed structural (schema) validation.
-- `PLAN_LIMIT` — The action would exceed a plan quota (e.g. the tier's maximum experiments, metrics, or configs). Upgrade the plan or archive an existing resource.
+- `PLAN_LIMIT` — The action would exceed a plan quota (e.g. the tier's maximum metrics or configs). Upgrade the plan or archive an existing resource.
 
 ### `metrics_grammar`
 
@@ -1119,7 +1106,7 @@ _No parameters._
 
 Returns every metric in the project (not paginated) — name, folder, source event, the typed `queryIr`, and the rendered query.
 
-**Use case:** Audit every metric defined in the project — for example to find the metric id to attach as an experiment's success metric.
+**Use case:** Audit every metric defined in the project — for example to find the metric id to reference from an alert rule.
 
 _Parameters_
 
@@ -1162,7 +1149,7 @@ _Errors_ — beyond the [common errors](#errors):
 
 Fetch one metric by its id or name, including the rendered DSL query and the typed IR.
 
-**Use case:** Inspect a single metric's full definition before reusing it in an experiment or alert rule.
+**Use case:** Inspect a single metric's full definition before reusing it in an alert rule.
 
 _Parameters_
 
@@ -1212,10 +1199,9 @@ _Parameters_
 | `event_name` | optional | `string` | Source event the query reads from. _(length 1–∞)_ |
 | `query` | optional | `string` | Metric query DSL string, e.g. `sum(purchase, amount)`. The alternative to `query_ir`. Every label the query references — in filters, the value position, `by (…)`, or `without (…)` — must exist as a property on the tracked event's payload; a query over a label the event never carries validates fine but returns empty results. _(length 1–4096)_ |
 | `winsorize_pct` | optional | `integer` | Winsorise percentile (1–99) to clamp outliers. Defaults to 99. _(default `99`; 1–99)_ |
-| `default_min_effect_of_interest` | optional | `any` | Default minimum effect of interest (relative, 0–1) — the smallest change in this metric worth acting on, used as the power-planning baseline. Intrinsic to the metric; an experiment overrides it per-attachment with `min_effect_of_interest` when a specific decision has a different cost/risk bar. `null` to omit. _(default `null`)_ |
 | `direction` | optional | `"higher_better" \| "lower_better" \| "neutral"` | Desired direction of movement. `higher_better` (default), `lower_better`, or `neutral` (guardrail). _(default `"higher_better"`)_ |
 | `unit` | optional | `any` | Display unit (e.g. `ms`, `%`, `$`), or `null` when unitless. |
-| `display` | optional | `object` | How the metric's series is DRAWN, as opposed to what it measures. Both parts used to be DSL functions (`expected(q, seasonal)`, `forecast(q, …)`), which meant turning a band on minted a different metric; they are properties now, so every chart of the metric picks them up and nothing that JUDGES the metric — an alert rule, the experiment analyzer — reads them at all. |
+| `display` | optional | `object` | How the metric's series is DRAWN, as opposed to what it measures. |
 | `display.band` | optional | `object` | Shade the seasonal baseline around the series. The fit is the median of this hour of the week over the four weeks before the window, and it is the SAME fit an `anomaly` alert rule fires on — so the shaded region is exactly where such a rule would stay quiet, whether or not one exists. |
 | `display.band.method` | required | `"seasonal"` | — |
 | `display.band.sigma` | optional | `number` | Half-width of the band in sigma-equivalents. Omit for 3, the sigma an alert rule also defaults to. |
@@ -1230,7 +1216,7 @@ Deliberately opaque here rather than mirrored node by node: the grammar belongs 
 | `query_ir.groupBy` | optional | `object` | How the series is split. On the envelope rather than in `expr` because every leaf of one expression shares it. |
 | `query_ir.groupBy.op` | required | `"by" \| "without"` | `by` names the output dimensions; `without` names the ones to drop. |
 | `query_ir.groupBy.labels` | required | `string[]` | Labels the grouping names. |
-| `query_ir.display` | optional | `object` | How the metric's series is DRAWN, as opposed to what it measures. Both parts used to be DSL functions (`expected(q, seasonal)`, `forecast(q, …)`), which meant turning a band on minted a different metric; they are properties now, so every chart of the metric picks them up and nothing that JUDGES the metric — an alert rule, the experiment analyzer — reads them at all. |
+| `query_ir.display` | optional | `object` | How the metric's series is DRAWN, as opposed to what it measures. |
 | `query_ir.display.band` | optional | `object` | Shade the seasonal baseline around the series. The fit is the median of this hour of the week over the four weeks before the window, and it is the SAME fit an `anomaly` alert rule fires on — so the shaded region is exactly where such a rule would stay quiet, whether or not one exists. |
 | `query_ir.display.band.method` | required | `"seasonal"` | — |
 | `query_ir.display.band.sigma` | optional | `number` | Half-width of the band in sigma-equivalents. Omit for 3, the sigma an alert rule also defaults to. |
@@ -1329,7 +1315,7 @@ _Errors_ — beyond the [common errors](#errors):
 - `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
 - `ALREADY_EXISTS` — A resource with this name already exists in the project.
 - `VALIDATION` — The request body failed structural (schema) validation.
-- `PLAN_LIMIT` — The action would exceed a plan quota (e.g. the tier's maximum experiments, metrics, or configs). Upgrade the plan or archive an existing resource.
+- `PLAN_LIMIT` — The action would exceed a plan quota (e.g. the tier's maximum metrics or configs). Upgrade the plan or archive an existing resource.
 
 #### `metrics_events_get`
 
@@ -1714,6 +1700,64 @@ _Errors_ — beyond the [common errors](#errors):
 - `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
 - `VALIDATION` — The request body failed structural (schema) validation.
 
+### `ops_qa_notes_create`
+
+**Add a QA note to an item**
+
+Append one typed QA note to a queue item. `kind` is `narrowing` (what now
+passes vs what still fails), `clarification` (what "fixed" now means),
+`verification` (requires a `verdict` of `pass` or `fail`, and `body` says
+what was checked) or `correction` (withdraws an earlier framing). Notes
+are append-only and appear in the item's QA notes section, not in the
+comment thread. The author is the caller's identity; pass `agent` to
+record the note as written by that agent type's QA automation. A `fail` verdict never changes the item's
+status by itself: the dashboard offers an explicit "Reopen item" action,
+and `ops update --status open` does the same from the CLI.
+
+**Use case:** QA automation records "verified on production: FAIL, the
+second facet still errors" as data an agent can read back.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `kind` | required | `"narrowing" \| "clarification" \| "verification" \| "correction"` | What a QA note is — `narrowing` (only part of the bug still fails), `clarification` (changes what "fixed" means), `verification` (a pass/fail verdict on a fix) or `correction` (withdraws an earlier framing). |
+| `body` | required | `string` | The note (markdown). _(length 1–10000)_ |
+| `agent` | optional | `"jarvis" \| "claude" \| "cursor" \| "copilot" \| "jules"` | The agent type writing the note — pass your own type when you are QA automation. Omitted, the note is attributed to the caller's identity. |
+| `listToken` | optional | `string` | REQUIRED. The `listToken` returned by the most recent `ops_qa_notes_list` call. It proves you listed existing ops qa notes and confirmed this one doesn't already exist before creating it. Call `ops_qa_notes_list` first if you don't have a fresh token. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+### `ops_qa_notes_list`
+
+**List an item's QA notes**
+
+The typed QA notes on a queue item, newest first (max 200) — narrowing,
+clarification, verification and correction notes, each with its author and
+time. They are separate from the comment thread: read these to learn the
+CURRENT QA state of a ticket (what remains failing, what "fixed" now means,
+the last verification verdict) without parsing prose comments.
+
+**Use case:** A coding agent picks an item up and checks the latest
+`verification` verdict and any `narrowing` note before touching the code.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `kind` | optional | `"narrowing" \| "clarification" \| "verification" \| "correction"` | What a QA note is — `narrowing` (only part of the bug still fails), `clarification` (changes what "fixed" means), `verification` (a pass/fail verdict on a fix) or `correction` (withdraws an earlier framing). |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
 ### `ops_update`
 
 **Update a queue item**
@@ -1837,7 +1881,7 @@ _Parameters_
 | `composite.rules` | required | `string[]` | Ids of the alert rules to combine. Stored sorted and de-duplicated. |
 | `severity` | optional | `"danger" \| "warn" \| "info"` | Severity of the raised alert. A `warnThreshold` breach opens one step quieter than this. _(default `"warn"`)_ |
 | `enabled` | optional | `boolean` | Whether the rule is evaluated by the cron. _(default `true`)_ |
-| `notify` | optional | `any` | Delivery target for a notification; `null` = use the project default. |
+| `notify` | optional | `any` | Delivery target for a rule's alert; `null` = use the project default. The `NotificationTarget` shape plus the in-app switch. |
 | `listToken` | optional | `string` | REQUIRED. The `listToken` returned by the most recent `ops_alerts_list` call. It proves you listed existing ops alerts and confirmed this one doesn't already exist before creating it. Call `ops_alerts_list` first if you don't have a fresh token. |
 
 _Errors_ — beyond the [common errors](#errors):
@@ -1845,7 +1889,7 @@ _Errors_ — beyond the [common errors](#errors):
 - `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
 - `ALREADY_EXISTS` — A resource with this name already exists in the project.
 - `METRIC_NOT_FOUND` — The referenced metric does not exist or is not visible to the caller.
-- `REFERENCED_NOT_FOUND` — A referenced entity (universe, metric, gate, event) does not exist.
+- `REFERENCED_NOT_FOUND` — A referenced entity (metric, gate, event) does not exist.
 - `VALIDATION` — The request body failed structural (schema) validation.
 
 #### `ops_alerts_list`
@@ -1908,7 +1952,7 @@ _Parameters_
 | `requiredBuckets` | optional | `any` | Buckets that must breach to fire; `null` restores "every bucket that had data". |
 | `severity` | optional | `"danger" \| "warn" \| "info"` | — |
 | `enabled` | optional | `boolean` | — |
-| `notify` | optional | `any` | Delivery target for a notification; `null` = use the project default. |
+| `notify` | optional | `any` | Delivery target for a rule's alert; `null` = use the project default. The `NotificationTarget` shape plus the in-app switch. |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -2375,11 +2419,9 @@ _Errors_ — beyond the [common errors](#errors):
 
 **Update the current project**
 
-Update the current project's settings — name, domain, slug, default environment, timezone, experiment-analysis knobs (statistical method, significance threshold, auto-rollback, minimum sample days), and the per-module enable flags. Partial: only the fields you send change.
+Update the current project's settings — name, domain, slug, default environment, timezone, and the per-module enable flags. Partial: only the fields you send change.
 
 The project id in the path must match the project the caller's credential resolves to (a credential can only edit its own project). Changing `domain` re-stamps the allowed origin into every live SDK key.
-
-**Use case:** Rename a project, move its domain, toggle a module on/off, or tune the experiment-analysis defaults without leaving the CLI.
 
 _Parameters_
 
@@ -2391,31 +2433,13 @@ _Parameters_
 | `slug` | optional | `string` | URL-safe identifier used in app URLs and SDK config. Lowercase letters, numbers, and hyphens; 2–48 chars; cannot start or end with a hyphen. The caller lowercases the raw slug before sending. _(length 2–48; pattern `^[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?$`)_ |
 | `defaultEnv` | optional | `"dev" \| "staging" \| "prod"` | Default environment new resources are scoped to. |
 | `timezone` | optional | `string` | IANA timezone the project's daily analysis runs in. _(length 1–64)_ |
-| `statMethod` | optional | `"sequential" \| "fixed" \| "bayesian"` | Statistical method the experiment analyzer uses. |
-| `sigThreshold` | optional | `"0.01" \| "0.05" \| "0.10"` | Significance threshold (alpha) for experiment analysis. |
-| `autoRollback` | optional | `boolean` | Whether a failing guardrail auto-rolls back the experiment. |
-| `minSampleDays` | optional | `integer` | Minimum number of days an experiment must run before it can be called. _(1–365)_ |
 | `moduleTranslations` | optional | `boolean` | Enable/disable the i18n/translations module. |
 | `moduleConfigs` | optional | `boolean` | Enable/disable the dynamic-configs module. |
 | `moduleGates` | optional | `boolean` | Enable/disable the feature-gates module. |
-| `moduleExperiments` | optional | `boolean` | Enable/disable the experiments module. |
 | `moduleFeedback` | optional | `boolean` | Enable/disable the feedback/ops module. |
 | `moduleUser` | optional | `boolean` | Enable/disable the user-management module. |
 | `moduleEvents` | optional | `boolean` | Enable/disable the events module. |
-| `minSampleSize` | optional | `integer` | Verdict power guard — minimum users per arm before a ship/hold verdict. _(2–1000000)_ |
-| `minRuntimeDays` | optional | `integer` | Minimum days an experiment must run before a verdict (peeking guard). _(0–365)_ |
-| `defaultPower` | optional | `number` | Target statistical power (1−β) feeding the realized-MDE calculation. _(0.5–0.99)_ |
-| `ciConfidence` | optional | `number` | Confidence level for the interval surfaced on results (any value in [0.5, 0.999], e.g. 0.90, 0.95, 0.975, 0.99). _(0.5–0.999)_ |
-| `defaultAllocationPct` | optional | `integer` | Default traffic allocation (basis points, 1000 = 10%) new experiments start with; overridable per experiment. _(1–10000)_ |
-| `defaultHoldout` | optional | `integer` | Default holdout carve-out (basis points) that seeds each new universe's holdout (0 = none). _(0–10000)_ |
 | `defaultWinsorizePct` | optional | `integer` | Default winsorization percentile new metrics start with; overridable per metric. _(1–99)_ |
-| `defaultMei` | optional | `any` | Default minimum effect of interest (relative, 0–1) new metrics start with; overridable per metric and per experiment. Null clears it. |
-| `cupedBaselineDays` | optional | `integer` | CUPED baseline window — days of pre-experiment history, frozen at start. _(1–365)_ |
-| `cupedMinOverlap` | optional | `number` | CUPED selection-bias guard — min share of users with a baseline, else skip. _(0.01–0.99)_ |
-| `cupedMinBaselineUsers` | optional | `integer` | CUPED — minimum users with a baseline before it runs at all. _(10–100000)_ |
-| `msprtTauMeiFactor` | optional | `number` | mSPRT prior width — τ = minimum effect of interest × this factor. _(0.1–2)_ |
-| `msprtTauSdFactor` | optional | `number` | mSPRT fallback prior width — τ = this × control SD when no MEI is set. _(0.05–1)_ |
-| `srmThreshold` | optional | `number` | SRM chi-square p-value below which the run is called invalid. _(0.0001–0.05)_ |
 | `errorAutocloseDays` | optional | `integer` | Days an `open` tracked error may go unseen before the nightly sweep auto-resolves it. `0` disables auto-close for this project. _(0–365)_ |
 | `errorTicketMinOccurrences` | optional | `integer` | Occurrence count a tracked error must cross before an `error` ticket is auto-filed into the ops queue. Requires a paid plan — the request is rejected with 403 on a plan without the `ops_auto_error_issues` entitlement. _(1–10000)_ |
 
@@ -2545,7 +2569,7 @@ _Errors_ — beyond the [common errors](#errors):
 
 Tags: free-form, project-scoped labels any item can carry — queue items
 (bugs, feature requests, error/alert tickets), flags, configs, kill
-switches, metrics, tracked errors, alert rules, and experiments all share
+switches, metrics, tracked errors and alert rules all share
 one tag roster.
 
 **Identity.** A tag is its name, unique case-insensitively per project. A
@@ -2559,7 +2583,7 @@ set; `update` adds/removes names incrementally.
 
 **Read an item's tags**
 
-Returns the tags attached to one item. The item is addressed by kind (`entityType`) plus its handle, so the same call reads tags off a queue item, a flag, a config, a kill switch, a metric, a tracked error, an alert rule, or an experiment.
+Returns the tags attached to one item.
 
 **Use case:** Check an item's current tags before editing them.
 
@@ -2567,7 +2591,7 @@ _Parameters_
 
 | Parameter | | Type | Description |
 | --- | --- | --- | --- |
-| `entityType` | required | `"ops" \| "flag" \| "config" \| "killswitch" \| "metric" \| "error" \| "alert_rule" \| "experiment"` | The kind of item a tag set hangs off: `ops` (any queue item — bug, feature request, error/alert/measure-plan ticket), `flag` (feature gate), `config` (dynamic config), `killswitch`, `metric`, `error` (tracked error group), `alert_rule`, or `experiment`. |
+| `entityType` | required | `"ops" \| "flag" \| "config" \| "killswitch" \| "metric" \| "error" \| "alert_rule"` | The kind of item a tag set hangs off: `ops` (any queue item — bug, feature request, error/alert/measure-plan ticket), `flag` (feature gate), `config` (dynamic config), `killswitch`, `metric`, `error` (tracked error group) or `alert_rule`. |
 | `entityId` | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 
 _Errors_ — beyond the [common errors](#errors):
@@ -2579,7 +2603,7 @@ _Errors_ — beyond the [common errors](#errors):
 
 **List the project's tags**
 
-Returns every tag in the project — the shared roster any item (queue items, flags, configs, kill switches, metrics, tracked errors, alert rules, experiments) can carry. Sorted by name.
+Returns every tag in the project — the shared roster any item (queue items, flags, configs, kill switches, metrics, tracked errors, alert rules) can carry. Sorted by name.
 
 **Use case:** See which tags already exist before tagging an item, so you reuse `ios` instead of minting `iOS-app`.
 
@@ -2610,7 +2634,7 @@ _Parameters_
 
 | Parameter | | Type | Description |
 | --- | --- | --- | --- |
-| `entityType` | required | `"ops" \| "flag" \| "config" \| "killswitch" \| "metric" \| "error" \| "alert_rule" \| "experiment"` | The kind of item a tag set hangs off: `ops` (any queue item — bug, feature request, error/alert/measure-plan ticket), `flag` (feature gate), `config` (dynamic config), `killswitch`, `metric`, `error` (tracked error group), `alert_rule`, or `experiment`. |
+| `entityType` | required | `"ops" \| "flag" \| "config" \| "killswitch" \| "metric" \| "error" \| "alert_rule"` | The kind of item a tag set hangs off: `ops` (any queue item — bug, feature request, error/alert/measure-plan ticket), `flag` (feature gate), `config` (dynamic config), `killswitch`, `metric`, `error` (tracked error group) or `alert_rule`. |
 | `entityId` | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 | `tags` | required | `string[]` | The complete tag set the item should carry — tags not listed are detached. Names are get-or-created (a new name mints a project tag), deduped case-insensitively; `[]` clears every tag. |
 
@@ -2635,7 +2659,7 @@ _Parameters_
 
 | Parameter | | Type | Description |
 | --- | --- | --- | --- |
-| `entityType` | required | `"ops" \| "flag" \| "config" \| "killswitch" \| "metric" \| "error" \| "alert_rule" \| "experiment"` | The kind of item a tag set hangs off: `ops` (any queue item — bug, feature request, error/alert/measure-plan ticket), `flag` (feature gate), `config` (dynamic config), `killswitch`, `metric`, `error` (tracked error group), `alert_rule`, or `experiment`. |
+| `entityType` | required | `"ops" \| "flag" \| "config" \| "killswitch" \| "metric" \| "error" \| "alert_rule"` | The kind of item a tag set hangs off: `ops` (any queue item — bug, feature request, error/alert/measure-plan ticket), `flag` (feature gate), `config` (dynamic config), `killswitch`, `metric`, `error` (tracked error group) or `alert_rule`. |
 | `entityId` | required | `string` | A resource path identifier — an opaque `xxx_<ULID>` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 | `add` | optional | `string[]` | Tag names to attach (get-or-created by name, case-insensitive). Already-attached names are a no-op. _(default `[]`)_ |
 | `remove` | optional | `string[]` | Tag names to detach (case-insensitive). Names the item doesn't carry are a no-op. A name in both lists is removed. _(default `[]`)_ |
@@ -2683,8 +2707,6 @@ Fetch SDK documentation — feature pages, nested snippets, and installable skil
 ### `docs_get`
 
 **Fetch one SDK doc page or snippet**
-
-Fetch one feature page (`flags`, `experiments`, …) or nested snippet (`release/experiments`, …), substituting declared \{\{placeholders\}\} from caller args.
 
 _Parameters_
 

@@ -8,7 +8,7 @@ A chat assistant built into the dashboard. It reads your project to answer quest
 
 ## What it is
 
-Open the assistant from the orb in the dashboard and ask in plain language. It's scoped to the
+Click **Open assistant** in the top bar of any project page and ask in plain language. It's scoped to the
 project you're viewing and authenticates with your session — it reads live state and proposes
 changes only in that project. It answers product and how-to questions by searching the same docs
 you're reading now (the `search_docs` tool), and cites its sources.
@@ -26,7 +26,7 @@ It works in two modes and picks the right one for you. The split is the whole sa
 
 - **[Read — answer from your project](https://docs.shipeasy.ai/assistant/read-vs-write)** — Read-only tools auto-execute and stream as a **thinking trace** ("✓ Reading your project", "✓ Checking the metric series"). It never changes anything to answer.
 
-- **[Write — propose a change](https://docs.shipeasy.ai/assistant/read-vs-write)** — Mutations never auto-run. Each surfaces as an **editable confirmation card** — it applies only when you press **Confirm**. So it's safe (and expected) for the assistant to propose a change directly instead of asking permission first.
+- **[Write — propose a change](https://docs.shipeasy.ai/assistant/read-vs-write)** — Changes are proposed, not applied behind your back. Each surfaces as an **editable confirmation card** — it applies only when you press **Confirm**. So it's safe (and expected) for the assistant to propose a change directly instead of asking permission first.
 
 ## What it produces
 
@@ -47,7 +47,7 @@ whole "measure this" ask, that's an approvable plan that creates what it can and
 
 ## Where it lives
 
-The orb sits in the dashboard chrome on every project page. Conversations are saved to your
+The **Open assistant** button sits in the top bar, between search and the notifications bell, on every project page. Conversations are saved to your
 member history and restore later. The assistant always operates on the project you're currently
 viewing.
 

@@ -1,28 +1,42 @@
-# Aggregation types
+# Aggregation functions
 
 Source: https://docs.shipeasy.ai/metrics/aggregations
 
-> Conversion, count, sum, mean, ratio — pick the right aggregation, set outlier handling, and avoid the variance traps that bite means and sums.
+> The eleven aggregation functions — count, sum, average, minimum, maximum, std dev and the p50 to p99 percentiles — plus rates, outlier handling, and how to pick one.
 
-A **metric** is "events aggregated per user." The aggregation function turns each user's event
-stream into a single number the platform charts over time and alert rules compare. Pick
-the right one and your power calculations are honest; pick the wrong one and a single outlier can
-swing your result.
+A **metric** reduces the events you log into a number the platform charts over time and alert rules
+compare. The **aggregation function** is the reduction: count the events, add up a property, take
+its average, read its 95th percentile. Pick the one that matches the question and the series tells
+the truth; pick the wrong one and a single outlier can swing it.
 
-## The five types
+## The eleven functions
 
-| Type    | Per-user value                          | Best for                         | Variance behaviour                     |
-| ------- | --------------------------------------- | -------------------------------- | -------------------------------------- |
-| rate    | `1` if the numerator happened, else `0` | Did they buy? Did they retain?   | Bounded `p(1-p)` — friendliest.        |
-| `count` | Number of events                        | Page views, sessions, clicks     | Long-tailed; outliers possible.        |
-| `sum`   | Sum of a numeric property               | Revenue, time spent, items added | Heavy-tailed; outliers a real problem. |
-| `mean`  | Average of a numeric property           | Order value, session length      | Same as sum, plus zero-handling.       |
-| `p`     | A percentile of a numeric property      | Latency, payload size            | Charted exactly; averaged per user.    |
+The **Aggregate** dropdown on the **New metric** form lists exactly these. The dashboard says
+_average_; the query language says `avg`.
 
-## Conversion — write it as a rate
+| In the dropdown | DSL      | Per bucket, it computes              | Best for                             |
+| --------------- | -------- | ------------------------------------ | ------------------------------------ |
+| count           | `count`  | Number of events                     | Page views, sessions, clicks, errors |
+| sum             | `sum`    | Sum of a numeric property            | Revenue, time spent, items added     |
+| average         | `avg`    | Mean of a numeric property           | Order value, session length          |
+| minimum         | `min`    | Smallest value of a numeric property | Fastest response, lowest basket      |
+| maximum         | `max`    | Largest value of a numeric property  | Slowest response, biggest payload    |
+| std dev         | `stddev` | Spread of a numeric property         | How consistent latency or size is    |
+| p50             | `p50`    | Median of a numeric property         | The typical request                  |
+| p75             | `p75`    | 75th percentile                      | The slower quarter                   |
+| p90             | `p90`    | 90th percentile                      | Tail latency                         |
+| p95             | `p95`    | 95th percentile                      | The usual latency SLO                |
+| p99             | `p99`    | 99th percentile                      | The worst one request in a hundred   |
 
-The simplest and statistically the friendliest, and it is a **division**: how many did the thing,
-out of how many could have.
+Every function except `count` takes a numeric property of the event as its second argument:
+`avg(purchase, revenueCents)`, `p95(page_view, loadTimeMs)`. `count` counts rows and takes none.
+For a percentile that isn't in the list, write `p(97.5, event, property)`; `p999` is shorthand for
+the 99.9th. The full grammar is on the [DSL page](https://docs.shipeasy.ai/metrics/grammar).
+
+## Rates — write them as a division
+
+A conversion or error rate is not a function of its own; it is a **division** of two aggregates:
+how many did the thing, out of how many could have.
 
 ```bash
 shipeasy metrics create purchase_conversion \
@@ -30,59 +44,46 @@ shipeasy metrics create purchase_conversion \
   --query 'count(purchase) / count(session_start)'
 ```
 
-On a chart that is the rate over each bucket. In an experiment it collapses per user to a `0` or
-a `1` — did the numerator happen, among the users eligible for the denominator — so the metric
-mean is the fraction who converted, variance is bounded by `p(1-p)` capping at `0.25`, power
-calculations are cheap and no single user can be an outlier.
-
-Use it whenever the question is yes/no.
+On a chart that is the rate over each bucket. Use it whenever the question is yes/no.
 
 > **Note**
 
-There is no single-event conversion aggregation. `count_users(purchase)` used to be one and was
-removed: Analytics Engine samples rows under load and weights the survivors, and a distinct count
-cannot be reweighted — sampling reweights rows, not sets — so it under-reported by the sample
-interval with no way to correct it. A rate has no such problem, because both sides are sampled the
-same way. Metrics stored before the removal still chart; new ones are written as rates.
+There is no single-event "unique users" aggregation. `count_users(purchase)` used to be one and
+was removed: Analytics Engine samples rows under load and weights the survivors, and a distinct
+count cannot be reweighted — sampling reweights rows, not sets — so it under-reported by the
+sample interval with no way to correct it. A rate has no such problem, because both sides are
+sampled the same way. Metrics stored before the removal still chart; new ones are written as
+rates.
 
 ## Count
 
-Per user: how many of the event happened?
+How many of the event happened in each bucket?
 
 ```bash
-shipeasy metrics create sessions_per_user \
+shipeasy metrics create sessions \
   --event-name session_start \
   --query 'count(session_start)'
 ```
 
-Each user contributes an integer ≥ 0. Means and variances behave
-reasonably for low-volume events (0–5 per user) and get long-tailed for
-high-volume ones (a power user with 200 sessions skews the mean). For
-long-tailed counts, consider:
-
-- Tightening the **winsorize** percentile (`--winsorize 95` instead of the 99 default) to clamp the heavy tail.
-- Switching to a rate (`count(session_start) / count(app_open)` — did they start a session at all?) if the count distinction doesn't drive your decision.
+Counts are the workhorse: error counts, signups, checkouts. A very spiky count is often better as a
+rate (`count(session_start) / count(app_open)`) if the raw number mostly tracks traffic.
 
 ## Sum
 
-Per user: sum a numeric property across all matching events.
+Add a numeric property across all matching events.
 
 ```bash
-shipeasy metrics create revenue_per_user \
+shipeasy metrics create revenue \
   --event-name purchase \
   --query 'sum(purchase, revenueCents)'
 ```
 
-The classic "did this change make us more money per user." Each
-user contributes their total revenue. Non-purchasers contribute `0`.
+Sums are **heavy-tailed**. One $50,000 enterprise purchase can swing a whole day. The metric's
+`--winsorize-pct` clamps that — the default is 99 and is rarely wrong.
 
-Sums are **heavy-tailed**. One $50,000 enterprise purchase can swing
-the mean for thousands of users. The metric's `--winsorize` percentile
-clamps that — the CLI default is `--winsorize 99` and is rarely wrong.
+## Average
 
-## Mean
-
-Per user: average a numeric property across their events.
+The mean of a numeric property across the events in each bucket.
 
 ```bash
 shipeasy metrics create avg_order_value \
@@ -90,79 +91,50 @@ shipeasy metrics create avg_order_value \
   --query 'avg(purchase, revenueCents)'
 ```
 
-There's a trap with `avg`: should users with zero matching events count
-as `0`, or be dropped from the denominator entirely? Today the DSL's
-`avg` averages across all exposed users — non-purchasers contribute `0`
-("average revenue per _exposed user_"). To answer the "average across
-buyers only" question instead, define two metrics and divide via the
-`ratio` aggregation, or compute the per-buyer average offline.
+The average runs over the events that exist, so a bucket with no events has no average rather than
+a zero. For "average among buyers" that is what you want; for "revenue per session" write a
+division instead: `sum(purchase, revenueCents) / count(session_start)`.
 
-## Rate
+## Minimum, maximum and standard deviation
 
-Per user: numerator-event count divided by denominator-event count. Division is
-ordinary — write `a / b`. (`ratio(a, b)` is the same thing spelled as a
-function, and still parses.)
+`min` and `max` are the extremes of a property; `stddev` is its spread. They are most useful next to
+an average — `stddev(req_dur, ms) / avg(req_dur, ms)` is the coefficient of variation, a quick read
+on how steady a latency is.
+
+## Percentiles
+
+`p50`, `p75`, `p90`, `p95` and `p99` read a point on the distribution of a numeric property. They are
+the right tool for latency and size, where the average hides the tail.
 
 ```bash
-shipeasy metrics create click_through_rate \
-  --event-name click \
-  --query 'count(click) / count(impression)'
+shipeasy metrics create p95_page_load_ms \
+  --event-name page_view \
+  --query 'p95(page_view, loadTimeMs)'
 ```
 
-As an **experiment** metric both sides must be `count`: the per-user collapse
-turns the rate into "did the numerator happen, among the denominator-eligible
-users", and that question only has an answer when both sides count events. On a
-chart there is no such restriction — `sum(order, amount) / count(session)`
-draws fine.
-
-Use ratios for inherently-ratio questions: clicks per impression, conversions per visit, errors
-per request. **Don't** compute the ratio yourself and store it as a `mean` — the math is
-different.
-
-Why it matters: the naive ratio-of-means (mean of numerators divided by mean of denominators)
-under-states the variance. Shipeasy uses the **delta method** to compute it correctly — which is
-what makes the confidence band the dashboard draws, and any anomaly rule armed on the series,
-trustworthy rather than jumpy. If you had computed `clicks/impressions` yourself per user, then
-taken the mean, you'd be calculating the wrong thing.
-
-The dashboard shows numerator and denominator alongside the ratio so the math is auditable.
+Quantiles do not merge across groups, so a percentile can't be averaged back together after a
+`by (…)` split — the parser refuses that rather than quietly give you a wrong number.
 
 ## Outlier handling
 
-Sums and means need outlier handling. Two options:
-
-**Winsorize** at a percentile. Anything above is clamped to the value
-at that percentile.
+`sum` and `avg` need outlier handling. The metric clamps with **winsorising**: anything above the
+chosen percentile is set to the value at that percentile.
 
 ```bash
-shipeasy metrics create revenue_per_user \
+shipeasy metrics create revenue \
   --event-name purchase \
   --query 'sum(purchase, revenueCents)' \
-  --winsorize 99
+  --winsorize-pct 99
 ```
 
-`99` (default), `95`, `90`. Lower percentiles clamp more aggressively.
-Trims the rarest 1% (or 5% / 10%) to the value of that percentile,
-keeps the body of the distribution intact.
-
-For a hard ceiling (e.g. session length can't reasonably exceed 4
-hours,
-revenue per user can't exceed your enterprise plan price.
-
-> **Symmetric across arms**
-
-The cutoff is computed from the **combined** control + treatment sample, then applied to both
-arms. This prevents the bug where one variant accidentally has its outliers preserved and looks
-artificially better. You can verify in the dashboard: the "applied threshold" row shows the same
-value across arms.
-
-The trade-off: clamping reduces variance (good — narrower CI, easier to detect lift) at the cost
-of slightly understating the true effect when the variant genuinely moves the tail (rare).
+`99` is the default; `95` and `90` clamp harder. It trims the rarest 1% (or 5% / 10%) and keeps the
+body of the distribution intact. Clamping steadies the series — a threshold alert stops flapping on
+one big order — at the cost of slightly understating a real move in the tail.
 
 ## Filters
 
-You can tighten what counts toward a metric with **filters**. Same shape as feature flag targeting rules,
-applied to the event's `properties` payload before aggregation:
+You can tighten what counts toward a metric with **filters**, written inline as
+`event{label=value}` and applied to the event's `properties` before aggregation:
 
 ```bash
 shipeasy metrics create organic_purchase \
@@ -170,16 +142,12 @@ shipeasy metrics create organic_purchase \
   --query 'count(purchase{channel="organic"})'
 ```
 
-Now only `purchase` events with `channel == "organic"` count. Multiple
-predicates inside `{}` are ANDed (commas separate them, and `or` groups them).
-String values must be double-quoted in the DSL. `=~` matches a **glob**, not a
-regex: `*` is any run of characters, `?` is exactly one, and the pattern matches
-the whole value.
-
-Common shapes:
+Multiple predicates inside `{}` are ANDed (commas separate them, and `or` groups them). String
+values must be double-quoted. `=~` matches a **glob**, not a regex: `*` is any run of characters,
+`?` is exactly one, and the pattern matches the whole value.
 
 ```bash
-# Web only (exclude mobile app purchases)
+# Web only
 'count(purchase{platform="web"})'
 
 # Geographic slice — a value set, not a regex
@@ -187,22 +155,17 @@ Common shapes:
 
 # Everything EXCEPT free tier — one negation, in front of the predicate
 'count(purchase{not tier="free"})'
-
-# Multiple — ANDed inside the same {}
-'count(purchase{platform="web", country="US"})'
 ```
 
-Filters run cheaply during aggregation. You can have many metrics that
-share the same underlying event, each filtering differently — no need
-to log the same purchase twice with different names.
+Many metrics can share one underlying event, each filtering differently — no need to log the same
+purchase twice under different names.
 
 ## Direction
 
-The dashboard infers each metric's "good" direction from its name and its
-aggregation type. Words like `error`, `fail`, `latency`, `crash`, `churn`,
-`bounce` are read as lower-is-better; that decides which way a trend cell is
-coloured and which side a directional alert rule watches. Set `direction`
-explicitly on the metric when the heuristic gets it wrong.
+The dashboard infers each metric's "good" direction from its name. Words like `error`, `fail`,
+`latency`, `crash`, `churn` and `bounce` read as lower-is-better; that decides which way a trend
+cell is coloured and which side a directional alert rule watches. Set `direction` explicitly on the
+metric when the heuristic gets it wrong.
 
 ## When you don't have the event yet
 

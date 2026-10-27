@@ -4,24 +4,24 @@ Source: https://docs.shipeasy.ai/feedback/connectors
 
 > Mirror new bug reports and feature requests out to a GitHub repo, a Google Sheet, or a Slack channel as they come in.
 
-**Connectors** push every new bug report and feature request out to an external tool, so triage doesn't have to start in Shipeasy. Open them from the **Connectors** button on the **Feedback** page (`/dashboard/<projectId>/feedback`).
+**Connectors** push every new bug report and feature request out to an external tool, so triage doesn't have to start in Shipeasy. Tickets themselves live on **Home**, the project's ops queue; a connector only mirrors them outward.
 
-## Which destinations are wired
+## Where each one is set up
 
-Three outbound destinations ship today:
+There is no single Connectors screen in the dashboard. Each destination has the surface that fits it:
 
-- **GitHub** — Opens an <b>Issue</b> (with labels) in a repository you pick for every selected event.
+- **Slack** —
+    **Connect Slack** authorizes the Shipeasy Slack app, then you pick a default channel. Posts a
+    <b>message</b> per event, with action buttons, a <code>/shipeasy</code> command and an
+    <b>@Shipeasy</b> assistant. <a href="/feedback/slack">Full Slack page →</a>
 
-- **Google Sheets** — Appends a <b>row</b> to a spreadsheet + tab of your choice for every selected event.
+- **GitHub** — Opens an <b>Issue</b> (with labels) in a repository you pick for every selected event. Create the connector with the API, then finish the GitHub App install.
 
-- **Slack** — Posts a <b>message</b> to a channel you pick — plus action buttons, notifications, a <code>/shipeasy</code> command and an <b>@Shipeasy</b> assistant. <a href="/feedback/slack">Full Slack page →</a>
+- **Google Sheets** — Appends a <b>row</b> to a spreadsheet and tab of your choice for every selected event.
 
-> **Want Linear, Jira, Notion…?**
+- **Coding agents** — Claude, Cursor, Copilot and Jules connectors run an agent on your queue instead of mirroring it. See [Scheduled triggers](https://docs.shipeasy.ai/get-started/triggers).
 
-Those aren't wired yet. The connectors panel has a **"Need a connector we don't have yet?"**
-banner — tell us where you want bugs and requests to land and it goes straight to the Shipeasy
-team as a feature request. Until then, GitHub, Google Sheets and Slack are the providers
-available.
+These are the only destinations. Anything else is not available.
 
 ## Events you can forward
 
@@ -34,56 +34,44 @@ Each connector subscribes to one or more lifecycle events:
 
 By default both are selected.
 
-## Setting up a GitHub connector
+## Setting up a GitHub or Google Sheets connector
+
+Both are created through the connector API, which returns the connector switched off; the provider's
+OAuth flow then attaches credentials and enables it.
 
 **Create the connector**
 
-**Connectors → New connector**, pick **GitHub**, name it, choose the events to forward, and
-**Continue**.
+[`POST /api/admin/connectors`](https://docs.shipeasy.ai/api/operations/createConnector) with `{ "provider": "github",
+"name": "Bugs → acme/app", "events": ["bug.created"] }`. Use `"google_sheets"` for a sheet.
 
-**Install the GitHub App**
+**Authorize the provider**
 
-You're redirected to install the Shipeasy GitHub App and pick which repos it can access. After
-consent you land back in the configure view.
+Complete the GitHub App install (pick which repos it can access) or the Google consent screen.
 
-**Pick a repo and labels**
+**Pick the target**
 
-Select the **repository**, optionally set **bug labels** and **feature labels**
-(comma-separated) to apply to opened issues, tick **Enabled**, and **Save**. Use **Send test**
-to open a throwaway issue and confirm the wiring.
+[Update the connector](https://docs.shipeasy.ai/api/operations/updateConnector) with the repository and optional **bug
+labels** and **feature labels**, or the spreadsheet and tab, and set `enabled: true`.
 
-## Setting up a Google Sheets connector
+**Check it**
 
-**Create the connector**
+[Send a test](https://docs.shipeasy.ai/api/operations/testConnector) — it opens a throwaway issue or appends a throwaway
+row, so you can confirm the wiring.
 
-**Connectors → New connector**, pick **Google Sheets**, name it, choose events, and
-**Continue**.
+## Setting up Slack
 
-**Authorize Google**
-
-Authorize Shipeasy to access your Drive. After consent you come back to configure.
-
-**Pick a spreadsheet and tab**
-
-Choose the **spreadsheet** and **tab** to append rows to, tick **Enabled**, and **Save**.
-
-## Setting up a Slack connector
-
-**Create the connector**
-
-**Connectors → New connector**, pick **Slack**, name it, choose events, and **Continue**.
+**Connect**
+Open **Settings → Notifications** and click **Connect Slack**.
 
 **Add to Slack**
 
-You're redirected to authorize the Shipeasy Slack app in your workspace. After consent you land
-back in the configure view.
+Authorize the Shipeasy Slack app in your workspace. After consent you land back on the
+Notifications tab.
 
 **Pick a channel**
 
-Choose the **feedback channel** new bugs/requests post to. Optionally pick a separate
-**notifications channel** for platform events (alerts, errors, config publishes) — leave it on
-*Same as feedback channel* to share one. Tick **Enabled**, **Save**, and use **Send test** to
-post a throwaway message.
+Choose the **default channel** for Slack notifications. Individual events can override it in the
+events table below.
 
 > **Slack does much more than mirror**
 
@@ -93,7 +81,7 @@ your flags and configs by chat. It's all on the dedicated **[Slack page](https:/
 
 ## Status & health
 
-Each connector in the list shows a status — **Needs OAuth**, **Needs repo** / **Needs sheet** / **Needs channel** (target not picked yet), **Active**, **Disabled**, or **Failing** (last dispatch errored). The configure view surfaces the last error and last successful delivery time, so you can tell at a glance whether mirroring is healthy.
+[List the connectors](https://docs.shipeasy.ai/api/operations/listConnectors) to see each one's status — **Needs OAuth**, **Needs repo** / **Needs sheet** / **Needs channel** (target not picked yet), **Active**, **Disabled**, or **Failing** (last dispatch errored). The last error and last successful delivery time come back with it, so you can tell at a glance whether mirroring is healthy.
 
 > **Connectors forward out — and Slack actions flow back**
 
@@ -104,5 +92,5 @@ ready-for-QA, resolve / dismiss alert) write straight back into Shipeasy.
 **Related**
 
 - [Feedback overview](https://docs.shipeasy.ai/feedback/getting-started) — Where bugs and feature requests are captured.
-- [Errors dashboard & triage](https://docs.shipeasy.ai/feedback/errors) — File an error as an issue, then mirror it via a connector.
+- [Errors page](https://docs.shipeasy.ai/feedback/errors) — File an error as an issue, then mirror it via a connector.
 - [Devtools overlay](https://docs.shipeasy.ai/feedback/devtools) — The in-page nub that captures bugs and requests.

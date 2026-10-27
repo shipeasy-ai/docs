@@ -9,7 +9,7 @@ This walks you through shipping a real feature behind a feature flag. You'll cre
 path, and ramp it from 0% → 5% → 25% → 100%. By the end the feature is live for everyone, with no
 redeploys between ramp steps.
 
-<Quickstart title="The 5-minute path" time="install · create · flag · ramp">
+<Quickstart title="The 5-minute path" time="install · initialise · create · wrap · ramp">
   <QuickstartStep
     num={1}
     label="INSTALL"
@@ -18,19 +18,25 @@ redeploys between ramp steps.
   />
   <QuickstartStep
     num={2}
+    label="INITIALISE"
+    title="Configure once at boot"
+    cmd="configure({ apiKey: process.env.SHIPEASY_SERVER_KEY })"
+  />
+  <QuickstartStep
+    num={3}
     label="CREATE"
     title="Create a feature flag at 0%"
     cmd="shipeasy release flags create checkout-v2 --rollout-percent 0"
   />
   <QuickstartStep
-    num={3}
+    num={4}
     label="WRAP"
     title="Put the new code path behind a feature flag"
     cmd="const flags = new Client(currentUser);
 if (flags.getFlag('checkout-v2')) { ... }"
   />
   <QuickstartStep
-    num={4}
+    num={5}
     label="RAMP"
     title="Bump to 5%, then 25%, then 100%"
     cmd="shipeasy release flags update checkout-v2 --rollout-percent 100"
@@ -81,7 +87,7 @@ description field exists on the feature flag row but the CLI's `flags create`
 doesn't accept a `--description` flag today — add the description from
 the dashboard after creating.)
 
-Alternatively, create it in the dashboard: **Flags → New feature flag → Save**.
+Alternatively, open **Feature flags** in the dashboard and click **New feature flag**.
 
 ## 3. Wrap the code path
 
@@ -209,7 +215,7 @@ shipeasy release flags update checkout-v2 --rollout-percent 100
 
 Each ramp step propagates to every SDK in under a second. No redeploy, no env var change.
 
-The same feature flag can be ramped from the dashboard with a slider, or via the
+The same feature flag can be ramped from the **Feature flags** page, or via the
 [Admin API](/api). Resolve the feature flag's id, then PATCH:
 
 ```bash

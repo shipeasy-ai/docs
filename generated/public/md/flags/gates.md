@@ -110,7 +110,7 @@ on a refresh.
 
 ## Overrides [#overrides]
 
-In the dashboard, expand a feature flag and add user IDs under **Overrides → Always on** or **Always off**. Overrides:
+Add user IDs with `shipeasy release flags whitelist-add <name>` (see [Overrides](https://docs.shipeasy.ai/flags/gates/overrides)). Overrides:
 
 - Bypass `enabled`, `killswitch`, all rules, and the rollout.
 - Are scoped to **`user_id`** only (no attribute matching — it's a literal set lookup).
@@ -162,10 +162,10 @@ That's rare. The default salt is fine for almost every case. The salt is also wh
 
 ## Audit log
 
-Every write to a feature flag is recorded in the audit log: who, when, from what (dashboard, CLI, API), and the diff. Find it under **Configs → Feature flags → \<feature flag\> → History**. Each row links to a one-click revert.
+Every write to a feature flag is recorded in the audit log: who, when, from what (dashboard, CLI, API), and the diff. Read it with `shipeasy release flags activity <name>`, or from the feature flag's activity feed on the **Feature flags** page.
 
 ## Limits [#rollout]
 
-Feature flags per project, rules per flag and overrides per flag are all plan-derived. The [pricing page](https://shipeasy.ai/pricing) has the matrix; **Settings → Billing** shows your own caps and how close you are to each. A create over a cap is rejected with `PLAN_LIMIT` rather than silently truncated.
+Feature flags per project, rules per flag and overrides per flag are all plan-derived. The [pricing page](https://shipeasy.ai/pricing) has the matrix; **Settings → Billing & usage** shows your own caps and how close you are to each. A create over a cap is rejected with `PLAN_LIMIT` rather than silently truncated.
 
 If you hit one, audit for stale flags first — the caps are generous if you delete what you ship.

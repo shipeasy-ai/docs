@@ -4,16 +4,53 @@ Source: https://docs.shipeasy.ai/flags/configs/values
 
 > Typed config values — strings, numbers, booleans, JSON — that change instantly without a redeploy. Schema-validated, versioned.
 
-A **dynamic value** is a typed key/value pair stored on your project. Use one when the answer to <em>"what should this be right now?"</em> is not boolean — pricing, copy, limits, feature options, API endpoints, model names, anything you'd otherwise hard-code as a constant or stash in an environment variable.
+A **dynamic value** is a named JSON object on your project, validated by a schema you write. Use one when the answer to <em>"what should this be right now?"</em> is not boolean — pricing, copy, limits, feature options, API endpoints, model names, anything you'd otherwise hard-code as a constant or stash in an environment variable.
 
 Unlike feature flags, dynamic values are **global per environment**: every user in `prod` sees the same value. To vary by user, put a feature flag around the code that reads the value, or use a [structured config](#structured-configs) with one key per cohort.
 
-## Types
+## Shape
 
-- `string` (string) — Copy, theme name, feature variant. Example: `"v2"`,  `"USD"`, `"claude-haiku-4-5"`.
-- `number` (number) — Limits, prices, timeouts. Example: `9.99`, `100`, `30000` .
-- `boolean` (boolean) — Site-wide on/off, separate from a feature flag when no targeting is needed.
-- `json` (object | array) — Structured config — see below. The per-value size cap is plan-derived.
+Every value is a **JSON object** at the top level, with a [JSON Schema](#validation) describing it. A single number or string lives inside that object as a field — `{ "max_files": 5 }`, `{ "theme": "dark" }`. Fields can be strings, numbers, booleans, arrays or nested objects; the per-value size cap is plan-derived.
+
+## Creating a value
+
+Pick the way that suits you. All three write the same thing.
+
+**Dashboard**
+
+Open **Configs** in the sidebar and click **New config**. Give it a `folder.name` key, describe
+its fields (the schema), and set the first value.
+
+**CLI**
+
+```bash
+shipeasy release configs create uploads.limits \
+  --schema '{"type":"object","properties":{"max_files":{"type":"number"}},"required":["max_files"]}' \
+  --value '{"max_files":5}'
+```
+
+**API**
+
+[`POST /api/admin/configs`](https://docs.shipeasy.ai/api/operations/createConfig) with `name`, `schema` and `value`.
+
+The name is `folder.name` — two lowercase segments — and is **immutable after create**, because it
+is the key your code looks the value up by. The [configs quickstart](https://docs.shipeasy.ai/flags/configs/quickstart)
+walks through the whole loop.
+
+## Creating a value
+
+In the dashboard: **Configs → Dynamic values → New value** — give it a name,
+pick a type (see [Types](#types) above), optionally attach a schema, and set
+the first value. Or from the CLI, with the schema and first value in one call:
+
+```bash
+shipeasy release configs create uploads.limits \
+  --schema '{"type":"object","properties":{"max_files":{"type":"number"}}}' \
+  --value '{"max_files":5}'
+```
+
+The value exists as soon as the create returns; reads and updates work from
+that moment on.
 
 ## Reading a value
 
@@ -23,12 +60,13 @@ import { configure, Client } from "@shipeasy/sdk/server";
 configure({ apiKey: process.env.SHIPEASY_SERVER_KEY ?? "" });
 
 const flags = new Client(currentUser);
-const limit = flags.getConfig<number>("rate-limit") ?? 100;
-const theme = flags.getConfig<string>("default-theme") ?? "light";
-const cfg = flags.getConfig<{ tier: string; limit: number }>("plan-defaults");
+const limits = flags.getConfig<{ max_files: number }>("uploads.limits", {
+  defaultValue: { max_files: 5 },
+});
+const theme = flags.getConfig<{ name: string }>("ui.theme", { defaultValue: { name: "light" } });
 ```
 
-The optional generic types the return value. **Always provide a fallback** — your code should never crash because the SDK hasn't initialised yet, or because someone deleted the value in the dashboard.
+The optional generic types the return value. **Always provide a default** — your code should never crash because the SDK hasn't initialised yet, or because someone archived the value in the dashboard.
 
 Browser:
 
@@ -50,21 +88,22 @@ no async, no Promise, no fetch.
 
 ## Updating a value
 
-Dashboard: **Configs → Dynamic values → click → edit value → Save**. The change is in KV in <100 ms and visible to your SDK on its next poll.
+Dashboard: open **Configs**, click the value, edit it, and publish. The change is in KV in <100 ms and visible to your SDK on its next poll.
 
 CLI:
 
 ```bash
-shipeasy release configs update rate-limit --value 200
-shipeasy release configs update default-theme --value '"dark"'
-shipeasy release configs update plan-defaults --value '{"tier":"pro","limit":50}'
+shipeasy release configs update uploads.limits --value '{"max_files":20}'
+shipeasy release configs update ui.theme --prod '{"name":"dark"}'
 ```
+
+`--value` publishes to every environment; `--dev`, `--staging` and `--prod` publish to just that one.
 
 A new value creates a **revision**; you can roll back from the dashboard at any time. Every revision records the author, source (dashboard / CLI / API), and a diff against the previous value.
 
 ```bash
 # Read the current value + schema
-shipeasy release configs get rate-limit
+shipeasy release configs get uploads.limits
 ```
 
 Revision history and rollback are dashboard-only — open the config detail view
@@ -84,8 +123,8 @@ A single JSON value can encode an entire decision tree. This is great for things
 
 ```ts
 type PlanCfg = Record<string, { max_seats: number | null; history_days: number }>;
-const cfg = flags.getConfig<PlanCfg>("plan-defaults");
-const seats = cfg?.[user.plan]?.max_seats ?? 3;
+const cfg = flags.getConfig<PlanCfg>("plan-defaults", { defaultValue: {} });
+const seats = cfg[user.plan]?.max_seats ?? 3;
 ```
 
 This collapses N flags into one JSON config that's **atomically updated** — no race conditions where the user sees half a new config and half the old one. The KV write is a single object, and the SDK either has the old version or the new one.
@@ -111,10 +150,7 @@ Other classic shapes:
 
 ## Validation
 
-When you create a value you can attach a **schema**:
-
-- Type: one of `string` / `number` / `boolean` / `json`.
-- For `json`: optionally a Zod schema, stored as a JSON Schema document on the project.
+Every value has a **schema**: a JSON Schema document (draft 2020-12) whose top level is `type: "object"`. You write it when you create the value and can change it later from the dashboard or with `shipeasy release configs update-schema`.
 
 If a write would violate the schema, the dashboard, the CLI, and the API all reject it before it reaches KV. Bad config never goes live.
 
@@ -127,6 +163,7 @@ const Schema = z.object({ tier: z.string(), limit: z.number() });
 
 const cfg = flags.getConfig("plan-defaults", {
   decode: (raw) => Schema.parse(raw),
+  defaultValue: { tier: "free", limit: 3 },
 });
 ```
 
@@ -162,7 +199,7 @@ Pair that with a grep across your source so a CI step fails when the code refere
 
 ## Limits
 
-How many values a project may hold, and how large a single JSON value may be, are both plan-derived — see the [pricing page](https://shipeasy.ai/pricing), or **Settings → Billing** for your own numbers. A write over either limit is rejected with `PLAN_LIMIT` before it reaches KV.
+How many values a project may hold, and how large a single JSON value may be, are both plan-derived — see the [pricing page](https://shipeasy.ai/pricing), or **Settings → Billing & usage** for your own numbers. A write over either limit is rejected with `PLAN_LIMIT` before it reaches KV.
 
 If your JSON is approaching the size limit, you're probably storing data that belongs in a database, not a config. Configs are designed for "a few KB of decisions per project", not "the user's shopping cart".
 

@@ -984,6 +984,44 @@
       ]
     },
     {
+      "path": "shipeasy ops qa-notes",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy ops qa-notes create",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--agent",
+        "--body",
+        "--kind",
+        "--verdict"
+      ]
+    },
+    {
+      "path": "shipeasy ops qa-notes list",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data",
+        "--kind"
+      ]
+    },
+    {
       "path": "shipeasy ops questions",
       "aliases": [],
       "args": [],

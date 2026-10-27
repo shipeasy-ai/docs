@@ -6,7 +6,7 @@ Source: https://docs.shipeasy.ai/metrics/quickstart
 
 This walks you through the metric pipeline end to end: pick what to measure, log the underlying
 events, create the metric definition, and put a threshold alert on it. By the end you'll have a
-number you can watch while you ramp, and a rule that pages when it moves the wrong way.
+number you can watch, and a rule that pages when it moves the wrong way.
 
 **Create a conversion metric**
 
@@ -17,7 +17,7 @@ shipeasy metrics create purchase_conversion --event-name purchase --query 'count
 **Log the underlying event from your code**
 
 ```bash
-flags.track(userId, 'purchase', { revenueCents })
+client.track('purchase', { revenueCents })
 ```
 
 **Raise a ticket when it drops**
@@ -59,31 +59,32 @@ shipeasy metrics create purchase_conversion \
   --query 'count(purchase) / count(session_start)'
 ```
 
-On a chart that is the conversion rate. In an experiment it collapses per user
-to a `0` or a `1` — did they purchase, among the users who started a session.
+On a chart that is the conversion rate: purchases out of sessions started, bucket by bucket.
 
-You now have a metric definition. It does nothing on its own; it tells the analysis pipeline how
-to aggregate the underlying events per user.
+You now have a metric definition. It does nothing on its own; it tells the pipeline how to
+aggregate the underlying events.
 
-For a revenue metric (sum the `revenueCents` property across `purchase` events per user):
+For a revenue metric (sum the `revenueCents` property across `purchase` events):
 
 ```bash
-shipeasy metrics create revenue_per_user \
+shipeasy metrics create revenue \
   --event-name purchase \
   --query 'sum(purchase, revenueCents)'
 ```
 
-For more aggregation types, see [Aggregations](https://docs.shipeasy.ai/metrics/aggregations).
+There are eleven aggregation functions in all — count, sum, average, minimum, maximum, std dev and
+the p50 to p99 percentiles. See [Aggregation functions](https://docs.shipeasy.ai/metrics/aggregations).
 
 ## 3. Log the underlying events
 
 The metric is a _rule_ for aggregating events. The events themselves come from your code:
 
 ```ts title="app/checkout/success/page.tsx"
-import { flags } from "@shipeasy/sdk/server";
+import { Client } from "@shipeasy/sdk/server";
 
 export default async function CheckoutSuccess({ order }: { order: Order }) {
-  flags.track(order.userId, "purchase", {
+  const client = new Client({ user_id: order.userId });
+  client.track("purchase", {
     revenueCents: order.totalCents,
     currency: order.currency,
     channel: order.acquisitionChannel,
@@ -94,12 +95,13 @@ export default async function CheckoutSuccess({ order }: { order: Order }) {
 
 A few rules that matter:
 
-- **The first argument is the `userId`.** `flags.track` requires it as a positional arg — it is what lets the analysis pipeline collapse events to one value PER USER.
+- **The event is tied to the user the `Client` was built for.** That is what lets you slice a series by who did it and count distinct users where you need to.
 - **Properties become filterable.** You can later add a metric like "organic-channel purchases" by filtering on `channel` inside the DSL selector (`count(purchase{channel="organic"})`).
 - **`track()` is fire-and-forget.** It returns void; the event flushes asynchronously. Don't `await` it expecting a delivery guarantee — it's analytics, not transactional state.
 
-Deploy this. Events start flowing. The metric definition will pick them up on the next analysis
-window (daily by default).
+Deploy this. Events start flowing, and the metric picks them up as they arrive. A brand-new event
+name shows up on the **Events** page first, waiting for you to approve it — metrics defined on an
+event that hasn't been approved yet fail until you do.
 
 ## 4. Put an alert on it
 
@@ -146,14 +148,14 @@ alert evaluator reads, so what you see locally is what the rule is judging:
 
 If the number is flat or missing, two checks:
 
-1. **Are events actually landing?** Open the **Events** tab and confirm non-trivial counts. Zero
+1. **Are events actually landing?** Open **Events** in the sidebar and confirm non-trivial counts. Zero
    means your `track()` call isn't running on the path you think it is.
 2. **Is the window long enough?** A 1-hour window on a low-volume event is mostly empty buckets.
    Widen the window, or set `--required-buckets` so one lone sample can't page anyone.
 
 ## Where to next
 
-- **[Aggregation types](https://docs.shipeasy.ai/metrics/aggregations)** — Conversion, count, sum, mean, ratio — what each does and when to pick it.
+- **[Aggregation functions](https://docs.shipeasy.ai/metrics/aggregations)** — All eleven — what each does and when to pick it.
 
 - **[The metric DSL](https://docs.shipeasy.ai/metrics/grammar)** — The full grammar — every aggregation, filter and operator, and what the parser refuses.
 
@@ -161,7 +163,7 @@ If the number is flat or missing, two checks:
 
 **Related**
 
-- [Aggregation types](https://docs.shipeasy.ai/metrics/aggregations) — Conversion, count, sum, mean, ratio
+- [Aggregation functions](https://docs.shipeasy.ai/metrics/aggregations) — All eleven, and when to pick each
 - [Query DSL grammar](https://docs.shipeasy.ai/metrics/grammar) — Everything the query language allows
 - [Configure alerts](https://docs.shipeasy.ai/metrics/alerts) — Raise a threshold on what you just built
 - [Flow & dependencies](https://docs.shipeasy.ai/flags/flow) — Trace what feeds what

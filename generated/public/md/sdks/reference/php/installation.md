@@ -97,7 +97,7 @@ $enabled = $client->getFlag('new_checkout');
 | `isNetworkEnabled` | env-derived | Master switch for **all** outbound requests. `null` ⇒ on in production, off everywhere else. See [Configuration](https://docs.shipeasy.ai/sdks/reference/php/configuration). |
 | `disableTelemetry` | env-derived | Opt out of the usage-telemetry beacon. `null` ⇒ on in production, off everywhere else. |
 | `telemetryUrl` | (built-in) | Override the telemetry endpoint. |
-| `privateAttributes` | `[]` | Attribute names stripped from outbound event payloads (LD/Statsig `privateAttributes`). See [Advanced](https://docs.shipeasy.ai/sdks/reference/php/advanced). |
+| `privateAttributes` | `[]` | Attribute names stripped from outbound event payloads (`privateAttributes`). See [Advanced](https://docs.shipeasy.ai/sdks/reference/php/advanced). |
 | `stickyStore` | `null` | A `Shipeasy\StickyBucketStore` for durable experiment bucketing. See [Advanced](https://docs.shipeasy.ai/sdks/reference/php/advanced). |
 | `logLevel` | `'warn'` | SDK diagnostic verbosity: `'silent'`, `'error'`, `'warn'`, `'info'`, `'debug'`. Runtime reads are fail-safe (never throw) and log at this level. See [Configuration](https://docs.shipeasy.ai/sdks/reference/php/configuration). |
 

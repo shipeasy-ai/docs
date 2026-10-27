@@ -52,7 +52,8 @@ Configs are typed via the optional generic. Always provide a fallback — your c
 ### Logging an event
 
 ```ts
-flags.track("u_4f2a", "purchase", { value: 49.99, sku: "SHIRT-L-BLUE" });
+const flags = new Client({ user_id: "u_4f2a" });
+flags.track("purchase", { value: 49.99, sku: "SHIRT-L-BLUE" });
 ```
 
 `track()` is fire-and-forget. Events are batched and sent to `/collect` on the Shipeasy edge.
@@ -224,7 +225,7 @@ Useful for QA, dogfooding new variants, walking a customer through what they sho
 <Callout type="warn" title="Don't put a server key in client code">
   The two key kinds aren&apos;t interchangeable. Server keys can read full payloads and write
   events; they don&apos;t belong in a bundle. Put the **client** key in the browser and the
-  **server** key in your server runtime — both come from **Project → SDK keys**.
+  **server** key in your server runtime — both come from **SDK keys** in the sidebar.
 </Callout>
 
 <ConvertCTA

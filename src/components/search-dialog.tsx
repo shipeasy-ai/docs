@@ -14,9 +14,24 @@
  * looks where the nav taught them to look.
  */
 
-import DefaultSearchDialog, {
-  type DefaultSearchDialogProps,
-} from "fumadocs-ui/components/dialog/search-default";
+import { useMemo, useState } from "react";
+import { useI18n } from "fumadocs-ui/contexts/i18n";
+import {
+  SearchDialog as Dialog,
+  SearchDialogClose,
+  SearchDialogContent,
+  SearchDialogFooter,
+  SearchDialogHeader,
+  SearchDialogIcon,
+  SearchDialogInput,
+  SearchDialogList,
+  SearchDialogOverlay,
+  TagsList,
+  TagsListItem,
+  type SharedProps,
+} from "fumadocs-ui/components/dialog/search";
+import { useDocsSearch } from "fumadocs-core/search/client";
+import { rankResults } from "@/lib/search-rank";
 
 const SEARCH_TAGS = [
   { name: "Get started", value: "get-started" },
@@ -28,6 +43,56 @@ const SEARCH_TAGS = [
   { name: "API", value: "api" },
 ];
 
-export default function SearchDialog(props: DefaultSearchDialogProps) {
-  return <DefaultSearchDialog {...props} type="static" tags={SEARCH_TAGS} allowClear />;
+/** How many ranked rows to show. The engine is asked for more than this so the
+ *  canonical page is in the pool even when a rarer chunk outscored it. */
+const SHOWN = 60;
+
+/**
+ * Same dialog as fumadocs' `DefaultSearchDialog`, with one difference: results
+ * are re-ranked (see `src/lib/search-rank.ts`) so "feature flag", "kill switch"
+ * and "alert rule" land on the page about them instead of on whichever chunk
+ * the engine's BM25 liked best. `DefaultSearchDialog` cannot be told to do that —
+ * it does not expose the client's `search` options or its result list.
+ */
+export default function SearchDialog(props: SharedProps) {
+  const { locale } = useI18n();
+  const [tag, setTag] = useState<string | undefined>(undefined);
+  const { search, setSearch, query } = useDocsSearch({
+    type: "static",
+    from: "/static.json",
+    locale,
+    tag,
+    search: { limit: 200 },
+  });
+
+  const items = useMemo(
+    () =>
+      query.data === "empty" || !query.data
+        ? null
+        : rankResults(search, query.data).slice(0, SHOWN),
+    [query.data, search],
+  );
+
+  return (
+    <Dialog search={search} onSearchChange={setSearch} isLoading={query.isLoading} {...props}>
+      <SearchDialogOverlay />
+      <SearchDialogContent>
+        <SearchDialogHeader>
+          <SearchDialogIcon />
+          <SearchDialogInput />
+          <SearchDialogClose />
+        </SearchDialogHeader>
+        <SearchDialogList items={items} />
+      </SearchDialogContent>
+      <SearchDialogFooter>
+        <TagsList tag={tag} onTagChange={setTag} allowClear>
+          {SEARCH_TAGS.map((t) => (
+            <TagsListItem key={t.value} value={t.value}>
+              {t.name}
+            </TagsListItem>
+          ))}
+        </TagsList>
+      </SearchDialogFooter>
+    </Dialog>
+  );
 }

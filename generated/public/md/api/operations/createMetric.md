@@ -15,4 +15,3 @@ query is invalid or references an unregistered event / label.
 
 - **Track an event** — `count_users(<event>)` for unique-user counts.
 - **Sum a value** — `sum(<event>, <label>)` for revenue / quantity metrics.
-- **Experiment success metric** — create the metric, then attach its id to an experiment.

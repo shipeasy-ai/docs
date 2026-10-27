@@ -14,6 +14,12 @@ redeploys between ramp steps.
 npm install @shipeasy/sdk && npx shipeasy login
 ```
 
+**Configure once at boot**
+
+```bash
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY })
+```
+
 **Create a feature flag at 0%**
 
 ```bash
@@ -79,7 +85,7 @@ description field exists on the feature flag row but the CLI's `flags create`
 doesn't accept a `--description` flag today — add the description from
 the dashboard after creating.)
 
-Alternatively, create it in the dashboard: **Flags → New feature flag → Save**.
+Alternatively, open **Feature flags** in the dashboard and click **New feature flag**.
 
 ## 3. Wrap the code path
 
@@ -193,7 +199,7 @@ shipeasy release flags update checkout-v2 --rollout-percent 100
 
 Each ramp step propagates to every SDK in under a second. No redeploy, no env var change.
 
-The same feature flag can be ramped from the dashboard with a slider, or via the
+The same feature flag can be ramped from the **Feature flags** page, or via the
 [Admin API](https://docs.shipeasy.ai/api). Resolve the feature flag's id, then PATCH:
 
 ```bash

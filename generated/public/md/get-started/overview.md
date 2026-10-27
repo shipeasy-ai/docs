@@ -132,7 +132,7 @@ For the native server SDKs (Go, Python, Ruby, Java, Kotlin, PHP, Swift) the eval
 
 A handful of behaviours are plan-derived rather than per-project. The big one is the **SDK poll interval** — the worst-case lag between an edit going live at the edge and a given SDK instance noticing it. Evaluation itself is local and instant on every plan; only the refresh cadence moves.
 
-You never configure it. The worker advertises the current value in the `X-Poll-Interval` response header and the SDK re-paces itself on the next poll, so a plan change propagates through the next KV rebuild with no redeploy and no per-project migration. Your plan's interval is on the [pricing page](https://shipeasy.ai/pricing) and on **Settings → Billing**.
+You never configure it. The worker advertises the current value in the `X-Poll-Interval` response header and the SDK re-paces itself on the next poll, so a plan change propagates through the next KV rebuild with no redeploy and no per-project migration. Your plan's interval is on the [pricing page](https://shipeasy.ai/pricing) and on **Settings → Billing & usage**.
 
 ## Identity model
 

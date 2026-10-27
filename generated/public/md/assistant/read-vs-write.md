@@ -2,11 +2,12 @@
 
 Source: https://docs.shipeasy.ai/assistant/read-vs-write
 
-> Read tools auto-execute and stream a thinking trace; write tools never auto-run — they surface as editable cards you confirm.
+> Read tools auto-execute and stream a thinking trace; writes surface as editable cards you confirm before anything is applied.
 
 The assistant has two kinds of tools, and the difference between them is the entire safety model:
-**reads happen automatically; writes never do.** You don't choose a mode — the assistant picks the
-right tool for what you asked, and the boundary is enforced server-side.
+**reads happen automatically; writes are proposed first.** You don't choose a mode — the assistant
+picks the right tool for what you asked. A write becomes an editable card, and the change runs
+only after you confirm it.
 
 ## Read mode — answers, auto-executed
 
@@ -25,12 +26,12 @@ The assistant doesn't answer product questions from its training data. It calls
 <code>search_docs</code> first and grounds the answer in the returned sections, ending with a
 <code>Sources:</code> line of links — so every claim traces back to a doc page.
 
-## Write mode — proposals, never auto-run
+## Write mode — proposals you confirm
 
-To change something, the assistant emits the matching write tool with its best-guess arguments —
-but write tools have **no server-side executor**. The model's call streams to the client and stops.
-It surfaces as an **editable confirmation card**, and the underlying change runs only after you
-press **Confirm**.
+To change something, the assistant emits the matching write tool with its best-guess arguments.
+The call surfaces as an **editable confirmation card**, and the underlying change runs only after
+you press **Confirm**. If a step can't be applied from the dashboard — it needs a code change,
+say — the assistant files it as a ticket instead, and says so.
 
 That inversion is deliberate: because nothing mutates until you confirm, it's safe — and expected —
 for the assistant to propose a mutation directly rather than asking "should I?" first.
@@ -53,10 +54,10 @@ ops_alerts_create / ops_alerts_update / ops_alerts_archive
 They are the same names the [MCP server](https://docs.shipeasy.ai/get-started/mcp-reference) advertises — the assistant and
 an external coding agent drive one surface, not two.
 
-> **It never claims success**
+> **Nothing applies until you confirm**
 
-The assistant never says an action "is done." It hands you the card; you apply it. If you cancel,
-nothing happened. Deleting resources is also available directly in the dashboard UI.
+The assistant hands you the card first; you apply it. If you cancel, the change isn't applied.
+Deleting resources is also available directly in the dashboard UI.
 
 ## Why the split holds
 
@@ -65,10 +66,10 @@ nothing happened. Deleting resources is also available directly in the dashboard
 Read tools only fetch — listing resources, reading docs, fetching a site page — so running them
 automatically can't surprise you. They're how the assistant grounds an answer.
 
-**Writes have no executor on the server**
+**Writes wait for your confirm**
 
-Write tools are registered without an <code>execute</code> function. The model can <em>call</em>
-them, but the server can't run them — the call becomes a card on the client.
+A write call doesn't apply on its own — it becomes a card on the client, with the assistant's
+best-guess arguments filled in for you to review, edit, and confirm.
 
 **You are the executor**
 

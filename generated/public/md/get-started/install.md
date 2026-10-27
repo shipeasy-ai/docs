@@ -136,8 +136,8 @@ Don't wrap this in a custom helper file. The SDK owns its own initialisation.
 
 **Server keys** can read full payloads and write events. **Client keys** are scoped: they expose
 only the feature flags and configs you mark _client-readable_, and they rate-limit by domain.
-Never put a server key in browser code. Manage both in **Project → SDK keys**, or with `shipeasy
-keys`.
+Never put a server key in browser code. Manage both in **SDK keys** in the sidebar, or with
+`shipeasy sdk keys`.
 
 ## CLI [#cli]
 

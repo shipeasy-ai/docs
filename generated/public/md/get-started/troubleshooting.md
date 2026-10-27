@@ -26,13 +26,13 @@ though the dashboard shows the new domain.
 
 > **Fixed automatically on domain change**
 
-Updating a project's domain in **Settings → Domain** now re-stamps the new value onto every
+Updating a project's domain in **Settings → General** now re-stamps the new value onto every
 existing (non-revoked) key. If you're on an older deploy, or want an immediate unblock, use one of
 the fixes below.
 
 ### How to resolve
 
-**Confirm the domain in Settings → Domain.** Use the bare host, no scheme and no path —
+**Confirm the domain in Settings → General.** Use the bare host, no scheme and no path —
 `app.example.com`, not `https://app.example.com/`.
 
 **Re-save the domain** (even to the same value). This re-stamps the allowlist onto every
@@ -62,7 +62,7 @@ The key in your `X-SDK-Key` / `Authorization` header isn't recognised. Usual
 causes:
 
 - **Wrong side.** A server key sent from the browser, or a client key used for a server-only read. Each entrypoint takes exactly one, separately-named key — see [Keys & environments](https://docs.shipeasy.ai/get-started/keys-and-environments).
-- **Revoked or expired.** Check the key list in **Settings → Keys**; mint a replacement if it's gone.
+- **Revoked or expired.** Check the key list in **SDK keys**; mint a replacement if it's gone.
 - **Wrong project.** The key belongs to a different project than the resources you're querying.
 
 ## Flags read `false` / configs read their default on the server during SSR
