@@ -256,7 +256,7 @@ export function MetricPulseScene() {
           <span className="se-met-val">
             5.2<span className="u">%</span>
           </span>
-          <span className="se-met-lift">▲ +8.3% vs control</span>
+          <span className="se-met-lift">▲ +8.3% vs previous 7 days</span>
           <svg className="se-met-spark" viewBox="0 0 200 56" preserveAspectRatio="none">
             <polyline
               className="se-met-line"
@@ -267,7 +267,7 @@ export function MetricPulseScene() {
         <div className="se-met-feed">
           <span className="se-met-k">event stream · user u_42</span>
           <div className="se-met-ev">
-            <span className="t">10:07</span> $exposure <span className="g v1">v1</span>
+            <span className="t">10:07</span> page_view <span className="g v1">/pricing</span>
           </div>
           <div className="se-met-ev">
             <span className="t">10:09</span> click
@@ -308,7 +308,7 @@ export function AssistantReadScene() {
             <span className="se-asst-tick">✓</span> Reading your project
           </div>
           <div className="se-asst-tstep">
-            <span className="se-asst-tick">✓</span> Checking experiment status
+            <span className="se-asst-tick">✓</span> Checking flag status
           </div>
           <div className="se-asst-tstep">
             <span className="se-asst-tick">✓</span> Searching the docs
@@ -321,7 +321,7 @@ export function AssistantReadScene() {
               <code>legacy_checkout</code> — fully rolled out, no rule references it
             </li>
             <li>
-              <code>dark_mode</code> — at 100% since March, experiment finished
+              <code>dark_mode</code> — at 100% since March, fully rolled out
             </li>
             <li>
               <code>beta_banner</code> — superseded by <code>nux_banner</code>
@@ -516,9 +516,9 @@ export function AssistantPlanScene({ resolved = false }: { resolved?: boolean })
     },
     {
       n: 2,
-      label: "Create experiment new-checkout-flow",
+      label: "Create feature flag new-checkout-flow",
       kind: "instant" as const,
-      detail: "control 50% · variant 50% · goal ↑ checkout_conversion_rate",
+      detail: "rollout 50% · goal ↑ checkout_conversion_rate",
     },
     {
       n: 3,
@@ -562,7 +562,7 @@ export function AssistantPlanScene({ resolved = false }: { resolved?: boolean })
         </div>
         {resolved ? (
           <div className="se-asst-plan-done">
-            <span className="se-asst-tick">✓</span> Created 2 resources and filed ticket #42 with 1
+            <span className="se-asst-tick">✓</span> Created 2 resources and filed a ticket with 1
             item to implement
           </div>
         ) : (

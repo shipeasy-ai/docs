@@ -9,7 +9,7 @@ This walks you through replacing one hard-coded constant with a config you can c
 dashboard. You'll create the config with a schema, read it in code with a guaranteed fallback, then
 change the value in production and watch it land without a deploy.
 
-<Quickstart title="The 5-minute path" time="install · create · read · change">
+<Quickstart title="The 5-minute path" time="install · initialise · create · read · change">
   <QuickstartStep
     num={1}
     label="INSTALL"
@@ -18,19 +18,26 @@ change the value in production and watch it land without a deploy.
   />
   <QuickstartStep
     num={2}
+    label="INITIALISE"
+    title="Initialise the SDK once at boot"
+    cmd={`import { configure } from "@shipeasy/sdk/server";
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY ?? "" });`}
+  />
+  <QuickstartStep
+    num={3}
     label="CREATE"
     title="Create the config with its shape and first value"
     cmd={`shipeasy release configs create uploads.limits --schema '{"type":"object","properties":{"max_files":{"type":"number"}}}' --value '{"max_files":5}'`}
   />
   <QuickstartStep
-    num={3}
+    num={4}
     label="READ"
     title="Read it where the constant used to be"
     cmd="const cfg = new Client(currentUser)
   .getConfig('uploads.limits', { defaultValue: { max_files: 5 } });"
   />
   <QuickstartStep
-    num={4}
+    num={5}
     label="CHANGE"
     title="Raise the limit in production"
     cmd={`shipeasy release configs update uploads.limits --prod '{"max_files":20}'`}

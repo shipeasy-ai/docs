@@ -51,6 +51,21 @@ Unlike feature flags, dynamic values are **global per environment**: every user 
   }}
 />
 
+## Creating a value
+
+In the dashboard: **Configs → Dynamic values → New value** — give it a name,
+pick a type (see [Types](#types) above), optionally attach a schema, and set
+the first value. Or from the CLI, with the schema and first value in one call:
+
+```bash
+shipeasy release configs create uploads.limits \
+  --schema '{"type":"object","properties":{"max_files":{"type":"number"}}}' \
+  --value '{"max_files":5}'
+```
+
+The value exists as soon as the create returns; reads and updates work from
+that moment on.
+
 ## Reading a value
 
 ```ts
@@ -198,7 +213,7 @@ Pair that with a grep across your source so a CI step fails when the code refere
 
 ## Limits
 
-How many values a project may hold, and how large a single JSON value may be, are both plan-derived — see the [pricing page](https://shipeasy.ai/pricing), or **Settings → Billing** for your own numbers. A write over either limit is rejected with `PLAN_LIMIT` before it reaches KV.
+How many values a project may hold, and how large a single JSON value may be, are both plan-derived — see the [pricing page](https://shipeasy.ai/pricing), or **Settings → Billing & usage** for your own numbers. A write over either limit is rejected with `PLAN_LIMIT` before it reaches KV.
 
 If your JSON is approaching the size limit, you&apos;re probably storing data that belongs in a database, not a config. Configs are designed for &quot;a few KB of decisions per project&quot;, not &quot;the user&apos;s shopping cart&quot;.
 

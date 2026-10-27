@@ -5,7 +5,7 @@ description: getFlagDetail returns the value plus the reason a flag resolved the
 
 <DocMeta status="Production ready" read="4 min read" works="@shipeasy/sdk · server + client" />
 
-`getFlag` tells you _what_ a flag resolved to. `getFlagDetail` tells you _why_ — it returns `{ value, reason }`, LaunchDarkly `variationDetail` parity, so you can log, debug, or branch on the cause rather than just the boolean.
+`getFlag` tells you _what_ a flag resolved to. `getFlagDetail` tells you _why_ — it returns `{ value, reason }` (the variation-detail shape other flag SDKs use), so you can log, debug, or branch on the cause rather than just the boolean.
 
 ```ts
 import { configure, Client, type FlagReason } from "@shipeasy/sdk/server";

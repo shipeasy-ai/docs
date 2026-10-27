@@ -70,15 +70,15 @@ flips:
 
 1. **A row gets written to the audit log.** Who flipped it, when, from what surface (dashboard,
    CLI, API), and the reason string they passed.
-2. **A webhook fires.** Wire it to PagerDuty, Opsgenie, or your incident channel. The flip should
+2. **A webhook fires.** Wire it to your paging tool or your incident channel. The flip should
    declare the incident, not require someone to remember to.
 
-Wire the `killswitch.flipped` event through **Feedback → Connectors** in the
-dashboard. Pick the GitHub, Slack, or PagerDuty connector (depending on the
+Wire the `killswitch.flipped` event through **Connectors** in the
+dashboard. Pick the GitHub or Slack connector (depending on the
 severity) and configure the connector filter to only fire when the new value
 is `true` (kill activated). Scope by name in the same filter when you want
-PagerDuty for the payment killswitch but only Slack for the experimental-
-feature one.
+the paging route for the payment killswitch but only Slack for the
+experimental-feature one.
 
 ## Naming
 

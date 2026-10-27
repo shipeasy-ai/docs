@@ -5,7 +5,7 @@ description: Fingerprint-grouped error issues with a status workflow, occurrence
 
 <DocMeta status="Production ready" read="4 min read" works="Dashboard · per project" />
 
-The **Errors** page (`/dashboard/<projectId>/errors`, under **Ops → Errors**) is where the errors reported by [`see()`](/feedback/error-reporting) land. Each distinct issue is grouped by **fingerprint** — so a thousand occurrences of the same problem are one row, not a thousand — and shown with its consequence sentence, occurrence trend, and triage state.
+The **Errors** page (`/dashboard/<projectId>/errors`) is where the errors reported by [`see()`](/feedback/error-reporting) land. Each distinct issue is grouped by **fingerprint** — so a thousand occurrences of the same problem are one row, not a thousand — and shown with its consequence sentence, occurrence trend, and triage state.
 
 <Callout type="info" title="This is the read side of see()">
   This page *displays* errors. Producing them is the SDK's job — wrap a catch with
@@ -39,6 +39,15 @@ resolved/ignored ──reopen──▶  open
 - **Ignored** — noise you've chosen to mute; hidden from open and no longer counted.
 
 Flip status from the per-row **⋯** menu (**Mark resolved**, **Ignore**, **Reopen**), from the detail panel, or in bulk by selecting rows and using the bulk-action bar.
+
+## From error to ticket
+
+A grouped issue doesn't stay a passive row. Once an issue passes **10
+occurrences**, Shipeasy files a ticket for it into the project's ops queue, so
+it can be picked up, assigned, and fixed like any other bug. If an issue then
+goes quiet, it **auto-closes after 3 days** without a new occurrence. Both
+numbers are per-project settings — change them under **Settings → Ops**
+("Create ticket after N occurrences" and "Auto-close resolved errors").
 
 <Callout type="success" title="Regressions re-open the same issue">
   Because issues are grouped by fingerprint, a recurrence of something you marked resolved
