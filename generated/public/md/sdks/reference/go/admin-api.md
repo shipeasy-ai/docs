@@ -72,6 +72,7 @@ operations in three ways worth knowing before you call them:
 - They authenticate with a **client** key (`sdk_client_…`) carrying the `tickets:public_create` scope — not the admin key. Client keys are meant to be embedded in shipped code, which is the point: a CLI, an installer, or a browser bundle can file a ticket without holding an admin credential. Pass yours with `admin.WithClientKey(...)`.
 - They are served by the Shipeasy **edge worker** (`api.shipeasy.ai`), not the admin API host. The generated client already routes them there.
 - Every item is filed as `pending_approval`, parked out of the work queue until a human promotes it in the dashboard, and repeat submissions of the same title dedupe against the open ticket already tracking them (HTTP 200 with `deduped: true` instead of a second ticket).
+- Pass `tags` — a list of tag names — to label the ticket. Each name is matched case-insensitively against the project's existing tags and reuses that tag (`ios` files under an existing `iOS`); a name with no match creates a new one. Up to 50 names of at most 64 characters each.
 
 The project is the key's own project — there is no project id to pass and no way
 to file into someone else's queue. The project must have public ticket creation
@@ -84,6 +85,7 @@ body := admin.NewCreatePublicBugRequest("Checkout 500s on Safari")
 body.SetStepsToReproduce("Open the cart on iOS Safari and tap the price row.")
 body.SetActualResult("The primary CTA overlaps the price.")
 body.SetPriority(admin.OPSITEMPRIORITY_HIGH)
+body.SetTags([]string{"ios", "checkout"})
 
 filed, _, err := client.OpsAPI.CreatePublicBug(ctx).CreatePublicBugRequest(*body).Execute()
 if err != nil {
