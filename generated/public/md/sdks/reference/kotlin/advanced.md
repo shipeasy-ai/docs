@@ -2,7 +2,7 @@
 
 Source: https://docs.shipeasy.ai/sdks/reference/kotlin/advanced
 
-> Attribute names usable for targeting but never persisted in analytics (privateAttributes). Since the server evaluates locally, private attrs…
+> Attribute names usable for targeting but never persisted in analytics (privateAttributes). Since the server evaluates locally, private attrs never leave for…
 
 > **Note**
 Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-kotlin/pages/advanced.md`](https://shipeasy-ai.github.io/sdk-kotlin/pages/advanced.md).
