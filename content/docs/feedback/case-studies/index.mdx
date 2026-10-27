@@ -62,7 +62,7 @@ lifetime.
 You're tired of hearing the same five feature requests in support and
 want to stack-rank them by actual demand instead of by who's loudest.
 Feature requests filed via the devtools nub (same `Shift+Alt+R` hotkey
-as the bug report flow above) land in **Feedback → Feature requests**
+as the bug report flow above) land in the project's **ops queue** as feature requests
 with the requester's identity, page URL, free-text use case, and any
 attached screenshots.
 
@@ -84,7 +84,7 @@ live) but you ship in your tracker (GitHub Issues, for most teams).
 Don't make humans copy-paste; the **GitHub connector** does the
 transition for you.
 
-Open **Feedback → Connectors → Add connector → GitHub**, point it at the
+Open **Connectors → Add connector → GitHub**, point it at the
 target repo, and pick `bug.created` (and / or `bug.status.changed`) as
 the events. The connector opens a GitHub issue with the bug title,
 reproduction steps, page URL, and reporter — and writes the issue URL
@@ -101,8 +101,8 @@ context baked in.
 The pattern that closes the loop in either case:
 
 - **The connector writes the external URL back** onto the bug card's
-  `external_link` field. Triagers jump from Feedback → GitHub /
-  Linear with a single click.
+  `external_link` field. Triagers jump from the ticket to the GitHub
+  issue with a single click.
 - **Dedup before forwarding.** Shipeasy collapses bug reports by
   page + repro fingerprint before the connector sees them, so a flurry
   of users hitting the same bug doesn't create N GitHub issues.

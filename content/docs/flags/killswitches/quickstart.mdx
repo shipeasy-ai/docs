@@ -32,7 +32,7 @@ sending in under five seconds without touching code.
     num={4}
     label="ALERT"
     title="Subscribe a connector (Slack / GitHub / etc.)"
-    cmd="Add via Dashboard → Feedback → Connectors → killswitch.flipped"
+    cmd="Add via Dashboard → Connectors → killswitch.flipped"
   />
 </Quickstart>
 
@@ -155,14 +155,14 @@ A killswitch is a _social_ signal as much as a technical one. Flipping it
 should announce itself on the team's incident channel and create a paper
 trail.
 
-Today this is wired through the **Feedback → Connectors** surface in the
+Today this is wired through the **Connectors** surface in the
 dashboard. Pick `killswitch.flipped` as the event, point it at a Slack or
 GitHub connector, and configure the filter (e.g. only fire for prod, or
 only for specific killswitch names). The connector payload includes who
 flipped it, when, and the new value — wire it into your incident channel
 and your runbook ("if you see this, page primary on-call within 2 minutes").
 
-For production-grade pages, point the connector at PagerDuty or Opsgenie —
+For production-grade pages, route the connector into your paging tool —
 that way flipping the killswitch _is_ declaring the incident, which is
 usually the right move.
 

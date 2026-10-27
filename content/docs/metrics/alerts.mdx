@@ -14,6 +14,18 @@ where you already triage.
 Alerts are evaluated server-side by a cron — there's no SDK call and nothing to
 poll. You only define the rule.
 
+## Create a rule in the dashboard
+
+Go to **Alerts → New alert rule**. In Manual mode you pick the metric, the
+comparator and the threshold; the lookback window (24h by default) is split
+into buckets — 6 to 12 of them, at a width we support — and each bucket is
+judged on its own. You choose how many buckets must breach before the rule
+fires, and whether a fired alert resolves itself when the metric comes back
+inside the threshold or is set to **Never auto-resolve**. The dashboard labels
+the middle severity **Warning**. (You can also describe the rule to the
+assistant and let it draft the card for you.) The API and CLI shape below is
+the same rule expressed as fields.
+
 ## What an alert chart shows
 
 Every rule renders as a 14-day chart of its metric with the alert story drawn on
@@ -28,12 +40,13 @@ the moment it fired. One band = one alert ticket.
 
 <AlertChartLive feature="breach" />
 
-### It compares the window average, not the raw spike
+### It judges bucket by bucket, not on a single reading
 
-A rule never fires on a single reading — it compares the **window average** (the
-bright line) against the threshold. A brief blip that punches over the line
-averages back out and never pages; only a sustained move fires. Widen the window
-to smooth more, narrow it to catch faster.
+A rule never fires on one raw reading. The window is split into buckets and
+each bucket is judged against the threshold on its own; the rule fires when
+enough buckets breach — you set how many. A brief blip confined to a single
+bucket doesn't page you; a sustained move does. Widen the window to smooth
+more, narrow it to catch faster.
 
 <AlertChartLive feature="window" />
 
@@ -157,9 +170,10 @@ shipeasy ops alerts list
 />
 
 <Callout type="warn">
-  **Windows are whole hours.** The minimum is 1 hour and there are no sub-hour windows — a "last 30
-  minutes" intent rounds up to 1h. Pick a window long enough that the metric is stable but short
-  enough to catch the spike you care about.
+  **In the API and CLI, `window` is whole hours.** The minimum is 1 hour and there are no sub-hour
+  windows — a "last 30 minutes" intent rounds up to 1h. In the dashboard the same lookback is
+  presented as buckets over the window. Pick a window long enough that the metric is stable but
+  short enough to catch the spike you care about.
 </Callout>
 
 ## How it fires
@@ -173,7 +187,8 @@ rule it:
 2. Compares that value to the threshold with the comparator. If it breaches, the
    rule **raises an alert**.
 3. When a previously-breaching rule comes back inside its threshold, the alert
-   **auto-resolves** — no manual clearing.
+   **auto-resolves** — no manual clearing — unless the rule is set to **Never
+   auto-resolve** in the dashboard.
 
 Each rule is evaluated in isolation, so a misconfigured metric can't block the
 others.

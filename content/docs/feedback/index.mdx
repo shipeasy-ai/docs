@@ -10,7 +10,7 @@ description: Capture user-reported bugs and feature requests, prioritize them, r
       Hear what users actually want — <em>before</em> you ship the wrong thing.
     </>
   }
-  subtitle="Capture bug reports and feature requests directly from your product. Prioritize, triage, and route them to your bug tracker — without forcing users into a 12-field Jira form."
+  subtitle="Capture bug reports and feature requests directly from your product. Prioritize, triage, and route them to your bug tracker — without forcing users into a 12-field form in a separate tracker."
   primaryHref="/feedback/getting-started"
   primaryLabel="Getting started"
   secondaryHref="#how-it-works"
@@ -34,8 +34,8 @@ description: Capture user-reported bugs and feature requests, prioritize them, r
 
 <TileGrid>
   <Tile href="#bugs" icon="◎" title="Bugs — what's broken">
-    Title, page URL, optional stack trace and screenshot. Status flow: `open` → `triaged` →
-    `resolved`.
+    Title, page URL, optional stack trace and screenshot. Status flow: `open` → `in progress` →
+    `ready for QA` → `resolved`, with `won't fix` and `dismissed` as terminal exits.
   </Tile>
   <Tile href="#feature-requests" icon="✦" title="Feature requests — what's missing">
     Title, importance (`nice-to-have` / `important` / `critical`), votes from other users. Status
@@ -46,8 +46,20 @@ description: Capture user-reported bugs and feature requests, prioritize them, r
 ## How it works [#how-it-works]
 
 A user hits **Report bug** in your app. The SDK sends the report to Shipeasy. You see it in the
-dashboard within seconds. Optional webhooks forward it to Slack / Linear / Jira so you don't have
-to live in a second tool.
+dashboard within seconds. Optional [connectors](/feedback/connectors) forward it to GitHub,
+Google Sheets or Slack so you don't have to live in a second tool.
+
+## Hand a ticket to a coding agent
+
+Any ticket in the queue can be handed to a coding agent: mention the agent in
+a comment — `@claude`, `@cursor`, `@copilot` or `@jules` — and that agent
+starts work on the item and reports back on the ticket. Four agents can be
+mentioned today: Claude Code, Cursor, GitHub Copilot and Gemini (Jules); each
+one first has to be connected for the project under **Settings → Triggers**.
+
+Project owners control this under **Settings → Ops → Agent mentions** — the
+switch is on by default, and it also decides which of the connected agents
+get one-tap mention chips on a ticket.
 
 ## Where to next
 

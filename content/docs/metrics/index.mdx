@@ -11,16 +11,23 @@ A **metric** is a number computed from a set of events you log. It is the thing 
 
 ## Aggregation types
 
-Shipeasy ships four aggregation functions. Each one collapses a user's event stream into a single number per analysis window:
+The **New metric** form offers eleven aggregations. Each one collapses a user's event stream into a single number per analysis window:
 
-| Type         | What it computes per user                     | Use it for                        | Variance                               |
-| ------------ | --------------------------------------------- | --------------------------------- | -------------------------------------- |
-| `conversion` | 1 if the event happened at least once, else 0 | Did they buy? Did they retain?    | Bounded `p(1-p)` — the friendliest.    |
-| `count`      | Number of events                              | Sessions, page views, clicks.     | Long-tailed; outliers possible.        |
-| `sum`        | Sum of a numeric event property               | Revenue, time spent, items added. | Heavy-tailed; outliers a real problem. |
-| `mean`       | Average of a numeric event property           | Order value, session length.      | Same as `sum`, plus zero-handling.     |
+| Aggregation  | What it computes per user                     | Use it for                        |
+| ------------ | --------------------------------------------- | --------------------------------- |
+| `count`      | Number of events                              | Sessions, page views, clicks.     |
+| `sum`        | Sum of a numeric event property               | Revenue, time spent, items added. |
+| `average`    | Average of a numeric event property           | Order value, session length.      |
+| `minimum`    | Smallest value of a numeric event property    | Fastest response, lowest load.    |
+| `maximum`    | Largest value of a numeric event property     | Slowest response, peak load.      |
+| `std dev`    | Standard deviation of a numeric property      | Spread and consistency.           |
+| `p50`        | Median (50th percentile)                      | The typical value.                |
+| `p75`        | 75th percentile                               | The slower quarter boundary.      |
+| `p90`        | 90th percentile                               | Tail behaviour.                   |
+| `p95`        | 95th percentile                               | Tail behaviour, SLO-style checks. |
+| `p99`        | 99th percentile                               | The extreme tail.                 |
 
-Conversion is the simplest and statistically the friendliest — the variance is bounded by `p(1-p)`, so power calculations are cheap and the t-test behaves. Means and sums need more samples and benefit from outlier handling (see below).
+A conversion-style rate — "did they buy?" — is a ratio of two counts; see [Ratio metrics](#ratio-metrics) below. Sums and averages benefit from outlier handling on heavy-tailed properties (see below).
 
 ### When the metric is "no event"
 
@@ -118,9 +125,9 @@ shipeasy metrics create click_through_rate \
   --query 'count(click) / count(impression)'
 ```
 
-As an **experiment** metric both sides must be `count`, because the per-user
-collapse asks "did the numerator happen, among the denominator-eligible users".
-On a chart any expression divides.
+For a ratio metric both sides are counts, because the per-user collapse asks
+"did the numerator happen, among the denominator-eligible users". On a chart
+any expression divides.
 
 Ratio metrics use the **delta method** to compute variance correctly (the naive ratio-of-means understates variance, which makes an anomaly rule fire on noise). The dashboard shows the numerator and denominator alongside the ratio so the math is auditable.
 

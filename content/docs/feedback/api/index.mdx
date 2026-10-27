@@ -25,8 +25,9 @@ curl https://shipeasy.ai/api/admin/bugs \
   </Tile>
   <Tile href="#capture" icon="↗" title="In-page capture">
     The devtools overlay (`@shipeasy/devtools`) files bugs + feature requests directly through these
-    admin endpoints using a short-lived browser-scoped admin token minted at `/devtools-auth`. There
-    is no separate public-ingest endpoint today.
+    admin endpoints using a short-lived browser-scoped admin token minted at `/devtools-auth`. For
+    untrusted reporters, a project can also enable **Public bug intake** (Settings → Ops) — a
+    public endpoint guarded by a `tickets:public_create` key scope. It is **off by default**.
   </Tile>
 </TileGrid>
 

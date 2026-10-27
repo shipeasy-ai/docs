@@ -21,7 +21,7 @@ description: The in-dashboard AI assistant — what it is, how read and write mo
 
 ## What it is
 
-Open the assistant from the orb in the dashboard and ask in plain language. It's scoped to the
+Open the assistant with the **Open assistant** button in the dashboard and ask in plain language. It's scoped to the
 project you're viewing and authenticates with your session — it reads live state and proposes
 changes only in that project. It answers product and how-to questions by searching the same docs
 you're reading now (the `search_docs` tool), and cites its sources.
@@ -43,9 +43,9 @@ It works in two modes and picks the right one for you. The split is the whole sa
     Checking the metric series"). It never changes anything to answer.
   </Tile>
   <Tile href="/assistant/read-vs-write" icon="✦" title="Write — propose a change">
-    Mutations never auto-run. Each surfaces as an **editable confirmation card** — it applies only
-    when you press **Confirm**. So it's safe (and expected) for the assistant to propose a change
-    directly instead of asking permission first.
+    Changes are proposed, not applied behind your back. Each surfaces as an **editable confirmation
+    card** — it applies only when you press **Confirm**. So it's safe (and expected) for the
+    assistant to propose a change directly instead of asking permission first.
   </Tile>
 </TileGrid>
 

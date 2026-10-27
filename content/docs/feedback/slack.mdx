@@ -62,9 +62,9 @@ entire platform:
       reply: "✅ Created a “payments” kill switch — it’s off for now.",
     },
     {
-      you: "set up an A/B test for the new checkout, and measure how often people finish checking out",
+      you: "put the new checkout behind a flag and measure how often people finish checking out",
       reply:
-        "✅ Drafted the “new checkout” test — an even split between the old and new versions, measuring completed checkouts. Say “start it” to launch.",
+        "✅ Drafted the “new checkout” flag at 50% with a checkout-completion metric attached. Say “ship it” to create both.",
     },
     {
       you: "let me know when our API error rate gets too high",
@@ -76,9 +76,9 @@ entire platform:
 It's just as good at **reading** and **changing** what already exists:
 
 <SlackAssistantScene
-  prompt="which tests are showing a clear winner right now?"
-  reply="📊 2 of 4 have a clear winner: the new checkout (new version up 12%) and the pricing test (variant B up 6%). The other two need more data."
-  caption="Ask questions too — @Shipeasy reads your flags, tests, configs and metrics and answers in the thread."
+  prompt="which flags are fully rolled out but haven't been touched in 90 days?"
+  reply="📊 3 flags are pinned at 100% and untouched for 90+ days — legacy_checkout, dark_mode and beta_banner. All three look safe to retire."
+  caption="Ask questions too — @Shipeasy reads your flags, configs and metrics and answers in the thread."
 />
 
 <SlackAssistantScene
