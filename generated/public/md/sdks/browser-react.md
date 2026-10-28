@@ -34,7 +34,7 @@ Never put a server key in a browser bundle. The two key kinds aren't interchange
 
 ## Bind a client to the user
 
-Construct a `Client` from your user object and `await ready()` once — it fetches the evaluation bundle, merges browser context (`locale`, `timezone`, `path`, `referrer`, `screen_*`, `user_agent`) and the persisted `anonymous_id`, so gate rules can target by locale and holdouts can hash anonymous visitors out of the box.
+Construct a `Client` from your user object and `await ready()` once — it fetches the evaluation bundle, merges browser context (`locale`, `timezone`, `path`, `referrer`, `screen_*`, `user_agent`) and the persisted `anonymous_id`, so gate rules can target by locale and anonymous visitors are bucketed consistently out of the box.
 
 ```ts
 const flags = new Client(user);

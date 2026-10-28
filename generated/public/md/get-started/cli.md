@@ -2,7 +2,7 @@
 
 Source: https://docs.shipeasy.ai/get-started/cli
 
-> The `shipeasy` command — manage flags, configs, kill switches, metrics, the ops queue, keys, and the MCP server from your terminal or CI.
+> The `shipeasy` command — manage flags, configs, killswitches, metrics, the ops queue, keys, and the MCP server from your terminal or CI.
 
 The CLI is a thin wrapper over the same Server Actions the dashboard uses. Anything you can do in the UI works from a terminal, and every read command supports `--json` so you can pipe results into scripts.
 
@@ -80,13 +80,13 @@ shipeasy release flags create new-ui \
 
 | Command                                                                 | Description                                                            |
 | ----------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `shipeasy release killswitch list`                          | List all kill switches. `ks` is the short alias                        |
-| `shipeasy release ks create <name>`                         | Create a kill switch (`folder.name`)                                   |
+| `shipeasy release killswitch list`                          | List all killswitches. `ks` is the short alias                        |
+| `shipeasy release ks create <name>`                         | Create a killswitch (`folder.name`)                                   |
 | `shipeasy release ks update <id>`                           | Update the default `--value`, the `--switches` map, or the description |
 | `shipeasy release ks set <id> --switch-key <k> --value <v>` | Set one named switch on one `--env` (default `prod`)                   |
 | `shipeasy release ks unset <id> --switch-key <k>`           | Remove a named switch from one `--env`                                 |
-| `shipeasy release ks set-value <id> --value <v>`            | Set the kill switch's own on/off value                                 |
-| `shipeasy release ks archive <id>`                          | Archive the kill switch                                                |
+| `shipeasy release ks set-value <id> --value <v>`            | Set the killswitch's own on/off value                                 |
+| `shipeasy release ks archive <id>`                          | Archive the killswitch                                                |
 
 ```bash
 shipeasy release ks create email.outbound
@@ -126,7 +126,7 @@ shipeasy release configs update pricing --value '{"base":9.99,"currency":"USD"}'
 | Command                                           | Description                                                                       |
 | ------------------------------------------------- | --------------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------- |
 | `shipeasy sdk keys list`              | List keys (id, kind, last used). The raw token is **never** shown after creation. |
-| `shipeasy sdk keys create --type <server | client                                                                            | admin>` | Create a key (required: `--type`). Token is shown **once**. |
+| `shipeasy sdk keys create --type <server | client | ops                                                                            | admin>` | Create a key (required: `--type`). Token is shown **once**. |
 | `shipeasy sdk keys revoke <id>`       | Revoke by id or id-prefix. First match wins.                                      |
 
 ## API tokens
@@ -153,9 +153,9 @@ for when to use each.
 
 ```bash
 shipeasy ops bug "Checkout button overlaps footer" \
-  --steps "1. Add item to cart. 2. Resize below 1024px." \
-  --actual "Button hidden behind sticky footer" \
-  --expected "Button stays visible above the footer"
+  --steps-to-reproduce "1. Add item to cart. 2. Resize below 1024px." \
+  --actual-result "Button hidden behind sticky footer" \
+  --expected-result "Button stays visible above the footer"
 
 shipeasy ops feature "Dark mode dashboard" \
   --description "System-prefers dark theme for the dashboard chrome" \
@@ -170,7 +170,6 @@ shipeasy ops feature "Dark mode dashboard" \
 | `shipeasy mcp install`   | Patch the right config file for Claude Code, Cursor, Windsurf, or a custom MCP client.     |
 | `shipeasy mcp status`    | Show the current MCP registration state for the detected client.                           |
 | `shipeasy mcp uninstall` | Remove the registration.                                                                   |
-| `shipeasy mcp status`    | Run the MCP server in the foreground. Used by the install command — rarely needed by hand. |
 
 See [MCP server](https://docs.shipeasy.ai/get-started/mcp) for the tool inventory.
 

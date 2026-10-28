@@ -187,7 +187,7 @@ gate. For coding assistants, use the local `@shipeasy/mcp` server above — it c
 
 ## Remote server for coding assistants (OAuth)
 
-For Claude Code, Cursor, and claude.ai connectors we also run a **remote MCP server with OAuth 2.1** — no `npx`, no local subprocess, no credentials file. It exposes the full ~30-tool admin surface (not just the Slack `exp_*` subset) over Streamable HTTP at:
+For Claude Code, Cursor, and claude.ai connectors we also run a **remote MCP server with OAuth 2.1** — no `npx`, no local subprocess, no credentials file. It exposes the full ~30-tool admin surface (not just the reduced Slack subset) over Streamable HTTP at:
 
 ```
 https://mcp.shipeasy.ai/mcp

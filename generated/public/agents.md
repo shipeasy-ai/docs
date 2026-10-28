@@ -137,7 +137,7 @@ configure({
 });
 ```
 
-The single `configure()` call boots flags, configs **and** kill switches. The optional `attributes` transform maps your user object onto the Shipeasy attribute map, so every bound `Client` you construct evaluates against the right context. The server SDK polls `/sdk/flags` and `/sdk/experiments` in the background. Evaluation happens **locally** — there is no per-request network call from your code. Env (dev / staging / prod) is **derived from the key**: each key is bound to exactly one environment when you mint it, so you deploy the prod key to prod and the staging key to staging — there is nothing to set in code. (A server key may still override per request with `?env=` for local debugging; client keys cannot — see below.)
+The single `configure()` call boots flags, configs **and** kill switches. The optional `attributes` transform maps your user object onto the Shipeasy attribute map, so every bound `Client` you construct evaluates against the right context. The server SDK polls `/sdk/flags` in the background. Evaluation happens **locally** — there is no per-request network call from your code. Env (dev / staging / prod) is **derived from the key**: each key is bound to exactly one environment when you mint it, so you deploy the prod key to prod and the staging key to staging — there is nothing to set in code. (A server key may still override per request with `?env=` for local debugging; client keys cannot — see below.)
 
 **Browser initialisation**
 
@@ -1118,7 +1118,7 @@ gate. For coding assistants, use the local `@shipeasy/mcp` server above — it c
 
 ### Remote server for coding assistants (OAuth)
 
-For Claude Code, Cursor, and claude.ai connectors we also run a **remote MCP server with OAuth 2.1** — no `npx`, no local subprocess, no credentials file. It exposes the full ~30-tool admin surface (not just the Slack `exp_*` subset) over Streamable HTTP at:
+For Claude Code, Cursor, and claude.ai connectors we also run a **remote MCP server with OAuth 2.1** — no `npx`, no local subprocess, no credentials file. It exposes the full ~30-tool admin surface (not just the reduced Slack subset) over Streamable HTTP at:
 
 ```
 https://mcp.shipeasy.ai/mcp
@@ -1217,7 +1217,7 @@ assistant is running has no effect.
 
 Source: https://docs.shipeasy.ai/get-started/cli
 
-The `shipeasy` command — manage flags, configs, kill switches, metrics, the ops queue, keys, and the MCP server from your terminal or CI.
+The `shipeasy` command — manage flags, configs, killswitches, metrics, the ops queue, keys, and the MCP server from your terminal or CI.
 
 The CLI is a thin wrapper over the same Server Actions the dashboard uses. Anything you can do in the UI works from a terminal, and every read command supports `--json` so you can pipe results into scripts.
 
@@ -1295,13 +1295,13 @@ shipeasy release flags create new-ui \
 
 | Command                                                                 | Description                                                            |
 | ----------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `shipeasy release killswitch list`                          | List all kill switches. `ks` is the short alias                        |
-| `shipeasy release ks create <name>`                         | Create a kill switch (`folder.name`)                                   |
+| `shipeasy release killswitch list`                          | List all killswitches. `ks` is the short alias                        |
+| `shipeasy release ks create <name>`                         | Create a killswitch (`folder.name`)                                   |
 | `shipeasy release ks update <id>`                           | Update the default `--value`, the `--switches` map, or the description |
 | `shipeasy release ks set <id> --switch-key <k> --value <v>` | Set one named switch on one `--env` (default `prod`)                   |
 | `shipeasy release ks unset <id> --switch-key <k>`           | Remove a named switch from one `--env`                                 |
-| `shipeasy release ks set-value <id> --value <v>`            | Set the kill switch's own on/off value                                 |
-| `shipeasy release ks archive <id>`                          | Archive the kill switch                                                |
+| `shipeasy release ks set-value <id> --value <v>`            | Set the killswitch's own on/off value                                 |
+| `shipeasy release ks archive <id>`                          | Archive the killswitch                                                |
 
 ```bash
 shipeasy release ks create email.outbound
@@ -1341,7 +1341,7 @@ shipeasy release configs update pricing --value '{"base":9.99,"currency":"USD"}'
 | Command                                           | Description                                                                       |
 | ------------------------------------------------- | --------------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------- |
 | `shipeasy sdk keys list`              | List keys (id, kind, last used). The raw token is **never** shown after creation. |
-| `shipeasy sdk keys create --type <server | client                                                                            | admin>` | Create a key (required: `--type`). Token is shown **once**. |
+| `shipeasy sdk keys create --type <server | client | ops                                                                            | admin>` | Create a key (required: `--type`). Token is shown **once**. |
 | `shipeasy sdk keys revoke <id>`       | Revoke by id or id-prefix. First match wins.                                      |
 
 ### API tokens
@@ -1368,9 +1368,9 @@ for when to use each.
 
 ```bash
 shipeasy ops bug "Checkout button overlaps footer" \
-  --steps "1. Add item to cart. 2. Resize below 1024px." \
-  --actual "Button hidden behind sticky footer" \
-  --expected "Button stays visible above the footer"
+  --steps-to-reproduce "1. Add item to cart. 2. Resize below 1024px." \
+  --actual-result "Button hidden behind sticky footer" \
+  --expected-result "Button stays visible above the footer"
 
 shipeasy ops feature "Dark mode dashboard" \
   --description "System-prefers dark theme for the dashboard chrome" \
@@ -1385,7 +1385,6 @@ shipeasy ops feature "Dark mode dashboard" \
 | `shipeasy mcp install`   | Patch the right config file for Claude Code, Cursor, Windsurf, or a custom MCP client.     |
 | `shipeasy mcp status`    | Show the current MCP registration state for the detected client.                           |
 | `shipeasy mcp uninstall` | Remove the registration.                                                                   |
-| `shipeasy mcp status`    | Run the MCP server in the foreground. Used by the install command — rarely needed by hand. |
 
 See [MCP server](https://docs.shipeasy.ai/get-started/mcp) for the tool inventory.
 
@@ -2396,7 +2395,7 @@ launched and authenticated, differs. The low-level plumbing is still there if yo
 Whatever the provider, the scheduled run authenticates with a restricted **`ops`** key, refreshes the plugin + CLI, and follows the installed `ops:work --pr` workflow. Mint the key with:
 
 ```bash
-npx -y @shipeasy/cli@latest keys create --type ops
+npx -y @shipeasy/cli@latest sdk keys create --type ops
 ```
 
 The `ops` key can read the queue, flip item status, link the PR it opens, and create resources — but never edits or deletes existing ones, and auto-extends its 7-day expiry on each run. A leaked trigger prompt can't compromise the project. **Never embed your admin login token.**

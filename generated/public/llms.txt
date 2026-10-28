@@ -23,8 +23,8 @@ Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with
 - [Keys & environments](https://docs.shipeasy.ai/get-started/keys-and-environments): Server key vs client key, where each goes, and how the read environment is derived from the key — never from a query param.
 - [Evaluation & caching](https://docs.shipeasy.ai/get-started/evaluation-and-caching): The read path in depth — in-memory rules, deterministic murmur3 bucketing, background polling, KV blobs, and infinite-TTL CDN propagation.
 - [Identity & bucketing](https://docs.shipeasy.ai/get-started/identity-and-bucketing): anonymous_id, user_id, identity stitching, bucketBy, and sticky bucketing — how Shipeasy decides which unit a flag buckets on.
-- [User attributes](https://docs.shipeasy.ai/get-started/attributes): The shape of the eval context — pass everything you know about the user, and Shipeasy uses it for targeting, rollouts, and metric breakdowns.
-- [CLI](https://docs.shipeasy.ai/get-started/cli): The `shipeasy` command — manage flags, configs, kill switches, metrics, the ops queue, keys, and the MCP server from your terminal or CI.
+- [User attributes](https://docs.shipeasy.ai/get-started/attributes): The shape of the eval context — pass everything you know about the user, and Shipeasy uses it for targeting, rollouts, and analysis breakdowns.
+- [CLI](https://docs.shipeasy.ai/get-started/cli): The `shipeasy` command — manage flags, configs, killswitches, metrics, the ops queue, keys, and the MCP server from your terminal or CI.
 - [CLI reference](https://docs.shipeasy.ai/get-started/cli-reference): Auto-generated reference for the `shipeasy` CLI — every command, argument, and flag, straight from the command definitions.
 - [MCP server](https://docs.shipeasy.ai/get-started/mcp): Hand the docs and tools to Claude Code, Cursor, Windsurf, or any MCP-compatible AI assistant — and let it do the boring setup for you.
 - [MCP reference](https://docs.shipeasy.ai/get-started/mcp-reference): Auto-generated reference for the @shipeasy/mcp server — every tool, nested under its group, with title, full description, parameters, and error codes.

@@ -46,7 +46,7 @@ launched and authenticated, differs. The low-level plumbing is still there if yo
 Whatever the provider, the scheduled run authenticates with a restricted **`ops`** key, refreshes the plugin + CLI, and follows the installed `ops:work --pr` workflow. Mint the key with:
 
 ```bash
-npx -y @shipeasy/cli@latest keys create --type ops
+npx -y @shipeasy/cli@latest sdk keys create --type ops
 ```
 
 The `ops` key can read the queue, flip item status, link the PR it opens, and create resources — but never edits or deletes existing ones, and auto-extends its 7-day expiry on each run. A leaked trigger prompt can't compromise the project. **Never embed your admin login token.**

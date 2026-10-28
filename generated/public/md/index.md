@@ -4,7 +4,7 @@ Source: https://docs.shipeasy.ai
 
 > Feature flags & configs, metrics & alerts, and bug + error capture — one SDK, one API key, for everything you ship.
 
-Feature flags, typed runtime configs, kill switches, metrics & threshold alerts, and bug + error capture — one SDK, one API key. Drive it by hand, by CLI, or by an AI agent.
+Feature flags, typed runtime configs, killswitches, metrics & threshold alerts, and bug + error capture — one SDK, one API key. Drive it by hand, by CLI, or by an AI agent.
 
 ## Start here
 
@@ -68,7 +68,7 @@ Full breakdown → [decision guide](https://docs.shipeasy.ai/flags/decision).
 
 ## Why Shipeasy
 
-- **One SDK** for feature flags, configs, kill switches, metrics, and feedback. Server _and_ client.
+- **One SDK** for feature flags, configs, killswitches, metrics, and feedback. Server _and_ client.
 - **One CLI** (`shipeasy`) for everything you can do in the dashboard.
 - **One MCP server** so your AI agent can do the boring setup for you.
 - **Sub-millisecond evaluation**: flags resolve in your code without a network round-trip.

@@ -2,7 +2,7 @@
 
 Source: https://docs.shipeasy.ai/get-started/attributes
 
-> The shape of the eval context — pass everything you know about the user, and Shipeasy uses it for targeting, rollouts, and metric breakdowns.
+> The shape of the eval context — pass everything you know about the user, and Shipeasy uses it for targeting, rollouts, and analysis breakdowns.
 
 A **user attribute** is any key/value pair you attach to a user when calling the SDK. Shipeasy uses attributes for three things:
 
