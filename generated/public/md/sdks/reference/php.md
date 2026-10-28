@@ -2,14 +2,14 @@
 
 Source: https://docs.shipeasy.ai/sdks/reference/php
 
-> shipeasy/shipeasy is the PHP server SDK for Shipeasy — feature flags (gates), dynamic configs, kill switches, A/B experiments, metric tracking, see() error…
+> shipeasy/shipeasy is the PHP server SDK for Shipeasy — feature flags (gates), dynamic configs, kill switches, metric tracking, see() error…
 
 > **Note**
 Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-php/pages/overview.md`](https://shipeasy-ai.github.io/sdk-php/pages/overview.md).
 
 `shipeasy/shipeasy` is the **PHP server SDK** for Shipeasy — feature flags
-(gates), dynamic configs, kill switches, A/B experiments, metric tracking,
-`see()` error reporting, and i18n SSR helpers. It targets **PHP 8.1+** and runs
+(gates), dynamic configs, kill switches, metric tracking,
+and `see()` error reporting. It targets **PHP 8.1+** and runs
 anywhere PHP runs: plain PHP, Laravel, Symfony, WordPress, Slim. It is PHP-FPM
 friendly — `Shipeasy\configure()` fetches once per request, with **no background
 poll thread**.
@@ -47,9 +47,7 @@ $client = new Client($currentUser);                // construct once per callsit
 $enabled = $client->getFlag('new_checkout');                       // gate
 $copy    = $client->getConfig('billing_copy');                     // dynamic config
 $panic   = $client->getKillswitch('payments_panic');               // kill switch
-$cta     = $client->universe('checkout')->assign();                // experiment (by universe)
-$color   = $cta->get('button_color', 'red');                       // variant ?? universe default ?? fallback
-$client->track('checkout_completed', ['amount' => 49]);            // metric event (auto-logs exposure on assign)
+$client->track('checkout_completed', ['amount' => 49]);            // metric event
 ```
 
 Constructing a `Client` before `configure()` throws `RuntimeException`.
@@ -60,7 +58,7 @@ A handful of package-level functions cover the cases that aren't per-user reads 
 all backed by the same configured SDK, so you never construct anything heavy:
 
 - `Shipeasy\configure()` / `configureForTesting()` / `configureForOffline()` — setup.
-- `Shipeasy\overrideFlag()` / `overrideConfig()` / `overrideExperiment()` / `clearOverrides()` — test overrides.
+- `Shipeasy\overrideFlag()` / `overrideConfig()` / `clearOverrides()` — test overrides.
 - `Shipeasy\see()` / `seeViolation()` / `controlFlowException()` — error reporting.
 - `Shipeasy\bootstrapScriptTag()` / `i18nScriptTag()` / `devtoolsScriptTag()` — SSR script tags (every argument optional; defaults from `configure()`).
 - `Shipeasy\onChange()` — change listener (long-running runtimes only).

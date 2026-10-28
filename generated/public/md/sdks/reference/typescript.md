@@ -2,14 +2,13 @@
 
 Source: https://docs.shipeasy.ai/sdks/reference/typescript
 
-> @shipeasy/sdk is the TypeScript / JavaScript SDK for the Shipeasy hosted platform — feature gates, runtime configs, kill switches, A/B experiments, metrics,…
+> @shipeasy/sdk is the TypeScript / JavaScript SDK for the Shipeasy hosted platform — feature gates, runtime configs, kill switches, metrics,…
 
 > **Note**
 Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-ts/pages/overview.md`](https://shipeasy-ai.github.io/sdk-ts/pages/overview.md).
 
 `@shipeasy/sdk` is the TypeScript / JavaScript SDK for the [Shipeasy](https://shipeasy.ai)
-hosted platform — feature gates, runtime configs, kill switches, A/B
-experiments, metrics, and i18n. It ships **two entrypoints** from one package:
+hosted platform — feature gates, runtime configs, kill switches, and metrics. It ships **two entrypoints** from one package:
 
 - `@shipeasy/sdk/server` — Node, Cloudflare Workers, Deno (authenticates with the **server** key).
 - `@shipeasy/sdk/client` — the browser (authenticates with the public
@@ -40,7 +39,7 @@ if (flags.getFlag("new_checkout")) { /* ship it */ }
 ## What `configure()` and `Client` do
 
 - **`configure({ apiKey })`** is the one-time setup call. It owns the key, the HTTP transport, the blob cache, and the poll lifecycle for the whole process — the first call wins, later calls are no-ops. Test/offline siblings: `configureForTesting()` and `configureForOffline()` (see [Testing](https://docs.shipeasy.ai/sdks/reference/typescript/testing)).
-- **`new Client(user)`** is a cheap, user-bound handle. It opens no connection and runs no poller — it just binds the resolved attribute bag once at construction. Construct one per user / per request. It exposes `getFlag`, `getFlagDetail`, `getConfig`, `universe(name).assign()`, `getKillswitch`, plus `track(event, props?)` — so reading an experiment (which auto-logs its exposure) **and** recording its conversion are end-to-end `Client`-only.
+- **`new Client(user)`** is a cheap, user-bound handle. It opens no connection and runs no poller — it just binds the resolved attribute bag once at construction. Construct one per user / per request. It exposes `getFlag`, `getFlagDetail`, `getConfig`, `getKillswitch`, plus `track(event, props?)` — reading flags and recording conversions are both `Client`-only.
 
 That is the entire surface you wire up: configure once, then `new Client(user)`
 everywhere you evaluate.

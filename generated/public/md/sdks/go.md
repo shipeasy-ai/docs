@@ -9,7 +9,7 @@ Generated from the Go SDK repo's own `/docs/` — the same Markdown `shipeasy do
 
 `github.com/shipeasy-ai/sdk-go` is the **server-side** Go SDK for
 [Shipeasy](https://shipeasy.ai): feature flags ("gates"), dynamic configs,
-kill switches, A/B experiments, metric tracking, and structured error reporting.
+kill switches, metric tracking, and structured error reporting.
 Evaluation is **local** against a cached copy of the edge blobs — there is no
 network call on the hot path.
 
@@ -57,10 +57,7 @@ The whole SDK is exactly two calls:
    carries no api key and opens no connection; every read is local. Its methods
    take **no** user argument (the user is already bound):
    `GetFlag`, `GetFlagOr`, `GetFlagDetail`, `GetConfig`, `GetConfigOr`,
-   `Universe(name).Assign()`, `GetKillswitch`, plus `Track(event, props)`.
-
-So an experiment is end-to-end Client-only: bind → `Universe(name).Assign()` →
-`Track`. `Assign()` auto-logs a single deduped exposure when the unit is enrolled.
+   `GetKillswitch`, plus `Track(event, props)`.
 
 ```go
 c := shipeasy.NewClient(acct)            // acct is your own *Account

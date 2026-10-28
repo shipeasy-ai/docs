@@ -2,14 +2,14 @@
 
 Source: https://docs.shipeasy.ai/sdks/reference/java
 
-> shipeasy (ai.shipeasy:shipeasy) is the server-side Java SDK for Shipeasy — feature flags, dynamic configs, kill switches, A/B experiments, metric tracking,…
+> shipeasy (ai.shipeasy:shipeasy) is the server-side Java SDK for Shipeasy — feature flags, dynamic configs, kill switches, metric tracking,…
 
 > **Note**
 Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-java/pages/overview.md`](https://shipeasy-ai.github.io/sdk-java/pages/overview.md).
 
 `shipeasy` (`ai.shipeasy:shipeasy`) is the **server-side Java SDK** for
 [Shipeasy](https://shipeasy.ai) — feature flags, dynamic configs, kill switches,
-A/B experiments, metric tracking, and `see()` error reporting. Rules are
+metric tracking, and `see()` error reporting. Rules are
 evaluated **locally** against a cached blob fetched from the edge, so there is no
 network call per evaluation.
 
@@ -34,7 +34,6 @@ boolean enabled = c.getFlag("new_checkout");
 Object  cfg     = c.getConfig("billing_copy");
 boolean killed  = c.getKillswitch("panic_button");
 
-Assignment cta = c.universe("hero_cta").assign(); // <=1 experiment; auto-logs exposure
 c.track("purchase", Map.of("amount", 49));  // record the conversion
 ```
 

@@ -107,13 +107,13 @@ shipeasy release flags create new-ui \
 
 | Command                                                                 | Description                                                            |
 | ----------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| <Cmd cmd="shipeasy release killswitch list" />                          | List all killswitches. `ks` is the short alias                        |
-| <Cmd cmd="shipeasy release ks create <name>" />                         | Create a killswitch (`folder.name`)                                   |
+| <Cmd cmd="shipeasy release killswitch list" />                          | List all killswitches. `ks` is the short alias                         |
+| <Cmd cmd="shipeasy release ks create <name>" />                         | Create a killswitch (`folder.name`)                                    |
 | <Cmd cmd="shipeasy release ks update <id>" />                           | Update the default `--value`, the `--switches` map, or the description |
 | <Cmd cmd="shipeasy release ks set <id> --switch-key <k> --value <v>" /> | Set one named switch on one `--env` (default `prod`)                   |
 | <Cmd cmd="shipeasy release ks unset <id> --switch-key <k>" />           | Remove a named switch from one `--env`                                 |
-| <Cmd cmd="shipeasy release ks set-value <id> --value <v>" />            | Set the killswitch's own on/off value                                 |
-| <Cmd cmd="shipeasy release ks archive <id>" />                          | Archive the killswitch                                                |
+| <Cmd cmd="shipeasy release ks set-value <id> --value <v>" />            | Set the killswitch's own on/off value                                  |
+| <Cmd cmd="shipeasy release ks archive <id>" />                          | Archive the killswitch                                                 |
 
 ```bash
 shipeasy release ks create email.outbound
@@ -150,11 +150,11 @@ shipeasy release configs update pricing --value '{"base":9.99,"currency":"USD"}'
 
 ## SDK keys
 
-| Command                                           | Description                                                                       |
-| ------------------------------------------------- | --------------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------- |
-| <Cmd cmd="shipeasy sdk keys list" />              | List keys (id, kind, last used). The raw token is **never** shown after creation. |
-| <Cmd cmd="shipeasy sdk keys create --type <server | client | ops                                                                            | admin>" /> | Create a key (required: `--type`). Token is shown **once**. |
-| <Cmd cmd="shipeasy sdk keys revoke <id>" />       | Revoke by id or id-prefix. First match wins.                                      |
+| Command                                              | Description                                                                                                     |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| <Cmd cmd="shipeasy sdk keys list" />                 | List keys (id, kind, last used). The raw token is **never** shown after creation.                               |
+| <Cmd cmd="shipeasy sdk keys create --type <type>" /> | Create a key. `--type` is required and is one of `server`, `client`, `admin` or `ops`. Token is shown **once**. |
+| <Cmd cmd="shipeasy sdk keys revoke <id>" />          | Revoke by id or id-prefix. First match wins.                                                                    |
 
 ## API tokens
 
@@ -192,11 +192,11 @@ shipeasy ops feature "Dark mode dashboard" \
 
 ## MCP server
 
-| Command                              | Description                                                                                |
-| ------------------------------------ | ------------------------------------------------------------------------------------------ |
-| <Cmd cmd="shipeasy mcp install" />   | Patch the right config file for Claude Code, Cursor, Windsurf, or a custom MCP client.     |
-| <Cmd cmd="shipeasy mcp status" />    | Show the current MCP registration state for the detected client.                           |
-| <Cmd cmd="shipeasy mcp uninstall" /> | Remove the registration.                                                                   |
+| Command                              | Description                                                                            |
+| ------------------------------------ | -------------------------------------------------------------------------------------- |
+| <Cmd cmd="shipeasy mcp install" />   | Patch the right config file for Claude Code, Cursor, Windsurf, or a custom MCP client. |
+| <Cmd cmd="shipeasy mcp status" />    | Show the current MCP registration state for the detected client.                       |
+| <Cmd cmd="shipeasy mcp uninstall" /> | Remove the registration.                                                               |
 
 See [MCP server](/get-started/mcp) for the tool inventory.
 

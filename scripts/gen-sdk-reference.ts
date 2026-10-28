@@ -444,10 +444,59 @@ function read(docs: SdkDocs, rel: string): string {
   return docs.read(rel);
 }
 
+/**
+ * Experiments and i18n are hidden from the portal (see HIDDEN_PAGES), but every
+ * SDK repo's `overview` still introduces itself as "flags, configs, kill
+ * switches, A/B experiments, ..." and shows a `universe(name).assign()` call.
+ * The SDK APIs are unchanged, so the repos keep that wording; the portal strips
+ * it from the two pages that front each SDK (landing + reference index) so the
+ * first screen never advertises a product the site does not document. Each rule
+ * is a precise rewrite of a sentence/line that exists in the overviews today —
+ * a rule that stops matching just means the repo reworded it (check the output
+ * for leftover "A/B" or "universe(").
+ */
+const HIDDEN_PROSE_RULES: Array<[RegExp, string]> = [
+  [/(\w+),\s+(kill switches),\s+and A\/B experiments/g, "$1, and $2"],
+  [/(\w+),\s+(kill switches)\s+and A\/B experiments/g, "$1 and $2"],
+  [/A\/B\s+experiments,\s+/g, ""],
+  [/(kill switches),\s+(metrics),\s+and i18n/g, "$1, and $2"],
+  [/(`see\(\)` error reporting),\s+and i18n (?:SSR|view) helpers(?: for\s+Rails)?/g, "and $1"],
+  // "So an experiment is end-to-end Client-only" paragraphs
+  [/So an experiment is end-to-end Client-only:[^\n]*\n[^\n]*\n\n?/g, ""],
+  [/So an experiment is \*\*end-to-end Client-only\*\*\.\s+/g, ""],
+  // `universe(name).assign()` in method lists / bullets
+  [/^- `universe\(name\)\.assign(?:\(\))?`[^\n]*(?:\n {2}[^\n]*)*\n/gm, ""],
+  [/`[Uu]niverse\(name\)\.[Aa]ssign(?:\(\))?`,\s+/g, ""],
+  [/\s*\/\s*`universe\(name\)\.assign\(\)`(?=\s*\/)/g, ""],
+  [/`overrideExperiment(?:\(\))?`\s+\/\s+/g, ""],
+  // node: "so reading an experiment ... are end-to-end `Client`-only"
+  [
+    /— so reading an experiment \(which auto-logs its\s+exposure\) \*\*and\*\* recording its conversion are end-to-end `Client`-only\./g,
+    "— reading flags and recording conversions are both `Client`-only.",
+  ],
+  // code lines
+  [/^a = client\.universe\([^\n]*\n(?:if a\.get[^\n]*\n\s+\.\.\.\n)?/gm, ""],
+  [/^Assignment cta = [^\n]*\n/gm, ""],
+  [/^\$cta\s+= [^\n]*\n\$color[^\n]*\n/gm, ""],
+  [/^assignment = flags\.universe[^\n]*\nassignment\.get[^\n]*\n/gm, ""],
+  [/ \(auto-logs exposure on assign\)/g, ""],
+  // swift
+  [/^\| `client\.universe[^\n]*\n/gm, ""],
+  [/read flags\/configs\/experiments from the cache/g, "read flags/configs from the cache"],
+  [/fractional rollout and experiment on every launch/g, "fractional rollout on every launch"],
+];
+
+function hideExperimentProse(md: string): string {
+  return HIDDEN_PROSE_RULES.reduce((out, [re, to]) => out.replace(re, to), md);
+}
+
 /** Repo Markdown → docs-site MDX: fill placeholders, drop hidden nav rows,
  *  point relative links at docs-site routes, escape the MDX metacharacters. */
-function prepare(raw: string, m: Manifest, slug: string): string {
-  return mdxEscape(rewriteLinks(dropHiddenNavRows(substitutePlaceholders(raw, m)), slug));
+function prepare(raw: string, m: Manifest, slug: string, hideExperiments = false): string {
+  const md = substitutePlaceholders(raw, m);
+  return mdxEscape(
+    rewriteLinks(dropHiddenNavRows(hideExperiments ? hideExperimentProse(md) : md), slug),
+  );
 }
 
 function emitPage(
@@ -460,9 +509,15 @@ function emitPage(
   slug: string,
 ) {
   const { title, body, description } = splitHeading(substitutePlaceholders(raw, m));
-  const fm = frontmatter(title ?? navTitle, description);
+  const fm = frontmatter(
+    title ?? navTitle,
+    fileBase === "index" && description ? hideExperimentProse(description) : description,
+  );
   const banner = `<Callout type="info">Generated from the SDK's own \`/docs/\` — also served raw at [\`${sourceUrl}\`](${sourceUrl}).</Callout>\n\n`;
-  writeFileSync(join(outDir, `${fileBase}.mdx`), fm + banner + prepare(body, m, slug) + "\n");
+  writeFileSync(
+    join(outDir, `${fileBase}.mdx`),
+    fm + banner + prepare(body, m, slug, fileBase === "index") + "\n",
+  );
 }
 
 function emitSnippets(outDir: string, m: Manifest, docs: SdkDocs, slug: string) {
@@ -556,7 +611,7 @@ function emitLanding(sdk: Sdk, m: Manifest, docs: SdkDocs) {
     : body;
 
   const page =
-    prepare(withInstall, m, sdk.slug).trim() +
+    prepare(withInstall, m, sdk.slug, true).trim() +
     (essentials
       ? `\n\nThe blocks below are the SDK repo's own snippets — the same ones ` +
         `\`shipeasy docs get --sdk ${m.sdk} release/flags\` returns, with a worked example baked in.\n\n${essentials}`

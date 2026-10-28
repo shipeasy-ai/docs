@@ -52,3 +52,9 @@
 # The tracker-sync case study named one vendor in its slug; it is now generic.
 /feedback/case-studies/route-bugs-to-linear/ /feedback/case-studies/route-bugs-to-your-tracker 301
 /feedback/case-studies/route-bugs-to-linear /feedback/case-studies/route-bugs-to-your-tracker 301
+
+# Short, guessable paths for the two most-linked get-started pages.
+/mcp/ /get-started/mcp/ 301
+/mcp /get-started/mcp/ 301
+/cli/ /get-started/cli/ 301
+/cli /get-started/cli/ 301

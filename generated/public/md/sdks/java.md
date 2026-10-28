@@ -9,7 +9,7 @@ Generated from the Java SDK repo's own `/docs/` — the same Markdown `shipeasy 
 
 `shipeasy` (`ai.shipeasy:shipeasy`) is the **server-side Java SDK** for
 [Shipeasy](https://shipeasy.ai) — feature flags, dynamic configs, kill switches,
-A/B experiments, metric tracking, and `see()` error reporting. Rules are
+metric tracking, and `see()` error reporting. Rules are
 evaluated **locally** against a cached blob fetched from the edge, so there is no
 network call per evaluation.
 
@@ -46,7 +46,6 @@ boolean enabled = c.getFlag("new_checkout");
 Object  cfg     = c.getConfig("billing_copy");
 boolean killed  = c.getKillswitch("panic_button");
 
-Assignment cta = c.universe("hero_cta").assign(); // <=1 experiment; auto-logs exposure
 c.track("purchase", Map.of("amount", 49));  // record the conversion
 ```
 

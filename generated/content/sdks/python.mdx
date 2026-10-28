@@ -3,12 +3,12 @@ title: "Python"
 description: "The Shipeasy Python server SDK — local evaluation, configs, WSGI/ASGI anon middleware, and metric tracking."
 ---
 
-<DocMeta status="Production ready" read="5 min read" updated="October 27, 2026" works="Python 3.8+ · Django · Flask · FastAPI" />
+<DocMeta status="Production ready" read="4 min read" updated="October 27, 2026" works="Python 3.8+ · Django · Flask · FastAPI" />
 
 <Callout type="info">Generated from the Python SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk python overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-python/pages/overview.md`](https://shipeasy-ai.github.io/sdk-python/pages/overview.md). Edit it in the SDK repo, not here.</Callout>
 
 `shipeasy` is the **server** SDK for Shipeasy — feature flags, remote configs,
-kill switches, A/B experiments, and metric tracking. It uses your **server key**
+kill switches, and metric tracking. It uses your **server key**
 and must never be embedded in a browser.
 
 ## Install
@@ -50,9 +50,6 @@ client = shipeasy.Client(current_user)
 if client.get_flag("new_checkout"):
     ...
 config = client.get_config("billing_copy")
-a = client.universe("checkout").assign()  # ≤1 experiment; exposure logs on first get()
-if a.get("button_color") == "green":
-    ...
 client.track("purchase", {"amount": 49})  # on conversion
 ```
 
@@ -64,12 +61,9 @@ call:
 - `get_flag(name, default=False)` · `get_flag_detail(name)`
 - `get_config(name, decode=None, default=None)`
 - `get_killswitch(name, switch_key=None)`
-- `universe(name).assign()` → `Assignment` (`.name` / `.group` / `.enrolled` /
-  `.get(field, fallback=None, *, exposure=True)`); the first `get()` on an
-  enrolled assignment logs one exposure (`exposure=False` peeks without logging)
 - `track(event, properties=None)`
 
-So an experiment is **end-to-end Client-only**. Constructing a `Client(user)`
+Constructing a `Client(user)`
 before `configure()` raises `RuntimeError`.
 
 ## The configure family

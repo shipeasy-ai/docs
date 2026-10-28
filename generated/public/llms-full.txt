@@ -1761,13 +1761,13 @@ shipeasy release flags create new-ui \
 
 | Command                                                                 | Description                                                            |
 | ----------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `shipeasy release killswitch list`                          | List all killswitches. `ks` is the short alias                        |
-| `shipeasy release ks create <name>`                         | Create a killswitch (`folder.name`)                                   |
+| `shipeasy release killswitch list`                          | List all killswitches. `ks` is the short alias                         |
+| `shipeasy release ks create <name>`                         | Create a killswitch (`folder.name`)                                    |
 | `shipeasy release ks update <id>`                           | Update the default `--value`, the `--switches` map, or the description |
 | `shipeasy release ks set <id> --switch-key <k> --value <v>` | Set one named switch on one `--env` (default `prod`)                   |
 | `shipeasy release ks unset <id> --switch-key <k>`           | Remove a named switch from one `--env`                                 |
-| `shipeasy release ks set-value <id> --value <v>`            | Set the killswitch's own on/off value                                 |
-| `shipeasy release ks archive <id>`                          | Archive the killswitch                                                |
+| `shipeasy release ks set-value <id> --value <v>`            | Set the killswitch's own on/off value                                  |
+| `shipeasy release ks archive <id>`                          | Archive the killswitch                                                 |
 
 ```bash
 shipeasy release ks create email.outbound
@@ -1804,11 +1804,11 @@ shipeasy release configs update pricing --value '{"base":9.99,"currency":"USD"}'
 
 ### SDK keys
 
-| Command                                           | Description                                                                       |
-| ------------------------------------------------- | --------------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------- |
-| `shipeasy sdk keys list`              | List keys (id, kind, last used). The raw token is **never** shown after creation. |
-| `shipeasy sdk keys create --type <server | client | ops                                                                            | admin>` | Create a key (required: `--type`). Token is shown **once**. |
-| `shipeasy sdk keys revoke <id>`       | Revoke by id or id-prefix. First match wins.                                      |
+| Command                                              | Description                                                                                                     |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `shipeasy sdk keys list`                 | List keys (id, kind, last used). The raw token is **never** shown after creation.                               |
+| `shipeasy sdk keys create --type <type>` | Create a key. `--type` is required and is one of `server`, `client`, `admin` or `ops`. Token is shown **once**. |
+| `shipeasy sdk keys revoke <id>`          | Revoke by id or id-prefix. First match wins.                                                                    |
 
 ### API tokens
 
@@ -1846,11 +1846,11 @@ shipeasy ops feature "Dark mode dashboard" \
 
 ### MCP server
 
-| Command                              | Description                                                                                |
-| ------------------------------------ | ------------------------------------------------------------------------------------------ |
-| `shipeasy mcp install`   | Patch the right config file for Claude Code, Cursor, Windsurf, or a custom MCP client.     |
-| `shipeasy mcp status`    | Show the current MCP registration state for the detected client.                           |
-| `shipeasy mcp uninstall` | Remove the registration.                                                                   |
+| Command                              | Description                                                                            |
+| ------------------------------------ | -------------------------------------------------------------------------------------- |
+| `shipeasy mcp install`   | Patch the right config file for Claude Code, Cursor, Windsurf, or a custom MCP client. |
+| `shipeasy mcp status`    | Show the current MCP registration state for the detected client.                       |
+| `shipeasy mcp uninstall` | Remove the registration.                                                               |
 
 See [MCP server](https://docs.shipeasy.ai/get-started/mcp) for the tool inventory.
 
@@ -8115,8 +8115,7 @@ The canonical Shipeasy SDK — one package with a server and a browser build, lo
 Generated from the TypeScript / JavaScript SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk typescript overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-ts/pages/overview.md`](https://shipeasy-ai.github.io/sdk-ts/pages/overview.md). Edit it in the SDK repo, not here.
 
 `@shipeasy/sdk` is the TypeScript / JavaScript SDK for the [Shipeasy](https://shipeasy.ai)
-hosted platform — feature gates, runtime configs, kill switches, A/B
-experiments, metrics, and i18n. It ships **two entrypoints** from one package:
+hosted platform — feature gates, runtime configs, kill switches, and metrics. It ships **two entrypoints** from one package:
 
 - `@shipeasy/sdk/server` — Node, Cloudflare Workers, Deno (authenticates with the **server** key).
 - `@shipeasy/sdk/client` — the browser (authenticates with the public
@@ -8159,7 +8158,7 @@ if (flags.getFlag("new_checkout")) { /* ship it */ }
 ### What `configure()` and `Client` do
 
 - **`configure({ apiKey })`** is the one-time setup call. It owns the key, the HTTP transport, the blob cache, and the poll lifecycle for the whole process — the first call wins, later calls are no-ops. Test/offline siblings: `configureForTesting()` and `configureForOffline()` (see [Testing](https://docs.shipeasy.ai/sdks/reference/typescript/testing)).
-- **`new Client(user)`** is a cheap, user-bound handle. It opens no connection and runs no poller — it just binds the resolved attribute bag once at construction. Construct one per user / per request. It exposes `getFlag`, `getFlagDetail`, `getConfig`, `universe(name).assign()`, `getKillswitch`, plus `track(event, props?)` — so reading an experiment (which auto-logs its exposure) **and** recording its conversion are end-to-end `Client`-only.
+- **`new Client(user)`** is a cheap, user-bound handle. It opens no connection and runs no poller — it just binds the resolved attribute bag once at construction. Construct one per user / per request. It exposes `getFlag`, `getFlagDetail`, `getConfig`, `getKillswitch`, plus `track(event, props?)` — reading flags and recording conversions are both `Client`-only.
 
 That is the entire surface you wire up: configure once, then `new Client(user)`
 everywhere you evaluate.
@@ -8469,7 +8468,7 @@ Generated from the Go SDK repo's own `/docs/` — the same Markdown `shipeasy do
 
 `github.com/shipeasy-ai/sdk-go` is the **server-side** Go SDK for
 [Shipeasy](https://shipeasy.ai): feature flags ("gates"), dynamic configs,
-kill switches, A/B experiments, metric tracking, and structured error reporting.
+kill switches, metric tracking, and structured error reporting.
 Evaluation is **local** against a cached copy of the edge blobs — there is no
 network call on the hot path.
 
@@ -8517,10 +8516,7 @@ The whole SDK is exactly two calls:
    carries no api key and opens no connection; every read is local. Its methods
    take **no** user argument (the user is already bound):
    `GetFlag`, `GetFlagOr`, `GetFlagDetail`, `GetConfig`, `GetConfigOr`,
-   `Universe(name).Assign()`, `GetKillswitch`, plus `Track(event, props)`.
-
-So an experiment is end-to-end Client-only: bind → `Universe(name).Assign()` →
-`Track`. `Assign()` auto-logs a single deduped exposure when the unit is enrolled.
+   `GetKillswitch`, plus `Track(event, props)`.
 
 ```go
 c := shipeasy.NewClient(acct)            // acct is your own *Account
@@ -8688,7 +8684,7 @@ The Shipeasy Python server SDK — local evaluation, configs, WSGI/ASGI anon mid
 Generated from the Python SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk python overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-python/pages/overview.md`](https://shipeasy-ai.github.io/sdk-python/pages/overview.md). Edit it in the SDK repo, not here.
 
 `shipeasy` is the **server** SDK for Shipeasy — feature flags, remote configs,
-kill switches, A/B experiments, and metric tracking. It uses your **server key**
+kill switches, and metric tracking. It uses your **server key**
 and must never be embedded in a browser.
 
 ### Install
@@ -8730,9 +8726,6 @@ client = shipeasy.Client(current_user)
 if client.get_flag("new_checkout"):
     ...
 config = client.get_config("billing_copy")
-a = client.universe("checkout").assign()  # ≤1 experiment; exposure logs on first get()
-if a.get("button_color") == "green":
-    ...
 client.track("purchase", {"amount": 49})  # on conversion
 ```
 
@@ -8744,10 +8737,9 @@ call:
 - `get_flag(name, default=False)` · `get_flag_detail(name)`
 - `get_config(name, decode=None, default=None)`
 - `get_killswitch(name, switch_key=None)`
-- `universe(name).assign()` → `Assignment` (`.name` / `.group` / `.enrolled` / `.get(field, fallback=None, *, exposure=True)`); the first `get()` on an enrolled assignment logs one exposure (`exposure=False` peeks without logging)
 - `track(event, properties=None)`
 
-So an experiment is **end-to-end Client-only**. Constructing a `Client(user)`
+Constructing a `Client(user)`
 before `configure()` raises `RuntimeError`.
 
 ### The configure family
@@ -8936,9 +8928,7 @@ The Shipeasy Ruby gem — fork-safe singleton, Rails railtie, local evaluation, 
 Generated from the Ruby SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk ruby overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-ruby/pages/overview.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/overview.md). Edit it in the SDK repo, not here.
 
 `shipeasy-sdk` is the server-side Ruby gem for the [Shipeasy](https://shipeasy.ai)
-hosted service: feature gates (flags), dynamic configs, kill switches, A/B
-experiments, metric tracking, `see()` error reporting, and i18n view helpers for
-Rails. It uses your **server key** and must never be embedded in a browser. It is
+hosted service: feature gates (flags), dynamic configs, kill switches, metric tracking, and `see()` error reporting. It uses your **server key** and must never be embedded in a browser. It is
 Rails-friendly but works in plain Ruby, Sinatra, Hanami, and serverless too.
 
 ### Install
@@ -8972,8 +8962,6 @@ flags = Shipeasy::Client.new(current_user)
 
 flags.get_flag("new_checkout")                       # NO user arg — bound at construction
 flags.get_config("button_color")
-assignment = flags.universe("checkout").assign       # <=1 experiment; auto-logs exposure
-assignment.get("label", "Buy")                       # variant ?? universe default ?? fallback
 flags.track("purchase", { revenue: 49 })             # on conversion
 flags.get_killswitch("payments")
 ```
@@ -8986,10 +8974,9 @@ argument on any call:
 - `get_flag(name, default: false)` · `get_flag_detail(name)`
 - `get_config(name, decode = nil, default: nil)`
 - `get_killswitch(name, switch_key = nil)`
-- `universe(name).assign` → an `Assignment` (`.name` / `.group` / `.enrolled?` / `.get(field, fallback = nil)`); auto-logs one deduped exposure when enrolled
 - `track(event_name, props = {})`
 
-So an experiment is **end-to-end Client-only**. Constructing a
+Constructing a
 `Shipeasy::Client.new(user)` before `Shipeasy.configure` raises `Shipeasy::Error`.
 
 ### The configure family
@@ -9156,7 +9143,7 @@ Generated from the Java SDK repo's own `/docs/` — the same Markdown `shipeasy 
 
 `shipeasy` (`ai.shipeasy:shipeasy`) is the **server-side Java SDK** for
 [Shipeasy](https://shipeasy.ai) — feature flags, dynamic configs, kill switches,
-A/B experiments, metric tracking, and `see()` error reporting. Rules are
+metric tracking, and `see()` error reporting. Rules are
 evaluated **locally** against a cached blob fetched from the edge, so there is no
 network call per evaluation.
 
@@ -9193,7 +9180,6 @@ boolean enabled = c.getFlag("new_checkout");
 Object  cfg     = c.getConfig("billing_copy");
 boolean killed  = c.getKillswitch("panic_button");
 
-Assignment cta = c.universe("hero_cta").assign(); // <=1 experiment; auto-logs exposure
 c.track("purchase", Map.of("amount", 49));  // record the conversion
 ```
 
@@ -9330,7 +9316,7 @@ Generated from the Kotlin SDK repo's own `/docs/` — the same Markdown `shipeas
 
 `shipeasy-kotlin` (`ai.shipeasy:shipeasy-kotlin`) is the **server-side** Shipeasy
 SDK for the JVM (and Android-compatible). It evaluates feature flags (gates),
-dynamic configs, kill switches and A/B experiments **locally** against rule blobs
+dynamic configs and kill switches **locally** against rule blobs
 it fetches from the Shipeasy edge — no per-evaluation network call on the hot
 path.
 
@@ -9361,8 +9347,7 @@ You learn exactly two things:
 1. **`configure()`** (and its test/offline siblings `configureForTesting()` /
    `configureForOffline()`) — call it once at app boot.
 2. **`Client(user)`** — the cheap, user-bound handle for every read:
-   `getFlag` / `getFlagDetail` / `getConfig` / `getKillswitch` /
-   `universe(name).assign()` / `track`.
+   `getFlag` / `getFlagDetail` / `getConfig` / `getKillswitch` / `track`.
 
 The user (and the `attributes` transform you register at configure time) is bound
 when you construct the `Client`, so its methods take no user argument. Construct a
@@ -9370,8 +9355,7 @@ when you construct the `Client`, so its methods take no user argument. Construct
 its own.
 
 A handful of top-level package functions cover everything else without naming a
-heavyweight object: `overrideFlag` / `overrideConfig` / `overrideExperiment` /
-`clearOverrides`, `onChange`, `bootstrapScriptTag` / `i18nScriptTag` /
+heavyweight object: `overrideFlag` / `overrideConfig` / `clearOverrides`, `onChange`, `bootstrapScriptTag` / `i18nScriptTag` /
 `devtoolsScriptTag`, and the
 `see()` family.
 
@@ -9507,8 +9491,8 @@ The Shipeasy PHP server SDK — PHP-FPM friendly per-request init, local evaluat
 Generated from the PHP SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk php overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-php/pages/overview.md`](https://shipeasy-ai.github.io/sdk-php/pages/overview.md). Edit it in the SDK repo, not here.
 
 `shipeasy/shipeasy` is the **PHP server SDK** for Shipeasy — feature flags
-(gates), dynamic configs, kill switches, A/B experiments, metric tracking,
-`see()` error reporting, and i18n SSR helpers. It targets **PHP 8.1+** and runs
+(gates), dynamic configs, kill switches, metric tracking,
+and `see()` error reporting. It targets **PHP 8.1+** and runs
 anywhere PHP runs: plain PHP, Laravel, Symfony, WordPress, Slim. It is PHP-FPM
 friendly — `Shipeasy\configure()` fetches once per request, with **no background
 poll thread**.
@@ -9554,9 +9538,7 @@ $client = new Client($currentUser);                // construct once per callsit
 $enabled = $client->getFlag('new_checkout');                       // gate
 $copy    = $client->getConfig('billing_copy');                     // dynamic config
 $panic   = $client->getKillswitch('payments_panic');               // kill switch
-$cta     = $client->universe('checkout')->assign();                // experiment (by universe)
-$color   = $cta->get('button_color', 'red');                       // variant ?? universe default ?? fallback
-$client->track('checkout_completed', ['amount' => 49]);            // metric event (auto-logs exposure on assign)
+$client->track('checkout_completed', ['amount' => 49]);            // metric event
 ```
 
 Constructing a `Client` before `configure()` throws `RuntimeException`.
@@ -9567,7 +9549,7 @@ A handful of package-level functions cover the cases that aren't per-user reads 
 all backed by the same configured SDK, so you never construct anything heavy:
 
 - `Shipeasy\configure()` / `configureForTesting()` / `configureForOffline()` — setup.
-- `Shipeasy\overrideFlag()` / `overrideConfig()` / `overrideExperiment()` / `clearOverrides()` — test overrides.
+- `Shipeasy\overrideFlag()` / `overrideConfig()` / `clearOverrides()` — test overrides.
 - `Shipeasy\see()` / `seeViolation()` / `controlFlowException()` — error reporting.
 - `Shipeasy\bootstrapScriptTag()` / `i18nScriptTag()` / `devtoolsScriptTag()` — SSR script tags (every argument optional; defaults from `configure()`).
 - `Shipeasy\onChange()` — change listener (long-running runtimes only).
@@ -9692,7 +9674,7 @@ The Shipeasy Swift SDK — a native client SDK on SwiftPM, authenticating with t
 Generated from the Swift SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk swift overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-swift/pages/overview.md`](https://shipeasy-ai.github.io/sdk-swift/pages/overview.md). Edit it in the SDK repo, not here.
 
 `Shipeasy` is the **native client** Swift SDK for [Shipeasy](https://shipeasy.ai) —
-feature flags, dynamic configs, kill switches, and A/B experiments for an
+feature flags, dynamic configs, and kill switches for an
 iOS / macOS / tvOS / watchOS app. It uses a **public client key** (`pk_…`, safe
 to embed in a shipped app), evaluates one device user server-side over
 `POST /sdk/evaluate`, and serves cheap local reads from the cached response.
@@ -9710,7 +9692,7 @@ Full wiring — frameworks, options, env vars — is in [Installation](https://d
 You call `configureClient(clientKey:)` **once** at app launch. It returns a
 `ShipeasyClient` and registers it as the process-global one (fetch it later with
 `shipeasyClient()`). Then you `identify(...)` the device user (which evaluates and
-caches assignments) and read flags/configs/experiments from the cache:
+caches assignments) and read flags/configs from the cache:
 
 ```swift
 import Shipeasy
@@ -9733,7 +9715,7 @@ first `identify`, reads return the supplied defaults.
 
 The **persisted device `anonymous_id`** is the whole point of the client SDK: it
 survives cold starts so a logged-out visitor buckets identically into every
-fractional rollout and experiment on every launch. See
+fractional rollout on every launch. See
 [configuration](https://docs.shipeasy.ai/sdks/reference/swift/configuration) and [advanced](https://docs.shipeasy.ai/sdks/reference/swift/advanced#anonymous-id-persistence--anonymousstore).
 
 ### The things you use
@@ -9745,7 +9727,6 @@ fractional rollout and experiment on every launch. See
 | `client.identify(_:)`      | Bind the device user + refresh assignments over `/sdk/evaluate`. Call at launch, on login, and whenever targeting attributes change. |
 | `client.reset()`           | Logout: clear `user_id`, keep the device `anonymous_id`, re-evaluate as anonymous. |
 | `client.getFlag/getConfig/getKillswitch` | Cached reads for the current user. |
-| `client.universe(_:).assign()` | Assign the user within a universe (a mutual-exclusion pool — the user lands in at most one of its experiments) and read the resolved params. Auto-logs one exposure when enrolled. |
 | `client.track(_:properties:)` | Conversion telemetry (fire-and-forget). |
 | `see(_:)` family           | Structured error reporting. See [error-reporting](https://docs.shipeasy.ai/sdks/reference/swift/error-reporting). |
 

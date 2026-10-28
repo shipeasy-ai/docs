@@ -67,6 +67,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         >
           <DocsLayout
             tree={source.pageTree}
+            // The site ships a single dark theme (RootProvider forces it), so a
+            // light/dark switch would be a button that does nothing.
+            themeSwitch={{ enabled: false }}
             nav={{
               title: (
                 <span className="flex items-center gap-2 font-semibold">

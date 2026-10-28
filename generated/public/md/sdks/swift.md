@@ -8,7 +8,7 @@ Source: https://docs.shipeasy.ai/sdks/swift
 Generated from the Swift SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk swift overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-swift/pages/overview.md`](https://shipeasy-ai.github.io/sdk-swift/pages/overview.md). Edit it in the SDK repo, not here.
 
 `Shipeasy` is the **native client** Swift SDK for [Shipeasy](https://shipeasy.ai) —
-feature flags, dynamic configs, kill switches, and A/B experiments for an
+feature flags, dynamic configs, and kill switches for an
 iOS / macOS / tvOS / watchOS app. It uses a **public client key** (`pk_…`, safe
 to embed in a shipped app), evaluates one device user server-side over
 `POST /sdk/evaluate`, and serves cheap local reads from the cached response.
@@ -26,7 +26,7 @@ Full wiring — frameworks, options, env vars — is in [Installation](https://d
 You call `configureClient(clientKey:)` **once** at app launch. It returns a
 `ShipeasyClient` and registers it as the process-global one (fetch it later with
 `shipeasyClient()`). Then you `identify(...)` the device user (which evaluates and
-caches assignments) and read flags/configs/experiments from the cache:
+caches assignments) and read flags/configs from the cache:
 
 ```swift
 import Shipeasy
@@ -49,7 +49,7 @@ first `identify`, reads return the supplied defaults.
 
 The **persisted device `anonymous_id`** is the whole point of the client SDK: it
 survives cold starts so a logged-out visitor buckets identically into every
-fractional rollout and experiment on every launch. See
+fractional rollout on every launch. See
 [configuration](https://docs.shipeasy.ai/sdks/reference/swift/configuration) and [advanced](https://docs.shipeasy.ai/sdks/reference/swift/advanced#anonymous-id-persistence--anonymousstore).
 
 ## The things you use
@@ -61,7 +61,6 @@ fractional rollout and experiment on every launch. See
 | `client.identify(_:)`      | Bind the device user + refresh assignments over `/sdk/evaluate`. Call at launch, on login, and whenever targeting attributes change. |
 | `client.reset()`           | Logout: clear `user_id`, keep the device `anonymous_id`, re-evaluate as anonymous. |
 | `client.getFlag/getConfig/getKillswitch` | Cached reads for the current user. |
-| `client.universe(_:).assign()` | Assign the user within a universe (a mutual-exclusion pool — the user lands in at most one of its experiments) and read the resolved params. Auto-logs one exposure when enrolled. |
 | `client.track(_:properties:)` | Conversion telemetry (fire-and-forget). |
 | `see(_:)` family           | Structured error reporting. See [error-reporting](https://docs.shipeasy.ai/sdks/reference/swift/error-reporting). |
 

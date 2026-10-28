@@ -1,13 +1,12 @@
 ---
 title: "Overview"
-description: "@shipeasy/sdk is the TypeScript / JavaScript SDK for the Shipeasy hosted platform — feature gates, runtime configs, kill switches, A/B experiments, metrics,…"
+description: "@shipeasy/sdk is the TypeScript / JavaScript SDK for the Shipeasy hosted platform — feature gates, runtime configs, kill switches, metrics,…"
 ---
 
 <Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-ts/pages/overview.md`](https://shipeasy-ai.github.io/sdk-ts/pages/overview.md).</Callout>
 
 `@shipeasy/sdk` is the TypeScript / JavaScript SDK for the [Shipeasy](https://shipeasy.ai)
-hosted platform — feature gates, runtime configs, kill switches, A/B
-experiments, metrics, and i18n. It ships **two entrypoints** from one package:
+hosted platform — feature gates, runtime configs, kill switches, and metrics. It ships **two entrypoints** from one package:
 
 - `@shipeasy/sdk/server` — Node, Cloudflare Workers, Deno (authenticates with
   the **server** key).
@@ -45,9 +44,8 @@ if (flags.getFlag("new_checkout")) { /* ship it */ }
 - **`new Client(user)`** is a cheap, user-bound handle. It opens no connection
   and runs no poller — it just binds the resolved attribute bag once at
   construction. Construct one per user / per request. It exposes `getFlag`,
-  `getFlagDetail`, `getConfig`, `universe(name).assign()`, `getKillswitch`, plus
-  `track(event, props?)` — so reading an experiment (which auto-logs its
-  exposure) **and** recording its conversion are end-to-end `Client`-only.
+  `getFlagDetail`, `getConfig`, `getKillswitch`, plus
+  `track(event, props?)` — reading flags and recording conversions are both `Client`-only.
 
 That is the entire surface you wire up: configure once, then `new Client(user)`
 everywhere you evaluate.

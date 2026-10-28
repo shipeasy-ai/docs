@@ -8,9 +8,7 @@ Source: https://docs.shipeasy.ai/sdks/ruby
 Generated from the Ruby SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk ruby overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-ruby/pages/overview.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/overview.md). Edit it in the SDK repo, not here.
 
 `shipeasy-sdk` is the server-side Ruby gem for the [Shipeasy](https://shipeasy.ai)
-hosted service: feature gates (flags), dynamic configs, kill switches, A/B
-experiments, metric tracking, `see()` error reporting, and i18n view helpers for
-Rails. It uses your **server key** and must never be embedded in a browser. It is
+hosted service: feature gates (flags), dynamic configs, kill switches, metric tracking, and `see()` error reporting. It uses your **server key** and must never be embedded in a browser. It is
 Rails-friendly but works in plain Ruby, Sinatra, Hanami, and serverless too.
 
 ## Install
@@ -44,8 +42,6 @@ flags = Shipeasy::Client.new(current_user)
 
 flags.get_flag("new_checkout")                       # NO user arg — bound at construction
 flags.get_config("button_color")
-assignment = flags.universe("checkout").assign       # <=1 experiment; auto-logs exposure
-assignment.get("label", "Buy")                       # variant ?? universe default ?? fallback
 flags.track("purchase", { revenue: 49 })             # on conversion
 flags.get_killswitch("payments")
 ```
@@ -58,10 +54,9 @@ argument on any call:
 - `get_flag(name, default: false)` · `get_flag_detail(name)`
 - `get_config(name, decode = nil, default: nil)`
 - `get_killswitch(name, switch_key = nil)`
-- `universe(name).assign` → an `Assignment` (`.name` / `.group` / `.enrolled?` / `.get(field, fallback = nil)`); auto-logs one deduped exposure when enrolled
 - `track(event_name, props = {})`
 
-So an experiment is **end-to-end Client-only**. Constructing a
+Constructing a
 `Shipeasy::Client.new(user)` before `Shipeasy.configure` raises `Shipeasy::Error`.
 
 ## The configure family

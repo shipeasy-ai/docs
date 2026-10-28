@@ -80,13 +80,13 @@ shipeasy release flags create new-ui \
 
 | Command                                                                 | Description                                                            |
 | ----------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `shipeasy release killswitch list`                          | List all killswitches. `ks` is the short alias                        |
-| `shipeasy release ks create <name>`                         | Create a killswitch (`folder.name`)                                   |
+| `shipeasy release killswitch list`                          | List all killswitches. `ks` is the short alias                         |
+| `shipeasy release ks create <name>`                         | Create a killswitch (`folder.name`)                                    |
 | `shipeasy release ks update <id>`                           | Update the default `--value`, the `--switches` map, or the description |
 | `shipeasy release ks set <id> --switch-key <k> --value <v>` | Set one named switch on one `--env` (default `prod`)                   |
 | `shipeasy release ks unset <id> --switch-key <k>`           | Remove a named switch from one `--env`                                 |
-| `shipeasy release ks set-value <id> --value <v>`            | Set the killswitch's own on/off value                                 |
-| `shipeasy release ks archive <id>`                          | Archive the killswitch                                                |
+| `shipeasy release ks set-value <id> --value <v>`            | Set the killswitch's own on/off value                                  |
+| `shipeasy release ks archive <id>`                          | Archive the killswitch                                                 |
 
 ```bash
 shipeasy release ks create email.outbound
@@ -123,11 +123,11 @@ shipeasy release configs update pricing --value '{"base":9.99,"currency":"USD"}'
 
 ## SDK keys
 
-| Command                                           | Description                                                                       |
-| ------------------------------------------------- | --------------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------- |
-| `shipeasy sdk keys list`              | List keys (id, kind, last used). The raw token is **never** shown after creation. |
-| `shipeasy sdk keys create --type <server | client | ops                                                                            | admin>` | Create a key (required: `--type`). Token is shown **once**. |
-| `shipeasy sdk keys revoke <id>`       | Revoke by id or id-prefix. First match wins.                                      |
+| Command                                              | Description                                                                                                     |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `shipeasy sdk keys list`                 | List keys (id, kind, last used). The raw token is **never** shown after creation.                               |
+| `shipeasy sdk keys create --type <type>` | Create a key. `--type` is required and is one of `server`, `client`, `admin` or `ops`. Token is shown **once**. |
+| `shipeasy sdk keys revoke <id>`          | Revoke by id or id-prefix. First match wins.                                                                    |
 
 ## API tokens
 
@@ -165,11 +165,11 @@ shipeasy ops feature "Dark mode dashboard" \
 
 ## MCP server
 
-| Command                              | Description                                                                                |
-| ------------------------------------ | ------------------------------------------------------------------------------------------ |
-| `shipeasy mcp install`   | Patch the right config file for Claude Code, Cursor, Windsurf, or a custom MCP client.     |
-| `shipeasy mcp status`    | Show the current MCP registration state for the detected client.                           |
-| `shipeasy mcp uninstall` | Remove the registration.                                                                   |
+| Command                              | Description                                                                            |
+| ------------------------------------ | -------------------------------------------------------------------------------------- |
+| `shipeasy mcp install`   | Patch the right config file for Claude Code, Cursor, Windsurf, or a custom MCP client. |
+| `shipeasy mcp status`    | Show the current MCP registration state for the detected client.                       |
+| `shipeasy mcp uninstall` | Remove the registration.                                                               |
 
 See [MCP server](https://docs.shipeasy.ai/get-started/mcp) for the tool inventory.
 

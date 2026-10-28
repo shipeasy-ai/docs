@@ -9,7 +9,7 @@ Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-
 
 `shipeasy-kotlin` (`ai.shipeasy:shipeasy-kotlin`) is the **server-side** Shipeasy
 SDK for the JVM (and Android-compatible). It evaluates feature flags (gates),
-dynamic configs, kill switches and A/B experiments **locally** against rule blobs
+dynamic configs and kill switches **locally** against rule blobs
 it fetches from the Shipeasy edge — no per-evaluation network call on the hot
 path.
 
@@ -32,8 +32,7 @@ You learn exactly two things:
 1. **`configure()`** (and its test/offline siblings `configureForTesting()` /
    `configureForOffline()`) — call it once at app boot.
 2. **`Client(user)`** — the cheap, user-bound handle for every read:
-   `getFlag` / `getFlagDetail` / `getConfig` / `getKillswitch` /
-   `universe(name).assign()` / `track`.
+   `getFlag` / `getFlagDetail` / `getConfig` / `getKillswitch` / `track`.
 
 The user (and the `attributes` transform you register at configure time) is bound
 when you construct the `Client`, so its methods take no user argument. Construct a
@@ -41,8 +40,7 @@ when you construct the `Client`, so its methods take no user argument. Construct
 its own.
 
 A handful of top-level package functions cover everything else without naming a
-heavyweight object: `overrideFlag` / `overrideConfig` / `overrideExperiment` /
-`clearOverrides`, `onChange`, `bootstrapScriptTag` / `i18nScriptTag` /
+heavyweight object: `overrideFlag` / `overrideConfig` / `clearOverrides`, `onChange`, `bootstrapScriptTag` / `i18nScriptTag` /
 `devtoolsScriptTag`, and the
 `see()` family.
 

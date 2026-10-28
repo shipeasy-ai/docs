@@ -2,13 +2,13 @@
 
 Source: https://docs.shipeasy.ai/sdks/reference/python
 
-> shipeasy is the server SDK for Shipeasy — feature flags, remote configs, kill switches, A/B experiments, and metric tracking. It uses your server key and…
+> shipeasy is the server SDK for Shipeasy — feature flags, remote configs, kill switches, and metric tracking. It uses your server key and…
 
 > **Note**
 Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-python/pages/overview.md`](https://shipeasy-ai.github.io/sdk-python/pages/overview.md).
 
 `shipeasy` is the **server** SDK for Shipeasy — feature flags, remote configs,
-kill switches, A/B experiments, and metric tracking. It uses your **server key**
+kill switches, and metric tracking. It uses your **server key**
 and must never be embedded in a browser.
 
 ## Mental model: `configure()` once, then `Client(user)` per request
@@ -35,9 +35,6 @@ client = shipeasy.Client(current_user)
 if client.get_flag("new_checkout"):
     ...
 config = client.get_config("billing_copy")
-a = client.universe("checkout").assign()  # ≤1 experiment; exposure logs on first get()
-if a.get("button_color") == "green":
-    ...
 client.track("purchase", {"amount": 49})  # on conversion
 ```
 
@@ -49,10 +46,9 @@ call:
 - `get_flag(name, default=False)` · `get_flag_detail(name)`
 - `get_config(name, decode=None, default=None)`
 - `get_killswitch(name, switch_key=None)`
-- `universe(name).assign()` → `Assignment` (`.name` / `.group` / `.enrolled` / `.get(field, fallback=None, *, exposure=True)`); the first `get()` on an enrolled assignment logs one exposure (`exposure=False` peeks without logging)
 - `track(event, properties=None)`
 
-So an experiment is **end-to-end Client-only**. Constructing a `Client(user)`
+Constructing a `Client(user)`
 before `configure()` raises `RuntimeError`.
 
 ## The configure family
