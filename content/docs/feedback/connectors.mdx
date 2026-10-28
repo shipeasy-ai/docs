@@ -3,34 +3,34 @@ title: Connectors
 description: Mirror new bug reports and feature requests out to a GitHub repo, a Google Sheet, or a Slack channel as they come in.
 ---
 
-<DocMeta status="Production ready" read="4 min read" works="Dashboard · per project" />
+<DocMeta status="Production ready" read="4 min read" works="Dashboard · Admin API" />
 
-**Connectors** push every new bug report and feature request out to an external tool, so triage doesn't have to start in Shipeasy. They are configured per project from the **Connectors** panel in the dashboard.
+**Connectors** push every new bug report and feature request out to an external tool, so triage doesn't have to start in Shipeasy. Tickets themselves live on **Home**, the project's ops queue; a connector only mirrors them outward.
 
-## Which destinations are wired
+## Where each one is set up
 
-Three outbound destinations ship today:
+There is no single Connectors screen in the dashboard. Each destination has the surface that fits it:
 
 <TileGrid>
-  <Tile icon="◇" title="GitHub" meta={<>OAuth · GitHub App</>}>
-    Opens an <b>Issue</b> (with labels) in a repository you pick for every selected event.
+  <Tile icon="▣" title="Slack" meta={<>Settings → Notifications</>}>
+    **Connect Slack** authorizes the Shipeasy Slack app, then you pick a default channel. Posts a{" "}
+    <b>message</b> per event, with action buttons, a <code>/shipeasy</code> command and an{" "}
+    <b>@Shipeasy</b> assistant. <a href="/feedback/slack">Full Slack page →</a>
   </Tile>
-  <Tile icon="▤" title="Google Sheets" meta={<>OAuth · Drive</>}>
-    Appends a <b>row</b> to a spreadsheet + tab of your choice for every selected event.
+  <Tile icon="◇" title="GitHub" meta={<>Admin API · GitHub App</>}>
+    Opens an <b>Issue</b> (with labels) in a repository you pick for every selected event. Create
+    the connector with the API, then finish the GitHub App install.
   </Tile>
-  <Tile icon="▣" title="Slack" meta={<>OAuth · Slack App</>}>
-    Posts a <b>message</b> to a channel you pick — plus action buttons, notifications, a
-    <code>/shipeasy</code> command and an <b>@Shipeasy</b> assistant.{" "}
-    <a href="/feedback/slack">Full Slack page →</a>
+  <Tile icon="▤" title="Google Sheets" meta={<>Admin API · Google OAuth</>}>
+    Appends a <b>row</b> to a spreadsheet and tab of your choice for every selected event.
+  </Tile>
+  <Tile icon="⚡" title="Coding agents" meta={<>Settings → Triggers</>}>
+    Claude, Cursor, Copilot and Jules connectors run an agent on your queue instead of mirroring it.
+    See [Scheduled triggers](/get-started/triggers).
   </Tile>
 </TileGrid>
 
-<Callout type="info" title="Want another destination?">
-  Other trackers aren't wired yet. The connectors panel has a **"Need a connector we don't have yet?"**
-  banner — tell us where you want bugs and requests to land and it goes straight to the Shipeasy
-  team as a feature request. Until then, GitHub, Google Sheets and Slack are the providers
-  available.
-</Callout>
+These are the only destinations. Anything else is not available.
 
 ## Events you can forward
 
@@ -43,54 +43,40 @@ Each connector subscribes to one or more lifecycle events:
 
 By default both are selected.
 
-## Setting up a GitHub connector
+## Setting up a GitHub or Google Sheets connector
+
+Both are created through the connector API, which returns the connector switched off; the provider's
+OAuth flow then attaches credentials and enables it.
 
 <Steps>
   <Step title="Create the connector">
-    **Connectors → New connector**, pick **GitHub**, name it, choose the events to forward, and
-    **Continue**.
+    [`POST /api/admin/connectors`](/api/operations/createConnector) with `{ "provider": "github",
+    "name": "Bugs → acme/app", "events": ["bug.created"] }`. Use `"google_sheets"` for a sheet.
   </Step>
-  <Step title="Install the GitHub App">
-    You're redirected to install the Shipeasy GitHub App and pick which repos it can access. After
-    consent you land back in the configure view.
+  <Step title="Authorize the provider">
+    Complete the GitHub App install (pick which repos it can access) or the Google consent screen.
   </Step>
-  <Step title="Pick a repo and labels">
-    Select the **repository**, optionally set **bug labels** and **feature labels**
-    (comma-separated) to apply to opened issues, tick **Enabled**, and **Save**. Use **Send test**
-    to open a throwaway issue and confirm the wiring.
+  <Step title="Pick the target">
+    [Update the connector](/api/operations/updateConnector) with the repository and optional **bug
+    labels** and **feature labels**, or the spreadsheet and tab, and set `enabled: true`.
+  </Step>
+  <Step title="Check it">
+    [Send a test](/api/operations/testConnector) — it opens a throwaway issue or appends a throwaway
+    row, so you can confirm the wiring.
   </Step>
 </Steps>
 
-## Setting up a Google Sheets connector
+## Setting up Slack
 
 <Steps>
-  <Step title="Create the connector">
-    **Connectors → New connector**, pick **Google Sheets**, name it, choose events, and
-    **Continue**.
-  </Step>
-  <Step title="Authorize Google">
-    Authorize Shipeasy to access your Drive. After consent you come back to configure.
-  </Step>
-  <Step title="Pick a spreadsheet and tab">
-    Choose the **spreadsheet** and **tab** to append rows to, tick **Enabled**, and **Save**.
-  </Step>
-</Steps>
-
-## Setting up a Slack connector
-
-<Steps>
-  <Step title="Create the connector">
-    **Connectors → New connector**, pick **Slack**, name it, choose events, and **Continue**.
-  </Step>
+  <Step title="Connect">Open **Settings → Notifications** and click **Connect Slack**.</Step>
   <Step title="Add to Slack">
-    You're redirected to authorize the Shipeasy Slack app in your workspace. After consent you land
-    back in the configure view.
+    Authorize the Shipeasy Slack app in your workspace. After consent you land back on the
+    Notifications tab.
   </Step>
   <Step title="Pick a channel">
-    Choose the **feedback channel** new bugs/requests post to. Optionally pick a separate
-    **notifications channel** for platform events (alerts, errors, config publishes) — leave it on
-    *Same as feedback channel* to share one. Tick **Enabled**, **Save**, and use **Send test** to
-    post a throwaway message.
+    Choose the **default channel** for Slack notifications. Individual events can override it in the
+    events table below.
   </Step>
 </Steps>
 
@@ -102,7 +88,7 @@ By default both are selected.
 
 ## Status & health
 
-Each connector in the list shows a status — **Needs OAuth**, **Needs repo** / **Needs sheet** / **Needs channel** (target not picked yet), **Active**, **Disabled**, or **Failing** (last dispatch errored). The configure view surfaces the last error and last successful delivery time, so you can tell at a glance whether mirroring is healthy.
+[List the connectors](/api/operations/listConnectors) to see each one's status — **Needs OAuth**, **Needs repo** / **Needs sheet** / **Needs channel** (target not picked yet), **Active**, **Disabled**, or **Failing** (last dispatch errored). The last error and last successful delivery time come back with it, so you can tell at a glance whether mirroring is healthy.
 
 <Callout type="info" title="Connectors forward out — and Slack actions flow back">
   The GitHub and Sheets connectors are one-way: new bugs/requests flow out, and status changes you
@@ -119,7 +105,7 @@ Each connector in the list shows a status — **Needs OAuth**, **Needs repo** / 
     },
     {
       href: "/feedback/errors",
-      title: "Errors dashboard & triage",
+      title: "Errors page",
       note: "File an error as an issue, then mirror it via a connector.",
     },
     {

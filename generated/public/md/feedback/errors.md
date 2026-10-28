@@ -4,7 +4,7 @@ Source: https://docs.shipeasy.ai/feedback/errors
 
 > Fingerprint-grouped error issues with a status workflow, occurrence timeseries, and automatic re-open on regression.
 
-The **Errors** page (`/dashboard/<projectId>/errors`, under **Ops → Errors**) is where the errors reported by [`see()`](https://docs.shipeasy.ai/feedback/error-reporting) land. Each distinct issue is grouped by **fingerprint** — so a thousand occurrences of the same problem are one row, not a thousand — and shown with its consequence sentence, occurrence trend, and triage state.
+The **Errors** page (**Errors** in the sidebar, `/dashboard/<projectId>/errors`) is where the errors reported by [`see()`](https://docs.shipeasy.ai/feedback/error-reporting) land. Each distinct issue is grouped by **fingerprint** — so a thousand occurrences of the same problem are one row, not a thousand — and shown with its consequence sentence, occurrence trend, and triage state.
 
 > **This is the read side of see()**
 
@@ -39,6 +39,15 @@ resolved/ignored ──reopen──▶  open
 
 Flip status from the per-row **⋯** menu (**Mark resolved**, **Ignore**, **Reopen**), from the detail panel, or in bulk by selecting rows and using the bulk-action bar.
 
+## From error to ticket
+
+A grouped issue doesn't stay a passive row. Once an issue passes **10
+occurrences**, Shipeasy files a ticket for it into the project's ops queue, so
+it can be picked up, assigned, and fixed like any other bug. If an issue then
+goes quiet, it **auto-closes after 3 days** without a new occurrence. Both
+numbers are per-project settings — change them under **Settings → Ops**
+("Create ticket after N occurrences" and "Auto-close resolved errors").
+
 > **Regressions re-open the same issue**
 
 Because issues are grouped by fingerprint, a recurrence of something you marked resolved
@@ -49,12 +58,22 @@ full trend) stays intact and you're not chasing duplicates.
 
 When code does `see(err)` and re-throws, the outer report links to the inner one as a **caused-by** chain rather than double-counting. The detail panel surfaces the upstream issue, so you can trace a wrapped error back to its root cause without it inflating your counts.
 
+## Error lifecycle [#error-lifecycle]
+
+Two numbers decide when an error closes itself and when it becomes a ticket. Both live under
+**Settings → Ops → Error lifecycle**:
+
+| Setting                     | Default        | What it does                                                                                                                                               |
+| --------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Auto-close quiet errors** | 3 days         | Resolves an open error once it has gone unseen this long. It reopens by itself when it happens again. `0` turns auto-close off.                            |
+| **Open a ticket after**     | 10 occurrences | How many times an error has to happen before it is filed into the queue on Home as a ticket. Tuning it needs a paid plan; every plan files at the default. |
+
 ## Filing an issue from an error
 
-Each row has a **File an issue** action. It creates an `error`-type ticket in [Feedback](https://docs.shipeasy.ai/feedback/getting-started), pre-filled from the tracked error and linked back to it — once filed, the row shows a `#42` chip instead of the file button. From there a [connector](https://docs.shipeasy.ai/feedback/connectors) can mirror it to GitHub. Worker-side auto-filing uses the same link, so manually-filed and auto-filed tickets de-duplicate.
+Each row has a **File an issue** action. It creates an `error`-type ticket on **Home**, the project's ops queue, pre-filled from the tracked error and linked back to it — once filed, the row shows a `#42` chip instead of the file button. From there a [connector](https://docs.shipeasy.ai/feedback/connectors) can mirror it to GitHub. Worker-side auto-filing uses the same link, so manually-filed and auto-filed tickets de-duplicate.
 
 **Related**
 
 - [Error reporting (see)](https://docs.shipeasy.ai/feedback/error-reporting) — The SDK side that produces these errors.
 - [Connectors](https://docs.shipeasy.ai/feedback/connectors) — Mirror filed issues out to GitHub.
-- [Feedback overview](https://docs.shipeasy.ai/feedback/getting-started) — Where filed error tickets live.
+- [Bugs & requests](https://docs.shipeasy.ai/feedback/getting-started) — Where filed error tickets live.

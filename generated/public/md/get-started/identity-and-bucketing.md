@@ -61,8 +61,8 @@ no-unit window. See [Evaluation & caching](https://docs.shipeasy.ai/get-started/
 When an anonymous visitor logs in, tie the two ids together so analytics don't split the same person in two:
 
 ```ts
-// Client SDK — call right after authentication
-flags.identify({
+// Client SDK — build a new Client right after authentication
+const flags = new Client({
   user_id: authenticatedUser.id,
   anonymous_id: currentAnonId, // the UUID that did the anonymous bucketing
 });
@@ -91,7 +91,7 @@ it.
 
 ## Sticky bucketing
 
-By default, bucketing is _stateless_ — recomputed from the hash every time, which is deterministic and needs no storage. **Sticky bucketing** instead **persists** a user's first assignment so they keep the same variant even if you later change allocation, weights, or the salt.
+By default, bucketing is _stateless_ — recomputed from the hash every time, which is deterministic and needs no storage. **Sticky bucketing** instead **persists** a user's first assignment so they keep the same answer even if you later change the rollout percentage or the salt.
 
 Reach for it when re-bucketing mid-rollout would be jarring — e.g. you bump the salt and don't want users who already have the feature to lose it. Sticky state is shared between SSR and the browser through a first-party `__se_sticky` cookie, the same way `__se_anon_id` keeps anonymous bucketing in agreement.
 

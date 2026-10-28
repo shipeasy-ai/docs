@@ -85,6 +85,28 @@ Unattended runs use an auto-approve flag (`--approval-mode=yolo`, `--sandbox dan
 also spend tokens/credits on every fire, so start with a weekly or daily cron and watch the first
 runs. PRs land for review; nothing auto-merges.
 
+## Mention an agent in a comment [#mentions]
+
+Besides running on a schedule, a connected agent can be started by hand: write its handle in a
+comment on a queue item — `@claude`, `@cursor`, `@copilot` or `@jules` — and Shipeasy hands the item
+to that agent. It marks your comment as seen with a 👀 reaction and the agent picks the work up,
+exactly as a scheduled run would. A second mention while that agent's run is still open adds
+instructions to it rather than starting from scratch.
+
+> **Off by default**
+
+A mention starts a real run, which spends your own Claude, Cursor, Copilot or Jules quota, so it
+is a project-level choice and **starts off**. Turn it on under **Settings → Ops → Mentions →
+Mentioning an agent starts a run**. While it is off, a mention stays a plain reference in the
+comment.
+
+A mention can only start an agent that is connected — set one up under **Settings → Triggers**
+first. The Mentions row lists which are connected right now. Codex, Muse and other MCP tools have no
+mention: they pull work from the queue themselves, so there is no run for Shipeasy to start.
+
+`@shipeasy` is different — it asks the built-in assistant to read the item and reply in the thread,
+and is not governed by the setting above.
+
 ## Connector registration — Shipeasy-fired vs. platform-scheduled
 
 A Shipeasy **connector** (Settings → Triggers, "Trigger now" + event auto-fire) means **Shipeasy's

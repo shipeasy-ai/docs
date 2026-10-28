@@ -67,9 +67,9 @@ Two keys are special:
 Shipeasy bucketing uses `user_id ?? anonymous_id` — so a user gets a stable assignment before _and_ after login. When the user authenticates, call `shipeasy.alias(anonymous_id, user_id)` to stitch their pre-login exposures to their post-login identity. Without this stitch, exposure events from before login show up as a separate user in analysis.
 
 <Callout type="warn" title="`user_id` is required for deterministic bucketing">
-  Without a stable id, every evaluation gets a fresh random bucket — rollouts oscillate, metric
-  variants flip between page loads, and analysis falls apart. Pass `user_id` as soon as you have it;
-  pass `anonymous_id` for the pre-login window.
+  Without a stable id, every evaluation gets a fresh random bucket — rollouts oscillate, flag
+  answers flip between page loads, and metric breakdowns fall apart. Pass `user_id` as soon as you
+  have it; pass `anonymous_id` for the pre-login window.
 </Callout>
 
 ## Custom attributes
@@ -211,11 +211,17 @@ Most projects benefit from a few standard fields. Set them up once and your futu
   </Tile>
 </TileGrid>
 
-## Registering attributes in the dashboard
+## Registering attributes
 
-Go to **Project → User attributes → Register** and declare the attributes you plan to send. Registration is **optional** but unlocks two things:
+Attributes your SDK sends are discovered automatically. To declare one ahead of time — with a type, or an enum of allowed values — register it from the CLI or the API:
 
-1. The dashboard rule builder can autocomplete attribute names and validate types.
+```bash
+shipeasy release flags attributes create plan --type enum --enum-values free,pro,team
+```
+
+Registration is **optional** but unlocks two things:
+
+1. The rule builder can autocomplete attribute names and validate types.
 2. Registered attributes become the labels you can filter and slice a metric series by.
 
 Unregistered attributes still work — they just won&apos;t appear in pickers.
@@ -344,7 +350,7 @@ A handful of fields are auto-treated:
   }}
 />
 
-You can set per-attribute retention in **Project → Privacy**; the default is plan-derived and shown there. Past the window, exposure rows are aggregated and the per-user attribute payload is dropped.
+Retention of per-user attribute payloads is plan-derived; the [pricing page](https://shipeasy.ai/pricing) states it.
 
 ## Troubleshooting
 

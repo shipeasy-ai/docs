@@ -28,10 +28,10 @@ Drop this into your HTML `<head>` (or your framework's equivalent):
 Both attributes are **required**. If either is missing the script logs a clear
 `console.error` and exits without mounting anything.
 
-| Attribute             | Where to find it                                                    |
-| --------------------- | ------------------------------------------------------------------- |
-| `data-client-api-key` | Dashboard → Settings → API Keys → Client key (public, safe in HTML) |
-| `data-project-id`     | Dashboard → Settings → Project ID                                   |
+| Attribute             | Where to find it                                                  |
+| --------------------- | ----------------------------------------------------------------- |
+| `data-client-api-key` | **SDK keys** in the sidebar → a client key (public, safe in HTML) |
+| `data-project-id`     | The id in your dashboard URL, `/dashboard/<projectId>`            |
 
 **Drop the script tag into <head>**
 
@@ -164,7 +164,7 @@ initDevtools({
 
 ```bash
 # The overlay needs the Feedback module enabled — toggle it in
-# Settings → Modules in the dashboard, then verify from the CLI:
+# Settings → Modules, then verify from the CLI:
 shipeasy ops list --type bug   # expect [] or rows, never 403
 # then load any page with ?se=1 and confirm the rail appears
 ```

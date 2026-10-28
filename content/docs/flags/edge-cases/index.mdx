@@ -16,7 +16,7 @@ The patterns below are the ones you wish someone told you on day one.
     Pass server-evaluated flags to the client to skip the hydration mismatch.
   </Tile>
   <Tile href="#fallback" icon="✓" title="Fail-safe defaults when KV is unreachable">
-    What `gate()` returns and how to override per-call.
+    What each read returns and how to set the default per call.
   </Tile>
 </TileGrid>
 
@@ -31,16 +31,16 @@ device", "sticky per session", or "sticky until the cookie clears". Pick it once
 real:
 
 ```ts
-import { gate } from "@shipeasy/sdk/server";
+import { Client } from "@shipeasy/sdk/server";
 
 // Good — stable across devices and sessions
-await gate("checkout-v2", { userId: session.user.id });
+new Client({ user_id: session.user.id }).getFlag("checkout-v2");
 
 // Acceptable for logged-out — survives across sessions on one device
-await gate("checkout-v2", { userId: anonymousIdFromCookie() });
+new Client({ anonymous_id: anonymousIdFromCookie() }).getFlag("checkout-v2");
 
 // Bad — re-buckets every request, every reload, every tab
-await gate("checkout-v2", { userId: crypto.randomUUID() });
+new Client({ user_id: crypto.randomUUID() }).getFlag("checkout-v2");
 ```
 
 If a visitor signs in mid-rollout they will re-bucket: anon cookie ID → real user ID changes
@@ -68,84 +68,60 @@ For instant-kill semantics, evaluate server-side at request time and short-circu
 killswitch before doing the dangerous thing:
 
 ```ts
-import { gate } from "@shipeasy/sdk/server";
+import { Client } from "@shipeasy/sdk/server";
 
 export async function POST(req: Request) {
-  if (!(await gate("emails-enabled"))) {
+  const client = new Client(await getCurrentUser());
+  if (client.getKillswitch("emails-paused")) {
     return new Response("paused", { status: 503 });
   }
   return sendEmail(await req.json());
 }
 ```
 
-The SDK has a small in-memory cache (default 10s) on top of the KV read. If you cannot tolerate
-even that, pass `{ maxAge: 0 }` and pay one KV round-trip per call.
+Reads come from the SDK's in-memory copy of the rule set, which it refreshes on its poll
+interval — there is no per-call network hop, so a flip lands on the next poll, not the next
+request. If a single extra request is unacceptable, put the pause in front of the dangerous call
+and also gate it downstream (for example in the worker that actually sends).
 
 ## SSR/CSR flicker [#ssr-flicker]
 
-The default client-side `gate()` returns `false` on first render (no value yet), then the real
-value on hydration. On a page where the flag controls a visible component, that's a flash of the
-control variant before the treatment appears — exactly the flicker we don't want.
+A browser-only read returns `false` on first render (no value yet), then the real value once the
+evaluation lands. On a page where the flag controls a visible component, that's a flash of the
+old UI before the new one appears — exactly the flicker we don't want.
 
-The fix is to evaluate on the server, ship the result down with the page, and hand it to the
-client SDK so the first client render already has the right value:
+Two fixes, depending on how the page is built:
 
-```tsx
-// app/page.tsx (Server Component)
-import { gate } from "@shipeasy/sdk/server";
-import { ShipeasyProvider } from "@/components/shipeasy-provider";
+- **Server-rendered framework (Next.js, Remix, SvelteKit).** Configure the server with its key and
+  the browser with `configure({ clientKey })`. The server evaluates the bundle and lands the same
+  data on `window.__SE_BOOTSTRAP`, so the first client render already has the right value and
+  matches the SSR output — no hydration mismatch. See
+  [SSR bootstrap](/sdks/browser-react#ssr-bootstrap--the-anon-cookie).
+- **No bundler, or a static page.** Use the [drop-in script tag](/sdks/script-loader): the edge
+  evaluates for the visitor and returns the answers inside the script, so `window.shipeasy` is
+  populated before the browser paints.
 
-export default async function Page() {
-  const flags = {
-    "checkout-v2": await gate("checkout-v2", { userId }),
-    "hero.title": await config<string>("hero.title"),
-  };
-  return (
-    <ShipeasyProvider initial={flags}>
-      <Page />
-    </ShipeasyProvider>
-  );
-}
-```
-
-```tsx
-// components/shipeasy-provider.tsx (Client Component)
-"use client";
-import { shipeasy } from "@shipeasy/sdk/client";
-import { useEffect } from "react";
-
-export function ShipeasyProvider({ initial, children }) {
-  useEffect(() => {
-    shipeasy({
-      apiKey: process.env.NEXT_PUBLIC_SHIPEASY_CLIENT_KEY!,
-      initial,
-    });
-  }, [initial]);
-  return children;
-}
-```
-
-First client render reads `initial.checkout-v2`, matches the SSR output, no hydration mismatch. The
-SDK takes over for subsequent evaluations.
+If you only have the client build, hold the flagged component back until `await client.ready()`
+resolves rather than rendering the old UI first.
 
 ## Fail-safe defaults [#fallback]
 
 If KV is unreachable (network blip, cold start, transient edge issue), the SDK returns:
 
-- `gate(name)` → `false`
-- `config(name)` → last-known-good from the in-memory cache, else `undefined`
+- `getFlag(name)` → `false`, or the default you pass as the second argument
+- `getConfig(name)` → last-known-good from the in-memory cache, else `undefined`
+- `getKillswitch(name)` → `false` — **not killed**, so a cold cache never kills a path by itself
 
-That's the safe default for **the common case**, where "feature off" is benign. The dangerous case
-is when _off_ is the failure mode — a killswitch that defaults to `false` would un-pause emails
-during an incident. Override per call:
+That's the safe default for **the common case**, where "feature off" is benign. The case to think
+about is a flag whose _off_ state is the dangerous one. Say so at the call site:
 
 ```ts
-// "off" is dangerous — default open, fail closed
-await gate("emails-enabled", ctx, { defaultValue: true });
+// "off" is dangerous — if Shipeasy is unreachable, keep the strict check on
+const strict = client.getFlag("payment-fraud-check", true);
 ```
 
-Set defaults at the call site, not in a wrapper. The defaultValue is the contract of "what does
-this code do if Shipeasy is dead?" and it should be readable next to the code that depends on it.
+Set defaults at the call site, not in a wrapper. The default is the contract of "what does this
+code do if Shipeasy is dead?" and it should be readable next to the code that depends on it.
 
 ## More edge cases
 
@@ -178,7 +154,7 @@ ever take.
 
 That's not aesthetic — it's a real cost:
 
-- Every `if (await gate(...))` adds a layer of indirection in code review. New engineers spend
+- Every `if (client.getFlag(...))` adds a layer of indirection in code review. New engineers spend
   time tracing why a 100% feature flag exists before realising it's dead.
 - Removed features that left their feature flags behind become Chesterton's-fence puzzles — was this
   rolled back? Is it still in flight? Nobody remembers.
@@ -254,10 +230,10 @@ const TierSchema = z.object({
   priceCents: z.number().int().nonnegative(),
 });
 
-const tiers = await config<unknown>("plans.tiers", { default: [] });
+const tiers = client.getConfig<unknown>("plans.tiers", { defaultValue: [] });
 const parsed = z.array(TierSchema).safeParse(tiers);
 if (!parsed.success) {
-  reportToSentry("Config schema drift", { configName: "plans.tiers", issues: parsed.error.issues });
+  reportError("Config schema drift", { configName: "plans.tiers", issues: parsed.error.issues });
   return DEFAULT_TIERS;
 }
 return parsed.data;
@@ -292,32 +268,33 @@ flipped in 6 months _probably_ still works — but you don't know.
 Three failure modes silently break a killswitch:
 
 1. **The wrapped code path was refactored.** Someone moved the dangerous call to a new function
-   and forgot the `if (!(await gate(...)))` wrapper. The killswitch still exists; flipping it
+   and forgot the `getKillswitch` check. The killswitch still exists; flipping it
    does nothing.
 2. **A new code path bypasses it.** A worker, a batch job, or a webhook handler was added later
    that calls the same dangerous side effect without the wrapper. The killswitch covers the old
    path; the new path is naked.
-3. **The webhook moved.** The PagerDuty integration URL changed, no one updated the
-   `killswitch.flipped` webhook, flipping the kill no longer pages.
+3. **The notification moved.** The Slack channel was renamed or archived, no one updated the
+   **Killswitch flipped** destination under **Settings → Notifications**, flipping the kill no
+   longer announces itself.
 
 The fix is rehearsal. Once a quarter, run a drill in staging:
 
 ```bash
 # Flip the killswitch ON (kill = true) for the drill
-shipeasy release killswitch update transactional.emails-enabled --value true
+shipeasy release killswitch update transactional.emails-paused --value true
 
 # Run the canonical test that exercises every email-sending code path
 pnpm test:integration --grep email
 
 # Confirm zero emails went out, then restore
-shipeasy release killswitch update transactional.emails-enabled --value false
+shipeasy release killswitch update transactional.emails-paused --value false
 ```
 
 If any test sent an email while the killswitch was off, you've found a naked code path. Fix
 _before_ you need the killswitch in production.
 
-The Shipeasy dashboard flags killswitches that haven't been flipped (in any env) in 90+ days
-with a yellow "stale" chip. Treat that chip as "drill overdue."
+The **Killswitches** page shows when each one was last published. Treat a killswitch nobody has
+flipped in a quarter as "drill overdue."
 
 ## Cross-env flag drift [#env-drift]
 

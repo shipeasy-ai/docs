@@ -48,3 +48,7 @@
 /flags-experiments/api /api 301
 /flags-experiments/* /flags/:splat 301
 /flags-experiments /flags 301
+
+# The tracker-sync case study named one vendor in its slug; it is now generic.
+/feedback/case-studies/route-bugs-to-linear/ /feedback/case-studies/route-bugs-to-your-tracker 301
+/feedback/case-studies/route-bugs-to-linear /feedback/case-studies/route-bugs-to-your-tracker 301

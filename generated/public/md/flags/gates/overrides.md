@@ -29,13 +29,9 @@ scale; overrides don't.
 
 ## Adding an override
 
-In the dashboard: expand the feature flag, scroll to **Overrides**, add user IDs under **Always on** or
-**Always off**.
-
-A first-class `flags override` CLI subcommand isn't shipped yet. The
-shortest path is the dashboard (feature flag detail → Overrides → paste user
-IDs); for scripting, PATCH the feature flag via the
-[Admin API](https://docs.shipeasy.ai/api):
+From the CLI, `shipeasy release flags whitelist-add checkout-v2` adds user IDs and
+`whitelist-remove` takes them out; `whitelist-set` replaces the whole list. For scripting, the same
+writes are available through the [Admin API](https://docs.shipeasy.ai/api):
 
 ```bash
 GATE_ID=$(curl -sS \
@@ -108,7 +104,7 @@ You can `GET` and `PATCH` this shape directly via the admin API.
 ## Limits
 
 How many overrides a single feature flag may carry is plan-derived — the [pricing
-page](https://shipeasy.ai/pricing) has the matrix, **Settings → Billing** has yours.
+page](https://shipeasy.ai/pricing) has the matrix, **Settings → Billing & usage** has yours.
 
 If you're approaching the limit, you're almost certainly using overrides where you should be using
 rules. Audit the list — most overrides are old QA accounts that should have been removed when the
@@ -137,7 +133,7 @@ been at 100% for >30 days) so you don't have to remember.
 ## Audit
 
 Every override change is recorded — who added it, who removed it, when, from what surface
-(dashboard, CLI, API). Find the audit trail under **Feature flag → History**. Particularly useful when a
+(dashboard, CLI, API). Read the audit trail with `shipeasy release flags activity <name>`. Particularly useful when a
 customer reports a feature they're "always seeing" — the history tells you whether they were
 overridden, by whom, and when.
 

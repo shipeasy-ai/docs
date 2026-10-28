@@ -4,10 +4,12 @@ import remarkGfm from "remark-gfm";
 import remarkRehype from "remark-rehype";
 import { toJsxRuntime } from "hast-util-to-jsx-runtime";
 import * as JsxRuntime from "react/jsx-runtime";
+import { readFileSync } from "node:fs";
 import type { Root } from "hast";
 import { createOpenAPI } from "fumadocs-openapi/server";
 import { createAPIPage } from "fumadocs-openapi/ui";
 import { rehypeUseCases } from "./rehype-use-cases";
+import { publicSpec } from "./public-spec";
 
 /**
  * Single OpenAPI server instance pointed at the admin-api spec. Both the
@@ -17,8 +19,17 @@ import { rehypeUseCases } from "./rehype-use-cases";
  */
 export const OPENAPI_SPEC_PATH = "./node_modules/@shipeasy/openapi/openapi.json";
 
+/**
+ * The spec is read through {@link publicSpec}, never raw: the published
+ * `@shipeasy/openapi` describes products we do not market (experiments,
+ * universes, i18n), and the API reference must not render their fields.
+ * The key stays `OPENAPI_SPEC_PATH` so the `document:` the generated MDX
+ * names still resolves.
+ */
 export const openapi = createOpenAPI({
-  input: [OPENAPI_SPEC_PATH],
+  input: () => ({
+    [OPENAPI_SPEC_PATH]: publicSpec(JSON.parse(readFileSync(OPENAPI_SPEC_PATH, "utf8"))),
+  }),
 });
 
 function rehypeReact(this: { compiler?: (tree: Root) => ReactNode }) {

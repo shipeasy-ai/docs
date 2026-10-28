@@ -13,12 +13,12 @@ That's the full loop: **event → metric → alert → ticket → ops:work.** No
 Your app already fires the fact. If it doesn't, add one `track` call at the failure point:
 
 ```ts
-import { flags } from "@shipeasy/sdk/server";
+import { Client } from "@shipeasy/sdk/server";
 
 try {
   await processCheckout(order);
 } catch (err) {
-  flags.track("checkout_error", { user_id: order.userId, code: err.code });
+  new Client({ user_id: order.userId }).track("checkout_error", { code: err.code });
   throw err;
 }
 ```
@@ -71,11 +71,11 @@ atomic diff, one item at a time.
 
 - **Tune the threshold before you trust it.** Start the rule disabled-or-loose, watch the metric for a few days, then set the threshold above normal noise so it fires on real regressions, not on Tuesday traffic.
 - **One alert, one symptom.** Don't pile conditions into one rule — separate alerts (error rate, latency, signups dropping) each file their own focused ticket.
-- **Forward downstream.** Alert tickets are feedback items, so the [Linear/Jira webhook](https://docs.shipeasy.ai/feedback/case-studies/route-bugs-to-linear) forwards them into your tracker just like bugs.
+- **Forward downstream.** Alert tickets are feedback items, so the [tracker sync job](https://docs.shipeasy.ai/feedback/case-studies/route-bugs-to-your-tracker) forwards them into your tracker just like bugs.
 - **Self-monitor too.** This same loop watches Shipeasy's own cron and error metrics — the pattern scales from your app to your infra.
 
 **Related**
 
 - [Alerts](https://docs.shipeasy.ai/metrics/alerts) — The event → metric → alert chain in full
-- [Route bugs to Linear](https://docs.shipeasy.ai/feedback/case-studies/route-bugs-to-linear) — Forward the filed ticket downstream
+- [Route bugs to your tracker](https://docs.shipeasy.ai/feedback/case-studies/route-bugs-to-your-tracker) — Forward the filed ticket downstream
 - [Error reporting](https://docs.shipeasy.ai/feedback/error-reporting) — The other source of auto-filed tickets

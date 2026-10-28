@@ -168,8 +168,8 @@ Don't wrap this in a custom helper file. The SDK owns its own initialisation.
 
 **Server keys** can read full payloads and write events. **Client keys** are scoped: they expose
 only the feature flags and configs you mark _client-readable_, and they rate-limit by domain.
-Never put a server key in browser code. Manage both in **Project → SDK keys**, or with `shipeasy
-keys`.
+Never put a server key in browser code. Manage both in **SDK keys** in the sidebar, or with
+`shipeasy sdk keys`.
 
 ### CLI [#cli]
 
@@ -369,7 +369,7 @@ This means a stolen refresh token is good for at most one refresh — the moment
 
 ### Using Shipeasy in CI
 
-For GitHub Actions, GitLab CI, and any non-interactive environment, generate a long-lived **API token** in **Project → Tokens → Create** and pass it as `SHIPEASY_CLI_TOKEN`:
+For GitHub Actions, GitLab CI, and any non-interactive environment, generate a long-lived **API token** under **SDK keys** (type **Admin**) and pass it as `SHIPEASY_CLI_TOKEN`:
 
 ```yaml title=".github/workflows/release.yml"
 - name: Check the flags this release depends on
@@ -485,9 +485,9 @@ flags and configs you mark client-readable, and the Worker rate-limits it by dom
 
 **Mint and manage**
 
-Create, rotate, and revoke keys in **Project → SDK keys**, or with `shipeasy sdk keys`. Each key
-is bound to its environment **at mint time** — you pick the env when you create the key, not
-when you use it.
+Create, rotate, and revoke keys in **SDK keys** in the sidebar, or with `shipeasy sdk keys`.
+Each key is bound to its environment **at mint time** — you pick the env when you create the
+key, not when you use it.
 
 ### The read environment is derived from the key
 
@@ -1466,6 +1466,12 @@ redeploys between ramp steps.
 npm install @shipeasy/sdk && npx shipeasy login
 ```
 
+**Configure once at boot**
+
+```bash
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY })
+```
+
 **Create a feature flag at 0%**
 
 ```bash
@@ -1531,7 +1537,7 @@ description field exists on the feature flag row but the CLI's `flags create`
 doesn't accept a `--description` flag today — add the description from
 the dashboard after creating.)
 
-Alternatively, create it in the dashboard: **Flags → New feature flag → Save**.
+Alternatively, open **Feature flags** in the dashboard and click **New feature flag**.
 
 ### 3. Wrap the code path
 
@@ -1645,7 +1651,7 @@ shipeasy release flags update checkout-v2 --rollout-percent 100
 
 Each ramp step propagates to every SDK in under a second. No redeploy, no env var change.
 
-The same feature flag can be ramped from the dashboard with a slider, or via the
+The same feature flag can be ramped from the **Feature flags** page, or via the
 [Admin API](https://docs.shipeasy.ai/api). Resolve the feature flag's id, then PATCH:
 
 ```bash
@@ -1702,14 +1708,21 @@ Source: https://docs.shipeasy.ai/flags/configs/quickstart
 
 Create a typed config, read it with getConfig, change the value in production — no redeploy, five minutes end to end.
 
-This walks you through replacing one hard-coded constant with a config you can change from a
-dashboard. You'll create the config with a schema, read it in code with a guaranteed fallback, then
+This walks you through replacing one hard-coded constant with a config you can change without a
+deploy. You'll create the config with a schema, read it in code with a guaranteed fallback, then
 change the value in production and watch it land without a deploy.
 
 **Install the SDK & log in**
 
 ```bash
 npm install @shipeasy/sdk && npx shipeasy login
+```
+
+**Initialise the SDK once at boot**
+
+```bash
+import { configure } from "@shipeasy/sdk/server";
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY ?? "" });
 ```
 
 **Create the config with its shape and first value**
@@ -1786,7 +1799,7 @@ Without `--value` the config starts as `{}` on every environment, which your def
 cover. Seeding one environment at a time works too — `--dev`, `--staging`, `--prod` each publish to
 just that one.
 
-Or in the dashboard: **Configs → Dynamic values → New**
+Or in the dashboard: open **Configs** and click **New config**.
 
 ### 3. Read it where the constant used to be
 
@@ -1879,56 +1892,64 @@ A killswitch is the lever you pull when something is on fire. This walkthrough t
 to a wired-in killswitch around an outbound-email path. By the end, on-call can disable email
 sending in under five seconds without touching code.
 
-**Create the killswitch (default OFF)**
+**Create the killswitch (not killed)**
 
 ```bash
-shipeasy release killswitch create transactional.emails-enabled --value false
+shipeasy release killswitch create transactional.emails-paused --value false
 ```
 
 **Guard the dangerous path**
 
 ```bash
-if (flags.ks('transactional.emails-enabled')) return; // killed → bail
+if (client.getKillswitch('transactional.emails-paused')) return; // killed → bail
 ```
 
 **Flip it, watch it stop**
 
 ```bash
-shipeasy release killswitch update transactional.emails-enabled --value true
+shipeasy release killswitch update transactional.emails-paused --value true
 ```
 
-**Subscribe a connector (Slack / GitHub / etc.)**
+**Tell the team when it flips**
 
 ```bash
-Add via Dashboard → Feedback → Connectors → killswitch.flipped
+Settings → Notifications → Events → Killswitch flipped
 ```
+
+### Prerequisites
+
+The SDK configured once with your **server key** — see the [quickstart](https://docs.shipeasy.ai/get-started/quickstart)
+for the single `configure()` call. Everything below reads through the `Client` it hands you.
 
 ### 1. Create the killswitch
 
 ```bash
-shipeasy release killswitch create transactional.emails-enabled \
+shipeasy release killswitch create transactional.emails-paused \
   --description "Disables outbound transactional email" \
   --value false
 ```
 
+You can also click **New killswitch** on the **Killswitches** page.
+
 Killswitch names must be `folder.name`. `--value false` means "killed = false" by
-default — the call to `flags.ks(...)` returns `false`, your code reads "not
-killed, proceed". Flip it to `true` to kill the path in production. Until the
-SDK has fetched the first blob, reads return `false` (the safer default for
-"is this killed?") — so a cold cache won't accidentally kill your emails.
+default — the read returns `false`, your code reads "not killed, proceed". Flip
+it to `true` to kill the path in production. Until the SDK has fetched the first
+blob, reads return `false` (the safer default for "is this killed?") — so a cold
+cache won't accidentally kill your emails.
 
 ### 2. Wire it into the code path
 
 Wrap the dangerous call with the killswitch read — it returns `true` when the
-killswitch is flipped, `false` (or the SDK default) otherwise:
+killswitch is engaged (the path is killed), `false` otherwise:
 
 **TypeScript**
 
 ```ts title="src/lib/mailer.ts"
-import { flags } from "@shipeasy/sdk/server";
+import { Client } from "@shipeasy/sdk/server";
 
-export async function sendOrderEmail(order: Order) {
-  if (flags.ks("transactional.emails-enabled")) {
+export async function sendOrderEmail(order: Order, user: User) {
+  const client = new Client(user);
+  if (client.getKillswitch("transactional.emails-paused")) {
     logger.warn("emails paused via killswitch", { orderId: order.id });
     return;
   }
@@ -1939,39 +1960,87 @@ export async function sendOrderEmail(order: Order) {
 
 **Python**
 
-Killswitches ride the same blob as flags. Read them from the evaluate result; see [Python](https://docs.shipeasy.ai/sdks/python) for the full client API.
+```python
+client = shipeasy.Client(user)
+if client.get_killswitch("transactional.emails-paused"):
+    logger.warning("emails paused via killswitch", extra={"order_id": order.id})
+    return
+mailer.send(order)
+```
 
 **Go**
 
-Killswitches ride the same blob as flags. Read them from the evaluate result; see [Go](https://docs.shipeasy.ai/sdks/go) for the full client API.
+```go
+client := shipeasy.NewClient(user)
+if client.GetKillswitch("transactional.emails-paused") {
+    log.Printf("emails paused via killswitch order=%s", order.ID)
+    return
+}
+mailer.Send(order)
+```
 
 **Ruby**
 
-Killswitches ride the same blob as flags. Read them from the evaluate result; see [Ruby](https://docs.shipeasy.ai/sdks/ruby) for the full client API.
+```ruby
+client = Shipeasy::Client.new(user)
+if client.get_killswitch("transactional.emails-paused")
+  Rails.logger.warn("emails paused via killswitch order=#{order.id}")
+  return
+end
+Mailer.send(order)
+```
 
 **Java**
 
-Killswitches ride the same blob as flags. Read them from the evaluate result; see [Java](https://docs.shipeasy.ai/sdks/java) for the full client API.
+```java
+Client client = new Client(user);
+if (client.getKillswitch("transactional.emails-paused")) {
+    log.warn("emails paused via killswitch orderId={}", order.id());
+    return;
+}
+mailer.send(order);
+```
 
 **Kotlin**
 
-Killswitches ride the same blob as flags. Read them from the evaluate result; see [Kotlin](https://docs.shipeasy.ai/sdks/kotlin) for the full client API.
+```kotlin
+val client = Client(user)
+if (client.getKillswitch("transactional.emails-paused")) {
+    logger.warn("emails paused via killswitch orderId=${order.id}")
+    return
+}
+mailer.send(order)
+```
 
 **PHP**
 
-Killswitches ride the same blob as flags. Read them from the evaluate result; see [PHP](https://docs.shipeasy.ai/sdks/php) for the full client API.
+```php
+$client = new Shipeasy\Client($user);
+if ($client->getKillswitch('transactional.emails-paused')) {
+    error_log("emails paused via killswitch order={$order->id}");
+    return;
+}
+$mailer->send($order);
+```
 
 **Swift**
 
-Killswitches ride the same blob as flags. Read them from the evaluate result; see [Swift](https://docs.shipeasy.ai/sdks/swift) for the full client API.
+```swift
+let client = try Client(user)
+if await client.getKillswitch("transactional.emails-paused") {
+    logger.warning("emails paused via killswitch")
+    return
+}
+try await mailer.send(order)
+```
 
 Three things to internalise:
 
-- **`undefined` for `ctx`.** Killswitches don't target — they're global. The second arg is just there to keep the function signature aligned with `gate()`.
-- **`defaultValue: true` is load-bearing.** Don't omit it. If KV is unreachable during the very incident that prompted the kill, you do not want the killswitch to silently default to `false` and amplify the outage.
+- **Killswitches don't target.** They're global, so the user you bind to the `Client` plays no part in the answer. A killswitch can still carry named per-key overrides — pass the key as a second argument, see [patterns](https://docs.shipeasy.ai/flags/killswitches/patterns).
+- **The cold-cache default is "not killed".** Reads return `false` until the first blob arrives, so a cold start never kills the path on its own. If you want the opposite posture during an outage, that is a flag decision, not a killswitch one.
 - **Log the bypass.** When the killswitch is engaged, log a structured warn so post-mortem can reconstruct what was suppressed.
 
-Deploy this. Killswitch is `on`, fallback is `true`, behaviour is unchanged from before.
+Deploy this. The killswitch is `false`, so behaviour is unchanged from before.
 
 ### 3. Rehearse the flip
 
@@ -1980,26 +2049,19 @@ flipped it before. Rehearse in staging:
 
 ```bash
 ## Flip the killswitch to true ("kill the path") — single-value form
-shipeasy release killswitch update transactional.emails-enabled --value true
-
-## Confirm via the SDK eval endpoint
-curl "https://api.shipeasy.ai/sdk/evaluate" \
-  -H "Authorization: Bearer $SHIPEASY_SERVER_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{ "user": { "user_id": "drill-user" } }' \
-  | jq '.killswitches["transactional.emails-enabled"]'
-## → true
+shipeasy release killswitch update transactional.emails-paused --value true
 
 ## Verify no emails flow in staging
 ## … run your normal email test path …
 
 ## Re-enable (flip back to false = "not killed")
-shipeasy release killswitch update transactional.emails-enabled --value false
+shipeasy release killswitch update transactional.emails-paused --value false
 ```
 
-Time how long it takes from "decide to flip" to "next email is suppressed."
-The next call should return the new value within one poll interval of the
-flip — that interval is plan-derived and advertised to the SDK, not configured.
+You can flip it from the **Killswitches** page too — it is the same write. Time how long it takes
+from "decide to flip" to "next email is suppressed." The next call should return the new value
+within one poll interval of the flip — that interval is plan-derived and advertised to the SDK, not
+configured.
 
 ### 4. Get notified when the killswitch flips
 
@@ -2007,23 +2069,18 @@ A killswitch is a _social_ signal as much as a technical one. Flipping it
 should announce itself on the team's incident channel and create a paper
 trail.
 
-Today this is wired through the **Feedback → Connectors** surface in the
-dashboard. Pick `killswitch.flipped` as the event, point it at a Slack or
-GitHub connector, and configure the filter (e.g. only fire for prod, or
-only for specific killswitch names). The connector payload includes who
-flipped it, when, and the new value — wire it into your incident channel
-and your runbook ("if you see this, page primary on-call within 2 minutes").
-
-For production-grade pages, point the connector at PagerDuty or Opsgenie —
-that way flipping the killswitch _is_ declaring the incident, which is
-usually the right move.
+Open **Settings → Notifications**. The **Events** table has a **Killswitch flipped** row; turn on
+the channels you want (in-app, email, Slack) for it. Connect Slack on the same tab first if you want
+the post in a channel — the message carries a one-click **Flip back**. The notification says who
+flipped it, when, and the new value; wire that into your runbook ("if you see this, page primary
+on-call within 2 minutes").
 
 ### What you have now
 
-- A killswitch in the dashboard at **Killswitches → emails-enabled**.
+- A killswitch on the **Killswitches** page, named `transactional.emails-paused`.
 - A wrapped code path that respects it on every call.
 - A rehearsed flip-and-restore drill that took < 5 seconds.
-- An alert on the flip event so the team knows when production is in degraded mode.
+- A notification on the flip so the team knows when production is in degraded mode.
 
 That's the whole pattern. Repeat for every system whose pause-button you'd want on the lock screen
 of your phone.
@@ -2053,7 +2110,7 @@ Create your first metric, log the events it depends on, and put an alert on it �
 
 This walks you through the metric pipeline end to end: pick what to measure, log the underlying
 events, create the metric definition, and put a threshold alert on it. By the end you'll have a
-number you can watch while you ramp, and a rule that pages when it moves the wrong way.
+number you can watch, and a rule that pages when it moves the wrong way.
 
 **Create a conversion metric**
 
@@ -2064,7 +2121,7 @@ shipeasy metrics create purchase_conversion --event-name purchase --query 'count
 **Log the underlying event from your code**
 
 ```bash
-flags.track(userId, 'purchase', { revenueCents })
+client.track('purchase', { revenueCents })
 ```
 
 **Raise a ticket when it drops**
@@ -2106,31 +2163,32 @@ shipeasy metrics create purchase_conversion \
   --query 'count(purchase) / count(session_start)'
 ```
 
-On a chart that is the conversion rate. In an experiment it collapses per user
-to a `0` or a `1` — did they purchase, among the users who started a session.
+On a chart that is the conversion rate: purchases out of sessions started, bucket by bucket.
 
-You now have a metric definition. It does nothing on its own; it tells the analysis pipeline how
-to aggregate the underlying events per user.
+You now have a metric definition. It does nothing on its own; it tells the pipeline how to
+aggregate the underlying events.
 
-For a revenue metric (sum the `revenueCents` property across `purchase` events per user):
+For a revenue metric (sum the `revenueCents` property across `purchase` events):
 
 ```bash
-shipeasy metrics create revenue_per_user \
+shipeasy metrics create revenue \
   --event-name purchase \
   --query 'sum(purchase, revenueCents)'
 ```
 
-For more aggregation types, see [Aggregations](https://docs.shipeasy.ai/metrics/aggregations).
+There are eleven aggregation functions in all — count, sum, average, minimum, maximum, std dev and
+the p50 to p99 percentiles. See [Aggregation functions](https://docs.shipeasy.ai/metrics/aggregations).
 
 ### 3. Log the underlying events
 
 The metric is a _rule_ for aggregating events. The events themselves come from your code:
 
 ```ts title="app/checkout/success/page.tsx"
-import { flags } from "@shipeasy/sdk/server";
+import { Client } from "@shipeasy/sdk/server";
 
 export default async function CheckoutSuccess({ order }: { order: Order }) {
-  flags.track(order.userId, "purchase", {
+  const client = new Client({ user_id: order.userId });
+  client.track("purchase", {
     revenueCents: order.totalCents,
     currency: order.currency,
     channel: order.acquisitionChannel,
@@ -2141,12 +2199,13 @@ export default async function CheckoutSuccess({ order }: { order: Order }) {
 
 A few rules that matter:
 
-- **The first argument is the `userId`.** `flags.track` requires it as a positional arg — it is what lets the analysis pipeline collapse events to one value PER USER.
+- **The event is tied to the user the `Client` was built for.** That is what lets you slice a series by who did it and count distinct users where you need to.
 - **Properties become filterable.** You can later add a metric like "organic-channel purchases" by filtering on `channel` inside the DSL selector (`count(purchase{channel="organic"})`).
 - **`track()` is fire-and-forget.** It returns void; the event flushes asynchronously. Don't `await` it expecting a delivery guarantee — it's analytics, not transactional state.
 
-Deploy this. Events start flowing. The metric definition will pick them up on the next analysis
-window (daily by default).
+Deploy this. Events start flowing, and the metric picks them up as they arrive. A brand-new event
+name shows up on the **Events** page first, waiting for you to approve it — metrics defined on an
+event that hasn't been approved yet fail until you do.
 
 ### 4. Put an alert on it
 
@@ -2193,14 +2252,14 @@ alert evaluator reads, so what you see locally is what the rule is judging:
 
 If the number is flat or missing, two checks:
 
-1. **Are events actually landing?** Open the **Events** tab and confirm non-trivial counts. Zero
+1. **Are events actually landing?** Open **Events** in the sidebar and confirm non-trivial counts. Zero
    means your `track()` call isn't running on the path you think it is.
 2. **Is the window long enough?** A 1-hour window on a low-volume event is mostly empty buckets.
    Widen the window, or set `--required-buckets` so one lone sample can't page anyone.
 
 ### Where to next
 
-- **[Aggregation types](https://docs.shipeasy.ai/metrics/aggregations)** — Conversion, count, sum, mean, ratio — what each does and when to pick it.
+- **[Aggregation functions](https://docs.shipeasy.ai/metrics/aggregations)** — All eleven — what each does and when to pick it.
 
 - **[The metric DSL](https://docs.shipeasy.ai/metrics/grammar)** — The full grammar — every aggregation, filter and operator, and what the parser refuses.
 
@@ -2208,7 +2267,7 @@ If the number is flat or missing, two checks:
 
 **Related**
 
-- [Aggregation types](https://docs.shipeasy.ai/metrics/aggregations) — Conversion, count, sum, mean, ratio
+- [Aggregation functions](https://docs.shipeasy.ai/metrics/aggregations) — All eleven, and when to pick each
 - [Query DSL grammar](https://docs.shipeasy.ai/metrics/grammar) — Everything the query language allows
 - [Configure alerts](https://docs.shipeasy.ai/metrics/alerts) — Raise a threshold on what you just built
 - [Flow & dependencies](https://docs.shipeasy.ai/flags/flow) — Trace what feeds what
@@ -2233,10 +2292,10 @@ Same SDK as flags and configs. No separate package, no separate API key.
 
 ```bash
 // app/layout.tsx
-await shipeasy({ serverKey: process.env.SHIPEASY_SERVER_KEY ?? '' });
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY ?? '' });
 ```
 
-Same `shipeasy()` boot as the rest of the platform.
+The same single `configure()` call as the rest of the platform, with the server key.
 
 **File a bug from the browser**
 
@@ -2248,8 +2307,8 @@ initDevtools();
 ```
 
 The overlay posts via `/devtools-auth` with a short-lived
-browser-scoped admin token. The bug shows up in the dashboard
-within seconds.
+browser-scoped admin token. The bug shows up on Home, the
+project's ops queue, within seconds.
 
 **Capture a feature request**
 
@@ -2260,7 +2319,7 @@ within seconds.
 // requires).
 ```
 
-Other signed-in members of the project see the request in the Feature requests tab and can vote /
+The request lands in the same queue on Home, filed as a feature request, where teammates can
 triage it.
 
 **From the CLI**
@@ -2270,15 +2329,15 @@ shipeasy ops list --type bug
 shipeasy ops list --type feature_request
 ```
 
-Or use the dashboard. Either way the records live in your project.
+Or open **Home** in the dashboard. Either way the records live in your project.
 
 ### Where to next
 
 - **[Case studies](https://docs.shipeasy.ai/feedback/case-studies)** — "Forward bugs to Slack", "Wire votes to a public roadmap", "Auto-attach session replay".
 
-- **[API reference](https://docs.shipeasy.ai/feedback/api)** — `POST /api/admin/bugs`, `POST /api/admin/feature-requests`, listing, status updates.
+- **[API reference](https://docs.shipeasy.ai/feedback/api)** — `POST /api/admin/ops` files a bug or feature request; list and status updates live there too.
 
-- **[CLI commands](https://docs.shipeasy.ai/get-started/cli)** — Every `shipeasy feedback …` verb.
+- **[CLI commands](https://docs.shipeasy.ai/get-started/cli)** — Every `shipeasy ops …` verb.
 
 **Related**
 
@@ -2376,6 +2435,28 @@ Unattended runs use an auto-approve flag (`--approval-mode=yolo`, `--sandbox dan
 also spend tokens/credits on every fire, so start with a weekly or daily cron and watch the first
 runs. PRs land for review; nothing auto-merges.
 
+### Mention an agent in a comment [#mentions]
+
+Besides running on a schedule, a connected agent can be started by hand: write its handle in a
+comment on a queue item — `@claude`, `@cursor`, `@copilot` or `@jules` — and Shipeasy hands the item
+to that agent. It marks your comment as seen with a 👀 reaction and the agent picks the work up,
+exactly as a scheduled run would. A second mention while that agent's run is still open adds
+instructions to it rather than starting from scratch.
+
+> **Off by default**
+
+A mention starts a real run, which spends your own Claude, Cursor, Copilot or Jules quota, so it
+is a project-level choice and **starts off**. Turn it on under **Settings → Ops → Mentions →
+Mentioning an agent starts a run**. While it is off, a mention stays a plain reference in the
+comment.
+
+A mention can only start an agent that is connected — set one up under **Settings → Triggers**
+first. The Mentions row lists which are connected right now. Codex, Muse and other MCP tools have no
+mention: they pull work from the queue themselves, so there is no run for Shipeasy to start.
+
+`@shipeasy` is different — it asks the built-in assistant to read the item and reply in the thread,
+and is not governed by the setting above.
+
 ### Connector registration — Shipeasy-fired vs. platform-scheduled
 
 A Shipeasy **connector** (Settings → Triggers, "Trigger now" + event auto-fire) means **Shipeasy's
@@ -2436,13 +2517,13 @@ though the dashboard shows the new domain.
 
 > **Fixed automatically on domain change**
 
-Updating a project's domain in **Settings → Domain** now re-stamps the new value onto every
+Updating a project's domain in **Settings → General** now re-stamps the new value onto every
 existing (non-revoked) key. If you're on an older deploy, or want an immediate unblock, use one of
 the fixes below.
 
 #### How to resolve
 
-**Confirm the domain in Settings → Domain.** Use the bare host, no scheme and no path —
+**Confirm the domain in Settings → General.** Use the bare host, no scheme and no path —
 `app.example.com`, not `https://app.example.com/`.
 
 **Re-save the domain** (even to the same value). This re-stamps the allowlist onto every
@@ -2472,7 +2553,7 @@ The key in your `X-SDK-Key` / `Authorization` header isn't recognised. Usual
 causes:
 
 - **Wrong side.** A server key sent from the browser, or a client key used for a server-only read. Each entrypoint takes exactly one, separately-named key — see [Keys & environments](https://docs.shipeasy.ai/get-started/keys-and-environments).
-- **Revoked or expired.** Check the key list in **Settings → Keys**; mint a replacement if it's gone.
+- **Revoked or expired.** Check the key list in **SDK keys**; mint a replacement if it's gone.
 - **Wrong project.** The key belongs to a different project than the resources you're querying.
 
 ### Flags read `false` / configs read their default on the server during SSR
@@ -2562,6 +2643,9 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy ops link-pr` — --pr-number --pr-url
 - `shipeasy ops list` — --data --limit --offset --owner --priority --scope --status --type
 - `shipeasy ops notify` — --dedupe-key --href --steps --summary --title
+- `shipeasy ops qa-notes`
+- `shipeasy ops qa-notes create` — --agent --body --kind --verdict
+- `shipeasy ops qa-notes list` — --data --kind
 - `shipeasy ops questions`
 - `shipeasy ops questions answer` — --other --selected
 - `shipeasy ops questions ask` — --agent --delivery --questions --run-id
@@ -2695,6 +2779,8 @@ Parameters and error codes: https://docs.shipeasy.ai/get-started/mcp-reference
 - `ops_link_pr`
 - `ops_list`
 - `ops_notify`
+- `ops_qa_notes_create`
+- `ops_qa_notes_list`
 - `ops_update`
 - `ops_alerts_archive`
 - `ops_alerts_channels`
@@ -2805,7 +2891,7 @@ Parameters and error codes: https://docs.shipeasy.ai/get-started/mcp-reference
 - Edge cases (flags) — https://docs.shipeasy.ai/flags/edge-cases
 - Metrics — https://docs.shipeasy.ai/metrics
 - Quickstart (metrics) — https://docs.shipeasy.ai/metrics/quickstart
-- Aggregation types — https://docs.shipeasy.ai/metrics/aggregations
+- Aggregation functions — https://docs.shipeasy.ai/metrics/aggregations
 - Query DSL grammar — https://docs.shipeasy.ai/metrics/grammar
 - Configure alerts — https://docs.shipeasy.ai/metrics/alerts
 - Bugs & Feature Requests — https://docs.shipeasy.ai/feedback
@@ -2816,7 +2902,7 @@ Parameters and error codes: https://docs.shipeasy.ai/get-started/mcp-reference
 - Connectors — https://docs.shipeasy.ai/feedback/connectors
 - Slack — https://docs.shipeasy.ai/feedback/slack
 - Case studies (feedback) — https://docs.shipeasy.ai/feedback/case-studies
-- Route bug reports to Linear/Jira — https://docs.shipeasy.ai/feedback/case-studies/route-bugs-to-linear
+- Route bug reports to your tracker — https://docs.shipeasy.ai/feedback/case-studies/route-bugs-to-your-tracker
 - From metric alert to auto-filed ticket — https://docs.shipeasy.ai/feedback/case-studies/alert-to-ticket-loop
 - Edge cases (feedback) — https://docs.shipeasy.ai/feedback/edge-cases
 - API reference (feedback) — https://docs.shipeasy.ai/feedback/api

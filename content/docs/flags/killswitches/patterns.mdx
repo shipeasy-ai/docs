@@ -1,6 +1,6 @@
 ---
 title: Patterns
-description: When a killswitch is the right answer — what to put behind one, fail-safe defaults, alerting, and the post-incident cleanup.
+description: When a killswitch is the right answer — what to put behind one, cold-cache behaviour, alerting, and the post-incident cleanup.
 ---
 
 <DocMeta status="Production ready" read="6 min read" works="Server SDK" />
@@ -29,68 +29,57 @@ Examples that should _not_ be killswitches:
 
 - **Feature rollouts.** That's what feature flags are for. A killswitch has no rollout percentage by
   design — you can't ramp it.
-- **A/B variant selection.** Use a [feature flag](/flags/gates) with a rollout percentage, or a [config](/flags/configs) holding the arm name. A killswitch can't express "50% see A, 50% see B."
+- **Percentage splits.** Use a [feature flag](/flags/gates) with a rollout percentage. A killswitch can't express "50% see the new path."
 - **Permission checks.** Killswitches bypass on incident, which is the opposite of what you want
   from an authz check.
 - **Anything you'd put behind a feature flag _and_ might never flip.** That's a config or a feature flag.
 
-## Fail-safe defaults
+## Cold-cache behaviour
 
-Every killswitch has a "what happens when the SDK can't reach us" value. Pick it deliberately:
+Every killswitch read has an answer even when the SDK can't reach us: **`false` — not killed.**
+Until the first rule set arrives, or if it can't be refreshed, the guarded path keeps running as it
+did before you added the switch. That is deliberate: a Shipeasy outage must not, by itself, pause
+your email or fail your payments.
 
-| Killswitch                 | Default       | Reasoning                                                          |
-| -------------------------- | ------------- | ------------------------------------------------------------------ |
-| `emails-enabled`           | `true` (on)   | Email is a core feature. Outage of Shipeasy shouldn't break email. |
-| `experimental-recommender` | `false` (off) | New, unproven path. Outage of Shipeasy should fall back to safe.   |
-| `expensive-ai-summary`     | `false` (off) | Costs money per call. Fail closed to protect the budget.           |
-| `payment-fraud-check`      | `true` (on)   | Skipping fraud check costs more than dropping a sale. Stay strict. |
-| `audit-log-redaction`      | `true` (on)   | Compliance feature. Fail-open is a leak.                           |
-
-The pattern: **fail-open for things whose absence creates a worse failure than their presence.**
-If skipping the call is the dangerous outcome, default-on. If running the call is the dangerous
-outcome (cost, leakage, instability), default-off.
+It also decides what belongs behind a killswitch. A killswitch can only ever _stop_ a path, never
+start one. If the dangerous outcome is _skipping_ a call (a fraud check, an audit-log redaction),
+don't put a killswitch in front of it — keep it unconditional, or use a
+[flag](/flags/gates) whose default you set at the call site.
 
 ```ts
-const flags = new Client(currentUser);
+const client = new Client(currentUser);
 
-// Default-on (system normally runs):
-const enabled = flags.getKillswitch("emails-enabled") ?? true;
+// Whole-path pause — true means "killed, bail out":
+if (client.getKillswitch("emails-paused")) return;
 
-// Default-off (system normally suppressed unless explicitly turned on):
-const enabled = flags.getKillswitch("experimental-recommender") ?? false;
+// A named override for one region, read through the same call:
+if (client.getKillswitch("payments-paused", "eu_region")) return;
 ```
-
-Express the default at the call site, not just in the dashboard config. A future reader can see
-the contract without leaving the file.
 
 ## Audit + alerting
 
-A killswitch flip is an incident-grade event. Two things should happen automatically when one
-flips:
+A killswitch flip is an incident-grade event. Two things should happen when one flips:
 
-1. **A row gets written to the audit log.** Who flipped it, when, from what surface (dashboard,
-   CLI, API), and the reason string they passed.
-2. **A webhook fires.** Wire it to your paging tool or your incident channel. The flip should
-   declare the incident, not require someone to remember to.
+1. **The flip is recorded.** Who flipped it, when, from what surface (dashboard, CLI, API), and
+   the new value.
+2. **The team hears about it.** Turn on **Killswitch flipped** under **Settings → Notifications →
+   Events** for the channels you use — in-app, email, Slack. The flip should declare the incident,
+   not require someone to remember to.
 
-Wire the `killswitch.flipped` event through **Connectors** in the
-dashboard. Pick the GitHub or Slack connector (depending on the
-severity) and configure the connector filter to only fire when the new value
-is `true` (kill activated). Scope by name in the same filter when you want
-the paging route for the payment killswitch but only Slack for the
-experimental-feature one.
+Slack is the usual choice for the incident channel: connect it on the same tab, pick the channel,
+and the post carries a one-click **Flip back**.
 
 ## Naming
 
 Killswitch names appear in incident timelines and post-mortems. Pick names that read naturally in
 that context:
 
-- ✓ `emails-enabled`, `payments-enabled`, `recommender-enabled` — reads as "is this system on?"
-- ✗ `email-killswitch`, `payment-flag`, `disable-recs` — reads awkwardly, the verb-noun shape
-  hides whether `true` or `false` is "running."
+- ✓ `emails-paused`, `payments-paused`, `recommender-paused` — reads as "is this system paused?"
+- ✗ `emails-enabled`, `email-killswitch`, `disable-recs` — the first inverts what `true` means, and
+  the others hide whether `true` or `false` is "running."
 
-The convention: positive-sense, `<system>-enabled`. Then `getKillswitch("emails-enabled")` returning
-`true` reads as "yes, emails are enabled."
+The convention: `<system>-paused`. Then `getKillswitch("emails-paused")` returning `true` reads as
+"yes, emails are paused" — which is exactly what the SDK returns when the switch is thrown.
 
 ## Post-incident cleanup
 
@@ -98,10 +87,10 @@ A killswitch flipped during an incident, the team fixed the underlying bug, and 
 back on. Two cleanup steps that often get skipped:
 
 1. **Verify the killswitch still works.** A flipped-then-restored killswitch sometimes drifts —
-   maybe someone removed the in-code feature flag during the fix, or the webhook moved. Re-rehearse the
+   maybe someone removed the in-code feature flag during the fix, or the notification moved. Re-rehearse the
    flip in staging within a week.
 2. **Update the runbook.** What was the trigger for this flip? Add it to the on-call runbook so
-   the next engineer doesn't have to figure it out from scratch. The audit log entry is the raw
+   the next engineer doesn't have to figure it out from scratch. The flip record is the raw
    material — turn it into a sentence in the runbook.
 
 If a killswitch hasn't been flipped (even in staging) in 6 months, it might still work — but you
@@ -141,13 +130,12 @@ re-seed between cases.
 
 ## The dashboard view
 
-The **Killswitches** page in the dashboard shows the current state of every killswitch in your
-project, who last touched it, and a one-click flip control with a required reason field. Keep this
-tab pinned during incidents — it's the central console.
+The **Killswitches** page shows the current state of every killswitch in your project and when
+it was last published, with a **Turn ON** / **Turn OFF** control on each row. Keep it pinned during
+incidents — it's the central console.
 
-Hovering on a killswitch shows its recent flip history. If a switch has been flipped 5 times in
-the last week, that's a signal that the underlying system needs a real fix, not just a kill
-button.
+If a switch has been flipped 5 times in the last week, that's a signal that the underlying system
+needs a real fix, not just a kill button.
 
 <SeeAlso
   links={[

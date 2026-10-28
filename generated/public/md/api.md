@@ -7,17 +7,20 @@ Source: https://docs.shipeasy.ai/api
 The Admin API is the same surface the dashboard, CLI, and MCP server use. Every request:
 
 - authenticates with `Authorization: Bearer sdk_admin_…`
-- scopes to a project via `X-Project-Id: <projectId>`
+- is scoped to the project the key belongs to, so no other header is needed
 - speaks JSON, returns conventional HTTP status codes
 
 ```bash
 curl https://shipeasy.ai/api/admin/gates \
-  -H "Authorization: Bearer sdk_admin_..." \
-  -H "X-Project-Id: prj_..."
+  -H "Authorization: Bearer sdk_admin_..."
 ```
 
-Mint admin keys via `POST /api/admin/keys` with `type: "admin"`. Keys expire after 90 days; rotate
-with the `revoke` action.
+To act on a different project you administer, add `X-Project-Id: <projectId>` to the request. It
+is an override, not a requirement.
+
+Mint admin keys in the dashboard under **SDK keys**, with `shipeasy sdk keys create --type admin`,
+or via `POST /api/admin/keys` with `type: "admin"`. Keys expire after 90 days; rotate with the
+`revoke` action.
 
 ## Common patterns
 

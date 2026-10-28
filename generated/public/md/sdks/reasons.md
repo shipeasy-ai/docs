@@ -4,7 +4,7 @@ Source: https://docs.shipeasy.ai/sdks/reasons
 
 > getFlagDetail returns the value plus the reason a flag resolved the way it did — RULE_MATCH, DEFAULT, OFF, OVERRIDE, FLAG_NOT_FOUND, and CLIENT_NOT_READY.
 
-`getFlag` tells you _what_ a flag resolved to. `getFlagDetail` tells you _why_ — it returns `{ value, reason }`, LaunchDarkly `variationDetail` parity, so you can log, debug, or branch on the cause rather than just the boolean.
+`getFlag` tells you _what_ a flag resolved to. `getFlagDetail` tells you _why_ — it returns `{ value, reason }`, so you can log, debug, or branch on the cause rather than just the boolean.
 
 ```ts
 import { configure, Client, type FlagReason } from "@shipeasy/sdk/server";

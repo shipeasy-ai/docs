@@ -201,9 +201,9 @@ what your rules use, not your whole user record.
 
 When a user complains "I should be in this beta but I'm not," check four things in order:
 
-1. **Is the feature flag enabled?** `shipeasy release flags list` shows `enabled` and the current rollout per feature flag; the feature flag detail page in the dashboard also shows `killswitch` state at the top of the header.
-2. **Does the user match the rule?** Open **Feature flags → checkout-v2 → Test evaluator** in the dashboard and paste a JSON `ctx` — same evaluator the SDK runs, prints the matched rule + bucket.
-3. **Is there an override?** Overrides win over rules. Check **Feature flags → checkout-v2 → Overrides**.
+1. **Is the feature flag enabled?** `shipeasy release flags list` shows `enabled` and the current rollout per feature flag; the **Feature flags** page shows the same state per row.
+2. **Does the user match the rule?** Open `checkout-v2` on the **Feature flags** page and compare its rules to the attributes your code passes. With the CLI, `shipeasy release flags get checkout-v2` prints the rules, and the [devtools overlay](https://docs.shipeasy.ai/sdks/devtools-overlay) shows what the SDK actually resolved in the browser.
+3. **Is there an override?** Overrides win over rules. `shipeasy release flags whitelist checkout-v2` lists them.
 4. **Are you passing the attribute the rule expects?** A rule on `plan` won't match `ctx.userPlan`. Log the user you bind to the `Client` and compare against the rule shape.
 
 **Related**

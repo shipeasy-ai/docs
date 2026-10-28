@@ -118,8 +118,8 @@ import { Client } from "@shipeasy/sdk/server";
 export async function sendOrderEmail(order: Order) {
   const flags = new Client({ user_id: order.userId });
   // `getKillswitch(name)` returns true when the killswitch is engaged (flipped to pause).
-  // Read it as "are we paused?". Unknown killswitches return false (fail-open).
-  if (flags.getKillswitch("emails-enabled")) {
+  // Read it as "are we paused?". Unknown killswitches return false (not killed).
+  if (flags.getKillswitch("emails-paused")) {
     logger.warn("emails paused via killswitch", { orderId: order.id });
     return;
   }
@@ -319,7 +319,7 @@ Use it instead of `gte` on a string — string comparison would mis-order `2.10.
 
 ## Change prices without a deploy [#pricing-config]
 
-Marketing wants to A/B price points across geos, run a temporary promo, and roll back instantly if
+Marketing wants to change price points across geos, run a temporary promo, and roll back instantly if
 the new price tanks conversion. Engineering does not want to deploy four times this week.
 
 **The primitive:** Config (typed number) with audit log.
@@ -426,13 +426,14 @@ shipeasy metrics create rec_rail_ctr \
 
 ```ts title="app/components/RecRail.tsx"
 "use client";
-import { flags } from "@shipeasy/sdk/client";
+import { Client } from "@shipeasy/sdk/client";
 import { useEffect } from "react";
 
-export function RecRail({ items, userId }) {
+export function RecRail({ items, user }) {
+  const flags = new Client(user);
   useEffect(() => {
     items.forEach((item) => flags.track("rec_impression", { itemId: item.id }));
-  }, [items, userId]);
+  }, [items, user]);
 
   return items.map((item) => (
     <a
@@ -455,5 +456,5 @@ The ratio metric uses the **delta method** — variance is computed jointly on n
 denominator means, accounting for their covariance. The confidence band the dashboard draws around
 the series is honest under this. Mean-of-ratios is not.
 
-See [Metrics — aggregation types](/metrics/aggregations#rate) for the formal
-treatment of why ratios need special handling.
+See [Metrics — aggregation types](/metrics/aggregations#rates--write-them-as-a-division) for why ratios
+need special handling.

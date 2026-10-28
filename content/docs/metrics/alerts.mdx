@@ -5,14 +5,48 @@ description: Turn an event into a metric, then raise a metric-threshold alert th
 
 <DocMeta status="Beta" read="6 min read" works="Edge Worker · Cron" />
 
-An **alert rule** watches one metric and fires when its value crosses a threshold
-over a window — "checkout errors `> 50` in the last hour", "active users `< 100`
-in the last 24h". When it fires, Shipeasy files a ticket into the same feedback
-queue as your bugs and error reports, so the thing you need to look at shows up
-where you already triage.
+An **alert rule** watches one metric and raises an alert when its value breaches a condition —
+"checkout errors `> 50`", "active users `< 100`". The window it looks at is cut into **buckets** and
+**each bucket is judged on its own**: a rule fires when enough of them breach, not when the window
+averages out past a line. When it fires, Shipeasy files a ticket into the same queue as your bugs and
+error reports, so the thing you need to look at shows up where you already triage.
 
-Alerts are evaluated server-side by a cron — there's no SDK call and nothing to
-poll. You only define the rule.
+Alerts are evaluated server-side every **10 minutes** — there's no SDK call and nothing to poll.
+You only define the rule.
+
+## Create a rule in the dashboard
+
+Open **Alerts** in the sidebar and click **New alert rule**. Everything below is one sheet:
+
+<Steps>
+  <Step title="Name it">A label for the rule, shown on the rule and on every alert it raises.</Step>
+  <Step title="Pick the metric and the condition">
+    Choose the metric, then the kind of condition. **Threshold** crosses a number you set (greater
+    than, at or above, less than, at or below). **Range** leaves a band it should stay inside.
+    **Anomaly** departs from the metric's own usual level for that hour of the week. **Outliers**
+    watches for one group running away from the others, and needs a metric grouped with `by (…)`.
+    **No data** fires when the metric stops reporting altogether — a count of zero is a reading, not
+    silence.
+  </Step>
+  <Step title="Choose the window and its buckets">
+    **Over 24h** is the default; presets run from 1h to 7d, or pick custom hours. The window is cut
+    into **6 to 12 buckets** — by default twelve equal ones (**Even split**), or pick a bucket width
+    such as 5 minutes or 1 hour. **Must breach** says how many buckets have to be past the line:
+    **all must breach** (every bucket that had data) or **N of M**.
+  </Step>
+  <Step title="Set severity, then who hears about it">
+    Severity is **Critical**, **Warning** or **Info**. **Notify** lists where a fired alert goes —
+    **In-app** (Home and the bell) is on by default, and you can add a Slack channel and an email
+    address.
+  </Step>
+  <Step title="Create the rule">
+    Click **Create alert rule**. It is enabled straight away unless you switch it off.
+  </Step>
+</Steps>
+
+Under **Tuning** a rule has optional extras: a **Warn at** level that speaks up before the rule
+pages, a **Clears at** level the metric must reach before the alert closes, **One alert per group**
+for grouped metrics, a **Delay** for data that lands in batches, and **Auto-resolve**.
 
 ## Create a rule in the dashboard
 
@@ -28,33 +62,32 @@ the same rule expressed as fields.
 
 ## What an alert chart shows
 
-Every rule renders as a 14-day chart of its metric with the alert story drawn on
-top. Three things it surfaces — each a different facet of how a rule reads its
-metric:
+Every rule renders as a 14-day chart of its metric with the alert story drawn on top. Three things
+it surfaces — each a different facet of how a rule reads its metric:
 
 ### It shades every breach
 
-The dashed line is the threshold; wherever the metric crosses to the breaching
-side, that stretch is shaded in the rule's severity colour and the marker shows
-the moment it fired. One band = one alert ticket.
+The dashed line is the threshold; wherever the metric crosses to the breaching side, that stretch
+is shaded in the rule's severity colour and the marker shows the moment it fired. One band = one
+alert ticket.
 
 <AlertChartLive feature="breach" />
 
-### It judges bucket by bucket, not on a single reading
+### It judges the window in buckets
 
-A rule never fires on one raw reading. The window is split into buckets and
-each bucket is judged against the threshold on its own; the rule fires when
-enough buckets breach — you set how many. A brief blip confined to a single
-bucket doesn't page you; a sustained move does. Widen the window to smooth
-more, narrow it to catch faster.
+A rule never fires on a single reading. It cuts its window into buckets and asks each one whether it
+breached; it fires once enough of them did (all of them, unless you set **N of M**). A brief blip
+punches over the line in one bucket and never pages; a sustained move breaches many. The bright line
+here is a trailing average drawn only to make the shape easy to read — the rule itself keeps the
+buckets apart. Widen the window to need a longer stretch, narrow it to catch faster.
 
 <AlertChartLive feature="window" />
 
 ### It can guard a floor, not just a ceiling
 
-Flip the comparator to `<` (or `<=`) and the rule watches a **floor** — it fires
-when the metric falls _below_ the line. Useful for "signups per hour", "active
-sessions", or any health number that's bad when it drops.
+Flip the comparator to `<` (or `<=`) and the rule watches a **floor** — it fires when the metric
+falls _below_ the line. Useful for "signups per hour", "active sessions", or any health number that's
+bad when it drops.
 
 <AlertChartLive feature="floor" />
 
@@ -82,14 +115,14 @@ is a three-link chain:
   chart={`flowchart LR
   evt["checkout_error<br/><small>event</small>"]:::event
   m["checkout-errors<br/><small>metric · count</small>"]:::metric
-  rule{"value &gt; 50<br/>over 1h?"}:::decision
-  rec["alert raised<br/><small>danger</small>"]:::alert
+  rule{"enough buckets<br/>&gt; 50?"}:::decision
+  rec["alert raised<br/><small>critical</small>"]:::alert
   ok["within threshold<br/><small>auto-resolves</small>"]:::sink
   tic["feedback ticket<br/><small>type: alert</small>"]:::sink
-  note["notification<br/><small>feed + email</small>"]:::sink
+  note["notification<br/><small>in-app · email · Slack</small>"]:::sink
 
 evt -- "agg" --> m
-m -- "cron · ~10 min" --> rule
+m -- "every 10 min" --> rule
 rule -- "breach" --> rec
 rule -- "no breach" --> ok
 rec --> tic
@@ -104,23 +137,24 @@ classDef sink fill:#131318,stroke:#2e2c38,color:#cbc9d6;
 />
 
 ```bash
-# 1. a metric over the event (DSL grammar: /shipeasy:metrics:grammar)
+# 1. a metric over the event (DSL grammar: /metrics/grammar)
 shipeasy metrics create checkout-errors \
   --event-name checkout_error --query 'count(checkout_error)'
 
-# 2. a threshold rule on that metric
-shipeasy ops alerts create "Checkout errors spiking" \
-  --metric checkout-errors --comparator gt --threshold 50 --window 1 --severity danger
+# 2. a threshold rule on that metric — `shipeasy metrics list` prints the id
+shipeasy ops alerts create \
+  --name "Checkout errors spiking" --metric-id <id> \
+  --comparator gt --threshold 50 --window-hours 24 --severity danger
 
 # 3. confirm it landed
 shipeasy ops alerts list
 ```
 
 <Callout type="info">
-  The same three steps are available over MCP (`exp_create_alert_rule`) and as the
+  The same three steps are available over MCP (`ops_alerts_create`) and as the
   `/shipeasy:alerts:create` skill, which surveys your project and proposes rules worth adding. The
-  CLI command is `shipeasy ops alerts` — `shipeasy ops alerts` is the read-only view of what has
-  already fired.
+  CLI command is `shipeasy ops alerts`; `shipeasy ops fired-alerts list` is the read-only view of
+  what has already fired.
 </Callout>
 
 ## The rule fields
@@ -132,66 +166,94 @@ shipeasy ops alerts list
       required: true,
       description: "Human label (1–120 chars), shown on the rule and on every alert it raises.",
     },
-    metric: {
-      type: "metric id or name",
+    metricId: {
+      type: "metric id",
       required: true,
       description:
-        "The metric to watch. Immutable once set — to point a rule at a different metric, delete it and create a new one.",
+        "The metric to watch. Immutable once set — to point a rule at a different metric, archive it and create a new one.",
+    },
+    kind: {
+      type: '"normal" | "anomaly" | "outliers" | "no_data"',
+      description:
+        "What the rule watches for. normal compares the value to a threshold or a range; anomaly compares it to its own seasonal baseline in sigmas; outliers compares each group to its peers; no_data fires on silence. The dashboard calls the first one Threshold or Range.",
     },
     comparator: {
       type: '"gt" | "gte" | "lt" | "lte"',
-      required: true,
       description: "How the value is compared to the threshold: > ≥ < ≤.",
     },
     threshold: {
       type: "number",
-      required: true,
       description: "The line the metric value is compared against.",
     },
-    window: {
+    windowHours: {
       type: "integer (hours)",
       description: "Lookback window in whole hours, 1–720 (30 days). Defaults to 24.",
     },
+    bucketMinutes: {
+      type: "integer (minutes)",
+      description:
+        'Width of the buckets the window is cut into. Omit for twelve equal buckets. The rule is judged per bucket, so this is the resolution at which "sustained" is measured.',
+    },
+    requiredBuckets: {
+      type: "integer",
+      description:
+        "How many buckets must breach before the rule fires. Omit to require every bucket that had data.",
+    },
     severity: {
       type: '"danger" | "warn" | "info"',
-      description: "Severity of the raised alert. Defaults to warn.",
+      description:
+        "Severity of the raised alert — Critical, Warning or Info in the dashboard. Defaults to warn.",
     },
     enabled: {
       type: "boolean",
-      description:
-        "Whether the cron evaluates the rule. Defaults to true; pass --disabled to create it dormant.",
+      description: "Whether the cron evaluates the rule. Defaults to true.",
     },
     notify: {
       type: "{ slackChannel?, email? }",
       description:
-        "Where this rule's alert is delivered, overriding the project default — a Slack channel (requires a connected Slack connector) and/or an email address. Omit to inherit the project default.",
+        "Where this rule's alert is delivered, overriding the project default — a Slack channel (requires a connected Slack app) and/or an email address. Omit to inherit the project default.",
+    },
+    warnThreshold: {
+      type: "number",
+      description:
+        "A milder second level that raises a quieter alert before the firing level is reached.",
+    },
+    recoveryThreshold: {
+      type: "number",
+      description:
+        "What the metric must get back to before a live alert closes, so a metric sitting on its threshold does not page and clear every tick.",
+    },
+    autoResolveMinutes: {
+      type: "integer (minutes)",
+      description:
+        "Close a live alert that has gone this long without a fresh verdict. Never closes one that is still breaching. Omit to never auto-resolve — the default.",
     },
   }}
 />
 
-<Callout type="warn">
-  **In the API and CLI, `window` is whole hours.** The minimum is 1 hour and there are no sub-hour
-  windows — a "last 30 minutes" intent rounds up to 1h. In the dashboard the same lookback is
-  presented as buckets over the window. Pick a window long enough that the metric is stable but
-  short enough to catch the spike you care about.
+<Callout type="info" title="Buckets, not one number">
+  The window is always judged in 6 to 12 buckets, so a "last 30 minutes" intent is a 1-hour window
+  with 5-minute buckets, not a sub-hour window. Pick a window long enough that the metric is stable
+  and buckets narrow enough to catch the spike you care about.
 </Callout>
 
 ## How it fires
 
-A cron evaluates every enabled rule on a roughly **10-minute** cadence. For each
-rule it:
+A cron evaluates every enabled rule **every 10 minutes**. For each rule it:
 
-1. Compiles the rule's metric into a query over the window
-   `[now − window hours, now]` and reads the aggregated value from Analytics
-   Engine.
-2. Compares that value to the threshold with the comparator. If it breaches, the
-   rule **raises an alert**.
-3. When a previously-breaching rule comes back inside its threshold, the alert
-   **auto-resolves** — no manual clearing — unless the rule is set to **Never
-   auto-resolve** in the dashboard.
+1. Reads the metric from Analytics Engine over the window `[now − window hours, now]`, cut into
+   buckets.
+2. Judges **each bucket on its own** against the condition. Buckets with no data are left out.
+3. If enough buckets breach — all of them by default, or the **N of M** you set — the rule
+   **raises an alert**.
+4. When a previously-breaching rule comes back inside its threshold (or reaches **Clears at**), the
+   alert **resolves** — no manual clearing.
 
-Each rule is evaluated in isolation, so a misconfigured metric can't block the
-others.
+**Auto-resolve** is a different thing: it closes an alert the rule has stopped being able to judge
+(for example because the data stopped arriving), never one that is still breaching. It defaults to
+**Never**, which leaves such an alert open until the metric speaks again.
+
+Each rule is evaluated in isolation, so a misconfigured metric can't block the others.
 
 ## What firing produces
 
@@ -199,18 +261,18 @@ A fired alert does three things at once:
 
 <TileGrid>
   <Tile icon="🔔" title="An alert record">
-    Shows in the read-only alerts view (`shipeasy ops alerts list`, danger first), with the observed
-    value, the rule, and a deep link to the metric. One active alert per rule — re-breaches update
-    it rather than piling up.
+    Shows in the read-only fired-alerts view (`shipeasy ops fired-alerts list`, critical first),
+    with the observed value, the rule, and a deep link to the metric. One active alert per rule —
+    re-breaches update it rather than piling up.
   </Tile>
   <Tile icon="◎" title="A feedback ticket">
     Auto-filed into the unified queue as type <strong>alert</strong>. Severity maps to priority:{" "}
-    <code>danger → critical</code>, <code>warn → high</code>,<code>info → medium</code>. Deduped
-    while open, so a flapping metric won't spam new tickets.
+    <code>Critical → critical</code>, <code>Warning → high</code>, <code>Info → medium</code>.
+    Deduped while open, so a flapping metric won't spam new tickets.
   </Tile>
   <Tile icon="✉" title="A notification">
-    An <code>alert.triggered</code> event hits the in-app feed and email, per your project's
-    notification preferences.
+    An <code>alert.triggered</code> event goes to the places the rule's **Notify** lists — in-app by
+    default, plus any Slack channel or email address you added — per your notification preferences.
   </Tile>
 </TileGrid>
 
@@ -219,8 +281,8 @@ breaches again after resolving, a fresh alert and ticket are raised.
 
 ## Where alerts are delivered
 
-By default a notification follows your **project default delivery** (set on
-Settings → Notifications): a default Slack channel and a default email. With no
+By default a notification follows your **project default delivery** (set under
+**Settings → Notifications**): a default Slack channel and a default email. With no
 default set, email falls back to the project owner and Slack to the connector's
 configured channel. Any rule can override that with its own **target** —
 useful for routing, say, billing alerts to `#finance` and on-call alerts to
@@ -236,19 +298,19 @@ connected Slack connector; the email target works with no connector.
 shipeasy ops alerts channels
 
 # create a rule that posts to #incidents and emails on-call
-shipeasy ops alerts create "Checkout errors spiking" \
-  --metric checkout-errors --comparator gt --threshold 50 \
-  --slack-channel '#incidents' --email oncall@acme.com
+shipeasy ops alerts create --name "Checkout errors spiking" \
+  --metric-id <id> --comparator gt --threshold 50 \
+  --notify '{"slackChannel":{"id":"C0123","name":"incidents"},"email":"oncall@acme.com"}'
 
 # move an existing rule's target, or clear it back to the project default
-shipeasy ops alerts update "Checkout errors spiking" --slack-channel '#billing'
-shipeasy ops alerts update "Checkout errors spiking" --clear-target
+shipeasy ops alerts update "Checkout errors spiking" \
+  --notify '{"slackChannel":{"id":"C0456","name":"billing"}}'
+shipeasy ops alerts update "Checkout errors spiking" --notify null
 ```
 
-Over MCP the same control is the `notify` argument on `exp_create_alert_rule` /
-`exp_update_alert_rule` (`{ slack_channel: { id, name }, email }`), and the
-in-dashboard assistant renders the **same** channel typeahead before it writes
-the rule.
+Over MCP the same control is the `notify` argument on `ops_alerts_create` /
+`ops_alerts_update`, and the in-dashboard assistant renders the **same** channel typeahead
+before it writes the rule.
 
 <Callout type="info">
   **From Slack:** the `/shipeasy alert <metric> <gt|gte|lt|lte> <threshold> [name]`
@@ -263,17 +325,17 @@ delivers.
 
 ## Tuning a rule
 
-Everything except the metric is editable in place — adjust the threshold, flip the
-comparator, widen the window, change severity, or toggle it off without recreating
-it:
+Everything except the metric is editable in place — from the rule's panel on the **Alerts** page
+or the CLI. Adjust the threshold, flip the comparator, widen the window, change the buckets or
+severity, or toggle it off without recreating it:
 
 ```bash
 shipeasy ops alerts update "Checkout errors spiking" \
-  --threshold 80 --window 2 --severity warn
+  --threshold 80 --window-hours 2 --severity warn
 shipeasy ops alerts update "Checkout errors spiking" --enabled false
 ```
 
-To repoint a rule at a different metric, delete it and create a new one — the
+To repoint a rule at a different metric, archive it and create a new one — the
 metric is pinned for the rule's life because it fixes both _what_ is measured and
 _how_ it's aggregated.
 

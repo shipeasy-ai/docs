@@ -2,7 +2,7 @@
 
 Source: https://docs.shipeasy.ai/feedback/slack
 
-> Run your release platform from Slack — create gates, configs, kill switches, alerts and metrics in plain language, and act on them as interactive cards.
+> Run your release platform from Slack — create flags, configs, kill switches, alerts and metrics in plain language, and act on them as interactive cards.
 
 Slack is a full front-end to Shipeasy. Connect it **once**, then talk to
 **@Shipeasy** in plain language to create and change anything — feature flags,
@@ -12,21 +12,18 @@ opening the dashboard. Bugs, requests and platform events land the same way.
 
 ## Connect Slack
 
-**Add the connector**
-
-On the **Feedback** page open **Connectors → New connector**, pick **Slack**, name it, and
-**Continue**.
+**Connect**
+Open **Settings → Notifications** and click **Connect Slack**.
 
 **Add to Slack**
 
 You're redirected to authorize the Shipeasy Slack app in your workspace. After consent you land
-back in the configure view.
+back on the Notifications tab.
 
-**Pick channels**
+**Pick a channel**
 
-Choose the **feedback channel** new bugs/requests post to. Optionally pick a separate
-**notifications channel** for platform events — leave it on *Same as feedback channel* to share
-one. Tick **Enabled** and **Save**.
+Choose the **default channel** for Slack notifications — new bugs, requests and platform events
+post there. Individual events can override it in the events table on the same tab.
 
 ## Meet @Shipeasy — run the whole platform from chat
 
@@ -53,9 +50,9 @@ entire platform:
 
 It's just as good at **reading** and **changing** what already exists:
 
-> which tests are showing a clear winner right now?
-> 📊 2 of 4 have a clear winner: the new checkout (new version up 12%) and the pricing test (variant B up 6%). The other two need more data.
-> Ask questions too — @Shipeasy reads your flags, tests, configs and metrics and answers in the thread.
+> what changed today?
+> 📋 3 changes today: the new pricing page flag went to 50%, the payments kill switch was created, and the checkout copy config was published to prod.
+> Ask questions too — @Shipeasy reads your flags, configs, kill switches and metrics and answers in the thread.
 
 > roll the new pricing page out to half of everyone
 > ✅ The new pricing page is now live for 50% of users in prod.
@@ -96,7 +93,7 @@ who did it, and recolours the card. Here's the full set:
 | Weekly digest · New team member  | _(informational — link only)_                                      |
 
 Choose which of these post to Slack in **Settings → Notifications** (the Slack
-column is live once a connector exists).
+column is live once Slack is connected).
 
 > **Privileged actions check your membership**
 
@@ -107,17 +104,17 @@ else.
 
 ## Bugs & requests — the other inbound stream
 
-New **bug reports** and **feature requests** post to your feedback channel with
+New **bug reports** and **feature requests** post to your default channel with
 the title, reporter, page URL and full details. Each carries a **Status ▾**
 dropdown covering the whole lifecycle.
 
-| Status                  | Border   |
-| ----------------------- | -------- |
-| Open                    | 🔵 blue  |
-| In progress             | 🟠 amber |
-| Ready for QA            | 🟠 amber |
-| Resolved                | 🟢 green |
-| **Won't fix / Dismiss** | ⚪ grey  |
+| Status        | Border   |
+| ------------- | -------- |
+| Open          | 🔵 blue  |
+| In progress   | 🟠 amber |
+| Ready for QA  | 🟠 amber |
+| Resolved      | 🟢 green |
+| **Won't fix** | ⚪ grey  |
 
 Pick one and the card recolours its **left border** to match — **Won't fix is a
 distinct grey, never the green of Resolved**. Link a PR to the item in Shipeasy
@@ -154,22 +151,21 @@ Shipeasy and it calls through to your project under the same membership check.
 
 ## Channel routing
 
-- **Feedback channel** — where new bugs and requests land.
-- **Notifications channel** — where platform events post (defaults to the feedback channel).
+- **Default channel** — where new bugs, requests and platform events post (**Settings → Notifications**).
+- **Per-event channel** — any event in the events table can post somewhere else.
 - **Per-alert channel** — an alert created in a specific channel posts back to that channel, overriding the project default.
 
 ## Status & health
 
-The connector in the list shows a status — **Needs OAuth**, **Needs channel**,
-**Active**, **Disabled**, or **Failing** (last dispatch errored). The configure
-view surfaces the last error and last successful delivery time, so you can tell at
-a glance whether mirroring is healthy.
+**Settings → Notifications** shows whether Slack is connected. If posting stops, click
+**Reconnect** there to re-authorize the workspace; it runs the same flow as **Connect Slack**.
 
 > **The bot needs your email**
 
 The `@Shipeasy` assistant, privileged card actions, the `/shipeasy` command, and the Slack-AI
 connection resolve access by your Slack email, which needs the `users:read.email` scope. If you
-connected Slack before this was added, click **Add to Slack** again to re-grant.
+connected Slack before this was added, click **Reconnect** on **Settings → Notifications** to
+re-grant.
 
 **Related**
 

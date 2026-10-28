@@ -5,8 +5,8 @@ description: Create a typed config, read it with getConfig, change the value in 
 
 <DocMeta status="Tutorial" read="5 min read" works="Server SDK · Browser SDK · CLI" />
 
-This walks you through replacing one hard-coded constant with a config you can change from a
-dashboard. You'll create the config with a schema, read it in code with a guaranteed fallback, then
+This walks you through replacing one hard-coded constant with a config you can change without a
+deploy. You'll create the config with a schema, read it in code with a guaranteed fallback, then
 change the value in production and watch it land without a deploy.
 
 <Quickstart title="The 5-minute path" time="install · initialise · create · read · change">
@@ -97,7 +97,7 @@ Without `--value` the config starts as `{}` on every environment, which your def
 cover. Seeding one environment at a time works too — `--dev`, `--staging`, `--prod` each publish to
 just that one.
 
-Or in the dashboard: **Configs &rarr; Dynamic values &rarr; New**
+Or in the dashboard: open **Configs** and click **New config**.
 
 ## 3. Read it where the constant used to be
 

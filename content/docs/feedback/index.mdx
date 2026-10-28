@@ -10,7 +10,7 @@ description: Capture user-reported bugs and feature requests, prioritize them, r
       Hear what users actually want — <em>before</em> you ship the wrong thing.
     </>
   }
-  subtitle="Capture bug reports and feature requests directly from your product. Prioritize, triage, and route them to your bug tracker — without forcing users into a 12-field form in a separate tracker."
+  subtitle="Capture bug reports and feature requests directly from your product. Prioritize, triage, and route them to the tools your team already uses — without forcing users into a 12-field form."
   primaryHref="/feedback/getting-started"
   primaryLabel="Getting started"
   secondaryHref="#how-it-works"
@@ -34,46 +34,43 @@ description: Capture user-reported bugs and feature requests, prioritize them, r
 
 <TileGrid>
   <Tile href="#bugs" icon="◎" title="Bugs — what's broken">
-    Title, page URL, optional stack trace and screenshot. Status flow: `open` → `in progress` →
-    `ready for QA` → `resolved`, with `won't fix` and `dismissed` as terminal exits.
+    Title, page URL, optional stack trace and screenshot. Status flow: `open` → `in_progress` →
+    `ready_for_qa` → `resolved`, with `wont_fix` as the exit for anything you decide not to change.
   </Tile>
   <Tile href="#feature-requests" icon="✦" title="Feature requests — what's missing">
-    Title, importance (`nice-to-have` / `important` / `critical`), votes from other users. Status
-    flow: `open` → `planned` → `shipped`.
+    Title, description and use case. Same status flow as bugs, so one queue and one set of filters
+    covers both.
   </Tile>
 </TileGrid>
 
 ## How it works [#how-it-works]
 
-A user hits **Report bug** in your app. The SDK sends the report to Shipeasy. You see it in the
-dashboard within seconds. Optional [connectors](/feedback/connectors) forward it to GitHub,
-Google Sheets or Slack so you don't have to live in a second tool.
+A user files a report from your app with the [devtools overlay](/feedback/devtools). You see it on
+**Home**, the project's ops queue, within seconds, alongside tracked errors and fired alerts. A
+[connector](/feedback/connectors) can mirror it to GitHub, Google Sheets or Slack so you don't have
+to live in a second tool.
 
 ## Hand a ticket to a coding agent
 
-Any ticket in the queue can be handed to a coding agent: mention the agent in
-a comment — `@claude`, `@cursor`, `@copilot` or `@jules` — and that agent
-starts work on the item and reports back on the ticket. Four agents can be
-mentioned today: Claude Code, Cursor, GitHub Copilot and Gemini (Jules); each
-one first has to be connected for the project under **Settings → Triggers**.
-
-Project owners control this under **Settings → Ops → Agent mentions** — the
-switch is on by default, and it also decides which of the connected agents
-get one-tap mention chips on a ticket.
+Any ticket in the queue can be handed to a coding agent: mention it in a comment (`@claude`,
+`@cursor`, `@copilot` or `@jules`) and it starts work on the item and reports back on the ticket.
+Each agent first has to be connected under **Settings → Triggers**, and mentions are **off by
+default** — a project owner switches them on under **Settings → Ops**. See
+[Mention an agent in a comment](/get-started/triggers#mentions).
 
 ## Where to next
 
 <CardGrid>
   <Card href="/feedback/getting-started" eyebrow="Step 1" title="Wire up the SDK">
-    Two lines for bugs, two for feature requests. Server or browser.
+    Mount the overlay once, then users file bugs and feature requests from the page.
   </Card>
   <Card href="/feedback/case-studies" eyebrow="Worked examples" title="Case studies">
-    "Add a 'Report bug' button in two minutes", "Wire user votes to a roadmap page", and more.
+    "Forward bugs to Slack", "Auto-attach a session replay link", and more.
   </Card>
   <Card href="/feedback/api" eyebrow="Reference" title="API reference">
-    REST endpoints for `bugs` and `feature-requests`.
+    REST endpoints for filing and triaging bugs and feature requests, plus the public intake.
   </Card>
   <Card href="/get-started/cli" eyebrow="Reference" title="CLI commands">
-    `shipeasy feedback bugs …` and `shipeasy feedback features …`.
+    `shipeasy ops …` files, lists and triages the queue.
   </Card>
 </CardGrid>

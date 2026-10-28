@@ -37,9 +37,9 @@ configure({
   title="Create your first feature flag"
   cmd="shipeasy release flags create checkout-v2 --rollout-percent 0"
 >
-  Start at 0% — the flag is off for everyone but live in your rule set, so you ship the code dark
-  and ramp when you're ready. Changes you make are visible to your SDK worldwide in under a
-  second.
+  At 0% the flag is shipped dark: off for everyone, live in your rule set. Raise it later with
+  `shipeasy release flags update checkout-v2 --rollout-percent 25`. Changes are visible to your SDK
+  worldwide in under a second.
 </QuickstartStep>
 
   <QuickstartStep

@@ -121,7 +121,7 @@ cd "$(shipeasy root)"
 
 ## `shipeasy metrics`
 
-Metrics: the event-backed queries that drive tracking dashboards and experiment success / guardrail measurement.
+Metrics: the event-backed queries that drive tracking dashboards.
 
 ```bash
 shipeasy metrics [options] [command]
@@ -266,10 +266,9 @@ shipeasy metrics create [options] <name>
 | `--event-name <value>` | optional | Source event the query reads from. |
 | `--query <value>` | optional | Metric query DSL string, e.g. `sum(purchase, amount)`. The alternative to `query_ir`. Every label the query references — in filters, the value position, `by (…)`, or `without (…)` — must exist as a property on the tracked event's payload; a query over a label the event never carries validates fine but returns empty results. |
 | `--winsorize-pct <value>` | optional | Winsorise percentile (1–99) to clamp outliers. Defaults to 99. |
-| `--default-min-effect-of-interest <value>` | optional | Default minimum effect of interest (relative, 0–1) — the smallest change in this metric worth acting on, used as the power-planning baseline. Intrinsic to the metric; an experiment overrides it per-attachment with `min_effect_of_interest` when a specific decision has a different cost/risk bar. `null` to omit. |
 | `--direction <value>` | optional | Desired direction of movement. `higher_better` (default), `lower_better`, or `neutral` (guardrail). |
 | `--unit <value>` | optional | Display unit (e.g. `ms`, `%`, `$`), or `null` when unitless. |
-| `--display <value>` | optional | How the metric's series is DRAWN, as opposed to what it measures. Both parts used to be DSL functions (`expected(q, seasonal)`, `forecast(q, …)`), which meant turning a band on minted a different metric; they are properties now, so every chart of the metric picks them up and nothing that JUDGES the metric — an alert rule, the experiment analyzer — reads them at all. |
+| `--display <value>` | optional | How the metric's series is DRAWN, as opposed to what it measures. |
 | `--query-ir <value>` | optional | A metric definition as a typed expression tree — the structured alternative to the `query` DSL string, and what the API stores. Exactly one of `query` / `query_ir` is supplied per metric body; `query` is the same definition written as text, and is the spelling to prefer. |
 
 ### `shipeasy metrics show`
@@ -307,10 +306,9 @@ shipeasy metrics update [options] <id>
 | `--event-name <value>` | optional | Source event the query reads from. |
 | `--query <value>` | optional | Metric query DSL string, e.g. `sum(purchase, amount)`. The alternative to `query_ir`. Every label the query references — in filters, the value position, `by (…)`, or `without (…)` — must exist as a property on the tracked event's payload; a query over a label the event never carries validates fine but returns empty results. |
 | `--winsorize-pct <value>` | optional | Winsorise percentile (1–99) to clamp outliers. Defaults to 99. |
-| `--default-min-effect-of-interest <value>` | optional | Default minimum effect of interest (relative, 0–1) — the smallest change in this metric worth acting on, used as the power-planning baseline. Intrinsic to the metric; an experiment overrides it per-attachment with `min_effect_of_interest` when a specific decision has a different cost/risk bar. `null` to omit. |
 | `--direction <value>` | optional | Desired direction of movement. `higher_better` (default), `lower_better`, or `neutral` (guardrail). |
 | `--unit <value>` | optional | Display unit (e.g. `ms`, `%`, `$`), or `null` when unitless. |
-| `--display <value>` | optional | How the metric's series is DRAWN, as opposed to what it measures. Both parts used to be DSL functions (`expected(q, seasonal)`, `forecast(q, …)`), which meant turning a band on minted a different metric; they are properties now, so every chart of the metric picks them up and nothing that JUDGES the metric — an alert rule, the experiment analyzer — reads them at all. |
+| `--display <value>` | optional | How the metric's series is DRAWN, as opposed to what it measures. |
 | `--query-ir <value>` | optional | A metric definition as a typed expression tree — the structured alternative to the `query` DSL string, and what the API stores. Exactly one of `query` / `query_ir` is supplied per metric body; `query` is the same definition written as text, and is the spelling to prefer. |
 
 ### `shipeasy metrics archive`
@@ -564,7 +562,7 @@ shipeasy ops comments create [options] <handle>
 
 ### `shipeasy ops fired-alerts`
 
-Fired alerts: the conditions the platform has actually raised — metric-rule crossings, armed kill switches, experiment SRM/peek guards, and guardrail breaches.
+Fired alerts: the conditions the platform has actually raised — metric-rule crossings, armed kill switches, and guardrail breaches.
 
 ```bash
 shipeasy ops fired-alerts [options] [command]
@@ -688,6 +686,49 @@ shipeasy ops investigations update [options] <handle> <investigationId>
 | `--visibility <value>` | optional | Record visibility. `draft` keeps it out of the panel; `published` surfaces it. |
 | `--completed-at <value>` | optional | ISO-8601 timestamp the work finished. Set it (or flip `kind` off `working`) to mark a run record done. |
 | `--session-id <value>` | optional | The agent-run session id, so the dashboard can deep-link to the run. |
+
+### `shipeasy ops qa-notes`
+
+Typed QA notes on a queue item — the QA follow-up that is not discussion.
+
+```bash
+shipeasy ops qa-notes [options] [command]
+```
+
+#### `shipeasy ops qa-notes list`
+
+List an item's QA notes
+
+```bash
+shipeasy ops qa-notes list [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--kind <value>` | optional | Only notes of this kind. |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy ops qa-notes create`
+
+Add a QA note to an item
+
+```bash
+shipeasy ops qa-notes create [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--kind <value>` | optional | What a QA note is — `narrowing` (only part of the bug still fails), `clarification` (changes what "fixed" means), `verification` (a pass/fail verdict on a fix) or `correction` (withdraws an earlier framing). |
+| `--body <value>` | optional | The note (markdown). |
+| `--agent <value>` | optional | The agent type writing the note — pass your own type when you are QA automation. Omitted, the note is attributed to the caller's identity. |
 
 ### `shipeasy ops questions`
 
@@ -1141,37 +1182,19 @@ shipeasy projects update [options] <id>
 | `--slug <value>` | optional | URL-safe identifier used in app URLs and SDK config. Lowercase letters, numbers, and hyphens; 2–48 chars; cannot start or end with a hyphen. The caller lowercases the raw slug before sending. |
 | `--default-env <value>` | optional | Default environment new resources are scoped to. |
 | `--timezone <value>` | optional | IANA timezone the project's daily analysis runs in. |
-| `--stat-method <value>` | optional | Statistical method the experiment analyzer uses. |
-| `--sig-threshold <value>` | optional | Significance threshold (alpha) for experiment analysis. |
-| `--auto-rollback <value>` | optional | Whether a failing guardrail auto-rolls back the experiment. |
-| `--min-sample-days <value>` | optional | Minimum number of days an experiment must run before it can be called. |
 | `--module-translations <value>` | optional | Enable/disable the i18n/translations module. |
 | `--module-configs <value>` | optional | Enable/disable the dynamic-configs module. |
 | `--module-gates <value>` | optional | Enable/disable the feature-gates module. |
-| `--module-experiments <value>` | optional | Enable/disable the experiments module. |
 | `--module-feedback <value>` | optional | Enable/disable the feedback/ops module. |
 | `--module-user <value>` | optional | Enable/disable the user-management module. |
 | `--module-events <value>` | optional | Enable/disable the events module. |
-| `--min-sample-size <value>` | optional | Verdict power guard — minimum users per arm before a ship/hold verdict. |
-| `--min-runtime-days <value>` | optional | Minimum days an experiment must run before a verdict (peeking guard). |
-| `--default-power <value>` | optional | Target statistical power (1−β) feeding the realized-MDE calculation. |
-| `--ci-confidence <value>` | optional | Confidence level for the interval surfaced on results (any value in [0.5, 0.999], e.g. 0.90, 0.95, 0.975, 0.99). |
-| `--default-allocation-pct <value>` | optional | Default traffic allocation (basis points, 1000 = 10%) new experiments start with; overridable per experiment. |
-| `--default-holdout <value>` | optional | Default holdout carve-out (basis points) that seeds each new universe's holdout (0 = none). |
 | `--default-winsorize-pct <value>` | optional | Default winsorization percentile new metrics start with; overridable per metric. |
-| `--default-mei <value>` | optional | Default minimum effect of interest (relative, 0–1) new metrics start with; overridable per metric and per experiment. Null clears it. |
-| `--cuped-baseline-days <value>` | optional | CUPED baseline window — days of pre-experiment history, frozen at start. |
-| `--cuped-min-overlap <value>` | optional | CUPED selection-bias guard — min share of users with a baseline, else skip. |
-| `--cuped-min-baseline-users <value>` | optional | CUPED — minimum users with a baseline before it runs at all. |
-| `--msprt-tau-mei-factor <value>` | optional | mSPRT prior width — τ = minimum effect of interest × this factor. |
-| `--msprt-tau-sd-factor <value>` | optional | mSPRT fallback prior width — τ = this × control SD when no MEI is set. |
-| `--srm-threshold <value>` | optional | SRM chi-square p-value below which the run is called invalid. |
 | `--error-autoclose-days <value>` | optional | Days an `open` tracked error may go unseen before the nightly sweep auto-resolves it. `0` disables auto-close for this project. |
 | `--error-ticket-min-occurrences <value>` | optional | Occurrence count a tracked error must cross before an `error` ticket is auto-filed into the ops queue. Requires a paid plan — the request is rejected with 403 on a plan without the `ops_auto_error_issues` entitlement. |
 
 ## `shipeasy tags`
 
-Tags: free-form, project-scoped labels any item can carry — queue items (bugs, feature requests, error/alert tickets), flags, configs, kill switches, metrics, tracked errors, alert rules, and experiments all share one tag roster.
+Tags: free-form, project-scoped labels any item can carry — queue items (bugs, feature requests, error/alert tickets), flags, configs, kill switches, metrics, tracked errors and alert rules all share one tag roster.
 
 ```bash
 shipeasy tags [options] [command]
@@ -1200,8 +1223,8 @@ shipeasy tags get [options] <entityType> <entityId>
 
 | Argument | | Description |
 | --- | --- | --- |
-| `entityType` | required | The kind of item — `ops`, `flag`, `config`, `killswitch`, `metric`, `error`, `alert_rule`, or `experiment`. |
-| `entityId` | required | The item's handle — an ops item's number (e.g. `7`) or id; a flag/config/killswitch/metric/alert rule/experiment's name or id; a tracked error's id. |
+| `entityType` | required | The kind of item — `ops`, `flag`, `config`, `killswitch`, `metric`, `error` or `alert_rule`. |
+| `entityId` | required | The item's handle — an ops item's number (e.g. `7`) or id; a flag/config/killswitch/metric/alert rule's name or id; a tracked error's id. |
 
 | Option | | Description |
 | --- | --- | --- |
@@ -1217,8 +1240,8 @@ shipeasy tags set [options] <entityType> <entityId>
 
 | Argument | | Description |
 | --- | --- | --- |
-| `entityType` | required | The kind of item — `ops`, `flag`, `config`, `killswitch`, `metric`, `error`, `alert_rule`, or `experiment`. |
-| `entityId` | required | The item's handle — an ops item's number (e.g. `7`) or id; a flag/config/killswitch/metric/alert rule/experiment's name or id; a tracked error's id. |
+| `entityType` | required | The kind of item — `ops`, `flag`, `config`, `killswitch`, `metric`, `error` or `alert_rule`. |
+| `entityId` | required | The item's handle — an ops item's number (e.g. `7`) or id; a flag/config/killswitch/metric/alert rule's name or id; a tracked error's id. |
 
 | Option | | Description |
 | --- | --- | --- |
@@ -1234,8 +1257,8 @@ shipeasy tags update [options] <entityType> <entityId>
 
 | Argument | | Description |
 | --- | --- | --- |
-| `entityType` | required | The kind of item — `ops`, `flag`, `config`, `killswitch`, `metric`, `error`, `alert_rule`, or `experiment`. |
-| `entityId` | required | The item's handle — an ops item's number (e.g. `7`) or id; a flag/config/killswitch/metric/alert rule/experiment's name or id; a tracked error's id. |
+| `entityType` | required | The kind of item — `ops`, `flag`, `config`, `killswitch`, `metric`, `error` or `alert_rule`. |
+| `entityId` | required | The item's handle — an ops item's number (e.g. `7`) or id; a flag/config/killswitch/metric/alert rule's name or id; a tracked error's id. |
 
 | Option | | Description |
 | --- | --- | --- |
@@ -1244,7 +1267,7 @@ shipeasy tags update [options] <entityType> <entityId>
 
 ## `shipeasy release`
 
-Feature delivery — flags, kill switches, dynamic configs, A/B experiments, and the universes they bucket in.
+Feature delivery — flags, kill switches, dynamic configs.
 
 ```bash
 shipeasy release [options] [command]
@@ -1589,7 +1612,6 @@ shipeasy release flags create [options] <name>
 
 | Option | | Description |
 | --- | --- | --- |
-| `--type <value>` | optional | Gate kind. `targeting` (default) is a normal flag with the full builder. `holdout` is a **restricted** flag — only a public rollout % and a whitelist are allowed; attribute rules and a gatekeeper stack are rejected. Used as an experiment's `holdout_gate`. |
 | `--enabled <value>` | optional | Master switch. Defaults to `true`. Set `false` to create the gate disabled (evaluates to `false` regardless of rules/rollout); flip on via `POST /{id}/enable` or PATCH. |
 | `--rollout-pct <value>` | optional | Initial rollout in **basis points** (0–10000 = 0%–100%) — `100` here means **1%**, not 100%. Use `rollout_percent` (0–100) below if you'd rather think in percent. Use `0` to create the gate dark and ramp via PATCH after deploy validation. |
 | `--rollout-percent <value>` | optional | Initial rollout as a **percentage** (0–100, fractional ok). Friendlier alias for `rollout_pct`; converted internally to basis points (e.g. `100` here = 10000 bp = 100%). If both `rollout_pct` and `rollout_percent` are set, `rollout_percent` wins. |
@@ -1632,7 +1654,6 @@ shipeasy release flags update [options] <id>
 
 | Option | | Description |
 | --- | --- | --- |
-| `--type <value>` | optional | Gate kind. Switching to `holdout` requires the gate carry only a public rollout % + whitelist (attribute rules / stack are rejected). |
 | `--rollout-pct <value>` | optional | New rollout in **basis points** (0–10000 = 0%–100%) — `100` here means **1%**. Use `rollout_percent` (0–100) below for percent. Omit both to leave unchanged. |
 | `--rollout-percent <value>` | optional | New rollout as a **percentage** (0–100). Friendlier alias for `rollout_pct`; converted internally. Wins over `rollout_pct` if both are supplied. Omit both to leave unchanged. |
 | `--rules <value>` | optional | Replaces the rule list wholesale. To add a value to an `in` rule, send the full new `rules` array with the augmented `value` (e.g. previous `['US','CA']` → `['US','CA','GB']`). |
@@ -1966,7 +1987,7 @@ One-command onboarding for this repo. Logs you in and binds a project, detects a
 8. Verification gate — session, keys, and every target's binding.
 9. Trusts the folder in Claude when its `.mcp.json` server is still pending — opens one interactive session prefilled with `/exit`, so it closes itself the moment you accept the prompt.
 10. Authorizes the hosted MCP connection: entries written to a config that is private to your machine carry an `Authorization: Bearer` header (your CLI session key) and need no sign-in at all — which is why Copilot's entries go to its CLI config and VS Code's user profile, not the repo. Committable ones (`.mcp.json`, `.cursor/mcp.json`) never hold a credential, so those take the OAuth browser flow via each agent's own `mcp login`.
-11. Everything that needs codebase judgement (entry-point `configure(...)` wiring, idiomatic secret stores, overlay script injection) is written to `shipeasy-wiring.md` — complete, self-contained instructions any coding agent (Claude, Codex, Cursor, Copilot, or a human) can execute. Key values never appear in that file. Alongside it, the SDK doc pages for exactly what you enabled — installation always, plus the overlay, head-tag, flag, experiment, metrics, error and i18n pages you turned on — are pulled from each SDK's live docs into `shipeasy-wiring-docs/` and linked from the step that needs them, so the wiring an agent writes tracks the SDK as it ships today rather than whatever this CLI version remembers. Both are temporary — once every gate passes the agent asks whether to delete them and commit the wiring, and does neither unless you say yes.
+11. Everything that needs codebase judgement (entry-point `configure(...)` wiring, idiomatic secret stores, overlay script injection) is written to `shipeasy-wiring.md` — complete, self-contained instructions any coding agent (Claude, Codex, Cursor, Copilot, or a human) can execute. Key values never appear in that file. Alongside it, the SDK doc pages for exactly what you enabled — installation always, plus the overlay, head-tag, flag, metrics, error and i18n pages you turned on — are pulled from each SDK's live docs into `shipeasy-wiring-docs/` and linked from the step that needs them, so the wiring an agent writes tracks the SDK as it ships today rather than whatever this CLI version remembers. Both are temporary — once every gate passes the agent asks whether to delete them and commit the wiring, and does neither unless you say yes.
 12. Offers to bootstrap the instrumentation a module enable can't produce on its own: with `ops` on, a session that finds this app's real failure paths and reports them through see(); with the release module on, one that names the product's critical moments and builds the event → metric → alert chain over them. Runs on your own harness with a written brief (skills, gates, and a stop-before-commit rule); `--no-bootstrap` skips it.
 13. Offers the automation trigger (scheduled queue burn-down as PRs).
 14. Opens the browser on the plan step — the two things setup will not decide for you: which plan you're on, and the Terms/Privacy agreements. Free needs no card; Pro/Business start a 14-day trial through Stripe. Completing that screen is what marks onboarding done for the account (an account that already finished it lands on Settings → Billing instead); `--no-plan` skips it.
@@ -2153,7 +2174,7 @@ Enable a platform module group (flags | i18n | ops) and verify it
 
 Turns on a coherent group of project modules in one call, then verifies the admin read paths are reachable and prints next steps. Module groups:
 
-• flags — gates + configs + events + experiments (kill switches ride the
+• flags — gates + configs + events (kill switches ride the
   same KV blob; no separate flag).
 • i18n  — translations; also ensures the primary profile (--profile,
   default en:prod) exists, since the server does not auto-create one.
@@ -2181,7 +2202,7 @@ shipeasy install [options] <module>
 Examples:
 
 ```bash
-# Enable the whole flags + experimentation platform
+# Enable the whole flags platform
 shipeasy install flags
 
 # Enable translations + ensure en:prod exists
@@ -2450,7 +2471,7 @@ shipeasy sdk keys create [options]
 | `--type <type>` | required | Key type: server \| client \| admin \| ops |
 | `--env <env>` | optional | Environment the key is bound to: dev \| staging \| prod (required for server/client keys) |
 | `--name <name>` | optional | Human label for the key (shown in the dashboard + audit logs) |
-| `--scopes <list>` | optional | Comma list of permission scopes: experiments:read, gates:evaluate, events:write, configs:write, experiments:write, tickets:public_create |
+| `--scopes <list>` | optional | Comma list of permission scopes: gates:evaluate, events:write, configs:write, tickets:public_create |
 | `--json` | optional | Output as JSON |
 | `--project <id>` | optional | Project ID override |
 

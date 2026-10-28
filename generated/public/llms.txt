@@ -23,7 +23,7 @@ Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with
 - [Keys & environments](https://docs.shipeasy.ai/get-started/keys-and-environments): Server key vs client key, where each goes, and how the read environment is derived from the key — never from a query param.
 - [Evaluation & caching](https://docs.shipeasy.ai/get-started/evaluation-and-caching): The read path in depth — in-memory rules, deterministic murmur3 bucketing, background polling, KV blobs, and infinite-TTL CDN propagation.
 - [Identity & bucketing](https://docs.shipeasy.ai/get-started/identity-and-bucketing): anonymous_id, user_id, identity stitching, bucketBy, and sticky bucketing — how Shipeasy decides which unit a flag buckets on.
-- [User attributes](https://docs.shipeasy.ai/get-started/attributes): The shape of the eval context — pass everything you know about the user, and Shipeasy uses it for targeting, holdouts, and analysis breakdowns.
+- [User attributes](https://docs.shipeasy.ai/get-started/attributes): The shape of the eval context — pass everything you know about the user, and Shipeasy uses it for targeting, rollouts, and metric breakdowns.
 - [CLI](https://docs.shipeasy.ai/get-started/cli): The `shipeasy` command — manage flags, configs, kill switches, metrics, the ops queue, keys, and the MCP server from your terminal or CI.
 - [CLI reference](https://docs.shipeasy.ai/get-started/cli-reference): Auto-generated reference for the `shipeasy` CLI — every command, argument, and flag, straight from the command definitions.
 - [MCP server](https://docs.shipeasy.ai/get-started/mcp): Hand the docs and tools to Claude Code, Cursor, Windsurf, or any MCP-compatible AI assistant — and let it do the boring setup for you.
@@ -74,7 +74,7 @@ Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with
 - [Targeting & rollouts](https://docs.shipeasy.ai/flags/configs/targeting): Show a value to the right users — attribute rules, deterministic percentage rollouts, and per-feature-flag salts. The rules engine, in detail.
 - [Killswitches](https://docs.shipeasy.ai/flags/killswitches): A flag with a single job — disable a system instantly during an incident.
 - [Quickstart (flags/killswitches)](https://docs.shipeasy.ai/flags/killswitches/quickstart): Wire a killswitch around a risky subsystem in five minutes — so the 3am on-call has one switch to flip.
-- [Patterns](https://docs.shipeasy.ai/flags/killswitches/patterns): When a killswitch is the right answer — what to put behind one, fail-safe defaults, alerting, and the post-incident cleanup.
+- [Patterns](https://docs.shipeasy.ai/flags/killswitches/patterns): When a killswitch is the right answer — what to put behind one, cold-cache behaviour, alerting, and the post-incident cleanup.
 - [Case studies (flags)](https://docs.shipeasy.ai/flags/case-studies): Real scenarios — when to reach for a feature flag vs config vs killswitch.
 - [Maintenance mode with a killswitch](https://docs.shipeasy.ai/flags/case-studies/maintenance-mode): Wrap a subsystem in a break-glass killswitch that defaults off and flips on in seconds during an incident.
 - [Plan entitlements with a dynamic config](https://docs.shipeasy.ai/flags/case-studies/entitlements-with-configs): Gate features by plan tier from one typed config instead of a sprawl of per-feature flags.
@@ -92,7 +92,7 @@ Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with
 
 - [Metrics](https://docs.shipeasy.ai/metrics): Define what you measure — aggregations, filters, outlier handling, and ratio metrics over your own events.
 - [Quickstart (metrics)](https://docs.shipeasy.ai/metrics/quickstart): Create your first metric, log the events it depends on, and put an alert on it — five minutes, end to end.
-- [Aggregation types](https://docs.shipeasy.ai/metrics/aggregations): Conversion, count, sum, mean, ratio — pick the right aggregation, set outlier handling, and avoid the variance traps that bite means and sums.
+- [Aggregation functions](https://docs.shipeasy.ai/metrics/aggregations): The eleven aggregation functions — count, sum, average, minimum, maximum, std dev and the p50 to p99 percentiles — plus rates, outlier handling, and how to pick one.
 - [Query DSL grammar](https://docs.shipeasy.ai/metrics/grammar): The complete formal grammar for the Shipeasy metric query DSL — aggregates, expressions, selectors, filters, group-by, and the deliberate refusals.
 - [Configure alerts](https://docs.shipeasy.ai/metrics/alerts): Turn an event into a metric, then raise a metric-threshold alert that files its own ticket when the metric crosses the line.
 
@@ -104,17 +104,17 @@ Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with
 - [Error reporting with see()](https://docs.shipeasy.ai/feedback/error-reporting): Report every handled exception with see() so it folds into the errors primitive with a product consequence.
 - [Errors dashboard & triage](https://docs.shipeasy.ai/feedback/errors): Fingerprint-grouped error issues with a status workflow, occurrence timeseries, and automatic re-open on regression.
 - [Connectors](https://docs.shipeasy.ai/feedback/connectors): Mirror new bug reports and feature requests out to a GitHub repo, a Google Sheet, or a Slack channel as they come in.
-- [Slack](https://docs.shipeasy.ai/feedback/slack): Run your release platform from Slack — create gates, configs, kill switches, alerts and metrics in plain language, and act on them as interactive cards.
-- [Case studies (feedback)](https://docs.shipeasy.ai/feedback/case-studies): Bug & feature request workflows — from "report bug" button to Linear sync.
-- [Route bug reports to Linear/Jira](https://docs.shipeasy.ai/feedback/case-studies/route-bugs-to-linear): Forward triaged bug reports into your tracker with a webhook, and dedup so one bug never opens five issues.
+- [Slack](https://docs.shipeasy.ai/feedback/slack): Run your release platform from Slack — create flags, configs, kill switches, alerts and metrics in plain language, and act on them as interactive cards.
+- [Case studies (feedback)](https://docs.shipeasy.ai/feedback/case-studies): Bug & feature request workflows — from "report bug" button to tracker sync.
+- [Route bug reports to your tracker](https://docs.shipeasy.ai/feedback/case-studies/route-bugs-to-your-tracker): Mirror confirmed bug reports into the issue tracker your engineers already use, and dedupe so one bug never opens five issues.
 - [From metric alert to auto-filed ticket](https://docs.shipeasy.ai/feedback/case-studies/alert-to-ticket-loop): Turn an event into a metric, raise a threshold alert on it, and have the alert file its own ticket for an agent to work.
 - [Edge cases (feedback)](https://docs.shipeasy.ai/feedback/edge-cases): Spam, dedup, PII, anonymous users, and other things that bite in production.
-- [API reference (feedback)](https://docs.shipeasy.ai/feedback/api): REST endpoints for bug reports and feature requests.
+- [API reference (feedback)](https://docs.shipeasy.ai/feedback/api): REST endpoints for filing, reading and updating bug reports and feature requests, including the public intake.
 
 ## Assistant
 
 - [Assistant](https://docs.shipeasy.ai/assistant): The in-dashboard AI assistant — what it is, how read and write modes differ, what it renders, and how it meters credits.
-- [Read vs write mode](https://docs.shipeasy.ai/assistant/read-vs-write): Read tools auto-execute and stream a thinking trace; write tools never auto-run — they surface as editable cards you confirm.
+- [Read vs write mode](https://docs.shipeasy.ai/assistant/read-vs-write): Read tools auto-execute and stream a thinking trace; writes surface as editable cards you confirm before anything is applied.
 - [Confirmation cards & plans](https://docs.shipeasy.ai/assistant/cards-and-plans): How the assistant turns an intent into an editable card you confirm — and how plan cards split instant resources from ship-code work.
 - [Measurement plans](https://docs.shipeasy.ai/assistant/measurement-plans): When a change needs instrumentation it can't do itself, the assistant writes a measurement plan and files measure_plan tickets for an agent to implement.
 - [Credits & metering](https://docs.shipeasy.ai/assistant/credits): The assistant runs on prepaid credits — how they're deducted, how to top up, and what happens at zero.

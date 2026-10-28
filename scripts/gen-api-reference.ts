@@ -13,11 +13,12 @@
  * Output is committed under `generated/`, then mirrored into `content/docs/`
  * by `scripts/sync-generated.ts`. See generated/README.md.
  */
-import { rmSync } from "node:fs";
+import { readFileSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { generateFiles } from "fumadocs-openapi";
 import { createOpenAPI } from "fumadocs-openapi/server";
+import { publicSpec } from "../src/lib/public-spec";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -52,7 +53,11 @@ async function main() {
   // Wipe the previous output so removed operations don't leave orphan MDX.
   rmSync(OUT, { recursive: true, force: true });
 
-  const openapi = createOpenAPI({ input: [SPEC] });
+  // The PUBLIC view of the spec (see src/lib/public-spec.ts): same key as the
+  // runtime `<APIPage>` uses, with the unmarketed products already removed.
+  const openapi = createOpenAPI({
+    input: () => ({ [SPEC]: publicSpec(JSON.parse(readFileSync(SPEC, "utf8"))) }),
+  });
 
   await generateFiles({
     input: openapi,

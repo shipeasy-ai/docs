@@ -1,5 +1,5 @@
 {
   "title": "Case studies",
   "defaultOpen": false,
-  "pages": ["index", "route-bugs-to-linear", "alert-to-ticket-loop", "..."]
+  "pages": ["index", "route-bugs-to-your-tracker", "alert-to-ticket-loop", "..."]
 }

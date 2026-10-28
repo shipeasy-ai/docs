@@ -101,7 +101,7 @@ This means a stolen refresh token is good for at most one refresh — the moment
 
 ## Using Shipeasy in CI
 
-For GitHub Actions, GitLab CI, and any non-interactive environment, generate a long-lived **API token** in **Project → Tokens → Create** and pass it as `SHIPEASY_CLI_TOKEN`:
+For GitHub Actions, GitLab CI, and any non-interactive environment, generate a long-lived **API token** under **SDK keys** (type **Admin**) and pass it as `SHIPEASY_CLI_TOKEN`:
 
 ```yaml title=".github/workflows/release.yml"
 - name: Check the flags this release depends on

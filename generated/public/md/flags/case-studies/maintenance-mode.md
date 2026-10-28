@@ -64,7 +64,7 @@ shipeasy release ks set-value checkout-maintenance --value false
 
 - **Default state:** off, shipped dark. The switch exists in every environment before you ever need it — provision it on a calm day, not mid-incident.
 - **Who can flip:** restrict the killswitch to on-call. The flip is the loudest action in your system; treat it like one.
-- **Telemetry:** killswitches carry no A/B eval telemetry — the health signal is the audit log of flips. Pair it with an [alert](https://docs.shipeasy.ai/metrics/alerts) on your checkout error-rate metric so the switch and the symptom show up on one timeline.
+- **Telemetry:** killswitches carry no evaluation telemetry — the health signal is the audit log of flips. Pair it with an [alert](https://docs.shipeasy.ai/metrics/alerts) on your checkout error-rate metric so the switch and the symptom show up on one timeline.
 - **Rehearse:** flip it in staging once a quarter so the muscle memory exists before the real outage.
 
 **Related**

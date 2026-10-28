@@ -13,56 +13,64 @@ sending in under five seconds without touching code.
   <QuickstartStep
     num={1}
     label="CREATE"
-    title="Create the killswitch (default OFF)"
-    cmd="shipeasy release killswitch create transactional.emails-enabled --value false"
+    title="Create the killswitch (not killed)"
+    cmd="shipeasy release killswitch create transactional.emails-paused --value false"
   />
   <QuickstartStep
     num={2}
     label="WIRE"
     title="Guard the dangerous path"
-    cmd="if (flags.ks('transactional.emails-enabled')) return; // killed → bail"
+    cmd="if (client.getKillswitch('transactional.emails-paused')) return; // killed → bail"
   />
   <QuickstartStep
     num={3}
     label="REHEARSE"
     title="Flip it, watch it stop"
-    cmd="shipeasy release killswitch update transactional.emails-enabled --value true"
+    cmd="shipeasy release killswitch update transactional.emails-paused --value true"
   />
   <QuickstartStep
     num={4}
-    label="ALERT"
-    title="Subscribe a connector (Slack / GitHub / etc.)"
-    cmd="Add via Dashboard → Connectors → killswitch.flipped"
+    label="NOTIFY"
+    title="Tell the team when it flips"
+    cmd="Settings → Notifications → Events → Killswitch flipped"
   />
 </Quickstart>
+
+## Prerequisites
+
+The SDK configured once with your **server key** — see the [quickstart](/get-started/quickstart)
+for the single `configure()` call. Everything below reads through the `Client` it hands you.
 
 ## 1. Create the killswitch
 
 ```bash
-shipeasy release killswitch create transactional.emails-enabled \
+shipeasy release killswitch create transactional.emails-paused \
   --description "Disables outbound transactional email" \
   --value false
 ```
 
+You can also click **New killswitch** on the **Killswitches** page.
+
 Killswitch names must be `folder.name`. `--value false` means "killed = false" by
-default — the call to `flags.ks(...)` returns `false`, your code reads "not
-killed, proceed". Flip it to `true` to kill the path in production. Until the
-SDK has fetched the first blob, reads return `false` (the safer default for
-"is this killed?") — so a cold cache won't accidentally kill your emails.
+default — the read returns `false`, your code reads "not killed, proceed". Flip
+it to `true` to kill the path in production. Until the SDK has fetched the first
+blob, reads return `false` (the safer default for "is this killed?") — so a cold
+cache won't accidentally kill your emails.
 
 ## 2. Wire it into the code path
 
 Wrap the dangerous call with the killswitch read — it returns `true` when the
-killswitch is flipped, `false` (or the SDK default) otherwise:
+killswitch is engaged (the path is killed), `false` otherwise:
 
 <Tabs items={["TypeScript", "Python", "Go", "Ruby", "Java", "Kotlin", "PHP", "Swift"]}>
   <Tab value="TypeScript">
 
 ```ts title="src/lib/mailer.ts"
-import { flags } from "@shipeasy/sdk/server";
+import { Client } from "@shipeasy/sdk/server";
 
-export async function sendOrderEmail(order: Order) {
-  if (flags.ks("transactional.emails-enabled")) {
+export async function sendOrderEmail(order: Order, user: User) {
+  const client = new Client(user);
+  if (client.getKillswitch("transactional.emails-paused")) {
     logger.warn("emails paused via killswitch", { orderId: order.id });
     return;
   }
@@ -74,52 +82,101 @@ export async function sendOrderEmail(order: Order) {
   </Tab>
   <Tab value="Python">
 
-Killswitches ride the same blob as flags. Read them from the evaluate result; see [Python](/sdks/python) for the full client API.
+```python
+client = shipeasy.Client(user)
+if client.get_killswitch("transactional.emails-paused"):
+    logger.warning("emails paused via killswitch", extra={"order_id": order.id})
+    return
+mailer.send(order)
+```
 
   </Tab>
   <Tab value="Go">
 
-Killswitches ride the same blob as flags. Read them from the evaluate result; see [Go](/sdks/go) for the full client API.
+```go
+client := shipeasy.NewClient(user)
+if client.GetKillswitch("transactional.emails-paused") {
+    log.Printf("emails paused via killswitch order=%s", order.ID)
+    return
+}
+mailer.Send(order)
+```
 
   </Tab>
   <Tab value="Ruby">
 
-Killswitches ride the same blob as flags. Read them from the evaluate result; see [Ruby](/sdks/ruby) for the full client API.
+```ruby
+client = Shipeasy::Client.new(user)
+if client.get_killswitch("transactional.emails-paused")
+  Rails.logger.warn("emails paused via killswitch order=#{order.id}")
+  return
+end
+Mailer.send(order)
+```
 
   </Tab>
   <Tab value="Java">
 
-Killswitches ride the same blob as flags. Read them from the evaluate result; see [Java](/sdks/java) for the full client API.
+```java
+Client client = new Client(user);
+if (client.getKillswitch("transactional.emails-paused")) {
+    log.warn("emails paused via killswitch orderId={}", order.id());
+    return;
+}
+mailer.send(order);
+```
 
   </Tab>
   <Tab value="Kotlin">
 
-Killswitches ride the same blob as flags. Read them from the evaluate result; see [Kotlin](/sdks/kotlin) for the full client API.
+```kotlin
+val client = Client(user)
+if (client.getKillswitch("transactional.emails-paused")) {
+    logger.warn("emails paused via killswitch orderId=${order.id}")
+    return
+}
+mailer.send(order)
+```
 
   </Tab>
   <Tab value="PHP">
 
-Killswitches ride the same blob as flags. Read them from the evaluate result; see [PHP](/sdks/php) for the full client API.
+```php
+$client = new Shipeasy\Client($user);
+if ($client->getKillswitch('transactional.emails-paused')) {
+    error_log("emails paused via killswitch order={$order->id}");
+    return;
+}
+$mailer->send($order);
+```
 
   </Tab>
   <Tab value="Swift">
 
-Killswitches ride the same blob as flags. Read them from the evaluate result; see [Swift](/sdks/swift) for the full client API.
+```swift
+let client = try Client(user)
+if await client.getKillswitch("transactional.emails-paused") {
+    logger.warning("emails paused via killswitch")
+    return
+}
+try await mailer.send(order)
+```
 
   </Tab>
 </Tabs>
 
 Three things to internalise:
 
-- **`undefined` for `ctx`.** Killswitches don't target — they're global. The second arg is just
-  there to keep the function signature aligned with `gate()`.
-- **`defaultValue: true` is load-bearing.** Don't omit it. If KV is unreachable during the very
-  incident that prompted the kill, you do not want the killswitch to silently default to `false`
-  and amplify the outage.
+- **Killswitches don't target.** They're global, so the user you bind to the `Client` plays no part
+  in the answer. A killswitch can still carry named per-key overrides — pass the key as a second
+  argument, see [patterns](/flags/killswitches/patterns).
+- **The cold-cache default is "not killed".** Reads return `false` until the first blob arrives, so
+  a cold start never kills the path on its own. If you want the opposite posture during an outage,
+  that is a flag decision, not a killswitch one.
 - **Log the bypass.** When the killswitch is engaged, log a structured warn so post-mortem can
   reconstruct what was suppressed.
 
-Deploy this. Killswitch is `on`, fallback is `true`, behaviour is unchanged from before.
+Deploy this. The killswitch is `false`, so behaviour is unchanged from before.
 
 ## 3. Rehearse the flip
 
@@ -128,26 +185,19 @@ flipped it before. Rehearse in staging:
 
 ```bash
 # Flip the killswitch to true ("kill the path") — single-value form
-shipeasy release killswitch update transactional.emails-enabled --value true
-
-# Confirm via the SDK eval endpoint
-curl "https://api.shipeasy.ai/sdk/evaluate" \
-  -H "Authorization: Bearer $SHIPEASY_SERVER_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{ "user": { "user_id": "drill-user" } }' \
-  | jq '.killswitches["transactional.emails-enabled"]'
-# → true
+shipeasy release killswitch update transactional.emails-paused --value true
 
 # Verify no emails flow in staging
 # … run your normal email test path …
 
 # Re-enable (flip back to false = "not killed")
-shipeasy release killswitch update transactional.emails-enabled --value false
+shipeasy release killswitch update transactional.emails-paused --value false
 ```
 
-Time how long it takes from "decide to flip" to "next email is suppressed."
-The next call should return the new value within one poll interval of the
-flip — that interval is plan-derived and advertised to the SDK, not configured.
+You can flip it from the **Killswitches** page too — it is the same write. Time how long it takes
+from "decide to flip" to "next email is suppressed." The next call should return the new value
+within one poll interval of the flip — that interval is plan-derived and advertised to the SDK, not
+configured.
 
 ## 4. Get notified when the killswitch flips
 
@@ -155,23 +205,18 @@ A killswitch is a _social_ signal as much as a technical one. Flipping it
 should announce itself on the team's incident channel and create a paper
 trail.
 
-Today this is wired through the **Connectors** surface in the
-dashboard. Pick `killswitch.flipped` as the event, point it at a Slack or
-GitHub connector, and configure the filter (e.g. only fire for prod, or
-only for specific killswitch names). The connector payload includes who
-flipped it, when, and the new value — wire it into your incident channel
-and your runbook ("if you see this, page primary on-call within 2 minutes").
-
-For production-grade pages, route the connector into your paging tool —
-that way flipping the killswitch _is_ declaring the incident, which is
-usually the right move.
+Open **Settings → Notifications**. The **Events** table has a **Killswitch flipped** row; turn on
+the channels you want (in-app, email, Slack) for it. Connect Slack on the same tab first if you want
+the post in a channel — the message carries a one-click **Flip back**. The notification says who
+flipped it, when, and the new value; wire that into your runbook ("if you see this, page primary
+on-call within 2 minutes").
 
 ## What you have now
 
-- A killswitch in the dashboard at **Killswitches → emails-enabled**.
+- A killswitch on the **Killswitches** page, named `transactional.emails-paused`.
 - A wrapped code path that respects it on every call.
 - A rehearsed flip-and-restore drill that took < 5 seconds.
-- An alert on the flip event so the team knows when production is in degraded mode.
+- A notification on the flip so the team knows when production is in degraded mode.
 
 That's the whole pattern. Repeat for every system whose pause-button you'd want on the lock screen
 of your phone.

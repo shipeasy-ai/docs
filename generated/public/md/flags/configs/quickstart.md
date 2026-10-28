@@ -4,14 +4,21 @@ Source: https://docs.shipeasy.ai/flags/configs/quickstart
 
 > Create a typed config, read it with getConfig, change the value in production — no redeploy, five minutes end to end.
 
-This walks you through replacing one hard-coded constant with a config you can change from a
-dashboard. You'll create the config with a schema, read it in code with a guaranteed fallback, then
+This walks you through replacing one hard-coded constant with a config you can change without a
+deploy. You'll create the config with a schema, read it in code with a guaranteed fallback, then
 change the value in production and watch it land without a deploy.
 
 **Install the SDK & log in**
 
 ```bash
 npm install @shipeasy/sdk && npx shipeasy login
+```
+
+**Initialise the SDK once at boot**
+
+```bash
+import { configure } from "@shipeasy/sdk/server";
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY ?? "" });
 ```
 
 **Create the config with its shape and first value**
@@ -88,7 +95,7 @@ Without `--value` the config starts as `{}` on every environment, which your def
 cover. Seeding one environment at a time works too — `--dev`, `--staging`, `--prod` each publish to
 just that one.
 
-Or in the dashboard: **Configs → Dynamic values → New**
+Or in the dashboard: open **Configs** and click **New config**.
 
 ## 3. Read it where the constant used to be
 

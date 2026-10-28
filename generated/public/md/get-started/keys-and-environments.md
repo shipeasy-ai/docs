@@ -49,9 +49,9 @@ flags and configs you mark client-readable, and the Worker rate-limits it by dom
 
 **Mint and manage**
 
-Create, rotate, and revoke keys in **Project → SDK keys**, or with `shipeasy sdk keys`. Each key
-is bound to its environment **at mint time** — you pick the env when you create the key, not
-when you use it.
+Create, rotate, and revoke keys in **SDK keys** in the sidebar, or with `shipeasy sdk keys`.
+Each key is bound to its environment **at mint time** — you pick the env when you create the
+key, not when you use it.
 
 ## The read environment is derived from the key
 

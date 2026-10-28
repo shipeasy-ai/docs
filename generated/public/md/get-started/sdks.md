@@ -47,7 +47,8 @@ Configs are typed via the optional generic. Always provide a fallback — your c
 ### Logging an event
 
 ```ts
-flags.track("u_4f2a", "purchase", { value: 49.99, sku: "SHIRT-L-BLUE" });
+const flags = new Client({ user_id: "u_4f2a" });
+flags.track("purchase", { value: 49.99, sku: "SHIRT-L-BLUE" });
 ```
 
 `track()` is fire-and-forget. Events are batched and sent to `/collect` on the Shipeasy edge.
@@ -220,7 +221,7 @@ analytics and exposure events are tagged so you can filter them out of analysis.
 
 The two key kinds aren't interchangeable. Server keys can read full payloads and write
 events; they don't belong in a bundle. Put the **client** key in the browser and the
-**server** key in your server runtime — both come from **Project → SDK keys**.
+**server** key in your server runtime — both come from **SDK keys** in the sidebar.
 
 **Related**
 
