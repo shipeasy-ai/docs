@@ -104,7 +104,7 @@ Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with
 - [Error reporting with see()](https://docs.shipeasy.ai/feedback/error-reporting): Report every handled exception with see() so it folds into the errors primitive with a product consequence.
 - [Errors dashboard & triage](https://docs.shipeasy.ai/feedback/errors): Fingerprint-grouped error issues with a status workflow, occurrence timeseries, and automatic re-open on regression.
 - [Connectors](https://docs.shipeasy.ai/feedback/connectors): Mirror new bug reports and feature requests out to a GitHub repo, a Google Sheet, or a Slack channel as they come in.
-- [Slack](https://docs.shipeasy.ai/feedback/slack): Run your release platform from Slack — create flags, configs, kill switches, alerts and metrics in plain language, and act on them as interactive cards.
+- [Slack](https://docs.shipeasy.ai/feedback/slack): Get alerts, errors, bugs and platform events in Slack on every plan — and on Pro and above, act on them from the card buttons, the /shipeasy command and the @Shipeasy assistant.
 - [Case studies (feedback)](https://docs.shipeasy.ai/feedback/case-studies): Bug & feature request workflows — from "report bug" button to tracker sync.
 - [Route bug reports to your tracker](https://docs.shipeasy.ai/feedback/case-studies/route-bugs-to-your-tracker): Mirror confirmed bug reports into the issue tracker your engineers already use, and dedupe so one bug never opens five issues.
 - [From metric alert to auto-filed ticket](https://docs.shipeasy.ai/feedback/case-studies/alert-to-ticket-loop): Turn an event into a metric, raise a threshold alert on it, and have the alert file its own ticket for an agent to work.

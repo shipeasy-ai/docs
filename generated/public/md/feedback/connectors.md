@@ -73,11 +73,12 @@ Notifications tab.
 Choose the **default channel** for Slack notifications. Individual events can override it in the
 events table below.
 
-> **Slack does much more than mirror**
+> **Slack does more than mirror**
 
-Posted messages carry **resolve / ready-for-QA** buttons, a **coloured status border**, platform
-**notifications**, a **`/shipeasy`** slash command, and an **`@Shipeasy`** assistant that runs
-your flags and configs by chat. It's all on the dedicated **[Slack page](https://docs.shipeasy.ai/feedback/slack)**.
+On every plan Slack receives bug, request, alert and platform-event cards with a **coloured status
+border**. On **Pro and above** those cards also carry **resolve / ready-for-QA** buttons, and you
+get a **`/shipeasy`** slash command and an **`@Shipeasy`** assistant that runs your flags and
+configs by chat. See the dedicated **[Slack page](https://docs.shipeasy.ai/feedback/slack)** for what each plan includes.
 
 ## Status & health
 
@@ -86,8 +87,8 @@ your flags and configs by chat. It's all on the dedicated **[Slack page](https:/
 > **Connectors forward out — and Slack actions flow back**
 
 The GitHub and Sheets connectors are one-way: new bugs/requests flow out, and status changes you
-make there don't sync back. The Slack connector is the exception — its message buttons (resolve /
-ready-for-QA, resolve / dismiss alert) write straight back into Shipeasy.
+make there don't sync back. The Slack connector is the exception on Pro and above — its message
+buttons (resolve / ready-for-QA, resolve / dismiss alert) write straight back into Shipeasy.
 
 **Related**
 

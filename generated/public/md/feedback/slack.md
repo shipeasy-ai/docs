@@ -2,13 +2,28 @@
 
 Source: https://docs.shipeasy.ai/feedback/slack
 
-> Run your release platform from Slack — create flags, configs, kill switches, alerts and metrics in plain language, and act on them as interactive cards.
+> Get alerts, errors, bugs and platform events in Slack on every plan — and on Pro and above, act on them from the card buttons, the /shipeasy command and the @Shipeasy assistant.
 
-Slack is a full front-end to Shipeasy. Connect it **once**, then talk to
-**@Shipeasy** in plain language to create and change anything — feature flags,
-dynamic configs, kill switches, alerts, metrics — and watch it
-all stream back into the channel as **interactive cards** you act on without ever
-opening the dashboard. Bugs, requests and platform events land the same way.
+Slack is where Shipeasy comes to find you. Connect it **once** and bugs,
+feature requests, alerts, error spikes and platform events post into your
+channel as cards. That part works on **every plan**. On **Pro and above** the
+same workspace connection also becomes a front-end: you act on the cards with
+their buttons, run `/shipeasy`, and talk to **@Shipeasy** in plain language to
+create and change flags, configs, kill switches, alerts and metrics without
+opening the dashboard.
+
+| What you do in Slack                                               | Plan          |
+| ------------------------------------------------------------------ | ------------- |
+| Receive bug, request, alert, error-spike and platform-event cards  | Every plan    |
+| `File an issue` from an alert or error card · `Acknowledge` a card | Every plan    |
+| Card actions — resolve, dismiss, mute, flip back, change status    | Pro and above |
+| `/shipeasy` slash command                                          | Pro and above |
+| Ask **@Shipeasy** to read or change your platform                  | Pro and above |
+
+On a plan without the write half, a gated button stamps the card **Pro plan
+required** and `@Shipeasy` replies with an upgrade note that also tells you what
+still works — nothing is changed. The [pricing page](https://shipeasy.ai/pricing)
+has the per-plan matrix.
 
 ## Connect Slack
 
@@ -26,6 +41,11 @@ Choose the **default channel** for Slack notifications — new bugs, requests an
 post there. Individual events can override it in the events table on the same tab.
 
 ## Meet @Shipeasy — run the whole platform from chat
+
+> **Pro and above**
+
+Everything in this section, the card buttons below and `/shipeasy` are the write half of Slack,
+included on Pro and above. Notifications and `File an issue` work on every plan.
 
 Mention **@Shipeasy** in any channel it's in and ask for what you want. There's
 nothing to memorise — no flags, no syntax. It understands plain language, **acts
@@ -80,17 +100,18 @@ how bad it is at a glance, and the same resolve / dismiss / mute controls:
 Flip a kill switch and the channel offers a one-click revert; publish a config to
 prod and the change is announced with a link:
 
-Every action writes straight back into Shipeasy, records an audit entry, stamps
-who did it, and recolours the card. Here's the full set:
+On Pro and above, every action writes straight back into Shipeasy, records an
+audit entry, stamps who did it, and recolours the card. `Acknowledge` and
+`File an issue` are the two that work on every plan. Here's the full set:
 
-| Event                            | Card actions                                                       |
-| -------------------------------- | ------------------------------------------------------------------ |
-| **Alert triggered**              | `Resolve` · `Dismiss` · `Mute rule` (disables the rule that fired) |
-| **Error spiking** (from `see()`) | `Resolve` · `Dismiss` · `Mute this error` (with a trend chart)     |
-| **Kill switch flipped**          | `Flip back` (one-click revert)                                     |
-| **Config published to prod**     | `Acknowledge`                                                      |
-| **Agent needs your attention**   | `Open the issue ↗` · `Acknowledge`                                 |
-| Weekly digest · New team member  | _(informational — link only)_                                      |
+| Event                            | Card actions                                                                                    |
+| -------------------------------- | ----------------------------------------------------------------------------------------------- |
+| **Alert triggered**              | `Resolve` · `Dismiss` · `Mute rule` (disables the rule that fired) · `File an issue` (any plan) |
+| **Error spiking** (from `see()`) | `Resolve` · `Dismiss` · `Mute this error` (with a trend chart) · `File an issue` (any plan)     |
+| **Kill switch flipped**          | `Flip back` (one-click revert)                                                                  |
+| **Config published to prod**     | `Acknowledge`                                                                                   |
+| **Agent needs your attention**   | `Open the issue ↗` · `Acknowledge`                                                              |
+| Weekly digest · New team member  | _(informational — link only)_                                                                   |
 
 Choose which of these post to Slack in **Settings → Notifications** (the Slack
 column is live once Slack is connected).
@@ -105,8 +126,8 @@ else.
 ## Bugs & requests — the other inbound stream
 
 New **bug reports** and **feature requests** post to your default channel with
-the title, reporter, page URL and full details. Each carries a **Status ▾**
-dropdown covering the whole lifecycle.
+the title, reporter, page URL and full details (every plan). On Pro and above
+each carries a **Status ▾** dropdown covering the whole lifecycle.
 
 | Status        | Border   |
 | ------------- | -------- |
@@ -132,7 +153,7 @@ context.
 
 ## Prefer a quick slash command?
 
-For a fast, no-chat shortcut, `/shipeasy` creates a metric alert from inside a
+For a fast, no-chat shortcut (Pro and above), `/shipeasy` creates a metric alert from inside a
 channel — the alert posts back to that channel, and the reply is private to you:
 
 ```text
