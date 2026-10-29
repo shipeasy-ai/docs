@@ -29,7 +29,7 @@ Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with
 - [MCP server](https://docs.shipeasy.ai/get-started/mcp): Hand the docs and tools to Claude Code, Cursor, Windsurf, or any MCP-compatible AI assistant — and let it do the boring setup for you.
 - [MCP reference](https://docs.shipeasy.ai/get-started/mcp-reference): Auto-generated reference for the @shipeasy/mcp server — every tool, nested under its group, with title, full description, parameters, and error codes.
 - [Install in your agent](https://docs.shipeasy.ai/get-started/agents): One plugin tree, every coding agent. Install Shipeasy's skills and MCP server into Claude Code, Codex, Copilot CLI, Cursor, Windsurf, Cline, Gemini and more.
-- [Scheduled triggers](https://docs.shipeasy.ai/get-started/triggers): Provision a scheduled agent that runs ops:work --pr on a cadence, burning down the feedback queue one PR at a time — on Claude Code, Cursor, Copilot and more.
+- [Scheduled triggers](https://docs.shipeasy.ai/get-started/triggers): Provision a scheduled agent that runs the shipeasy-ops-work skill on a cadence, burning down the feedback queue one PR at a time — on Claude Code, Cursor, Copilot and more.
 - [Team & permissions](https://docs.shipeasy.ai/get-started/team): Invite teammates to a project, assign roles, and control who can publish to production.
 - [Project settings & modules](https://docs.shipeasy.ai/get-started/modules): Toggle which Shipeasy modules a project exposes, and manage notifications, billing, ownership, and deletion.
 - [Usage & quotas](https://docs.shipeasy.ai/get-started/usage): See per-evaluation usage across feature flags, configs, killswitches, and events — and how it tracks against your plan's included credit.
