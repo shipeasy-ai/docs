@@ -68,7 +68,7 @@ shipeasy.configure(
 )
 ```
 
-- **`api_key`** *(required)* — your Shipeasy **server key** (`sdk_server_...`). Authenticates flags, configs, kill switches and experiments. Read it from the environment (`os.environ["SHIPEASY_SERVER_KEY"]`); never hard-code it.
+- **`api_key`** *(required)* — your Shipeasy **server key** (`sdk_server_...`). Authenticates flags, configs, killswitches and experiments. Read it from the environment (`os.environ["SHIPEASY_SERVER_KEY"]`); never hard-code it.
 - **`attributes`** *(optional)* — a transform from YOUR user object to the Shipeasy attribute map that targeting evaluates against. The default is identity, so if your user object is already that map you can omit it:
 
 ```python

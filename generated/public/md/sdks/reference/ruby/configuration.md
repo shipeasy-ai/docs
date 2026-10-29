@@ -21,7 +21,7 @@ Shipeasy.configure do |c|
 end
 ```
 
-- **`c.api_key`** — your Shipeasy **server key**. Authenticates flags, configs, kill switches and experiments. Never embed it in a browser.
+- **`c.api_key`** — your Shipeasy **server key**. Authenticates flags, configs, killswitches and experiments. Never embed it in a browser.
 - **`c.attributes`** — a transform from YOUR user object to the Shipeasy attribute hash that targeting evaluates against. The default is identity, so if your user object is already that hash you can omit it:
 
 ```ruby

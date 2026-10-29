@@ -112,7 +112,7 @@ That single rule decides almost every architectural choice — no per-request fe
 
 The admin app is a Next.js app that owns:
 
-- The dashboard UI for feature flags, configs, kill switches, metrics and alerts.
+- The dashboard UI for feature flags, configs, killswitches, metrics and alerts.
 - Server Actions and Route Handlers — the same endpoints the CLI calls.
 - Stateless JWT sessions (short expiry, no session table).
 - The KV rebuild + CDN purge pipeline. Whenever you change a flag, the admin app rebuilds the affected blob and purges the URL.
@@ -130,8 +130,8 @@ The same worker also handles the CLI device-auth flow and runs the cron + queue 
 
 #### Shared state [#shared-state]
 
-- `Database (SQLite)` (row store) — Source of truth — feature flags, configs, kill switches, metrics, keys, exposures, daily results. Project-scoped on every query.
-- `KV` (read cache) — Two blobs per project: `:flags` (feature flags, configs and kill switches) and  `:experiments`, the longer-lived half of the rule set.
+- `Database (SQLite)` (row store) — Source of truth — feature flags, configs, killswitches, metrics, keys, exposures, daily results. Project-scoped on every query.
+- `KV` (read cache) — Two blobs per project: `:flags` (feature flags, configs and killswitches) and  `:experiments`, the longer-lived half of the rule set.
 - `Events store` (event store) — Append-only telemetry. Written from the worker only, never from the admin app.
 - `Queues` (async pipeline) — The cron enqueues one message per project. The consumer runs analysis and writes results back to the database.
 
@@ -277,7 +277,7 @@ Install the SDK and CLI, bind a project, wire one init call, ship a flag at 0%, 
 
 One SDK, one CLI, one configure call. Create a flag at 0%, wrap your code, then ramp it from your terminal. No card required.
 
-This is the universal path. Every product — gates, configs, kill switches, metrics — starts here, then branches. If you only read one page, read this one.
+This is the universal path. Every product — gates, configs, killswitches, metrics — starts here, then branches. If you only read one page, read this one.
 
 **Add the SDK and CLI**
 
@@ -307,7 +307,7 @@ Full flow, including CI tokens, lives in [Authenticate](https://docs.shipeasy.ai
 // app/layout.tsx — runs once per cold start\nimport { configure } from "@shipeasy/sdk/server";\nconfigure({ apiKey: process.env.SHIPEASY_SERVER_KEY ?? "", attributes: (u) => ({ user_id: u.id, plan: u.plan }) });
 ```
 
-The single `configure()` call boots flags, configs **and** kill switches. The server SDK polls the
+The single `configure()` call boots flags, configs **and** killswitches. The server SDK polls the
 rule set in the background and evaluates **locally** — there is no per-request network hop. Env
 (dev / staging / prod) is derived from the key, not from a query param. See [Keys &
 environments](https://docs.shipeasy.ai/get-started/keys-and-environments).
@@ -485,13 +485,13 @@ Same single configure call, public client key, then a user-bound `Client` whose 
 
 You have a flag ramping. Pick where to go deeper.
 
-- **[Gates](https://docs.shipeasy.ai/flags/gates/quickstart)** — Targeting rules, per-condition rollouts, gradual ramps, and kill switches.
+- **[Gates](https://docs.shipeasy.ai/flags/gates/quickstart)** — Targeting rules, per-condition rollouts, gradual ramps, and killswitches.
 
 - **[Configs](https://docs.shipeasy.ai/flags/configs/quickstart)** — Typed JSON values you change at runtime — limits, copy, thresholds — without a deploy.
 
 - **[Metrics & alerts](https://docs.shipeasy.ai/metrics/quickstart)** — Turn the events you already log into a number, then have a threshold rule watch it for you.
 
-- **[Kill switches](https://docs.shipeasy.ai/flags/killswitches/quickstart)** — One switch that turns a subsystem off everywhere, without a deploy or a rollout ramp.
+- **[Killswitches](https://docs.shipeasy.ai/flags/killswitches/quickstart)** — One switch that turns a subsystem off everywhere, without a deploy or a rollout ramp.
 
 **Related**
 
@@ -516,7 +516,7 @@ Shipeasy ships as a small set of npm packages — install only the ones you need
 
 - **[@shipeasy/sdk](#sdk)** — The core SDK. Conditional exports pick the right build for your runtime — Node, Workers, Bun, Deno, or browser.
 
-- **[@shipeasy/cli](#cli)** — The <code>shipeasy</code> command. Login, manage flags, configs and kill switches, work the ops queue, install the MCP server.
+- **[@shipeasy/cli](#cli)** — The <code>shipeasy</code> command. Login, manage flags, configs and killswitches, work the ops queue, install the MCP server.
 
 - **[@shipeasy/mcp](#mcp)** — MCP server for AI assistants. Installed via the CLI — your agent gets a typed toolkit.
 
@@ -611,7 +611,7 @@ configure({
 });
 ```
 
-The single `configure()` call boots flags, configs **and** kill switches. The optional `attributes` transform maps your user object onto the Shipeasy attribute map, so every bound `Client` you construct evaluates against the right context. The server SDK polls `/sdk/flags` in the background. Evaluation happens **locally** — there is no per-request network call from your code. Env (dev / staging / prod) is **derived from the key**: each key is bound to exactly one environment when you mint it, so you deploy the prod key to prod and the staging key to staging — there is nothing to set in code. (A server key may still override per request with `?env=` for local debugging; client keys cannot — see below.)
+The single `configure()` call boots flags, configs **and** killswitches. The optional `attributes` transform maps your user object onto the Shipeasy attribute map, so every bound `Client` you construct evaluates against the right context. The server SDK polls `/sdk/flags` in the background. Evaluation happens **locally** — there is no per-request network call from your code. Env (dev / staging / prod) is **derived from the key**: each key is bound to exactly one environment when you mint it, so you deploy the prod key to prod and the staging key to staging — there is nothing to set in code. (A server key may still override per request with `?env=` for local debugging; client keys cannot — see below.)
 
 **Browser initialisation**
 
@@ -634,7 +634,7 @@ The client key is public — it ships in your browser bundle. Its environment is
 
 **One key, one configure call**
 
-Flags, configs, and kill switches share a single key per side (`apiKey` on the server, `clientKey` in the browser). There is no second configure step — the single `configure()` call boots all of them.
+Flags, configs, and killswitches share a single key per side (`apiKey` on the server, `clientKey` in the browser). There is no second configure step — the single `configure()` call boots all of them.
 
 Don't wrap this in a custom helper file. The SDK owns its own initialisation.
 
@@ -988,7 +988,7 @@ flags.track("checkout_viewed", { source: "nav" });
 #### Server-side rendering bootstrap
 
 For Next.js / Remix / SvelteKit, `configure()` once at startup, then bind a
-`Client` to the request user and read flags, configs and kill switches directly:
+`Client` to the request user and read flags, configs and killswitches directly:
 
 ```tsx title="app/layout.tsx"
 import { configure, Client } from "@shipeasy/sdk/server";
@@ -1041,7 +1041,7 @@ framework provides (Vue's `onMounted` + `onUnmounted`, Svelte's
 
 #### A note on vanilla JS [#vanilla-js]
 
-Every Shipeasy SDK API works from plain JavaScript. You can drop the SDK into a plain `<script>` tag, an Astro island, an HTMX page, or a vanilla TS app, and every primitive — feature flags, configs, kill switches — works without any framework.
+Every Shipeasy SDK API works from plain JavaScript. You can drop the SDK into a plain `<script>` tag, an Astro island, an HTMX page, or a vanilla TS app, and every primitive — feature flags, configs, killswitches — works without any framework.
 
 ### React Native & mobile [#mobile]
 
@@ -1152,14 +1152,14 @@ Shipeasy has exactly two kinds of SDK key. One per entrypoint, one configure cal
 
 ### One key per entrypoint
 
-|            | **Server key**                                | **Client key**                         |
-| ---------- | --------------------------------------------- | -------------------------------------- |
-| Import     | `@shipeasy/sdk/server`                        | `@shipeasy/sdk/client`                 |
-| Field      | `apiKey`                                      | `clientKey`                            |
-| Visibility | **Secret** — never ships to a browser         | **Public** — ships in your bundle      |
-| Reads      | Full rule set (gates, configs, kill switches) | Only client-readable flags and configs |
-| Writes     | Events                                        | Events, rate-limited by domain         |
-| Env        | Bound to one env; may override per request    | **Locked** to its env                  |
+|            | **Server key**                               | **Client key**                         |
+| ---------- | -------------------------------------------- | -------------------------------------- |
+| Import     | `@shipeasy/sdk/server`                       | `@shipeasy/sdk/client`                 |
+| Field      | `apiKey`                                     | `clientKey`                            |
+| Visibility | **Secret** — never ships to a browser        | **Public** — ships in your bundle      |
+| Reads      | Full rule set (gates, configs, killswitches) | Only client-readable flags and configs |
+| Writes     | Events                                       | Events, rate-limited by domain         |
+| Env        | Bound to one env; may override per request   | **Locked** to its env                  |
 
 ```ts
 // Server (root layout / startup) — server key ONLY, passed as apiKey
@@ -7769,11 +7769,11 @@ Each project has its own roster. Open **Team** in the dashboard (`/dashboard/<pr
 
 Membership is role-based. There are three roles:
 
-| Role       | What they can do                                                                                                         |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------ |
-| **Admin**  | Full control. Manage members, billing, and API keys. Publish to production.                                              |
-| **Editor** | Create and edit feature flags, configs, and kill switches. Promote to staging. Cannot publish to prod or invite members. |
-| **Viewer** | Read-only. See dashboards, metrics, and the ops queue. Useful for stakeholders.                                          |
+| Role       | What they can do                                                                                                        |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **Admin**  | Full control. Manage members, billing, and API keys. Publish to production.                                             |
+| **Editor** | Create and edit feature flags, configs, and killswitches. Promote to staging. Cannot publish to prod or invite members. |
+| **Viewer** | Read-only. See dashboards, metrics, and the ops queue. Useful for stakeholders.                                         |
 
 The **owner** of the project is always an admin and can't be removed without first transferring ownership (see [Project settings → Danger zone](https://docs.shipeasy.ai/get-started/modules#danger-zone)).
 
@@ -7842,7 +7842,7 @@ The modules you will see, in the order the tab lists them:
 | **Bugs & feature requests** | In-app bug reports and feature requests captured via the devtools overlay.                    |
 | **Events**                  | Live SDK event stream (evaluations, overrides) shown in the devtools overlay.                 |
 
-Your tab can list more switches than this table — modules for products that are rolling out gradually appear only once they are available to your workspace, and work the same way. Kill switches, metrics, alerts and the ops queue are always on; they have no module switch.
+Your tab can list more switches than this table — modules for products that are rolling out gradually appear only once they are available to your workspace, and work the same way. Killswitches, metrics, alerts and the ops queue are always on; they have no module switch.
 
 > **Modules are per project**
 
@@ -7859,7 +7859,7 @@ The **Notifications** tab manages per-event notification preferences for the pro
 
 ### Billing & plan limits
 
-The **Billing** tab is the whole billing surface: subscription status, upgrade/downgrade, billing interval, assistant credit top-ups, and your current plan's live limits (flags, configs, kill switches, metrics, alert rules, SDK keys, poll interval) with usage against each. It is authoritative — the docs deliberately state no caps or prices; the [pricing page](https://shipeasy.ai/pricing) has the per-plan matrix.
+The **Billing** tab is the whole billing surface: subscription status, upgrade/downgrade, billing interval, assistant credit top-ups, and your current plan's live limits (flags, configs, killswitches, metrics, alert rules, SDK keys, poll interval) with usage against each. It is authoritative — the docs deliberately state no caps or prices; the [pricing page](https://shipeasy.ai/pricing) has the per-plan matrix.
 
 ### Danger zone
 
@@ -7870,7 +7870,7 @@ The **Danger** tab holds the two irreversible, owner-only actions:
 Both actions require you to be the project owner and ask you to confirm the project name.
 
 - **Transfer ownership** — move the project to a different admin, who gains full control. You pick the new owner from the existing active members.
-- **Delete project** — removes all gates, configs, kill switches, metrics, and audit logs after a **14-day grace period**.
+- **Delete project** — removes all gates, configs, killswitches, metrics, and audit logs after a **14-day grace period**.
 
 **Related**
 
@@ -7915,7 +7915,7 @@ Paid plans include a monthly allowance of events and evaluations. Cross **80%** 
 Exceeding the included credit is **informational only** — evaluations and events keep flowing. The
 banner is a heads-up to consider upgrading if the volume is your new normal.
 
-Some resources (flags, configs, kill switches, metrics, alert rules, SDK keys) are hard caps rather than usage meters — exceeding one is rejected with `PLAN_LIMIT` rather than billed.
+Some resources (flags, configs, killswitches, metrics, alert rules, SDK keys) are hard caps rather than usage meters — exceeding one is rejected with `PLAN_LIMIT` rather than billed.
 
 > **Where the numbers live**
 
@@ -8031,7 +8031,7 @@ One package for JavaScript (server + browser) plus seven native server languages
 
 The TypeScript package ships a server and a browser build. Seven native server SDKs — Go, Python, Ruby, Java, Kotlin, PHP, Swift — speak the same wire format and run the same deterministic evaluation locally.
 
-Every Shipeasy SDK is a thin client over two cached blobs — `:flags` (gates + configs + kill switches) and `:experiments`, the longer-lived half of the rule set. The SDK polls them in the background and **evaluates locally**: there is no per-call network round-trip on your hot path.
+Every Shipeasy SDK is a thin client over two cached blobs — `:flags` (gates + configs + killswitches) and `:experiments`, the longer-lived half of the rule set. The SDK polls them in the background and **evaluates locally**: there is no per-call network round-trip on your hot path.
 
 ### The shared evaluation model
 
@@ -8113,13 +8113,13 @@ Defaults are returned **only when a value can't be evaluated** (client not ready
 
 Source: https://docs.shipeasy.ai/sdks/node-typescript
 
-The canonical Shipeasy SDK — one package with a server and a browser build, local evaluation, configs, kill switches, and metric tracking.
+The canonical Shipeasy SDK — one package with a server and a browser build, local evaluation, configs, killswitches, and metric tracking.
 
 > **Note**
 Generated from the TypeScript / JavaScript SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk typescript overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-ts/pages/overview.md`](https://shipeasy-ai.github.io/sdk-ts/pages/overview.md). Edit it in the SDK repo, not here.
 
 `@shipeasy/sdk` is the TypeScript / JavaScript SDK for the [Shipeasy](https://shipeasy.ai)
-hosted platform — feature gates, runtime configs, kill switches, and metrics. It ships **two entrypoints** from one package:
+hosted platform — feature gates, runtime configs, killswitches, and metrics. It ships **two entrypoints** from one package:
 
 - `@shipeasy/sdk/server` — Node, Cloudflare Workers, Deno (authenticates with the **server** key).
 - `@shipeasy/sdk/client` — the browser (authenticates with the public
@@ -8175,7 +8175,7 @@ everywhere you evaluate.
 | [Configuration](https://docs.shipeasy.ai/sdks/reference/typescript/configuration) | `configure()`, `attributes`, env vars, SSR bootstrap |
 | [Flags](https://docs.shipeasy.ai/sdks/reference/typescript/flags) | `getFlag`, `getFlagDetail`, defaults |
 | [Configs](https://docs.shipeasy.ai/sdks/reference/typescript/configs) | `getConfig` typed values + defaults |
-| [Kill switches](https://docs.shipeasy.ai/sdks/reference/typescript/killswitches) | `getKillswitch` semantics |
+| [Killswitches](https://docs.shipeasy.ai/sdks/reference/typescript/killswitches) | `getKillswitch` semantics |
 | [Error reporting](https://docs.shipeasy.ai/sdks/reference/typescript/error-reporting) | `see()` grammar |
 | [Testing](https://docs.shipeasy.ai/sdks/reference/typescript/testing) | `configureForTesting`/`configureForOffline`, `override*` |
 | [OpenFeature](https://docs.shipeasy.ai/sdks/reference/typescript/openfeature) | server + web providers |
@@ -8222,11 +8222,11 @@ const cfg = flags.getConfig<{ max: number }>("billing_copy", {
 });
 ```
 
-### Kill switches
+### Killswitches
 
-Read a kill switch (not user-bound — global on/off, optionally per-switch). Assumes `configure()` ran at startup — see Installation.
+Read a killswitch (not user-bound — global on/off, optionally per-switch). Assumes `configure()` ran at startup — see Installation.
 
-#### Whole kill switch
+#### Whole killswitch
 
 ```ts
 import { Client } from "@shipeasy/sdk/server"; // or "@shipeasy/sdk/client"
@@ -8235,7 +8235,7 @@ import { Client } from "@shipeasy/sdk/server"; // or "@shipeasy/sdk/client"
 const flags = new Client(currentUser);
 
 // getKillswitch(name, switchKey?)
-//   name      — the kill switch name
+//   name      — the killswitch name
 //   switchKey — optional; reads a single named override switch instead of
 //               the whole-killswitch "killed" flag
 if (flags.getKillswitch("payments")) {
@@ -8252,7 +8252,7 @@ const flags = new Client(currentUser); // construct once per callsite
 // own value; an UNCONFIGURED switch falls back to the whole-killswitch "killed"
 // value — so this is always safe to call before any per-key override exists.
 if (flags.getKillswitch("payments", "apple_pay")) {
-  // the "apple_pay" switch is on (or the whole kill switch is killed)
+  // the "apple_pay" switch is on (or the whole killswitch is killed)
 }
 ```
 
@@ -8402,7 +8402,7 @@ Logged-out visitors bucket on a shared first-party `__se_anon_id` cookie, minted
 
 ### DevTools overlay
 
-Press `Shift+Alt+S` on any page running the SDK (or append `?se=1`). The panel mounts in a Shadow DOM overlay and flips every gate / config / kill switch **for the current session only** — for QA, demos, and bug repro.
+Press `Shift+Alt+S` on any page running the SDK (or append `?se=1`). The panel mounts in a Shadow DOM overlay and flips every gate / config / killswitch **for the current session only** — for QA, demos, and bug repro.
 
 ```ts
 import { loadDevtools } from "@shipeasy/sdk/client";
@@ -8465,14 +8465,14 @@ Use `see.Violation("name")` for a non-exception problem and `see.ControlFlowExce
 
 Source: https://docs.shipeasy.ai/sdks/go
 
-The Shipeasy Go server SDK — context-aware client, local evaluation, configs, kill switches, and metric tracking.
+The Shipeasy Go server SDK — context-aware client, local evaluation, configs, killswitches, and metric tracking.
 
 > **Note**
 Generated from the Go SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk go overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-go/pages/overview.md`](https://shipeasy-ai.github.io/sdk-go/pages/overview.md). Edit it in the SDK repo, not here.
 
 `github.com/shipeasy-ai/sdk-go` is the **server-side** Go SDK for
 [Shipeasy](https://shipeasy.ai): feature flags ("gates"), dynamic configs,
-kill switches, metric tracking, and structured error reporting.
+killswitches, metric tracking, and structured error reporting.
 Evaluation is **local** against a cached copy of the edge blobs — there is no
 network call on the hot path.
 
@@ -8539,7 +8539,7 @@ lives in the global config — failing loudly surfaces the misconfiguration).
 - [Configuration](https://docs.shipeasy.ai/sdks/reference/go/configuration) — `Configure` options, env vars, init/poll vs one-shot, change listeners.
 - [Flags](https://docs.shipeasy.ai/sdks/reference/go/flags) — `GetFlag`, `GetFlagOr`, `GetFlagDetail`.
 - [Configs](https://docs.shipeasy.ai/sdks/reference/go/configs) — `GetConfig`, `GetConfigOr`.
-- [Kill switches](https://docs.shipeasy.ai/sdks/reference/go/killswitches) — `GetKillswitch`, named switches.
+- [Killswitches](https://docs.shipeasy.ai/sdks/reference/go/killswitches) — `GetKillswitch`, named switches.
 - [Error reporting](https://docs.shipeasy.ai/sdks/reference/go/error-reporting) — the `See()` surface.
 - [Testing](https://docs.shipeasy.ai/sdks/reference/go/testing) — `ConfigureForTesting`, `ConfigureForOffline`, the `Override*` helpers.
 - [OpenFeature](https://docs.shipeasy.ai/sdks/reference/go/openfeature) — `NewGlobalProvider()`.
@@ -8606,11 +8606,11 @@ v := c.GetConfigOr("billing_copy", map[string]any{"cta": "Buy"}) // name; def
 _ = v
 ```
 
-### Kill switches
+### Killswitches
 
-Check whether the `payments` kill switch is engaged. Assumes `Configure()` ran at startup — see Installation.
+Check whether the `payments` killswitch is engaged. Assumes `Configure()` ran at startup — see Installation.
 
-#### Read a kill switch
+#### Read a killswitch
 
 ```go
 // construct once per callsite (cheap; binds the user)
@@ -8631,7 +8631,7 @@ c := shipeasy.NewClient(shipeasy.User{"user_id": "u_123"})
 
 // GetKillswitch(name, switchKey) — the optional switchKey selects a named
 // per-key override (the dashboard "switches" feature). When that key has no
-// override, it falls back to the kill switch's top-level value.
+// override, it falls back to the killswitch's top-level value.
 if c.GetKillswitch("payments", "eu") {
     // killed for the "eu" variant
 }
@@ -8688,7 +8688,7 @@ The Shipeasy Python server SDK — local evaluation, configs, WSGI/ASGI anon mid
 Generated from the Python SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk python overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-python/pages/overview.md`](https://shipeasy-ai.github.io/sdk-python/pages/overview.md). Edit it in the SDK repo, not here.
 
 `shipeasy` is the **server** SDK for Shipeasy — feature flags, remote configs,
-kill switches, and metric tracking. It uses your **server key**
+killswitches, and metric tracking. It uses your **server key**
 and must never be embedded in a browser.
 
 ### Install
@@ -8844,9 +8844,9 @@ client = shipeasy.Client(current_user)
 max_items = client.get_config("billing_copy", decode=lambda v: v["max"], default=0)
 ```
 
-### Kill switches
+### Killswitches
 
-Check a kill switch on a user-bound client. Assumes `configure()` ran at
+Check a killswitch on a user-bound client. Assumes `configure()` ran at
 startup — see Installation.
 
 #### Top-level guard
@@ -8857,7 +8857,7 @@ import shipeasy
 ## construct once per callsite (cheap; binds the user)
 client = shipeasy.Client(current_user)
 
-## name                          kill switch name (required)
+## name                          killswitch name (required)
 if client.get_killswitch("payments"):  # True == engaged (feature killed)
     return fallback()
 ```
@@ -8870,7 +8870,7 @@ import shipeasy
 client = shipeasy.Client(current_user)
 
 ## switch_key                    the variable you check against the switches
-##                               CONFIGURED on the kill switch (dashboard "switches");
+##                               CONFIGURED on the killswitch (dashboard "switches");
 ##                               if that key isn't configured, falls back to the
 ##                               top-level value above
 provider = "stripe"
@@ -8926,13 +8926,13 @@ client.track("checkout_started")   # properties are optional
 
 Source: https://docs.shipeasy.ai/sdks/ruby
 
-The Shipeasy Ruby gem — fork-safe singleton, Rails railtie, local evaluation, configs, kill switches, and metric tracking.
+The Shipeasy Ruby gem — fork-safe singleton, Rails railtie, local evaluation, configs, killswitches, and metric tracking.
 
 > **Note**
 Generated from the Ruby SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk ruby overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-ruby/pages/overview.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/overview.md). Edit it in the SDK repo, not here.
 
 `shipeasy-sdk` is the server-side Ruby gem for the [Shipeasy](https://shipeasy.ai)
-hosted service: feature gates (flags), dynamic configs, kill switches, metric tracking, and `see()` error reporting. It uses your **server key** and must never be embedded in a browser. It is
+hosted service: feature gates (flags), dynamic configs, killswitches, metric tracking, and `see()` error reporting. It uses your **server key** and must never be embedded in a browser. It is
 Rails-friendly but works in plain Ruby, Sinatra, Hanami, and serverless too.
 
 ### Install
@@ -9063,9 +9063,9 @@ flags = Shipeasy::Client.new(current_user)
 value = flags.get_config("billing_copy", default: "blue")
 ```
 
-### Kill switches
+### Killswitches
 
-Read the kill switch `payments` (true = killed). Assumes
+Read the killswitch `payments` (true = killed). Assumes
 `Shipeasy.configure` ran at startup — see Installation.
 
 #### Whole switch
@@ -9075,7 +9075,7 @@ Read the kill switch `payments` (true = killed). Assumes
 flags = Shipeasy::Client.new(current_user)
 
 ## get_killswitch(name, switch_key = nil)
-##   name       — the kill switch key (required)
+##   name       — the killswitch key (required)
 ##   switch_key — optional named per-key switch to read
 if flags.get_killswitch("payments")
   # killed → take the safe path
@@ -9090,7 +9090,7 @@ flags = Shipeasy::Client.new(current_user)
 provider = "stripe"   # pass the thing you're about to do as the switch key
 
 ## A configured switch returns its own boolean; an unconfigured key falls back to
-## the kill switch's top-level value.
+## the killswitch's top-level value.
 if flags.get_killswitch("payments", provider)
   use_backup_processor
 end
@@ -9140,13 +9140,13 @@ flags.track("checkout_started")   # props are optional
 
 Source: https://docs.shipeasy.ai/sdks/java
 
-The Shipeasy Java server SDK — configure once, bind a Client per request, servlet anon filter, local evaluation, configs, kill switches, and metric tracking.
+The Shipeasy Java server SDK — configure once, bind a Client per request, servlet anon filter, local evaluation, configs, killswitches, and metric tracking.
 
 > **Note**
 Generated from the Java SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk java overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-java/pages/overview.md`](https://shipeasy-ai.github.io/sdk-java/pages/overview.md). Edit it in the SDK repo, not here.
 
 `shipeasy` (`ai.shipeasy:shipeasy`) is the **server-side Java SDK** for
-[Shipeasy](https://shipeasy.ai) — feature flags, dynamic configs, kill switches,
+[Shipeasy](https://shipeasy.ai) — feature flags, dynamic configs, killswitches,
 metric tracking, and `see()` error reporting. Rules are
 evaluated **locally** against a cached blob fetched from the edge, so there is no
 network call per evaluation.
@@ -9202,7 +9202,7 @@ Constructing a `Client` before `configure()` has run throws
 - [Configuration](https://docs.shipeasy.ai/sdks/reference/java/configuration) — `configure()`, the `attributes` transform, one-shot vs background poll, env vars.
 - [Flags](https://docs.shipeasy.ai/sdks/reference/java/flags) — `getFlag`, defaults, `getFlagDetail`.
 - [Configs](https://docs.shipeasy.ai/sdks/reference/java/configs) — `getConfig`, typed values, defaults.
-- [Kill switches](https://docs.shipeasy.ai/sdks/reference/java/killswitches) — `getKillswitch` and named per-key switches.
+- [Killswitches](https://docs.shipeasy.ai/sdks/reference/java/killswitches) — `getKillswitch` and named per-key switches.
 - [Error reporting](https://docs.shipeasy.ai/sdks/reference/java/error-reporting) — `see()` structured error reporting.
 - [Testing](https://docs.shipeasy.ai/sdks/reference/java/testing) — `configureForTesting()` / `configureForOffline()` + the override statics.
 - [OpenFeature](https://docs.shipeasy.ai/sdks/reference/java/openfeature) — the `ShipeasyProvider` server provider.
@@ -9246,9 +9246,9 @@ Object cfg = client.getConfig(
 // one-arg overload returns null when absent: client.getConfig("billing_copy")
 ```
 
-### Kill switches
+### Killswitches
 
-Check whether the kill switch `payments` is killed. Assumes
+Check whether the killswitch `payments` is killed. Assumes
 `configure()` ran at startup — see Installation.
 
 ```java
@@ -9313,14 +9313,14 @@ client.track("checkout_started", Map.of()); // props are optional (pass an empty
 
 Source: https://docs.shipeasy.ai/sdks/kotlin
 
-The Shipeasy Kotlin SDK — pure-JVM core plus an Android client artifact, local evaluation, configs, kill switches, and metric tracking.
+The Shipeasy Kotlin SDK — pure-JVM core plus an Android client artifact, local evaluation, configs, killswitches, and metric tracking.
 
 > **Note**
 Generated from the Kotlin SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk kotlin overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-kotlin/pages/overview.md`](https://shipeasy-ai.github.io/sdk-kotlin/pages/overview.md). Edit it in the SDK repo, not here.
 
 `shipeasy-kotlin` (`ai.shipeasy:shipeasy-kotlin`) is the **server-side** Shipeasy
 SDK for the JVM (and Android-compatible). It evaluates feature flags (gates),
-dynamic configs and kill switches **locally** against rule blobs
+dynamic configs and killswitches **locally** against rule blobs
 it fetches from the Shipeasy edge — no per-evaluation network call on the hot
 path.
 
@@ -9380,7 +9380,7 @@ users bucket identically across launches. It ships in the companion artifact
 - [Configuration](https://docs.shipeasy.ai/sdks/reference/kotlin/configuration) — `configure()` in full, the `attributes` transform, init/poll.
 - [Flags](https://docs.shipeasy.ai/sdks/reference/kotlin/flags) — `getFlag` / `getFlagDetail`.
 - [Configs](https://docs.shipeasy.ai/sdks/reference/kotlin/configs) — `getConfig`.
-- [Kill switches](https://docs.shipeasy.ai/sdks/reference/kotlin/killswitches) — `getKillswitch`.
+- [Killswitches](https://docs.shipeasy.ai/sdks/reference/kotlin/killswitches) — `getKillswitch`.
 - [Error reporting](https://docs.shipeasy.ai/sdks/reference/kotlin/error-reporting) — `see()` structured error reporting.
 - [Testing](https://docs.shipeasy.ai/sdks/reference/kotlin/testing) — `configureForTesting()` / `configureForOffline()` + the override helpers.
 - [OpenFeature](https://docs.shipeasy.ai/sdks/reference/kotlin/openfeature) — provider availability.
@@ -9421,9 +9421,9 @@ val flags = Client(currentUser)
 val value = flags.getConfig("billing_copy", default = "Pay now")
 ```
 
-### Kill switches
+### Killswitches
 
-Check a kill switch — `true` means the feature is killed. Assumes `configure()`
+Check a killswitch — `true` means the feature is killed. Assumes `configure()`
 ran at startup — see [Installation](https://docs.shipeasy.ai/sdks/reference/kotlin/installation).
 
 ```kotlin
@@ -9433,7 +9433,7 @@ import ai.shipeasy.Client
 val flags = Client(currentUser)
 
 // getKillswitch(name, switchKey = null): without switchKey → true when the whole
-// kill switch is killed; with switchKey → true when that named per-key override
+// killswitch is killed; with switchKey → true when that named per-key override
 // is on (an unconfigured key falls back to the top-level value).
 if (flags.getKillswitch("payments", switchKey = null)) {
     return serviceUnavailable()   // killed — short-circuit
@@ -9489,13 +9489,13 @@ flags.track("checkout_started")   // props are optional (default emptyMap())
 
 Source: https://docs.shipeasy.ai/sdks/php
 
-The Shipeasy PHP server SDK — PHP-FPM friendly per-request init, local evaluation, configs, kill switches, and metric tracking.
+The Shipeasy PHP server SDK — PHP-FPM friendly per-request init, local evaluation, configs, killswitches, and metric tracking.
 
 > **Note**
 Generated from the PHP SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk php overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-php/pages/overview.md`](https://shipeasy-ai.github.io/sdk-php/pages/overview.md). Edit it in the SDK repo, not here.
 
 `shipeasy/shipeasy` is the **PHP server SDK** for Shipeasy — feature flags
-(gates), dynamic configs, kill switches, metric tracking,
+(gates), dynamic configs, killswitches, metric tracking,
 and `see()` error reporting. It targets **PHP 8.1+** and runs
 anywhere PHP runs: plain PHP, Laravel, Symfony, WordPress, Slim. It is PHP-FPM
 friendly — `Shipeasy\configure()` fetches once per request, with **no background
@@ -9541,7 +9541,7 @@ $client = new Client($currentUser);                // construct once per callsit
 
 $enabled = $client->getFlag('new_checkout');                       // gate
 $copy    = $client->getConfig('billing_copy');                     // dynamic config
-$panic   = $client->getKillswitch('payments_panic');               // kill switch
+$panic   = $client->getKillswitch('payments_panic');               // killswitch
 $client->track('checkout_completed', ['amount' => 49]);            // metric event
 ```
 
@@ -9564,7 +9564,7 @@ all backed by the same configured SDK, so you never construct anything heavy:
 - [Configuration](https://docs.shipeasy.ai/sdks/reference/php/configuration) — the `configure()` options in detail.
 - [Flags](https://docs.shipeasy.ai/sdks/reference/php/flags) — `getFlag` / `getFlagDetail`.
 - [Configs](https://docs.shipeasy.ai/sdks/reference/php/configs) — `getConfig`.
-- [Kill switches](https://docs.shipeasy.ai/sdks/reference/php/killswitches) — `getKillswitch`.
+- [Killswitches](https://docs.shipeasy.ai/sdks/reference/php/killswitches) — `getKillswitch`.
 - [Error reporting](https://docs.shipeasy.ai/sdks/reference/php/error-reporting) — `see()` / `controlFlowException()`.
 - [Testing](https://docs.shipeasy.ai/sdks/reference/php/testing) — `configureForTesting()` / `configureForOffline()` + overrides.
 - [OpenFeature](https://docs.shipeasy.ai/sdks/reference/php/openfeature) — `ShipeasyProvider`.
@@ -9606,9 +9606,9 @@ $value = $client->getConfig(
 );
 ```
 
-### Kill switches
+### Killswitches
 
-Read a kill switch (global panic boolean). Assumes `Shipeasy\configure()` ran at
+Read a killswitch (global panic boolean). Assumes `Shipeasy\configure()` ran at
 startup — see Installation.
 
 ```php
@@ -9618,7 +9618,7 @@ use Shipeasy\Client;
 $client = new Client($currentUser);
 
 $panic = $client->getKillswitch(
-    'payments',   // kill switch name
+    'payments',   // killswitch name
     null,                   // optional $switchKey — read a named per-key override
 );                          //   (null = top-level value; unconfigured key falls back to it too)
 ```
@@ -9672,13 +9672,13 @@ $client->track('checkout_started');   // $props are optional
 
 Source: https://docs.shipeasy.ai/sdks/swift
 
-The Shipeasy Swift SDK — a native client SDK on SwiftPM, authenticating with the public client key, for flags, configs, kill switches, and metric tracking.
+The Shipeasy Swift SDK — a native client SDK on SwiftPM, authenticating with the public client key, for flags, configs, killswitches, and metric tracking.
 
 > **Note**
 Generated from the Swift SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk swift overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-swift/pages/overview.md`](https://shipeasy-ai.github.io/sdk-swift/pages/overview.md). Edit it in the SDK repo, not here.
 
 `Shipeasy` is the **native client** Swift SDK for [Shipeasy](https://shipeasy.ai) —
-feature flags, dynamic configs, and kill switches for an
+feature flags, dynamic configs, and killswitches for an
 iOS / macOS / tvOS / watchOS app. It uses a **public client key** (`pk_…`, safe
 to embed in a shipped app), evaluates one device user server-side over
 `POST /sdk/evaluate`, and serves cheap local reads from the cached response.
@@ -9779,9 +9779,9 @@ let copy = await shipeasyClient()?.getConfig("billing_copy", default: ["headline
 let headline = (copy as? [String: Any])?["headline"] as? String
 ```
 
-### Kill switches
+### Killswitches
 
-Check whether the kill switch `payments` is engaged (`true` = killed)
+Check whether the killswitch `payments` is engaged (`true` = killed)
 from the configured `ShipeasyClient`. Assumes `configureClient(...)` ran at startup
 — see Installation.
 
@@ -9796,7 +9796,7 @@ let killed = await shipeasyClient()?.getKillswitch("payments") ?? false
 
 ```swift
 // switchKey: read one named override (e.g. per region); an unset key falls back
-// to the kill switch's top-level value
+// to the killswitch's top-level value
 let killedEu = await shipeasyClient()?.getKillswitch("payments", switchKey: "eu_region") ?? false
 ```
 
@@ -10243,9 +10243,9 @@ snapshot too.
 
 Source: https://docs.shipeasy.ai/sdks/devtools-overlay
 
-A browser overlay to flip any gate, config, or kill switch for the current session — for QA, demos, and bug repro.
+A browser overlay to flip any gate, config, or killswitch for the current session — for QA, demos, and bug repro.
 
-The browser SDK ships an in-page devtools panel. Open it on any page running the SDK and flip every gate, config, or kill switch **for your current session only** — without redeploying or touching the dashboard.
+The browser SDK ships an in-page devtools panel. Open it on any page running the SDK and flip every gate, config, or killswitch **for your current session only** — without redeploying or touching the dashboard.
 
 ### Open it
 
@@ -10455,7 +10455,7 @@ The provider maps Shipeasy [evaluation reasons](https://docs.shipeasy.ai/sdks/re
 
 The provider changes nothing about evaluation — it's a thin translation layer. If you're not
 already invested in OpenFeature, the native <a href="/sdks/node-typescript">SDK API</a> is simpler
-and gives you configs, kill switches, and tracking directly.
+and gives you configs, killswitches, and tracking directly.
 
 **Related**
 
@@ -12016,7 +12016,7 @@ Other classic shapes:
 ```json title="copy/hero"
 {
   "headline": "Ship features 10× faster",
-  "sub": "Flags, configs, and kill switches — one SDK.",
+  "sub": "Flags, configs, and killswitches — one SDK.",
   "cta_label": "Start free"
 }
 ```
@@ -13702,7 +13702,7 @@ untouched.
 Spot-check <code>getBooleanDetails</code> reasons in staging, then ship. Drop the old vendor's
 dependency once nothing imports it.
 
-Once you're stable, weigh dropping OpenFeature for the [native SDK](https://docs.shipeasy.ai/sdks/node-typescript) — it's simpler and gives you configs, kill switches, and tracking directly. But the migration itself is the cheap part precisely because the provider is a drop-in.
+Once you're stable, weigh dropping OpenFeature for the [native SDK](https://docs.shipeasy.ai/sdks/node-typescript) — it's simpler and gives you configs, killswitches, and tracking directly. But the migration itself is the cheap part precisely because the provider is a drop-in.
 
 **Related**
 
@@ -13720,7 +13720,7 @@ Use the devtools overlay (Shift+Alt+S / ?se=1) and ?se_gate_… URL overrides to
 
 A flag is built but sitting at 0%, and QA needs to verify it before you ramp. You don't want to flip the dashboard (that's everyone) and you don't want a special build (that's a deploy). You want to see the feature on your own screen, right now — and ideally hand a teammate a link that reproduces the exact state.
 
-The browser SDK ships a [devtools overlay](https://docs.shipeasy.ai/sdks/devtools-overlay) for precisely this: flip any gate, config, or kill switch **for your session only**.
+The browser SDK ships a [devtools overlay](https://docs.shipeasy.ai/sdks/devtools-overlay) for precisely this: flip any gate, config, or killswitch **for your session only**.
 
 ### Open the overlay
 
@@ -15253,7 +15253,7 @@ records each one with the level either side of it. They show on the metric's
 detail panel, newest first, under **Level shifts**.
 
 Beside each one, where there is a match, sits the nearest change you made in the
-half hour before it: a gate rolled out, a config edited, a kill switch armed.
+half hour before it: a gate rolled out, a config edited, a killswitch armed.
 That is a **correlation, not a cause** — the flag that went
 to 50% four minutes earlier is usually the reason and sometimes a coincidence,
 and the panel says "around" rather than "because" for exactly that reason. A
@@ -15418,7 +15418,7 @@ Mount the in-app devtools overlay so you and your team can file bugs and feature
 The **devtools overlay** is the in-app panel behind every bug report and feature
 request. It mounts as an isolated, shadow-DOM floating rail on your own site,
 captures the page context for you, and posts straight into your project's feedback
-queue. The same overlay also surfaces your flags, configs and kill switches, so
+queue. The same overlay also surfaces your flags, configs and killswitches, so
 it doubles as a control panel while you're building.
 
 It ships as a standalone script that works on **any platform** — Next.js, Rails,
@@ -15613,7 +15613,7 @@ fingerprint, surface on the **Errors** page, and auto-file a ticket once
 they cross a threshold.
 
 There is no separate error SDK and no second API key. `see()` rides the same
-`configure()` call as flags, configs, and kill switches — the server passes its
+`configure()` call as flags, configs, and killswitches — the server passes its
 server key, the browser its client key.
 
 ### The shape
@@ -15966,7 +15966,7 @@ feature requests, alerts, error spikes and platform events post into your
 channel as cards. That part works on **every plan**. On **Pro and above** the
 same workspace connection also becomes a front-end: you act on the cards with
 their buttons, run `/shipeasy`, and talk to **@Shipeasy** in plain language to
-create and change flags, configs, kill switches, alerts and metrics without
+create and change flags, configs, killswitches, alerts and metrics without
 opening the dashboard.
 
 | What you do in Slack                                               | Plan          |
@@ -16016,7 +16016,7 @@ entire platform:
 | ------------------- | ----------------------------------------------------------------------- |
 | **Feature flags**   | create a flag, roll it out to a %, choose who sees it, turn it on/off   |
 | **Dynamic configs** | create a config, change what it returns                                 |
-| **Kill switches**   | create one, flip it on or off                                           |
+| **Killswitches**    | create one, flip it on or off                                           |
 | **Alerts**          | tell you when a number gets too high or too low                         |
 | **Metrics**         | start tracking something people do                                      |
 | **Just ask**        | list what you have, check how a metric is moving, "what changed today?" |
@@ -16028,8 +16028,8 @@ entire platform:
 It's just as good at **reading** and **changing** what already exists:
 
 > what changed today?
-> 📋 3 changes today: the new pricing page flag went to 50%, the payments kill switch was created, and the checkout copy config was published to prod.
-> Ask questions too — @Shipeasy reads your flags, configs, kill switches and metrics and answers in the thread.
+> 📋 3 changes today: the new pricing page flag went to 50%, the payments killswitch was created, and the checkout copy config was published to prod.
+> Ask questions too — @Shipeasy reads your flags, configs, killswitches and metrics and answers in the thread.
 
 > roll the new pricing page out to half of everyone
 > ✅ The new pricing page is now live for 50% of users in prod.
@@ -16054,7 +16054,7 @@ When a specific error caught by [`see()`](https://docs.shipeasy.ai/feedback/erro
 **spiking**, that lands too — with a little chart of the last hour so you can see
 how bad it is at a glance, and the same resolve / dismiss / mute controls:
 
-Flip a kill switch and the channel offers a one-click revert; publish a config to
+Flip a killswitch and the channel offers a one-click revert; publish a config to
 prod and the change is announced with a link:
 
 On Pro and above, every action writes straight back into Shipeasy, records an
@@ -16065,7 +16065,7 @@ audit entry, stamps who did it, and recolours the card. `Acknowledge` and
 | -------------------------------- | ----------------------------------------------------------------------------------------------- |
 | **Alert triggered**              | `Resolve` · `Dismiss` · `Mute rule` (disables the rule that fired) · `File an issue` (any plan) |
 | **Error spiking** (from `see()`) | `Resolve` · `Dismiss` · `Mute this error` (with a trend chart) · `File an issue` (any plan)     |
-| **Kill switch flipped**          | `Flip back` (one-click revert)                                                                  |
+| **Killswitch flipped**           | `Flip back` (one-click revert)                                                                  |
 | **Config published to prod**     | `Acknowledge`                                                                                   |
 | **Agent needs your attention**   | `Open the issue ↗` · `Acknowledge`                                                              |
 | Weekly digest · New team member  | _(informational — link only)_                                                                   |
@@ -16075,7 +16075,7 @@ column is live once Slack is connected).
 
 > **Privileged actions check your membership**
 
-Flipping a kill switch, publishing a config, and muting an alert rule go through the real admin
+Flipping a killswitch, publishing a config, and muting an alert rule go through the real admin
 path (so the change propagates) and verify **you're a member of the project** first. If you're
 not, only you see a quiet "ask an admin to invite you" — the shared card is untouched for everyone
 else.
@@ -16122,7 +16122,7 @@ For anything beyond a quick alert, just talk to **@Shipeasy**.
 ### Drive Shipeasy from Slack's AI
 
 If you'd rather use **Slack's own AI assistant**, Shipeasy is also available there
-as an MCP connection — the same flags, configs, kill switches, metrics and
+as an MCP connection — the same flags, configs, killswitches, metrics and
 ops queue. Your workspace admin enables it once under the Slack App's **MCP Server
 Connection** (Slack identity auth); after that, ask Slack's assistant to manage
 Shipeasy and it calls through to your project under the same membership check.
@@ -16688,7 +16688,7 @@ Source: https://docs.shipeasy.ai/assistant
 
 The in-dashboard AI assistant — what it is, how read and write modes differ, what it renders, and how it meters credits.
 
-A chat assistant built into the dashboard. It reads your project to answer questions, and proposes every change as a card you confirm — feature flags, configs, kill switches, metrics, and alert rules. Nothing happens until you approve it.
+A chat assistant built into the dashboard. It reads your project to answer questions, and proposes every change as a card you confirm — feature flags, configs, killswitches, metrics, and alert rules. Nothing happens until you approve it.
 
 ### What it is
 
@@ -16721,7 +16721,7 @@ whole "measure this" ask, that's an approvable plan that creates what it can and
 
 - **[Choice chooser](https://docs.shipeasy.ai/assistant/cards-and-plans)** — When it needs a decision to continue (`ask_user`), it asks with clickable options instead of a numbered list — optionally with a free-text "Something else…" field.
 
-- **[Confirmation cards](https://docs.shipeasy.ai/assistant/cards-and-plans)** — Feature flags, configs, kill switches, metrics, and alert rules — each an editable card you tweak, then **Confirm** to apply.
+- **[Confirmation cards](https://docs.shipeasy.ai/assistant/cards-and-plans)** — Feature flags, configs, killswitches, metrics, and alert rules — each an editable card you tweak, then **Confirm** to apply.
 
 - **[Plan cards](https://docs.shipeasy.ai/assistant/cards-and-plans)** — Multi-step work (`suggest_plan`) as an approvable plan: **instant** resources created on the spot, plus **ship** code work captured for your team.
 
@@ -16854,7 +16854,7 @@ A confirmation card is a form pre-filled with the assistant's proposal. Every wr
 
 - `Feature flag` (card) — Name, targeting rules, rollout %, default — edit before you create.
 - `Dynamic config` (card) — Key, typed value, targeting. Adjust the value and ship.
-- `Kill switch` (card) — Name and default. Confirm to add the break-glass switch.
+- `Killswitch` (card) — Name and default. Confirm to add the break-glass switch.
 - `Metric / alert rule` (card) — Event, aggregation, threshold, severity — from metrics_create and ops_alerts_create.
 - `Queue item` (card) — Title, kind, priority, owner — from ops_create, before anything is filed.
 
@@ -17054,7 +17054,7 @@ Sometimes you just want answers, not changes. In [read mode](https://docs.shipea
 
 > **You:** "Which feature flags are still at 100% but haven't been touched in 90 days? Any I can retire?"
 
-It queries your flags, configs and kill switches and answers in the chat — listing flags stuck at 100% for months, configs no targeting rule references, and kill switches nobody has exercised. It cites what it found; you decide what to clean up.
+It queries your flags, configs and killswitches and answers in the chat — listing flags stuck at 100% for months, configs no targeting rule references, and killswitches nobody has exercised. It cites what it found; you decide what to clean up.
 
 - `Read mode` (execute) — Queries run immediately and answer in chat — no card, nothing changes.
 - `Write mode` (confirm) — Every mutation surfaces as an editable card you approve first.
@@ -17249,5 +17249,48 @@ individually. If one is close to what you need, start from its section links abo
 if you want the smaller, single-primitive recipes, the
 [Flags & Configs case studies](https://docs.shipeasy.ai/flags/case-studies) are the next
 level down.
+
+---
+
+## Changelog
+
+Source: https://docs.shipeasy.ai/changelog
+
+Where to find what changed in Shipeasy — SDK releases, CLI versions, and the docs themselves.
+
+Shipeasy ships continuously, so there is no single release train to announce. Each piece with a version number keeps its own release history, and this page points at all of them. Nothing here is copied by hand, so it never goes stale.
+
+### SDKs
+
+Every SDK publishes a tagged release for each version, with notes on what changed. Pin the version you run and read the notes before you bump it.
+
+| SDK                                        | Release history                                                     |
+| ------------------------------------------ | ------------------------------------------------------------------- |
+| [Node / TypeScript](https://docs.shipeasy.ai/sdks/node-typescript) | [GitHub releases](https://github.com/shipeasy-ai/sdk-ts/releases)   |
+| [Python](https://docs.shipeasy.ai/sdks/python)                     | [GitHub tags](https://github.com/shipeasy-ai/sdk-python/tags)       |
+| [Go](https://docs.shipeasy.ai/sdks/go)                             | [GitHub tags](https://github.com/shipeasy-ai/sdk-go/tags)           |
+| [Ruby](https://docs.shipeasy.ai/sdks/ruby)                         | [GitHub releases](https://github.com/shipeasy-ai/sdk-ruby/releases) |
+| [PHP](https://docs.shipeasy.ai/sdks/php)                           | [GitHub tags](https://github.com/shipeasy-ai/sdk-php/tags)          |
+| [Java](https://docs.shipeasy.ai/sdks/java)                         | [GitHub tags](https://github.com/shipeasy-ai/sdk-java/tags)         |
+| [Kotlin](https://docs.shipeasy.ai/sdks/kotlin)                     | [GitHub tags](https://github.com/shipeasy-ai/sdk-kotlin/tags)       |
+| [Swift](https://docs.shipeasy.ai/sdks/swift)                       | [GitHub tags](https://github.com/shipeasy-ai/sdk-swift/tags)        |
+
+### CLI and MCP server
+
+The CLI and the MCP server are published to npm as `@shipeasy/cli` and `@shipeasy/mcp`. Check which version you have installed:
+
+```bash
+shipeasy --version
+```
+
+Every published version is listed on the [`@shipeasy/cli` versions page](https://www.npmjs.com/package/@shipeasy/cli?activeTab=versions). Running the CLI through `npx -y @shipeasy/cli@latest` always uses the newest release — see [Install](https://docs.shipeasy.ai/get-started/install).
+
+### The dashboard and the API
+
+The dashboard and the Admin API deploy continuously, so they have no version to pin. The [API reference](https://docs.shipeasy.ai/api) is generated from the same spec the CLI and MCP server are built from, so it always matches what is live.
+
+### The docs
+
+Pages show when they last changed, and the whole site is versioned in the [docs repository](https://github.com/shipeasy-ai/docs/commits/main). To get an agent-readable snapshot of the current docs, see [llms.txt](https://docs.shipeasy.ai/get-started/llms).
 
 ---

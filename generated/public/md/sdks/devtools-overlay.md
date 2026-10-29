@@ -2,9 +2,9 @@
 
 Source: https://docs.shipeasy.ai/sdks/devtools-overlay
 
-> A browser overlay to flip any gate, config, or kill switch for the current session — for QA, demos, and bug repro.
+> A browser overlay to flip any gate, config, or killswitch for the current session — for QA, demos, and bug repro.
 
-The browser SDK ships an in-page devtools panel. Open it on any page running the SDK and flip every gate, config, or kill switch **for your current session only** — without redeploying or touching the dashboard.
+The browser SDK ships an in-page devtools panel. Open it on any page running the SDK and flip every gate, config, or killswitch **for your current session only** — without redeploying or touching the dashboard.
 
 ## Open it
 

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: { default: "Shipeasy Docs", template: "%s — Shipeasy Docs" },
   description:
-    "Shipeasy developer documentation. Guides and API reference for feature flags, kill switches, runtime configs, metrics and alerts — all served from the edge.",
+    "Shipeasy developer documentation. Guides and API reference for feature flags, killswitches, runtime configs, metrics and alerts — all served from the edge.",
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     siteName: "Shipeasy Docs",
     title: "Shipeasy Docs — Feature Flags, Configs & Metrics",
     description:
-      "Developer docs for Shipeasy: feature flags, kill switches, runtime configs, metrics and alerts. Install via MCP in 12 seconds.",
+      "Developer docs for Shipeasy: feature flags, killswitches, runtime configs, metrics and alerts. Install via MCP in 12 seconds.",
     images: [
       {
         url: "https://shipeasy.ai/opengraph-image.png",
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Shipeasy Docs — Feature Flags, Configs & Metrics",
     description:
-      "Developer docs for feature flags, kill switches, runtime configs, metrics and alerts. Served from the edge.",
+      "Developer docs for feature flags, killswitches, runtime configs, metrics and alerts. Served from the edge.",
     images: ["https://shipeasy.ai/opengraph-image.png"],
     creator: "@shipeasyai",
   },
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
 };
 
 const PRODUCT_DESCRIPTIONS: Record<string, string> = {
-  "Flags & Configs": "Gates, configs & kill switches",
+  "Flags & Configs": "Gates, configs & killswitches",
   "Bugs & Requests": "Bug reports & feature requests",
 };
 

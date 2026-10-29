@@ -6,7 +6,7 @@ Source: https://docs.shipeasy.ai/flags/case-studies/qa-with-devtools
 
 A flag is built but sitting at 0%, and QA needs to verify it before you ramp. You don't want to flip the dashboard (that's everyone) and you don't want a special build (that's a deploy). You want to see the feature on your own screen, right now — and ideally hand a teammate a link that reproduces the exact state.
 
-The browser SDK ships a [devtools overlay](https://docs.shipeasy.ai/sdks/devtools-overlay) for precisely this: flip any gate, config, or kill switch **for your session only**.
+The browser SDK ships a [devtools overlay](https://docs.shipeasy.ai/sdks/devtools-overlay) for precisely this: flip any gate, config, or killswitch **for your session only**.
 
 ## Open the overlay
 

@@ -2,13 +2,13 @@
 
 Source: https://docs.shipeasy.ai/sdks/node-typescript
 
-> The canonical Shipeasy SDK — one package with a server and a browser build, local evaluation, configs, kill switches, and metric tracking.
+> The canonical Shipeasy SDK — one package with a server and a browser build, local evaluation, configs, killswitches, and metric tracking.
 
 > **Note**
 Generated from the TypeScript / JavaScript SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk typescript overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-ts/pages/overview.md`](https://shipeasy-ai.github.io/sdk-ts/pages/overview.md). Edit it in the SDK repo, not here.
 
 `@shipeasy/sdk` is the TypeScript / JavaScript SDK for the [Shipeasy](https://shipeasy.ai)
-hosted platform — feature gates, runtime configs, kill switches, and metrics. It ships **two entrypoints** from one package:
+hosted platform — feature gates, runtime configs, killswitches, and metrics. It ships **two entrypoints** from one package:
 
 - `@shipeasy/sdk/server` — Node, Cloudflare Workers, Deno (authenticates with the **server** key).
 - `@shipeasy/sdk/client` — the browser (authenticates with the public
@@ -64,7 +64,7 @@ everywhere you evaluate.
 | [Configuration](https://docs.shipeasy.ai/sdks/reference/typescript/configuration) | `configure()`, `attributes`, env vars, SSR bootstrap |
 | [Flags](https://docs.shipeasy.ai/sdks/reference/typescript/flags) | `getFlag`, `getFlagDetail`, defaults |
 | [Configs](https://docs.shipeasy.ai/sdks/reference/typescript/configs) | `getConfig` typed values + defaults |
-| [Kill switches](https://docs.shipeasy.ai/sdks/reference/typescript/killswitches) | `getKillswitch` semantics |
+| [Killswitches](https://docs.shipeasy.ai/sdks/reference/typescript/killswitches) | `getKillswitch` semantics |
 | [Error reporting](https://docs.shipeasy.ai/sdks/reference/typescript/error-reporting) | `see()` grammar |
 | [Testing](https://docs.shipeasy.ai/sdks/reference/typescript/testing) | `configureForTesting`/`configureForOffline`, `override*` |
 | [OpenFeature](https://docs.shipeasy.ai/sdks/reference/typescript/openfeature) | server + web providers |
@@ -111,11 +111,11 @@ const cfg = flags.getConfig<{ max: number }>("billing_copy", {
 });
 ```
 
-## Kill switches
+## Killswitches
 
-Read a kill switch (not user-bound — global on/off, optionally per-switch). Assumes `configure()` ran at startup — see Installation.
+Read a killswitch (not user-bound — global on/off, optionally per-switch). Assumes `configure()` ran at startup — see Installation.
 
-### Whole kill switch
+### Whole killswitch
 
 ```ts
 import { Client } from "@shipeasy/sdk/server"; // or "@shipeasy/sdk/client"
@@ -124,7 +124,7 @@ import { Client } from "@shipeasy/sdk/server"; // or "@shipeasy/sdk/client"
 const flags = new Client(currentUser);
 
 // getKillswitch(name, switchKey?)
-//   name      — the kill switch name
+//   name      — the killswitch name
 //   switchKey — optional; reads a single named override switch instead of
 //               the whole-killswitch "killed" flag
 if (flags.getKillswitch("payments")) {
@@ -141,7 +141,7 @@ const flags = new Client(currentUser); // construct once per callsite
 // own value; an UNCONFIGURED switch falls back to the whole-killswitch "killed"
 // value — so this is always safe to call before any per-key override exists.
 if (flags.getKillswitch("payments", "apple_pay")) {
-  // the "apple_pay" switch is on (or the whole kill switch is killed)
+  // the "apple_pay" switch is on (or the whole killswitch is killed)
 }
 ```
 

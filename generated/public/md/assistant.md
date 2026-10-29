@@ -4,7 +4,7 @@ Source: https://docs.shipeasy.ai/assistant
 
 > The in-dashboard AI assistant — what it is, how read and write modes differ, what it renders, and how it meters credits.
 
-A chat assistant built into the dashboard. It reads your project to answer questions, and proposes every change as a card you confirm — feature flags, configs, kill switches, metrics, and alert rules. Nothing happens until you approve it.
+A chat assistant built into the dashboard. It reads your project to answer questions, and proposes every change as a card you confirm — feature flags, configs, killswitches, metrics, and alert rules. Nothing happens until you approve it.
 
 ## What it is
 
@@ -37,7 +37,7 @@ whole "measure this" ask, that's an approvable plan that creates what it can and
 
 - **[Choice chooser](https://docs.shipeasy.ai/assistant/cards-and-plans)** — When it needs a decision to continue (`ask_user`), it asks with clickable options instead of a numbered list — optionally with a free-text "Something else…" field.
 
-- **[Confirmation cards](https://docs.shipeasy.ai/assistant/cards-and-plans)** — Feature flags, configs, kill switches, metrics, and alert rules — each an editable card you tweak, then **Confirm** to apply.
+- **[Confirmation cards](https://docs.shipeasy.ai/assistant/cards-and-plans)** — Feature flags, configs, killswitches, metrics, and alert rules — each an editable card you tweak, then **Confirm** to apply.
 
 - **[Plan cards](https://docs.shipeasy.ai/assistant/cards-and-plans)** — Multi-step work (`suggest_plan`) as an approvable plan: **instant** resources created on the spot, plus **ship** code work captured for your team.
 

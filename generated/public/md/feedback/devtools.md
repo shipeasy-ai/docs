@@ -7,7 +7,7 @@ Source: https://docs.shipeasy.ai/feedback/devtools
 The **devtools overlay** is the in-app panel behind every bug report and feature
 request. It mounts as an isolated, shadow-DOM floating rail on your own site,
 captures the page context for you, and posts straight into your project's feedback
-queue. The same overlay also surfaces your flags, configs and kill switches, so
+queue. The same overlay also surfaces your flags, configs and killswitches, so
 it doubles as a control panel while you're building.
 
 It ships as a standalone script that works on **any platform** — Next.js, Rails,

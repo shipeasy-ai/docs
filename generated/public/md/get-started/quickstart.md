@@ -6,7 +6,7 @@ Source: https://docs.shipeasy.ai/get-started/quickstart
 
 One SDK, one CLI, one configure call. Create a flag at 0%, wrap your code, then ramp it from your terminal. No card required.
 
-This is the universal path. Every product — gates, configs, kill switches, metrics — starts here, then branches. If you only read one page, read this one.
+This is the universal path. Every product — gates, configs, killswitches, metrics — starts here, then branches. If you only read one page, read this one.
 
 **Add the SDK and CLI**
 
@@ -36,7 +36,7 @@ Full flow, including CI tokens, lives in [Authenticate](https://docs.shipeasy.ai
 // app/layout.tsx — runs once per cold start\nimport { configure } from "@shipeasy/sdk/server";\nconfigure({ apiKey: process.env.SHIPEASY_SERVER_KEY ?? "", attributes: (u) => ({ user_id: u.id, plan: u.plan }) });
 ```
 
-The single `configure()` call boots flags, configs **and** kill switches. The server SDK polls the
+The single `configure()` call boots flags, configs **and** killswitches. The server SDK polls the
 rule set in the background and evaluates **locally** — there is no per-request network hop. Env
 (dev / staging / prod) is derived from the key, not from a query param. See [Keys &
 environments](https://docs.shipeasy.ai/get-started/keys-and-environments).
@@ -214,13 +214,13 @@ Same single configure call, public client key, then a user-bound `Client` whose 
 
 You have a flag ramping. Pick where to go deeper.
 
-- **[Gates](https://docs.shipeasy.ai/flags/gates/quickstart)** — Targeting rules, per-condition rollouts, gradual ramps, and kill switches.
+- **[Gates](https://docs.shipeasy.ai/flags/gates/quickstart)** — Targeting rules, per-condition rollouts, gradual ramps, and killswitches.
 
 - **[Configs](https://docs.shipeasy.ai/flags/configs/quickstart)** — Typed JSON values you change at runtime — limits, copy, thresholds — without a deploy.
 
 - **[Metrics & alerts](https://docs.shipeasy.ai/metrics/quickstart)** — Turn the events you already log into a number, then have a threshold rule watch it for you.
 
-- **[Kill switches](https://docs.shipeasy.ai/flags/killswitches/quickstart)** — One switch that turns a subsystem off everywhere, without a deploy or a rollout ramp.
+- **[Killswitches](https://docs.shipeasy.ai/flags/killswitches/quickstart)** — One switch that turns a subsystem off everywhere, without a deploy or a rollout ramp.
 
 **Related**
 

@@ -16,7 +16,7 @@ whole admin API:
 | Capability           | Operations                                                                               |
 | -------------------- | ---------------------------------------------------------------------------------------- |
 | File a public ticket (client key) | `createPublicBug`, `createPublicFeatureRequest`                                           |
-| Toggle a kill switch | `toggleKillswitch`                                                                        |
+| Toggle a killswitch | `toggleKillswitch`                                                                        |
 | Manage a whitelist   | `getGateWhitelist`, `setGateWhitelist`, `addToGateWhitelist`, `removeFromGateWhitelist`   |
 
 Everything else in the admin API — listing, generic CRUD, experiments, metrics,
@@ -102,7 +102,7 @@ $admin->ops()->createPublicFeatureRequest(new CreatePublicFeatureRequestRequest(
 ]));
 ```
 
-## Toggle a kill switch
+## Toggle a killswitch
 
 `toggleKillswitch` reads the current value and publishes its opposite in one
 call. Every body field is optional, so it widens from "flip it" to "set exactly
@@ -114,7 +114,7 @@ use Shipeasy\Admin\Generated\Model\ToggleKillswitchRequest;
 
 $ks = 'payments.checkout'; // id (ksw_…) or name
 
-// Flip the kill switch itself on prod — no body at all.
+// Flip the killswitch itself on prod — no body at all.
 $admin->killswitch()->toggleKillswitch($ks);
 
 // Flip one nested sub-switch on prod (created off→on if it doesn't exist yet).

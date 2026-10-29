@@ -1,6 +1,6 @@
 ---
 title: "Swift"
-description: "The Shipeasy Swift SDK — a native client SDK on SwiftPM, authenticating with the public client key, for flags, configs, kill switches, and metric tracking."
+description: "The Shipeasy Swift SDK — a native client SDK on SwiftPM, authenticating with the public client key, for flags, configs, killswitches, and metric tracking."
 ---
 
 <DocMeta status="Production ready" read="4 min read" updated="August 9, 2026" works="iOS 15+ · macOS 12+ · tvOS 15+ · watchOS 8+ · SwiftPM" />
@@ -8,7 +8,7 @@ description: "The Shipeasy Swift SDK — a native client SDK on SwiftPM, authent
 <Callout type="info">Generated from the Swift SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk swift overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-swift/pages/overview.md`](https://shipeasy-ai.github.io/sdk-swift/pages/overview.md). Edit it in the SDK repo, not here.</Callout>
 
 `Shipeasy` is the **native client** Swift SDK for [Shipeasy](https://shipeasy.ai) —
-feature flags, dynamic configs, and kill switches for an
+feature flags, dynamic configs, and killswitches for an
 iOS / macOS / tvOS / watchOS app. It uses a **public client key** (`pk_…`, safe
 to embed in a shipped app), evaluates one device user server-side over
 `POST /sdk/evaluate`, and serves cheap local reads from the cached response.
@@ -109,9 +109,9 @@ let copy = await shipeasyClient()?.getConfig("billing_copy", default: ["headline
 let headline = (copy as? [String: Any])?["headline"] as? String
 ```
 
-## Kill switches
+## Killswitches
 
-Check whether the kill switch `payments` is engaged (`true` = killed)
+Check whether the killswitch `payments` is engaged (`true` = killed)
 from the configured `ShipeasyClient`. Assumes `configureClient(...)` ran at startup
 — see Installation.
 
@@ -126,7 +126,7 @@ let killed = await shipeasyClient()?.getKillswitch("payments") ?? false
 
 ```swift
 // switchKey: read one named override (e.g. per region); an unset key falls back
-// to the kill switch's top-level value
+// to the killswitch's top-level value
 let killedEu = await shipeasyClient()?.getKillswitch("payments", switchKey: "eu_region") ?? false
 ```
 

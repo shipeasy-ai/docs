@@ -1,0 +1,40 @@
+# Changelog
+
+Source: https://docs.shipeasy.ai/changelog
+
+> Where to find what changed in Shipeasy — SDK releases, CLI versions, and the docs themselves.
+
+Shipeasy ships continuously, so there is no single release train to announce. Each piece with a version number keeps its own release history, and this page points at all of them. Nothing here is copied by hand, so it never goes stale.
+
+## SDKs
+
+Every SDK publishes a tagged release for each version, with notes on what changed. Pin the version you run and read the notes before you bump it.
+
+| SDK                                        | Release history                                                     |
+| ------------------------------------------ | ------------------------------------------------------------------- |
+| [Node / TypeScript](https://docs.shipeasy.ai/sdks/node-typescript) | [GitHub releases](https://github.com/shipeasy-ai/sdk-ts/releases)   |
+| [Python](https://docs.shipeasy.ai/sdks/python)                     | [GitHub tags](https://github.com/shipeasy-ai/sdk-python/tags)       |
+| [Go](https://docs.shipeasy.ai/sdks/go)                             | [GitHub tags](https://github.com/shipeasy-ai/sdk-go/tags)           |
+| [Ruby](https://docs.shipeasy.ai/sdks/ruby)                         | [GitHub releases](https://github.com/shipeasy-ai/sdk-ruby/releases) |
+| [PHP](https://docs.shipeasy.ai/sdks/php)                           | [GitHub tags](https://github.com/shipeasy-ai/sdk-php/tags)          |
+| [Java](https://docs.shipeasy.ai/sdks/java)                         | [GitHub tags](https://github.com/shipeasy-ai/sdk-java/tags)         |
+| [Kotlin](https://docs.shipeasy.ai/sdks/kotlin)                     | [GitHub tags](https://github.com/shipeasy-ai/sdk-kotlin/tags)       |
+| [Swift](https://docs.shipeasy.ai/sdks/swift)                       | [GitHub tags](https://github.com/shipeasy-ai/sdk-swift/tags)        |
+
+## CLI and MCP server
+
+The CLI and the MCP server are published to npm as `@shipeasy/cli` and `@shipeasy/mcp`. Check which version you have installed:
+
+```bash
+shipeasy --version
+```
+
+Every published version is listed on the [`@shipeasy/cli` versions page](https://www.npmjs.com/package/@shipeasy/cli?activeTab=versions). Running the CLI through `npx -y @shipeasy/cli@latest` always uses the newest release — see [Install](https://docs.shipeasy.ai/get-started/install).
+
+## The dashboard and the API
+
+The dashboard and the Admin API deploy continuously, so they have no version to pin. The [API reference](https://docs.shipeasy.ai/api) is generated from the same spec the CLI and MCP server are built from, so it always matches what is live.
+
+## The docs
+
+Pages show when they last changed, and the whole site is versioned in the [docs repository](https://github.com/shipeasy-ai/docs/commits/main). To get an agent-readable snapshot of the current docs, see [llms.txt](https://docs.shipeasy.ai/get-started/llms).

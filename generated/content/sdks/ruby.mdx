@@ -1,6 +1,6 @@
 ---
 title: "Ruby"
-description: "The Shipeasy Ruby gem — fork-safe singleton, Rails railtie, local evaluation, configs, kill switches, and metric tracking."
+description: "The Shipeasy Ruby gem — fork-safe singleton, Rails railtie, local evaluation, configs, killswitches, and metric tracking."
 ---
 
 <DocMeta status="Production ready" read="4 min read" updated="October 27, 2026" works="Ruby 3.0+ · Rails · Sinatra · Rack" />
@@ -8,7 +8,7 @@ description: "The Shipeasy Ruby gem — fork-safe singleton, Rails railtie, loca
 <Callout type="info">Generated from the Ruby SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk ruby overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-ruby/pages/overview.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/overview.md). Edit it in the SDK repo, not here.</Callout>
 
 `shipeasy-sdk` is the server-side Ruby gem for the [Shipeasy](https://shipeasy.ai)
-hosted service: feature gates (flags), dynamic configs, kill switches, metric tracking, and `see()` error reporting. It uses your **server key** and must never be embedded in a browser. It is
+hosted service: feature gates (flags), dynamic configs, killswitches, metric tracking, and `see()` error reporting. It uses your **server key** and must never be embedded in a browser. It is
 Rails-friendly but works in plain Ruby, Sinatra, Hanami, and serverless too.
 
 ## Install
@@ -139,9 +139,9 @@ flags = Shipeasy::Client.new(current_user)
 value = flags.get_config("billing_copy", default: "blue")
 ```
 
-## Kill switches
+## Killswitches
 
-Read the kill switch `payments` (true = killed). Assumes
+Read the killswitch `payments` (true = killed). Assumes
 `Shipeasy.configure` ran at startup — see Installation.
 
 ### Whole switch
@@ -151,7 +151,7 @@ Read the kill switch `payments` (true = killed). Assumes
 flags = Shipeasy::Client.new(current_user)
 
 # get_killswitch(name, switch_key = nil)
-#   name       — the kill switch key (required)
+#   name       — the killswitch key (required)
 #   switch_key — optional named per-key switch to read
 if flags.get_killswitch("payments")
   # killed → take the safe path
@@ -166,7 +166,7 @@ flags = Shipeasy::Client.new(current_user)
 provider = "stripe"   # pass the thing you're about to do as the switch key
 
 # A configured switch returns its own boolean; an unconfigured key falls back to
-# the kill switch's top-level value.
+# the killswitch's top-level value.
 if flags.get_killswitch("payments", provider)
   use_backup_processor
 end

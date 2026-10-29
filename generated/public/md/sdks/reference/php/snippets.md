@@ -2,7 +2,7 @@
 
 Source: https://docs.shipeasy.ai/sdks/reference/php/snippets
 
-> Minimal copy-paste blocks for flags, configs, kill switches and metric tracking.
+> Minimal copy-paste blocks for flags, configs, killswitches and metric tracking.
 
 Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same leaves the `docs get` op returns.
 
@@ -44,7 +44,7 @@ $value = $client->getConfig(
 
 ### release / killswitches
 
-Read a kill switch (global panic boolean). Assumes `Shipeasy\configure()` ran at
+Read a killswitch (global panic boolean). Assumes `Shipeasy\configure()` ran at
 startup — see Installation.
 
 ```php
@@ -54,7 +54,7 @@ use Shipeasy\Client;
 $client = new Client($currentUser);
 
 $panic = $client->getKillswitch(
-    'payments',   // kill switch name
+    'payments',   // killswitch name
     null,                   // optional $switchKey — read a named per-key override
 );                          //   (null = top-level value; unconfigured key falls back to it too)
 ```

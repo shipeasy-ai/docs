@@ -12,7 +12,7 @@ A confirmation card is a form pre-filled with the assistant's proposal. Every wr
 
 - `Feature flag` (card) — Name, targeting rules, rollout %, default — edit before you create.
 - `Dynamic config` (card) — Key, typed value, targeting. Adjust the value and ship.
-- `Kill switch` (card) — Name and default. Confirm to add the break-glass switch.
+- `Killswitch` (card) — Name and default. Confirm to add the break-glass switch.
 - `Metric / alert rule` (card) — Event, aggregation, threshold, severity — from metrics_create and ops_alerts_create.
 - `Queue item` (card) — Title, kind, priority, owner — from ops_create, before anything is filed.
 

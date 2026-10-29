@@ -20,7 +20,7 @@ The modules you will see, in the order the tab lists them:
 | **Bugs & feature requests** | In-app bug reports and feature requests captured via the devtools overlay.                    |
 | **Events**                  | Live SDK event stream (evaluations, overrides) shown in the devtools overlay.                 |
 
-Your tab can list more switches than this table — modules for products that are rolling out gradually appear only once they are available to your workspace, and work the same way. Kill switches, metrics, alerts and the ops queue are always on; they have no module switch.
+Your tab can list more switches than this table — modules for products that are rolling out gradually appear only once they are available to your workspace, and work the same way. Killswitches, metrics, alerts and the ops queue are always on; they have no module switch.
 
 > **Modules are per project**
 
@@ -37,7 +37,7 @@ The **Notifications** tab manages per-event notification preferences for the pro
 
 ## Billing & plan limits
 
-The **Billing** tab is the whole billing surface: subscription status, upgrade/downgrade, billing interval, assistant credit top-ups, and your current plan's live limits (flags, configs, kill switches, metrics, alert rules, SDK keys, poll interval) with usage against each. It is authoritative — the docs deliberately state no caps or prices; the [pricing page](https://shipeasy.ai/pricing) has the per-plan matrix.
+The **Billing** tab is the whole billing surface: subscription status, upgrade/downgrade, billing interval, assistant credit top-ups, and your current plan's live limits (flags, configs, killswitches, metrics, alert rules, SDK keys, poll interval) with usage against each. It is authoritative — the docs deliberately state no caps or prices; the [pricing page](https://shipeasy.ai/pricing) has the per-plan matrix.
 
 ## Danger zone
 
@@ -48,7 +48,7 @@ The **Danger** tab holds the two irreversible, owner-only actions:
 Both actions require you to be the project owner and ask you to confirm the project name.
 
 - **Transfer ownership** — move the project to a different admin, who gains full control. You pick the new owner from the existing active members.
-- **Delete project** — removes all gates, configs, kill switches, metrics, and audit logs after a **14-day grace period**.
+- **Delete project** — removes all gates, configs, killswitches, metrics, and audit logs after a **14-day grace period**.
 
 **Related**
 

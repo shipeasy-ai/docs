@@ -48,7 +48,7 @@ The provider maps Shipeasy [evaluation reasons](https://docs.shipeasy.ai/sdks/re
 
 The provider changes nothing about evaluation — it's a thin translation layer. If you're not
 already invested in OpenFeature, the native <a href="/sdks/node-typescript">SDK API</a> is simpler
-and gives you configs, kill switches, and tracking directly.
+and gives you configs, killswitches, and tracking directly.
 
 **Related**
 

@@ -2,13 +2,13 @@
 
 Source: https://docs.shipeasy.ai/sdks/reference/php
 
-> shipeasy/shipeasy is the PHP server SDK for Shipeasy — feature flags (gates), dynamic configs, kill switches, metric tracking, see() error…
+> shipeasy/shipeasy is the PHP server SDK for Shipeasy — feature flags (gates), dynamic configs, killswitches, metric tracking, see() error…
 
 > **Note**
 Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-php/pages/overview.md`](https://shipeasy-ai.github.io/sdk-php/pages/overview.md).
 
 `shipeasy/shipeasy` is the **PHP server SDK** for Shipeasy — feature flags
-(gates), dynamic configs, kill switches, metric tracking,
+(gates), dynamic configs, killswitches, metric tracking,
 and `see()` error reporting. It targets **PHP 8.1+** and runs
 anywhere PHP runs: plain PHP, Laravel, Symfony, WordPress, Slim. It is PHP-FPM
 friendly — `Shipeasy\configure()` fetches once per request, with **no background
@@ -46,7 +46,7 @@ $client = new Client($currentUser);                // construct once per callsit
 
 $enabled = $client->getFlag('new_checkout');                       // gate
 $copy    = $client->getConfig('billing_copy');                     // dynamic config
-$panic   = $client->getKillswitch('payments_panic');               // kill switch
+$panic   = $client->getKillswitch('payments_panic');               // killswitch
 $client->track('checkout_completed', ['amount' => 49]);            // metric event
 ```
 
@@ -69,7 +69,7 @@ all backed by the same configured SDK, so you never construct anything heavy:
 - [Configuration](https://docs.shipeasy.ai/sdks/reference/php/configuration) — the `configure()` options in detail.
 - [Flags](https://docs.shipeasy.ai/sdks/reference/php/flags) — `getFlag` / `getFlagDetail`.
 - [Configs](https://docs.shipeasy.ai/sdks/reference/php/configs) — `getConfig`.
-- [Kill switches](https://docs.shipeasy.ai/sdks/reference/php/killswitches) — `getKillswitch`.
+- [Killswitches](https://docs.shipeasy.ai/sdks/reference/php/killswitches) — `getKillswitch`.
 - [Error reporting](https://docs.shipeasy.ai/sdks/reference/php/error-reporting) — `see()` / `controlFlowException()`.
 - [Testing](https://docs.shipeasy.ai/sdks/reference/php/testing) — `configureForTesting()` / `configureForOffline()` + overrides.
 - [OpenFeature](https://docs.shipeasy.ai/sdks/reference/php/openfeature) — `ShipeasyProvider`.

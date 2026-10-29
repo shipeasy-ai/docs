@@ -44,7 +44,7 @@ const HIDDEN_TEXT =
   /experiment|a\/b|holdout|\bsrm\b|sequential test|universe|significance|verdict/i;
 
 const INFO_DESCRIPTION = [
-  "REST API for managing feature flags, dynamic configs, kill switches, metrics, alert rules and the ops queue in a Shipeasy project.",
+  "REST API for managing feature flags, dynamic configs, killswitches, metrics, alert rules and the ops queue in a Shipeasy project.",
   "",
   "Authenticate with an admin key: `Authorization: Bearer sdk_admin_…`. The key carries its project, so no other header is needed; send `X-Project-Id` only to act on a different project the key's owner can administer.",
   "",

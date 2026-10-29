@@ -1,6 +1,6 @@
 ---
 title: "Kotlin"
-description: "The Shipeasy Kotlin SDK — pure-JVM core plus an Android client artifact, local evaluation, configs, kill switches, and metric tracking."
+description: "The Shipeasy Kotlin SDK — pure-JVM core plus an Android client artifact, local evaluation, configs, killswitches, and metric tracking."
 ---
 
 <DocMeta status="Production ready" read="4 min read" updated="October 27, 2026" works="JDK 17+ · Android minSdk 26+ · Gradle · Maven" />
@@ -9,7 +9,7 @@ description: "The Shipeasy Kotlin SDK — pure-JVM core plus an Android client a
 
 `shipeasy-kotlin` (`ai.shipeasy:shipeasy-kotlin`) is the **server-side** Shipeasy
 SDK for the JVM (and Android-compatible). It evaluates feature flags (gates),
-dynamic configs and kill switches **locally** against rule blobs
+dynamic configs and killswitches **locally** against rule blobs
 it fetches from the Shipeasy edge — no per-evaluation network call on the hot
 path.
 
@@ -69,7 +69,7 @@ users bucket identically across launches. It ships in the companion artifact
 - [Configuration](/sdks/reference/kotlin/configuration) — `configure()` in full, the `attributes` transform, init/poll.
 - [Flags](/sdks/reference/kotlin/flags) — `getFlag` / `getFlagDetail`.
 - [Configs](/sdks/reference/kotlin/configs) — `getConfig`.
-- [Kill switches](/sdks/reference/kotlin/killswitches) — `getKillswitch`.
+- [Killswitches](/sdks/reference/kotlin/killswitches) — `getKillswitch`.
 - [Error reporting](/sdks/reference/kotlin/error-reporting) — `see()` structured error reporting.
 - [Testing](/sdks/reference/kotlin/testing) — `configureForTesting()` / `configureForOffline()` + the override helpers.
 - [OpenFeature](/sdks/reference/kotlin/openfeature) — provider availability.
@@ -110,9 +110,9 @@ val flags = Client(currentUser)
 val value = flags.getConfig("billing_copy", default = "Pay now")
 ```
 
-## Kill switches
+## Killswitches
 
-Check a kill switch — `true` means the feature is killed. Assumes `configure()`
+Check a killswitch — `true` means the feature is killed. Assumes `configure()`
 ran at startup — see [Installation](/sdks/reference/kotlin/installation).
 
 ```kotlin
@@ -122,7 +122,7 @@ import ai.shipeasy.Client
 val flags = Client(currentUser)
 
 // getKillswitch(name, switchKey = null): without switchKey → true when the whole
-// kill switch is killed; with switchKey → true when that named per-key override
+// killswitch is killed; with switchKey → true when that named per-key override
 // is on (an unconfigured key falls back to the top-level value).
 if (flags.getKillswitch("payments", switchKey = null)) {
     return serviceUnavailable()   // killed — short-circuit

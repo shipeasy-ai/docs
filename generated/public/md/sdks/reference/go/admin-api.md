@@ -18,7 +18,7 @@ whole admin API:
 | Capability           | Operations                                                                             |
 | -------------------- | -------------------------------------------------------------------------------------- |
 | File a public ticket (client key) | `CreatePublicBug`, `CreatePublicFeatureRequest`                                          |
-| Toggle a kill switch | `ToggleKillswitch`                                                                       |
+| Toggle a killswitch | `ToggleKillswitch`                                                                       |
 | Manage a whitelist   | `GetGateWhitelist`, `SetGateWhitelist`, `AddToGateWhitelist`, `RemoveFromGateWhitelist`  |
 
 Everything else in the admin API — listing, generic CRUD, experiments, metrics,
@@ -99,7 +99,7 @@ _, _, _ = client.OpsAPI.CreatePublicFeatureRequest(ctx).
     CreatePublicFeatureRequestRequest(*feature).Execute()
 ```
 
-## Toggle a kill switch
+## Toggle a killswitch
 
 `ToggleKillswitch` reads the current value and publishes its opposite in one
 call. Every body field is optional, so it widens from "flip it" to "set exactly
@@ -108,7 +108,7 @@ this, on this environment":
 ```go
 ks := "payments.checkout" // id (ksw_…) or name
 
-// Flip the kill switch itself on prod — no body at all.
+// Flip the killswitch itself on prod — no body at all.
 _, _, _ = client.KillswitchAPI.ToggleKillswitch(ctx, ks).Execute()
 
 // Flip one nested sub-switch on prod (created off→on if it doesn't exist yet).

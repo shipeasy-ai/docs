@@ -2,7 +2,7 @@
 
 Source: https://docs.shipeasy.ai/sdks/reference/java/snippets
 
-> Minimal copy-paste blocks for flags, configs, kill switches and metric tracking.
+> Minimal copy-paste blocks for flags, configs, killswitches and metric tracking.
 
 Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same leaves the `docs get` op returns.
 
@@ -46,7 +46,7 @@ Object cfg = client.getConfig(
 
 ### release / killswitches
 
-Check whether the kill switch `payments` is killed. Assumes
+Check whether the killswitch `payments` is killed. Assumes
 `configure()` ran at startup — see Installation.
 
 ```java

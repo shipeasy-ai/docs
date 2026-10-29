@@ -51,7 +51,7 @@ untouched.
 Spot-check <code>getBooleanDetails</code> reasons in staging, then ship. Drop the old vendor's
 dependency once nothing imports it.
 
-Once you're stable, weigh dropping OpenFeature for the [native SDK](https://docs.shipeasy.ai/sdks/node-typescript) — it's simpler and gives you configs, kill switches, and tracking directly. But the migration itself is the cheap part precisely because the provider is a drop-in.
+Once you're stable, weigh dropping OpenFeature for the [native SDK](https://docs.shipeasy.ai/sdks/node-typescript) — it's simpler and gives you configs, killswitches, and tracking directly. But the migration itself is the cheap part precisely because the provider is a drop-in.
 
 **Related**
 

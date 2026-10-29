@@ -130,7 +130,7 @@ evaluates exactly as written:
 
 - A gate is `{ "enabled", "rolloutPct" (0–10000, i.e. basis points), "salt", "rules": [] }`. `rolloutPct: 10000` = 100% on; `0` = off for everyone. Add targeting under `rules`.
 - A config is `{ "value": <any JSON> }`; `get_config("billing_copy")` returns that `value`.
-- A kill switch is `{ "value": <bool> }`.
+- A killswitch is `{ "value": <bool> }`.
 - Leave `experiments` as `{ "experiments": {}, "universes": {} }` if you have none (or paste a real `/sdk/experiments` body).
 
 ```python

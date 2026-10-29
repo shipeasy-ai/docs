@@ -66,7 +66,7 @@ const SDKS: Sdk[] = [
     landing: "node-typescript",
     landingTitle: "Node / TypeScript",
     blurb:
-      "The canonical Shipeasy SDK — one package with a server and a browser build, local evaluation, configs, kill switches, and metric tracking.",
+      "The canonical Shipeasy SDK — one package with a server and a browser build, local evaluation, configs, killswitches, and metric tracking.",
     works: "Node 18+ · Cloudflare Workers · Deno · Next.js · Browsers",
   },
   {
@@ -88,7 +88,7 @@ const SDKS: Sdk[] = [
     landing: "go",
     landingTitle: "Go",
     blurb:
-      "The Shipeasy Go server SDK — context-aware client, local evaluation, configs, kill switches, and metric tracking.",
+      "The Shipeasy Go server SDK — context-aware client, local evaluation, configs, killswitches, and metric tracking.",
     works: "Go 1.21+",
   },
   {
@@ -99,7 +99,7 @@ const SDKS: Sdk[] = [
     landing: "java",
     landingTitle: "Java",
     blurb:
-      "The Shipeasy Java server SDK — configure once, bind a Client per request, servlet anon filter, local evaluation, configs, kill switches, and metric tracking.",
+      "The Shipeasy Java server SDK — configure once, bind a Client per request, servlet anon filter, local evaluation, configs, killswitches, and metric tracking.",
     works: "Java 17+ · Maven · Gradle",
   },
   {
@@ -110,7 +110,7 @@ const SDKS: Sdk[] = [
     landing: "kotlin",
     landingTitle: "Kotlin",
     blurb:
-      "The Shipeasy Kotlin SDK — pure-JVM core plus an Android client artifact, local evaluation, configs, kill switches, and metric tracking.",
+      "The Shipeasy Kotlin SDK — pure-JVM core plus an Android client artifact, local evaluation, configs, killswitches, and metric tracking.",
     works: "JDK 17+ · Android minSdk 26+ · Gradle · Maven",
   },
   {
@@ -121,7 +121,7 @@ const SDKS: Sdk[] = [
     landing: "php",
     landingTitle: "PHP",
     blurb:
-      "The Shipeasy PHP server SDK — PHP-FPM friendly per-request init, local evaluation, configs, kill switches, and metric tracking.",
+      "The Shipeasy PHP server SDK — PHP-FPM friendly per-request init, local evaluation, configs, killswitches, and metric tracking.",
     works: "PHP 8.1+ · Composer · Laravel · Symfony · WordPress",
   },
   {
@@ -132,7 +132,7 @@ const SDKS: Sdk[] = [
     landing: "swift",
     landingTitle: "Swift",
     blurb:
-      "The Shipeasy Swift SDK — a native client SDK on SwiftPM, authenticating with the public client key, for flags, configs, kill switches, and metric tracking.",
+      "The Shipeasy Swift SDK — a native client SDK on SwiftPM, authenticating with the public client key, for flags, configs, killswitches, and metric tracking.",
     works: "iOS 15+ · macOS 12+ · tvOS 15+ · watchOS 8+ · SwiftPM",
   },
   {
@@ -143,7 +143,7 @@ const SDKS: Sdk[] = [
     landing: "ruby",
     landingTitle: "Ruby",
     blurb:
-      "The Shipeasy Ruby gem — fork-safe singleton, Rails railtie, local evaluation, configs, kill switches, and metric tracking.",
+      "The Shipeasy Ruby gem — fork-safe singleton, Rails railtie, local evaluation, configs, killswitches, and metric tracking.",
     works: "Ruby 3.0+ · Rails · Sinatra · Rack",
   },
 ];
@@ -156,7 +156,7 @@ const PAGE_TITLES: Record<string, string> = {
   configuration: "Configuration",
   flags: "Feature flags",
   configs: "Dynamic configs",
-  killswitches: "Kill switches",
+  killswitches: "Killswitches",
   experiments: "Experiments",
   i18n: "Internationalization (i18n)",
   "error-reporting": "Error reporting",
@@ -456,10 +456,10 @@ function read(docs: SdkDocs, rel: string): string {
  * for leftover "A/B" or "universe(").
  */
 const HIDDEN_PROSE_RULES: Array<[RegExp, string]> = [
-  [/(\w+),\s+(kill switches),\s+and A\/B experiments/g, "$1, and $2"],
-  [/(\w+),\s+(kill switches)\s+and A\/B experiments/g, "$1 and $2"],
+  [/(\w+),\s+(kill ?switches),\s+and A\/B experiments/g, "$1, and $2"],
+  [/(\w+),\s+(kill ?switches)\s+and A\/B experiments/g, "$1 and $2"],
   [/A\/B\s+experiments,\s+/g, ""],
-  [/(kill switches),\s+(metrics),\s+and i18n/g, "$1, and $2"],
+  [/(kill ?switches),\s+(metrics),\s+and i18n/g, "$1, and $2"],
   [/(`see\(\)` error reporting),\s+and i18n (?:SSR|view) helpers(?: for\s+Rails)?/g, "and $1"],
   // "So an experiment is end-to-end Client-only" paragraphs
   [/So an experiment is end-to-end Client-only:[^\n]*\n[^\n]*\n\n?/g, ""],
@@ -490,10 +490,20 @@ function hideExperimentProse(md: string): string {
   return HIDDEN_PROSE_RULES.reduce((out, [re, to]) => out.replace(re, to), md);
 }
 
+/** The app, the sidebar and the Flags & Configs pages all say "Killswitch"; the
+ *  SDK repos' prose says "kill switch". One word, so a reader who learns the name
+ *  from an SDK page finds it spelled the same in the dashboard. */
+function unifyKillswitchName(md: string): string {
+  return md.replace(
+    /\b([Kk])ill switch(es)?\b/g,
+    (_all, k: string, es?: string) => `${k}illswitch${es ?? ""}`,
+  );
+}
+
 /** Repo Markdown → docs-site MDX: fill placeholders, drop hidden nav rows,
  *  point relative links at docs-site routes, escape the MDX metacharacters. */
 function prepare(raw: string, m: Manifest, slug: string, hideExperiments = false): string {
-  const md = substitutePlaceholders(raw, m);
+  const md = unifyKillswitchName(substitutePlaceholders(raw, m));
   return mdxEscape(
     rewriteLinks(dropHiddenNavRows(hideExperiments ? hideExperimentProse(md) : md), slug),
   );
@@ -508,7 +518,9 @@ function emitPage(
   m: Manifest,
   slug: string,
 ) {
-  const { title, body, description } = splitHeading(substitutePlaceholders(raw, m));
+  const { title, body, description } = splitHeading(
+    unifyKillswitchName(substitutePlaceholders(raw, m)),
+  );
   const fm = frontmatter(
     title ?? navTitle,
     fileBase === "index" && description ? hideExperimentProse(description) : description,
@@ -539,7 +551,7 @@ function emitSnippets(outDir: string, m: Manifest, docs: SdkDocs, slug: string) 
     join(outDir, "snippets.mdx"),
     frontmatter(
       "Snippets",
-      "Minimal copy-paste blocks for flags, configs, kill switches and metric tracking.",
+      "Minimal copy-paste blocks for flags, configs, killswitches and metric tracking.",
     ) + body,
   );
 }
@@ -575,7 +587,7 @@ function emitSkill(outDir: string, m: Manifest, docs: SdkDocs, name: string) {
 const LANDING_SNIPPETS: { group: string; leaf: string; title: string }[] = [
   { group: "release", leaf: "flags", title: "Feature flags" },
   { group: "release", leaf: "configs", title: "Dynamic configs" },
-  { group: "release", leaf: "killswitches", title: "Kill switches" },
+  { group: "release", leaf: "killswitches", title: "Killswitches" },
   { group: "metrics", leaf: "track", title: "Track a conversion" },
 ];
 

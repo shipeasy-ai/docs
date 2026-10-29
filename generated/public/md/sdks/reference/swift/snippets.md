@@ -2,7 +2,7 @@
 
 Source: https://docs.shipeasy.ai/sdks/reference/swift/snippets
 
-> Minimal copy-paste blocks for flags, configs, kill switches and metric tracking.
+> Minimal copy-paste blocks for flags, configs, killswitches and metric tracking.
 
 Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same leaves the `docs get` op returns.
 
@@ -41,7 +41,7 @@ let headline = (copy as? [String: Any])?["headline"] as? String
 
 ### release / killswitches
 
-Check whether the kill switch `payments` is engaged (`true` = killed)
+Check whether the killswitch `payments` is engaged (`true` = killed)
 from the configured `ShipeasyClient`. Assumes `configureClient(...)` ran at startup
 — see Installation.
 
@@ -56,7 +56,7 @@ let killed = await shipeasyClient()?.getKillswitch("payments") ?? false
 
 ```swift
 // switchKey: read one named override (e.g. per region); an unset key falls back
-// to the kill switch's top-level value
+// to the killswitch's top-level value
 let killedEu = await shipeasyClient()?.getKillswitch("payments", switchKey: "eu_region") ?? false
 ```
 

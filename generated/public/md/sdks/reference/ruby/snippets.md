@@ -2,7 +2,7 @@
 
 Source: https://docs.shipeasy.ai/sdks/reference/ruby/snippets
 
-> Minimal copy-paste blocks for flags, configs, kill switches and metric tracking.
+> Minimal copy-paste blocks for flags, configs, killswitches and metric tracking.
 
 Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same leaves the `docs get` op returns.
 
@@ -66,7 +66,7 @@ value = flags.get_config("billing_copy", default: "blue")
 
 ### release / killswitches
 
-Read the kill switch `payments` (true = killed). Assumes
+Read the killswitch `payments` (true = killed). Assumes
 `Shipeasy.configure` ran at startup — see Installation.
 
 ### Whole switch
@@ -76,7 +76,7 @@ Read the kill switch `payments` (true = killed). Assumes
 flags = Shipeasy::Client.new(current_user)
 
 # get_killswitch(name, switch_key = nil)
-#   name       — the kill switch key (required)
+#   name       — the killswitch key (required)
 #   switch_key — optional named per-key switch to read
 if flags.get_killswitch("payments")
   # killed → take the safe path
@@ -91,7 +91,7 @@ flags = Shipeasy::Client.new(current_user)
 provider = "stripe"   # pass the thing you're about to do as the switch key
 
 # A configured switch returns its own boolean; an unconfigured key falls back to
-# the kill switch's top-level value.
+# the killswitch's top-level value.
 if flags.get_killswitch("payments", provider)
   use_backup_processor
 end

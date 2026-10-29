@@ -33,7 +33,7 @@ Paid plans include a monthly allowance of events and evaluations. Cross **80%** 
 Exceeding the included credit is **informational only** — evaluations and events keep flowing. The
 banner is a heads-up to consider upgrading if the volume is your new normal.
 
-Some resources (flags, configs, kill switches, metrics, alert rules, SDK keys) are hard caps rather than usage meters — exceeding one is rejected with `PLAN_LIMIT` rather than billed.
+Some resources (flags, configs, killswitches, metrics, alert rules, SDK keys) are hard caps rather than usage meters — exceeding one is rejected with `PLAN_LIMIT` rather than billed.
 
 > **Where the numbers live**
 

@@ -102,7 +102,7 @@ Logged-out visitors bucket on a shared first-party `__se_anon_id` cookie, minted
 
 ## DevTools overlay
 
-Press `Shift+Alt+S` on any page running the SDK (or append `?se=1`). The panel mounts in a Shadow DOM overlay and flips every gate / config / kill switch **for the current session only** — for QA, demos, and bug repro.
+Press `Shift+Alt+S` on any page running the SDK (or append `?se=1`). The panel mounts in a Shadow DOM overlay and flips every gate / config / killswitch **for the current session only** — for QA, demos, and bug repro.
 
 ```ts
 import { loadDevtools } from "@shipeasy/sdk/client";

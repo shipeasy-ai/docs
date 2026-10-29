@@ -1,6 +1,6 @@
 {
   "title": "Flags & Configs",
-  "description": "Feature flags, typed configs & kill switches",
+  "description": "Feature flags, typed configs & killswitches",
   "root": true,
   "defaultOpen": true,
   "pages": [

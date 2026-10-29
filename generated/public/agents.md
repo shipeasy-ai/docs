@@ -42,7 +42,7 @@ Shipeasy ships as a small set of npm packages — install only the ones you need
 
 - **[@shipeasy/sdk](#sdk)** — The core SDK. Conditional exports pick the right build for your runtime — Node, Workers, Bun, Deno, or browser.
 
-- **[@shipeasy/cli](#cli)** — The <code>shipeasy</code> command. Login, manage flags, configs and kill switches, work the ops queue, install the MCP server.
+- **[@shipeasy/cli](#cli)** — The <code>shipeasy</code> command. Login, manage flags, configs and killswitches, work the ops queue, install the MCP server.
 
 - **[@shipeasy/mcp](#mcp)** — MCP server for AI assistants. Installed via the CLI — your agent gets a typed toolkit.
 
@@ -137,7 +137,7 @@ configure({
 });
 ```
 
-The single `configure()` call boots flags, configs **and** kill switches. The optional `attributes` transform maps your user object onto the Shipeasy attribute map, so every bound `Client` you construct evaluates against the right context. The server SDK polls `/sdk/flags` in the background. Evaluation happens **locally** — there is no per-request network call from your code. Env (dev / staging / prod) is **derived from the key**: each key is bound to exactly one environment when you mint it, so you deploy the prod key to prod and the staging key to staging — there is nothing to set in code. (A server key may still override per request with `?env=` for local debugging; client keys cannot — see below.)
+The single `configure()` call boots flags, configs **and** killswitches. The optional `attributes` transform maps your user object onto the Shipeasy attribute map, so every bound `Client` you construct evaluates against the right context. The server SDK polls `/sdk/flags` in the background. Evaluation happens **locally** — there is no per-request network call from your code. Env (dev / staging / prod) is **derived from the key**: each key is bound to exactly one environment when you mint it, so you deploy the prod key to prod and the staging key to staging — there is nothing to set in code. (A server key may still override per request with `?env=` for local debugging; client keys cannot — see below.)
 
 **Browser initialisation**
 
@@ -160,7 +160,7 @@ The client key is public — it ships in your browser bundle. Its environment is
 
 **One key, one configure call**
 
-Flags, configs, and kill switches share a single key per side (`apiKey` on the server, `clientKey` in the browser). There is no second configure step — the single `configure()` call boots all of them.
+Flags, configs, and killswitches share a single key per side (`apiKey` on the server, `clientKey` in the browser). There is no second configure step — the single `configure()` call boots all of them.
 
 Don't wrap this in a custom helper file. The SDK owns its own initialisation.
 
@@ -444,14 +444,14 @@ Shipeasy has exactly two kinds of SDK key. One per entrypoint, one configure cal
 
 ### One key per entrypoint
 
-|            | **Server key**                                | **Client key**                         |
-| ---------- | --------------------------------------------- | -------------------------------------- |
-| Import     | `@shipeasy/sdk/server`                        | `@shipeasy/sdk/client`                 |
-| Field      | `apiKey`                                      | `clientKey`                            |
-| Visibility | **Secret** — never ships to a browser         | **Public** — ships in your bundle      |
-| Reads      | Full rule set (gates, configs, kill switches) | Only client-readable flags and configs |
-| Writes     | Events                                        | Events, rate-limited by domain         |
-| Env        | Bound to one env; may override per request    | **Locked** to its env                  |
+|            | **Server key**                               | **Client key**                         |
+| ---------- | -------------------------------------------- | -------------------------------------- |
+| Import     | `@shipeasy/sdk/server`                       | `@shipeasy/sdk/client`                 |
+| Field      | `apiKey`                                     | `clientKey`                            |
+| Visibility | **Secret** — never ships to a browser        | **Public** — ships in your bundle      |
+| Reads      | Full rule set (gates, configs, killswitches) | Only client-readable flags and configs |
+| Writes     | Events                                       | Events, rate-limited by domain         |
+| Env        | Bound to one env; may override per request   | **Locked** to its env                  |
 
 ```ts
 // Server (root layout / startup) — server key ONLY, passed as apiKey
@@ -551,7 +551,7 @@ Install the SDK and CLI, bind a project, wire one init call, ship a flag at 0%, 
 
 One SDK, one CLI, one configure call. Create a flag at 0%, wrap your code, then ramp it from your terminal. No card required.
 
-This is the universal path. Every product — gates, configs, kill switches, metrics — starts here, then branches. If you only read one page, read this one.
+This is the universal path. Every product — gates, configs, killswitches, metrics — starts here, then branches. If you only read one page, read this one.
 
 **Add the SDK and CLI**
 
@@ -581,7 +581,7 @@ Full flow, including CI tokens, lives in [Authenticate](https://docs.shipeasy.ai
 // app/layout.tsx — runs once per cold start\nimport { configure } from "@shipeasy/sdk/server";\nconfigure({ apiKey: process.env.SHIPEASY_SERVER_KEY ?? "", attributes: (u) => ({ user_id: u.id, plan: u.plan }) });
 ```
 
-The single `configure()` call boots flags, configs **and** kill switches. The server SDK polls the
+The single `configure()` call boots flags, configs **and** killswitches. The server SDK polls the
 rule set in the background and evaluates **locally** — there is no per-request network hop. Env
 (dev / staging / prod) is derived from the key, not from a query param. See [Keys &
 environments](https://docs.shipeasy.ai/get-started/keys-and-environments).
@@ -759,13 +759,13 @@ Same single configure call, public client key, then a user-bound `Client` whose 
 
 You have a flag ramping. Pick where to go deeper.
 
-- **[Gates](https://docs.shipeasy.ai/flags/gates/quickstart)** — Targeting rules, per-condition rollouts, gradual ramps, and kill switches.
+- **[Gates](https://docs.shipeasy.ai/flags/gates/quickstart)** — Targeting rules, per-condition rollouts, gradual ramps, and killswitches.
 
 - **[Configs](https://docs.shipeasy.ai/flags/configs/quickstart)** — Typed JSON values you change at runtime — limits, copy, thresholds — without a deploy.
 
 - **[Metrics & alerts](https://docs.shipeasy.ai/metrics/quickstart)** — Turn the events you already log into a number, then have a threshold rule watch it for you.
 
-- **[Kill switches](https://docs.shipeasy.ai/flags/killswitches/quickstart)** — One switch that turns a subsystem off everywhere, without a deploy or a rollout ramp.
+- **[Killswitches](https://docs.shipeasy.ai/flags/killswitches/quickstart)** — One switch that turns a subsystem off everywhere, without a deploy or a rollout ramp.
 
 **Related**
 
@@ -2913,3 +2913,4 @@ Parameters and error codes: https://docs.shipeasy.ai/get-started/mcp-reference
 - Assistant use cases — https://docs.shipeasy.ai/assistant/use-cases
 - API reference — https://docs.shipeasy.ai/api
 - Advanced use cases — https://docs.shipeasy.ai/use-cases
+- Changelog — https://docs.shipeasy.ai/changelog

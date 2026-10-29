@@ -2,7 +2,7 @@
 
 Source: https://docs.shipeasy.ai/sdks/reference/go/snippets
 
-> Minimal copy-paste blocks for flags, configs, kill switches and metric tracking.
+> Minimal copy-paste blocks for flags, configs, killswitches and metric tracking.
 
 Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same leaves the `docs get` op returns.
 
@@ -69,9 +69,9 @@ _ = v
 
 ### release / killswitches
 
-Check whether the `payments` kill switch is engaged. Assumes `Configure()` ran at startup — see Installation.
+Check whether the `payments` killswitch is engaged. Assumes `Configure()` ran at startup — see Installation.
 
-### Read a kill switch
+### Read a killswitch
 
 ```go
 // construct once per callsite (cheap; binds the user)
@@ -92,7 +92,7 @@ c := shipeasy.NewClient(shipeasy.User{"user_id": "u_123"})
 
 // GetKillswitch(name, switchKey) — the optional switchKey selects a named
 // per-key override (the dashboard "switches" feature). When that key has no
-// override, it falls back to the kill switch's top-level value.
+// override, it falls back to the killswitch's top-level value.
 if c.GetKillswitch("payments", "eu") {
     // killed for the "eu" variant
 }

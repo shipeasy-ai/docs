@@ -143,7 +143,7 @@ Other classic shapes:
 ```json title="copy/hero"
 {
   "headline": "Ship features 10× faster",
-  "sub": "Flags, configs, and kill switches — one SDK.",
+  "sub": "Flags, configs, and killswitches — one SDK.",
   "cta_label": "Start free"
 }
 ```

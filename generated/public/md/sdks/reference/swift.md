@@ -2,13 +2,13 @@
 
 Source: https://docs.shipeasy.ai/sdks/reference/swift
 
-> Shipeasy is the native client Swift SDK for Shipeasy — feature flags, dynamic configs, and kill switches for an iOS / macOS / tvOS /…
+> Shipeasy is the native client Swift SDK for Shipeasy — feature flags, dynamic configs, and killswitches for an iOS / macOS / tvOS / watchOS…
 
 > **Note**
 Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-swift/pages/overview.md`](https://shipeasy-ai.github.io/sdk-swift/pages/overview.md).
 
 `Shipeasy` is the **native client** Swift SDK for [Shipeasy](https://shipeasy.ai) —
-feature flags, dynamic configs, and kill switches for an
+feature flags, dynamic configs, and killswitches for an
 iOS / macOS / tvOS / watchOS app. It uses a **public client key** (`pk_…`, safe
 to embed in a shipped app), evaluates one device user server-side over
 `POST /sdk/evaluate`, and serves cheap local reads from the cached response.

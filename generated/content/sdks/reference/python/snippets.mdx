@@ -1,6 +1,6 @@
 ---
 title: "Snippets"
-description: "Minimal copy-paste blocks for flags, configs, kill switches and metric tracking."
+description: "Minimal copy-paste blocks for flags, configs, killswitches and metric tracking."
 ---
 
 Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same leaves the `docs get` op returns.
@@ -83,7 +83,7 @@ max_items = client.get_config("billing_copy", decode=lambda v: v["max"], default
 
 ### release / killswitches
 
-Check a kill switch on a user-bound client. Assumes `configure()` ran at
+Check a killswitch on a user-bound client. Assumes `configure()` ran at
 startup — see Installation.
 
 ### Top-level guard
@@ -94,7 +94,7 @@ import shipeasy
 # construct once per callsite (cheap; binds the user)
 client = shipeasy.Client(current_user)
 
-# name                          kill switch name (required)
+# name                          killswitch name (required)
 if client.get_killswitch("payments"):  # True == engaged (feature killed)
     return fallback()
 ```
@@ -107,7 +107,7 @@ import shipeasy
 client = shipeasy.Client(current_user)
 
 # switch_key                    the variable you check against the switches
-#                               CONFIGURED on the kill switch (dashboard "switches");
+#                               CONFIGURED on the killswitch (dashboard "switches");
 #                               if that key isn't configured, falls back to the
 #                               top-level value above
 provider = "stripe"

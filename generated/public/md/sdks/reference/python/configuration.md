@@ -18,7 +18,7 @@ shipeasy.configure(
 )
 ```
 
-- **`api_key`** — your Shipeasy **server key** (`sdk_server_...`). Authenticates flags, configs, kill switches and experiments. Never embed it in a browser.
+- **`api_key`** — your Shipeasy **server key** (`sdk_server_...`). Authenticates flags, configs, killswitches and experiments. Never embed it in a browser.
 - **`attributes`** — a transform from YOUR user object to the Shipeasy attribute map that targeting evaluates against. The default is identity, so if your user object is already that map you can omit it:
 
 ```python

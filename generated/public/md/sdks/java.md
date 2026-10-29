@@ -2,13 +2,13 @@
 
 Source: https://docs.shipeasy.ai/sdks/java
 
-> The Shipeasy Java server SDK — configure once, bind a Client per request, servlet anon filter, local evaluation, configs, kill switches, and metric tracking.
+> The Shipeasy Java server SDK — configure once, bind a Client per request, servlet anon filter, local evaluation, configs, killswitches, and metric tracking.
 
 > **Note**
 Generated from the Java SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk java overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-java/pages/overview.md`](https://shipeasy-ai.github.io/sdk-java/pages/overview.md). Edit it in the SDK repo, not here.
 
 `shipeasy` (`ai.shipeasy:shipeasy`) is the **server-side Java SDK** for
-[Shipeasy](https://shipeasy.ai) — feature flags, dynamic configs, kill switches,
+[Shipeasy](https://shipeasy.ai) — feature flags, dynamic configs, killswitches,
 metric tracking, and `see()` error reporting. Rules are
 evaluated **locally** against a cached blob fetched from the edge, so there is no
 network call per evaluation.
@@ -64,7 +64,7 @@ Constructing a `Client` before `configure()` has run throws
 - [Configuration](https://docs.shipeasy.ai/sdks/reference/java/configuration) — `configure()`, the `attributes` transform, one-shot vs background poll, env vars.
 - [Flags](https://docs.shipeasy.ai/sdks/reference/java/flags) — `getFlag`, defaults, `getFlagDetail`.
 - [Configs](https://docs.shipeasy.ai/sdks/reference/java/configs) — `getConfig`, typed values, defaults.
-- [Kill switches](https://docs.shipeasy.ai/sdks/reference/java/killswitches) — `getKillswitch` and named per-key switches.
+- [Killswitches](https://docs.shipeasy.ai/sdks/reference/java/killswitches) — `getKillswitch` and named per-key switches.
 - [Error reporting](https://docs.shipeasy.ai/sdks/reference/java/error-reporting) — `see()` structured error reporting.
 - [Testing](https://docs.shipeasy.ai/sdks/reference/java/testing) — `configureForTesting()` / `configureForOffline()` + the override statics.
 - [OpenFeature](https://docs.shipeasy.ai/sdks/reference/java/openfeature) — the `ShipeasyProvider` server provider.
@@ -108,9 +108,9 @@ Object cfg = client.getConfig(
 // one-arg overload returns null when absent: client.getConfig("billing_copy")
 ```
 
-## Kill switches
+## Killswitches
 
-Check whether the kill switch `payments` is killed. Assumes
+Check whether the killswitch `payments` is killed. Assumes
 `configure()` ran at startup — see Installation.
 
 ```java

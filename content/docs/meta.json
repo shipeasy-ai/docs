@@ -8,7 +8,8 @@
     "feedback",
     "assistant",
     "api",
-    "use-cases"
+    "use-cases",
+    "changelog"
   ],
   "root": true
 }

@@ -37,5 +37,5 @@ copy := c.GetConfigOr("billing_copy", map[string]any{"cta": "Buy"})
 ```
 
 Configs are not user-scoped, so the bound `Client` is read the same way for any
-user — they're exposed on `Client` purely so flags, configs, kill switches,
+user — they're exposed on `Client` purely so flags, configs, killswitches,
 experiments and tracking all come off one handle.

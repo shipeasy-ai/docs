@@ -1,13 +1,13 @@
-# Kill switches
+# Killswitches
 
 Source: https://docs.shipeasy.ai/sdks/reference/swift/killswitches
 
-> A kill switch reports whether a panic/disable switch is engaged. It returns a Bool — true means the switch is on (the thing it guards is killed). The value…
+> A killswitch reports whether a panic/disable switch is engaged. It returns a Bool — true means the switch is on (the thing it guards is killed). The value…
 
 > **Note**
 Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-swift/pages/killswitches.md`](https://shipeasy-ai.github.io/sdk-swift/pages/killswitches.md).
 
-A kill switch reports whether a panic/disable switch is engaged. It returns a
+A killswitch reports whether a panic/disable switch is engaged. It returns a
 `Bool` — `true` means the switch is **on** (the thing it guards is killed). The
 value comes from the cached `/sdk/evaluate` response.
 
@@ -26,7 +26,7 @@ aren't loaded yet.
 
 ## Named override switches
 
-A kill switch can carry **named per-key override switches** (the dashboard
+A killswitch can carry **named per-key override switches** (the dashboard
 "switches" feature) — e.g. one switch per region or per site. Pass `switchKey:` to
 read a named switch:
 
@@ -35,5 +35,5 @@ let killedEu = await client.getKillswitch("panic_button", switchKey: "eu_region"
 ```
 
 When the named key has no explicit override configured, the result **falls back to
-the kill switch's top-level value** — so a key you haven't set behaves exactly like
+the killswitch's top-level value** — so a key you haven't set behaves exactly like
 the un-keyed `getKillswitch("panic_button")` call.

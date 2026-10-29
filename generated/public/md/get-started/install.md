@@ -10,7 +10,7 @@ Shipeasy ships as a small set of npm packages — install only the ones you need
 
 - **[@shipeasy/sdk](#sdk)** — The core SDK. Conditional exports pick the right build for your runtime — Node, Workers, Bun, Deno, or browser.
 
-- **[@shipeasy/cli](#cli)** — The <code>shipeasy</code> command. Login, manage flags, configs and kill switches, work the ops queue, install the MCP server.
+- **[@shipeasy/cli](#cli)** — The <code>shipeasy</code> command. Login, manage flags, configs and killswitches, work the ops queue, install the MCP server.
 
 - **[@shipeasy/mcp](#mcp)** — MCP server for AI assistants. Installed via the CLI — your agent gets a typed toolkit.
 
@@ -105,7 +105,7 @@ configure({
 });
 ```
 
-The single `configure()` call boots flags, configs **and** kill switches. The optional `attributes` transform maps your user object onto the Shipeasy attribute map, so every bound `Client` you construct evaluates against the right context. The server SDK polls `/sdk/flags` in the background. Evaluation happens **locally** — there is no per-request network call from your code. Env (dev / staging / prod) is **derived from the key**: each key is bound to exactly one environment when you mint it, so you deploy the prod key to prod and the staging key to staging — there is nothing to set in code. (A server key may still override per request with `?env=` for local debugging; client keys cannot — see below.)
+The single `configure()` call boots flags, configs **and** killswitches. The optional `attributes` transform maps your user object onto the Shipeasy attribute map, so every bound `Client` you construct evaluates against the right context. The server SDK polls `/sdk/flags` in the background. Evaluation happens **locally** — there is no per-request network call from your code. Env (dev / staging / prod) is **derived from the key**: each key is bound to exactly one environment when you mint it, so you deploy the prod key to prod and the staging key to staging — there is nothing to set in code. (A server key may still override per request with `?env=` for local debugging; client keys cannot — see below.)
 
 **Browser initialisation**
 
@@ -128,7 +128,7 @@ The client key is public — it ships in your browser bundle. Its environment is
 
 **One key, one configure call**
 
-Flags, configs, and kill switches share a single key per side (`apiKey` on the server, `clientKey` in the browser). There is no second configure step — the single `configure()` call boots all of them.
+Flags, configs, and killswitches share a single key per side (`apiKey` on the server, `clientKey` in the browser). There is no second configure step — the single `configure()` call boots all of them.
 
 Don't wrap this in a custom helper file. The SDK owns its own initialisation.
 

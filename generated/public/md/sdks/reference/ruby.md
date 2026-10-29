@@ -2,13 +2,13 @@
 
 Source: https://docs.shipeasy.ai/sdks/reference/ruby
 
-> shipeasy-sdk is the server-side Ruby gem for the Shipeasy hosted service: feature gates (flags), dynamic configs, kill switches, metric…
+> shipeasy-sdk is the server-side Ruby gem for the Shipeasy hosted service: feature gates (flags), dynamic configs, killswitches, metric…
 
 > **Note**
 Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-ruby/pages/overview.md`](https://shipeasy-ai.github.io/sdk-ruby/pages/overview.md).
 
 `shipeasy-sdk` is the server-side Ruby gem for the [Shipeasy](https://shipeasy.ai)
-hosted service: feature gates (flags), dynamic configs, kill switches, metric tracking, and `see()` error reporting. It uses your **server key** and must never be embedded in a browser. It is
+hosted service: feature gates (flags), dynamic configs, killswitches, metric tracking, and `see()` error reporting. It uses your **server key** and must never be embedded in a browser. It is
 Rails-friendly but works in plain Ruby, Sinatra, Hanami, and serverless too.
 
 ## Mental model: configure once, bind a `Client` per user

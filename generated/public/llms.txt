@@ -38,22 +38,22 @@ Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with
 ## SDKs
 
 - [SDKs](https://docs.shipeasy.ai/sdks): One package for JavaScript (server + browser) plus seven native server languages — all evaluating the same blob, the same way.
-- [Node / TypeScript](https://docs.shipeasy.ai/sdks/node-typescript): The canonical Shipeasy SDK — one package with a server and a browser build, local evaluation, configs, kill switches, and metric tracking.
+- [Node / TypeScript](https://docs.shipeasy.ai/sdks/node-typescript): The canonical Shipeasy SDK — one package with a server and a browser build, local evaluation, configs, killswitches, and metric tracking.
 - [Browser & React](https://docs.shipeasy.ai/sdks/browser-react): The client build of @shipeasy/sdk — client-key init, identify, in-browser evaluation, the DevTools overlay, and SSR bootstrap.
-- [Go](https://docs.shipeasy.ai/sdks/go): The Shipeasy Go server SDK — context-aware client, local evaluation, configs, kill switches, and metric tracking.
+- [Go](https://docs.shipeasy.ai/sdks/go): The Shipeasy Go server SDK — context-aware client, local evaluation, configs, killswitches, and metric tracking.
 - [Python](https://docs.shipeasy.ai/sdks/python): The Shipeasy Python server SDK — local evaluation, configs, WSGI/ASGI anon middleware, and metric tracking.
-- [Ruby](https://docs.shipeasy.ai/sdks/ruby): The Shipeasy Ruby gem — fork-safe singleton, Rails railtie, local evaluation, configs, kill switches, and metric tracking.
-- [Java](https://docs.shipeasy.ai/sdks/java): The Shipeasy Java server SDK — configure once, bind a Client per request, servlet anon filter, local evaluation, configs, kill switches, and metric tracking.
-- [Kotlin](https://docs.shipeasy.ai/sdks/kotlin): The Shipeasy Kotlin SDK — pure-JVM core plus an Android client artifact, local evaluation, configs, kill switches, and metric tracking.
-- [PHP](https://docs.shipeasy.ai/sdks/php): The Shipeasy PHP server SDK — PHP-FPM friendly per-request init, local evaluation, configs, kill switches, and metric tracking.
-- [Swift](https://docs.shipeasy.ai/sdks/swift): The Shipeasy Swift SDK — a native client SDK on SwiftPM, authenticating with the public client key, for flags, configs, kill switches, and metric tracking.
+- [Ruby](https://docs.shipeasy.ai/sdks/ruby): The Shipeasy Ruby gem — fork-safe singleton, Rails railtie, local evaluation, configs, killswitches, and metric tracking.
+- [Java](https://docs.shipeasy.ai/sdks/java): The Shipeasy Java server SDK — configure once, bind a Client per request, servlet anon filter, local evaluation, configs, killswitches, and metric tracking.
+- [Kotlin](https://docs.shipeasy.ai/sdks/kotlin): The Shipeasy Kotlin SDK — pure-JVM core plus an Android client artifact, local evaluation, configs, killswitches, and metric tracking.
+- [PHP](https://docs.shipeasy.ai/sdks/php): The Shipeasy PHP server SDK — PHP-FPM friendly per-request init, local evaluation, configs, killswitches, and metric tracking.
+- [Swift](https://docs.shipeasy.ai/sdks/swift): The Shipeasy Swift SDK — a native client SDK on SwiftPM, authenticating with the public client key, for flags, configs, killswitches, and metric tracking.
 - [Evaluation reasons](https://docs.shipeasy.ai/sdks/reasons): getFlagDetail returns the value plus the reason a flag resolved the way it did — RULE_MATCH, DEFAULT, OFF, OVERRIDE, FLAG_NOT_FOUND, and CLIENT_NOT_READY.
 - [Reacting to changes](https://docs.shipeasy.ai/sdks/onchange): onChange fires after a background poll picks up new rules — use it to invalidate caches or re-render when a flag flips.
 - [Multi-context bucketing (bucketBy)](https://docs.shipeasy.ai/sdks/bucketby): Bucket on company_id, session_id, or any attribute instead of user_id — so a rollout splits by account, not by individual user.
 - [Private attributes](https://docs.shipeasy.ai/sdks/private-attributes): Mark attributes as private so they're used for targeting but never persisted or sent to the events store.
 - [Offline & snapshots](https://docs.shipeasy.ai/sdks/offline-snapshot): Build a fully offline client from a captured snapshot — real evaluation, zero network. For CI, tests, and air-gapped runtimes.
 - [Testing](https://docs.shipeasy.ai/sdks/testing): Swap configure() for configureForTesting() and seed the values your code should see — unit-test flag-gated code without touching the network.
-- [Devtools overlay](https://docs.shipeasy.ai/sdks/devtools-overlay): A browser overlay to flip any gate, config, or kill switch for the current session — for QA, demos, and bug repro.
+- [Devtools overlay](https://docs.shipeasy.ai/sdks/devtools-overlay): A browser overlay to flip any gate, config, or killswitch for the current session — for QA, demos, and bug repro.
 - [Drop-in script tag](https://docs.shipeasy.ai/sdks/script-loader): Add feature flags and configs to a no-build or static site with one <script> tag — evaluated at the edge, ready before first paint, no bundler required.
 - [OpenFeature provider](https://docs.shipeasy.ai/sdks/openfeature): Plug Shipeasy in as the backing provider for the CNCF OpenFeature API — a pure adapter over the SDK, server and web.
 
@@ -127,6 +127,10 @@ Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with
 ## use-cases
 
 - [Advanced use cases](https://docs.shipeasy.ai/use-cases): Four cross-cutting patterns combining flags, configs, killswitches, metrics, alerts and feedback — the things you can only do when it is all one platform.
+
+## changelog
+
+- [Changelog](https://docs.shipeasy.ai/changelog): Where to find what changed in Shipeasy — SDK releases, CLI versions, and the docs themselves.
 
 ## Reference (not inlined in llms-full.txt)
 
@@ -239,7 +243,7 @@ Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with
 - [Feature flags (gates)](https://docs.shipeasy.ai/sdks/reference/go/flags)
 - [Shipeasy Go SDK — Overview](https://docs.shipeasy.ai/sdks/reference/go)
 - [Installation](https://docs.shipeasy.ai/sdks/reference/go/installation)
-- [Kill switches](https://docs.shipeasy.ai/sdks/reference/go/killswitches)
+- [Killswitches](https://docs.shipeasy.ai/sdks/reference/go/killswitches)
 - [OpenFeature provider](https://docs.shipeasy.ai/sdks/reference/go/openfeature)
 - [Agent skill](https://docs.shipeasy.ai/sdks/reference/go/skill)
 - [Snippets](https://docs.shipeasy.ai/sdks/reference/go/snippets)
@@ -252,7 +256,7 @@ Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with
 - [Feature flags](https://docs.shipeasy.ai/sdks/reference/java/flags)
 - [Overview](https://docs.shipeasy.ai/sdks/reference/java)
 - [Installation](https://docs.shipeasy.ai/sdks/reference/java/installation)
-- [Kill switches](https://docs.shipeasy.ai/sdks/reference/java/killswitches)
+- [Killswitches](https://docs.shipeasy.ai/sdks/reference/java/killswitches)
 - [OpenFeature provider](https://docs.shipeasy.ai/sdks/reference/java/openfeature)
 - [Agent skill](https://docs.shipeasy.ai/sdks/reference/java/skill)
 - [Snippets](https://docs.shipeasy.ai/sdks/reference/java/snippets)
@@ -264,7 +268,7 @@ Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with
 - [Flags (feature gates)](https://docs.shipeasy.ai/sdks/reference/kotlin/flags)
 - [Overview](https://docs.shipeasy.ai/sdks/reference/kotlin)
 - [Installation & configuration](https://docs.shipeasy.ai/sdks/reference/kotlin/installation)
-- [Kill switches](https://docs.shipeasy.ai/sdks/reference/kotlin/killswitches)
+- [Killswitches](https://docs.shipeasy.ai/sdks/reference/kotlin/killswitches)
 - [OpenFeature](https://docs.shipeasy.ai/sdks/reference/kotlin/openfeature)
 - [Agent skill](https://docs.shipeasy.ai/sdks/reference/kotlin/skill)
 - [Snippets](https://docs.shipeasy.ai/sdks/reference/kotlin/snippets)
@@ -277,7 +281,7 @@ Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with
 - [Flags](https://docs.shipeasy.ai/sdks/reference/php/flags)
 - [Overview](https://docs.shipeasy.ai/sdks/reference/php)
 - [Installation & configuration](https://docs.shipeasy.ai/sdks/reference/php/installation)
-- [Kill switches](https://docs.shipeasy.ai/sdks/reference/php/killswitches)
+- [Killswitches](https://docs.shipeasy.ai/sdks/reference/php/killswitches)
 - [OpenFeature](https://docs.shipeasy.ai/sdks/reference/php/openfeature)
 - [Agent skill](https://docs.shipeasy.ai/sdks/reference/php/skill)
 - [Snippets](https://docs.shipeasy.ai/sdks/reference/php/snippets)
@@ -290,7 +294,7 @@ Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with
 - [Feature flags — `get_flag`](https://docs.shipeasy.ai/sdks/reference/python/flags)
 - [Shipeasy Python SDK — Overview](https://docs.shipeasy.ai/sdks/reference/python)
 - [Installation & configuration](https://docs.shipeasy.ai/sdks/reference/python/installation)
-- [Kill switches — `get_killswitch`](https://docs.shipeasy.ai/sdks/reference/python/killswitches)
+- [Killswitches — `get_killswitch`](https://docs.shipeasy.ai/sdks/reference/python/killswitches)
 - [OpenFeature provider](https://docs.shipeasy.ai/sdks/reference/python/openfeature)
 - [Agent skill](https://docs.shipeasy.ai/sdks/reference/python/skill)
 - [Snippets](https://docs.shipeasy.ai/sdks/reference/python/snippets)
@@ -303,7 +307,7 @@ Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with
 - [Feature flags — `get_flag`](https://docs.shipeasy.ai/sdks/reference/ruby/flags)
 - [Shipeasy Ruby SDK — Overview](https://docs.shipeasy.ai/sdks/reference/ruby)
 - [Installation & configuration](https://docs.shipeasy.ai/sdks/reference/ruby/installation)
-- [Kill switches — `get_killswitch`](https://docs.shipeasy.ai/sdks/reference/ruby/killswitches)
+- [Killswitches — `get_killswitch`](https://docs.shipeasy.ai/sdks/reference/ruby/killswitches)
 - [OpenFeature provider](https://docs.shipeasy.ai/sdks/reference/ruby/openfeature)
 - [Agent skill](https://docs.shipeasy.ai/sdks/reference/ruby/skill)
 - [Snippets](https://docs.shipeasy.ai/sdks/reference/ruby/snippets)
@@ -315,7 +319,7 @@ Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with
 - [Flags](https://docs.shipeasy.ai/sdks/reference/swift/flags)
 - [Overview](https://docs.shipeasy.ai/sdks/reference/swift)
 - [Installation & configuration](https://docs.shipeasy.ai/sdks/reference/swift/installation)
-- [Kill switches](https://docs.shipeasy.ai/sdks/reference/swift/killswitches)
+- [Killswitches](https://docs.shipeasy.ai/sdks/reference/swift/killswitches)
 - [OpenFeature](https://docs.shipeasy.ai/sdks/reference/swift/openfeature)
 - [Agent skill](https://docs.shipeasy.ai/sdks/reference/swift/skill)
 - [Snippets](https://docs.shipeasy.ai/sdks/reference/swift/snippets)
@@ -327,7 +331,7 @@ Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with
 - [Feature flags (`getFlag`)](https://docs.shipeasy.ai/sdks/reference/typescript/flags)
 - [Overview](https://docs.shipeasy.ai/sdks/reference/typescript)
 - [Installation & configuration](https://docs.shipeasy.ai/sdks/reference/typescript/installation)
-- [Kill switches (`getKillswitch`)](https://docs.shipeasy.ai/sdks/reference/typescript/killswitches)
+- [Killswitches (`getKillswitch`)](https://docs.shipeasy.ai/sdks/reference/typescript/killswitches)
 - [OpenFeature](https://docs.shipeasy.ai/sdks/reference/typescript/openfeature)
 - [Agent skill](https://docs.shipeasy.ai/sdks/reference/typescript/skill)
 - [Snippets](https://docs.shipeasy.ai/sdks/reference/typescript/snippets)

@@ -6,7 +6,7 @@ Source: https://docs.shipeasy.ai/sdks
 
 The TypeScript package ships a server and a browser build. Seven native server SDKs — Go, Python, Ruby, Java, Kotlin, PHP, Swift — speak the same wire format and run the same deterministic evaluation locally.
 
-Every Shipeasy SDK is a thin client over two cached blobs — `:flags` (gates + configs + kill switches) and `:experiments`, the longer-lived half of the rule set. The SDK polls them in the background and **evaluates locally**: there is no per-call network round-trip on your hot path.
+Every Shipeasy SDK is a thin client over two cached blobs — `:flags` (gates + configs + killswitches) and `:experiments`, the longer-lived half of the rule set. The SDK polls them in the background and **evaluates locally**: there is no per-call network round-trip on your hot path.
 
 ## The shared evaluation model
 

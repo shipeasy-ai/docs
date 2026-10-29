@@ -24,7 +24,7 @@ That single rule decides almost every architectural choice — no per-request fe
 
 The admin app is a Next.js app that owns:
 
-- The dashboard UI for feature flags, configs, kill switches, metrics and alerts.
+- The dashboard UI for feature flags, configs, killswitches, metrics and alerts.
 - Server Actions and Route Handlers — the same endpoints the CLI calls.
 - Stateless JWT sessions (short expiry, no session table).
 - The KV rebuild + CDN purge pipeline. Whenever you change a flag, the admin app rebuilds the affected blob and purges the URL.
@@ -42,8 +42,8 @@ The same worker also handles the CLI device-auth flow and runs the cron + queue 
 
 ### Shared state [#shared-state]
 
-- `Database (SQLite)` (row store) — Source of truth — feature flags, configs, kill switches, metrics, keys, exposures, daily results. Project-scoped on every query.
-- `KV` (read cache) — Two blobs per project: `:flags` (feature flags, configs and kill switches) and  `:experiments`, the longer-lived half of the rule set.
+- `Database (SQLite)` (row store) — Source of truth — feature flags, configs, killswitches, metrics, keys, exposures, daily results. Project-scoped on every query.
+- `KV` (read cache) — Two blobs per project: `:flags` (feature flags, configs and killswitches) and  `:experiments`, the longer-lived half of the rule set.
 - `Events store` (event store) — Append-only telemetry. Written from the worker only, never from the admin app.
 - `Queues` (async pipeline) — The cron enqueues one message per project. The consumer runs analysis and writes results back to the database.
 

@@ -2,13 +2,13 @@
 
 Source: https://docs.shipeasy.ai/sdks/reference/java
 
-> shipeasy (ai.shipeasy:shipeasy) is the server-side Java SDK for Shipeasy — feature flags, dynamic configs, kill switches, metric tracking,…
+> shipeasy (ai.shipeasy:shipeasy) is the server-side Java SDK for Shipeasy — feature flags, dynamic configs, killswitches, metric tracking,…
 
 > **Note**
 Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-java/pages/overview.md`](https://shipeasy-ai.github.io/sdk-java/pages/overview.md).
 
 `shipeasy` (`ai.shipeasy:shipeasy`) is the **server-side Java SDK** for
-[Shipeasy](https://shipeasy.ai) — feature flags, dynamic configs, kill switches,
+[Shipeasy](https://shipeasy.ai) — feature flags, dynamic configs, killswitches,
 metric tracking, and `see()` error reporting. Rules are
 evaluated **locally** against a cached blob fetched from the edge, so there is no
 network call per evaluation.
@@ -52,7 +52,7 @@ Constructing a `Client` before `configure()` has run throws
 - [Configuration](https://docs.shipeasy.ai/sdks/reference/java/configuration) — `configure()`, the `attributes` transform, one-shot vs background poll, env vars.
 - [Flags](https://docs.shipeasy.ai/sdks/reference/java/flags) — `getFlag`, defaults, `getFlagDetail`.
 - [Configs](https://docs.shipeasy.ai/sdks/reference/java/configs) — `getConfig`, typed values, defaults.
-- [Kill switches](https://docs.shipeasy.ai/sdks/reference/java/killswitches) — `getKillswitch` and named per-key switches.
+- [Killswitches](https://docs.shipeasy.ai/sdks/reference/java/killswitches) — `getKillswitch` and named per-key switches.
 - [Error reporting](https://docs.shipeasy.ai/sdks/reference/java/error-reporting) — `see()` structured error reporting.
 - [Testing](https://docs.shipeasy.ai/sdks/reference/java/testing) — `configureForTesting()` / `configureForOffline()` + the override statics.
 - [OpenFeature](https://docs.shipeasy.ai/sdks/reference/java/openfeature) — the `ShipeasyProvider` server provider.

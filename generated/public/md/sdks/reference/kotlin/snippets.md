@@ -2,7 +2,7 @@
 
 Source: https://docs.shipeasy.ai/sdks/reference/kotlin/snippets
 
-> Minimal copy-paste blocks for flags, configs, kill switches and metric tracking.
+> Minimal copy-paste blocks for flags, configs, killswitches and metric tracking.
 
 Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same leaves the `docs get` op returns.
 
@@ -43,7 +43,7 @@ val value = flags.getConfig("billing_copy", default = "Pay now")
 
 ### release / killswitches
 
-Check a kill switch — `true` means the feature is killed. Assumes `configure()`
+Check a killswitch — `true` means the feature is killed. Assumes `configure()`
 ran at startup — see [Installation](https://docs.shipeasy.ai/sdks/reference/kotlin/installation).
 
 ```kotlin
@@ -53,7 +53,7 @@ import ai.shipeasy.Client
 val flags = Client(currentUser)
 
 // getKillswitch(name, switchKey = null): without switchKey → true when the whole
-// kill switch is killed; with switchKey → true when that named per-key override
+// killswitch is killed; with switchKey → true when that named per-key override
 // is on (an unconfigured key falls back to the top-level value).
 if (flags.getKillswitch("payments", switchKey = null)) {
     return serviceUnavailable()   // killed — short-circuit

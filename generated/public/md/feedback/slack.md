@@ -9,7 +9,7 @@ feature requests, alerts, error spikes and platform events post into your
 channel as cards. That part works on **every plan**. On **Pro and above** the
 same workspace connection also becomes a front-end: you act on the cards with
 their buttons, run `/shipeasy`, and talk to **@Shipeasy** in plain language to
-create and change flags, configs, kill switches, alerts and metrics without
+create and change flags, configs, killswitches, alerts and metrics without
 opening the dashboard.
 
 | What you do in Slack                                               | Plan          |
@@ -59,7 +59,7 @@ entire platform:
 | ------------------- | ----------------------------------------------------------------------- |
 | **Feature flags**   | create a flag, roll it out to a %, choose who sees it, turn it on/off   |
 | **Dynamic configs** | create a config, change what it returns                                 |
-| **Kill switches**   | create one, flip it on or off                                           |
+| **Killswitches**    | create one, flip it on or off                                           |
 | **Alerts**          | tell you when a number gets too high or too low                         |
 | **Metrics**         | start tracking something people do                                      |
 | **Just ask**        | list what you have, check how a metric is moving, "what changed today?" |
@@ -71,8 +71,8 @@ entire platform:
 It's just as good at **reading** and **changing** what already exists:
 
 > what changed today?
-> 📋 3 changes today: the new pricing page flag went to 50%, the payments kill switch was created, and the checkout copy config was published to prod.
-> Ask questions too — @Shipeasy reads your flags, configs, kill switches and metrics and answers in the thread.
+> 📋 3 changes today: the new pricing page flag went to 50%, the payments killswitch was created, and the checkout copy config was published to prod.
+> Ask questions too — @Shipeasy reads your flags, configs, killswitches and metrics and answers in the thread.
 
 > roll the new pricing page out to half of everyone
 > ✅ The new pricing page is now live for 50% of users in prod.
@@ -97,7 +97,7 @@ When a specific error caught by [`see()`](https://docs.shipeasy.ai/feedback/erro
 **spiking**, that lands too — with a little chart of the last hour so you can see
 how bad it is at a glance, and the same resolve / dismiss / mute controls:
 
-Flip a kill switch and the channel offers a one-click revert; publish a config to
+Flip a killswitch and the channel offers a one-click revert; publish a config to
 prod and the change is announced with a link:
 
 On Pro and above, every action writes straight back into Shipeasy, records an
@@ -108,7 +108,7 @@ audit entry, stamps who did it, and recolours the card. `Acknowledge` and
 | -------------------------------- | ----------------------------------------------------------------------------------------------- |
 | **Alert triggered**              | `Resolve` · `Dismiss` · `Mute rule` (disables the rule that fired) · `File an issue` (any plan) |
 | **Error spiking** (from `see()`) | `Resolve` · `Dismiss` · `Mute this error` (with a trend chart) · `File an issue` (any plan)     |
-| **Kill switch flipped**          | `Flip back` (one-click revert)                                                                  |
+| **Killswitch flipped**           | `Flip back` (one-click revert)                                                                  |
 | **Config published to prod**     | `Acknowledge`                                                                                   |
 | **Agent needs your attention**   | `Open the issue ↗` · `Acknowledge`                                                              |
 | Weekly digest · New team member  | _(informational — link only)_                                                                   |
@@ -118,7 +118,7 @@ column is live once Slack is connected).
 
 > **Privileged actions check your membership**
 
-Flipping a kill switch, publishing a config, and muting an alert rule go through the real admin
+Flipping a killswitch, publishing a config, and muting an alert rule go through the real admin
 path (so the change propagates) and verify **you're a member of the project** first. If you're
 not, only you see a quiet "ask an admin to invite you" — the shared card is untouched for everyone
 else.
@@ -165,7 +165,7 @@ For anything beyond a quick alert, just talk to **@Shipeasy**.
 ## Drive Shipeasy from Slack's AI
 
 If you'd rather use **Slack's own AI assistant**, Shipeasy is also available there
-as an MCP connection — the same flags, configs, kill switches, metrics and
+as an MCP connection — the same flags, configs, killswitches, metrics and
 ops queue. Your workspace admin enables it once under the Slack App's **MCP Server
 Connection** (Slack identity auth); after that, ask Slack's assistant to manage
 Shipeasy and it calls through to your project under the same membership check.

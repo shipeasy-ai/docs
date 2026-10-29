@@ -1,13 +1,13 @@
 ---
 title: "Shipeasy Go SDK — Overview"
-description: "github.com/shipeasy-ai/sdk-go is the server-side Go SDK for Shipeasy: feature flags (\"gates\"), dynamic configs, kill switches, metric…"
+description: "github.com/shipeasy-ai/sdk-go is the server-side Go SDK for Shipeasy: feature flags (\"gates\"), dynamic configs, killswitches, metric…"
 ---
 
 <Callout type="info">Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-go/pages/overview.md`](https://shipeasy-ai.github.io/sdk-go/pages/overview.md).</Callout>
 
 `github.com/shipeasy-ai/sdk-go` is the **server-side** Go SDK for
 [Shipeasy](https://shipeasy.ai): feature flags ("gates"), dynamic configs,
-kill switches, metric tracking, and structured error reporting.
+killswitches, metric tracking, and structured error reporting.
 Evaluation is **local** against a cached copy of the edge blobs — there is no
 network call on the hot path.
 
@@ -66,7 +66,7 @@ lives in the global config — failing loudly surfaces the misconfiguration).
 - [Configuration](/sdks/reference/go/configuration) — `Configure` options, env vars, init/poll vs one-shot, change listeners.
 - [Flags](/sdks/reference/go/flags) — `GetFlag`, `GetFlagOr`, `GetFlagDetail`.
 - [Configs](/sdks/reference/go/configs) — `GetConfig`, `GetConfigOr`.
-- [Kill switches](/sdks/reference/go/killswitches) — `GetKillswitch`, named switches.
+- [Killswitches](/sdks/reference/go/killswitches) — `GetKillswitch`, named switches.
 - [Error reporting](/sdks/reference/go/error-reporting) — the `See()` surface.
 - [Testing](/sdks/reference/go/testing) — `ConfigureForTesting`, `ConfigureForOffline`, the `Override*` helpers.
 - [OpenFeature](/sdks/reference/go/openfeature) — `NewGlobalProvider()`.

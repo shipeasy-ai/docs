@@ -56,7 +56,7 @@ Sometimes you just want answers, not changes. In [read mode](https://docs.shipea
 
 > **You:** "Which feature flags are still at 100% but haven't been touched in 90 days? Any I can retire?"
 
-It queries your flags, configs and kill switches and answers in the chat — listing flags stuck at 100% for months, configs no targeting rule references, and kill switches nobody has exercised. It cites what it found; you decide what to clean up.
+It queries your flags, configs and killswitches and answers in the chat — listing flags stuck at 100% for months, configs no targeting rule references, and killswitches nobody has exercised. It cites what it found; you decide what to clean up.
 
 - `Read mode` (execute) — Queries run immediately and answer in chat — no card, nothing changes.
 - `Write mode` (confirm) — Every mutation surfaces as an editable card you approve first.

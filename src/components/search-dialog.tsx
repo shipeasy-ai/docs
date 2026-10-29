@@ -31,7 +31,7 @@ import {
   type SharedProps,
 } from "fumadocs-ui/components/dialog/search";
 import { useDocsSearch } from "fumadocs-core/search/client";
-import { rankResults } from "@/lib/search-rank";
+import { rankResults, rewriteQuery } from "@/lib/search-rank";
 
 const SEARCH_TAGS = [
   { name: "Get started", value: "get-started" },
@@ -57,6 +57,10 @@ const SHOWN = 60;
 export default function SearchDialog(props: SharedProps) {
   const { locale } = useI18n();
   const [tag, setTag] = useState<string | undefined>(undefined);
+  // What the reader typed vs. what the engine is asked: `rewriteQuery` fixes a
+  // typo ("killswtich") or turns a question into the page's own word, without
+  // ever editing the text in the box.
+  const [typed, setTyped] = useState("");
   const { search, setSearch, query } = useDocsSearch({
     type: "static",
     from: "/static.json",
@@ -74,7 +78,15 @@ export default function SearchDialog(props: SharedProps) {
   );
 
   return (
-    <Dialog search={search} onSearchChange={setSearch} isLoading={query.isLoading} {...props}>
+    <Dialog
+      search={typed}
+      onSearchChange={(value) => {
+        setTyped(value);
+        setSearch(rewriteQuery(value));
+      }}
+      isLoading={query.isLoading}
+      {...props}
+    >
       <SearchDialogOverlay />
       <SearchDialogContent>
         <SearchDialogHeader>

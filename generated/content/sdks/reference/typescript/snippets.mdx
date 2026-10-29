@@ -1,6 +1,6 @@
 ---
 title: "Snippets"
-description: "Minimal copy-paste blocks for flags, configs, kill switches and metric tracking."
+description: "Minimal copy-paste blocks for flags, configs, killswitches and metric tracking."
 ---
 
 Minimal copy-paste blocks, grouped by the registry taxonomy. These are the same leaves the `docs get` op returns.
@@ -48,9 +48,9 @@ const cfg = flags.getConfig<{ max: number }>("billing_copy", {
 
 ### release / killswitches
 
-Read a kill switch (not user-bound — global on/off, optionally per-switch). Assumes `configure()` ran at startup — see Installation.
+Read a killswitch (not user-bound — global on/off, optionally per-switch). Assumes `configure()` ran at startup — see Installation.
 
-### Whole kill switch
+### Whole killswitch
 
 ```ts
 import { Client } from "@shipeasy/sdk/server"; // or "@shipeasy/sdk/client"
@@ -59,7 +59,7 @@ import { Client } from "@shipeasy/sdk/server"; // or "@shipeasy/sdk/client"
 const flags = new Client(currentUser);
 
 // getKillswitch(name, switchKey?)
-//   name      — the kill switch name
+//   name      — the killswitch name
 //   switchKey — optional; reads a single named override switch instead of
 //               the whole-killswitch "killed" flag
 if (flags.getKillswitch("payments")) {
@@ -76,7 +76,7 @@ const flags = new Client(currentUser); // construct once per callsite
 // own value; an UNCONFIGURED switch falls back to the whole-killswitch "killed"
 // value — so this is always safe to call before any per-key override exists.
 if (flags.getKillswitch("payments", "apple_pay")) {
-  // the "apple_pay" switch is on (or the whole kill switch is killed)
+  // the "apple_pay" switch is on (or the whole killswitch is killed)
 }
 ```
 

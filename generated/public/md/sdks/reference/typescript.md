@@ -2,13 +2,13 @@
 
 Source: https://docs.shipeasy.ai/sdks/reference/typescript
 
-> @shipeasy/sdk is the TypeScript / JavaScript SDK for the Shipeasy hosted platform — feature gates, runtime configs, kill switches, metrics,…
+> @shipeasy/sdk is the TypeScript / JavaScript SDK for the Shipeasy hosted platform — feature gates, runtime configs, killswitches, metrics,…
 
 > **Note**
 Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-ai.github.io/sdk-ts/pages/overview.md`](https://shipeasy-ai.github.io/sdk-ts/pages/overview.md).
 
 `@shipeasy/sdk` is the TypeScript / JavaScript SDK for the [Shipeasy](https://shipeasy.ai)
-hosted platform — feature gates, runtime configs, kill switches, and metrics. It ships **two entrypoints** from one package:
+hosted platform — feature gates, runtime configs, killswitches, and metrics. It ships **two entrypoints** from one package:
 
 - `@shipeasy/sdk/server` — Node, Cloudflare Workers, Deno (authenticates with the **server** key).
 - `@shipeasy/sdk/client` — the browser (authenticates with the public
@@ -52,7 +52,7 @@ everywhere you evaluate.
 | [Configuration](https://docs.shipeasy.ai/sdks/reference/typescript/configuration) | `configure()`, `attributes`, env vars, SSR bootstrap |
 | [Flags](https://docs.shipeasy.ai/sdks/reference/typescript/flags) | `getFlag`, `getFlagDetail`, defaults |
 | [Configs](https://docs.shipeasy.ai/sdks/reference/typescript/configs) | `getConfig` typed values + defaults |
-| [Kill switches](https://docs.shipeasy.ai/sdks/reference/typescript/killswitches) | `getKillswitch` semantics |
+| [Killswitches](https://docs.shipeasy.ai/sdks/reference/typescript/killswitches) | `getKillswitch` semantics |
 | [Error reporting](https://docs.shipeasy.ai/sdks/reference/typescript/error-reporting) | `see()` grammar |
 | [Testing](https://docs.shipeasy.ai/sdks/reference/typescript/testing) | `configureForTesting`/`configureForOffline`, `override*` |
 | [OpenFeature](https://docs.shipeasy.ai/sdks/reference/typescript/openfeature) | server + web providers |

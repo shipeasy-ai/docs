@@ -78,7 +78,7 @@ flags.track("checkout_viewed", { source: "nav" });
 ### Server-side rendering bootstrap
 
 For Next.js / Remix / SvelteKit, `configure()` once at startup, then bind a
-`Client` to the request user and read flags, configs and kill switches directly:
+`Client` to the request user and read flags, configs and killswitches directly:
 
 ```tsx title="app/layout.tsx"
 import { configure, Client } from "@shipeasy/sdk/server";
@@ -131,7 +131,7 @@ framework provides (Vue's `onMounted` + `onUnmounted`, Svelte's
 
 ### A note on vanilla JS [#vanilla-js]
 
-Every Shipeasy SDK API works from plain JavaScript. You can drop the SDK into a plain `<script>` tag, an Astro island, an HTMX page, or a vanilla TS app, and every primitive — feature flags, configs, kill switches — works without any framework.
+Every Shipeasy SDK API works from plain JavaScript. You can drop the SDK into a plain `<script>` tag, an Astro island, an HTMX page, or a vanilla TS app, and every primitive — feature flags, configs, killswitches — works without any framework.
 
 ## React Native & mobile [#mobile]
 

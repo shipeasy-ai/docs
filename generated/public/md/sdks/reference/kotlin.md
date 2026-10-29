@@ -9,7 +9,7 @@ Generated from the SDK's own `/docs/` — also served raw at [`https://shipeasy-
 
 `shipeasy-kotlin` (`ai.shipeasy:shipeasy-kotlin`) is the **server-side** Shipeasy
 SDK for the JVM (and Android-compatible). It evaluates feature flags (gates),
-dynamic configs and kill switches **locally** against rule blobs
+dynamic configs and killswitches **locally** against rule blobs
 it fetches from the Shipeasy edge — no per-evaluation network call on the hot
 path.
 
@@ -61,7 +61,7 @@ users bucket identically across launches. It ships in the companion artifact
 - [Configuration](https://docs.shipeasy.ai/sdks/reference/kotlin/configuration) — `configure()` in full, the `attributes` transform, init/poll.
 - [Flags](https://docs.shipeasy.ai/sdks/reference/kotlin/flags) — `getFlag` / `getFlagDetail`.
 - [Configs](https://docs.shipeasy.ai/sdks/reference/kotlin/configs) — `getConfig`.
-- [Kill switches](https://docs.shipeasy.ai/sdks/reference/kotlin/killswitches) — `getKillswitch`.
+- [Killswitches](https://docs.shipeasy.ai/sdks/reference/kotlin/killswitches) — `getKillswitch`.
 - [Error reporting](https://docs.shipeasy.ai/sdks/reference/kotlin/error-reporting) — `see()` structured error reporting.
 - [Testing](https://docs.shipeasy.ai/sdks/reference/kotlin/testing) — `configureForTesting()` / `configureForOffline()` + the override helpers.
 - [OpenFeature](https://docs.shipeasy.ai/sdks/reference/kotlin/openfeature) — provider availability.

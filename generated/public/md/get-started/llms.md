@@ -14,7 +14,7 @@ Point a coding agent at one of these instead of asking it to crawl the site. Eve
 | Endpoint | What it is | Size |
 | --- | --- | --- |
 | [`/llms.txt`](https://docs.shipeasy.ai/llms.txt) | **Index** — Every page with its one-line description. Fetch this first | 34 KB |
-| [`/llms-full.txt`](https://docs.shipeasy.ai/llms-full.txt) | **Full corpus** — The whole documentation in one file, in nav order | 817 KB |
+| [`/llms-full.txt`](https://docs.shipeasy.ai/llms-full.txt) | **Full corpus** — The whole documentation in one file, in nav order | 820 KB |
 | [`/agents.md`](https://docs.shipeasy.ai/agents.md) | **Setup runbook** — Install to first flag, then a full CLI + MCP reference | 123 KB |
 
 ## Which one
@@ -23,11 +23,11 @@ Point a coding agent at one of these instead of asking it to crawl the site. Eve
 
 **Answering questions about Shipeasy** — [`/llms.txt`](https://docs.shipeasy.ai/llms.txt) first, then fetch the one or two pages it points at. Cheaper and sharper than loading the corpus.
 
-**Bulk ingestion** — [`/llms-full.txt`](https://docs.shipeasy.ai/llms-full.txt), 92 pages in one request.
+**Bulk ingestion** — [`/llms-full.txt`](https://docs.shipeasy.ai/llms-full.txt), 93 pages in one request.
 
 ## One page at a time
 
-Every page on this site is also served as plain markdown at `/md/<path>.md` — [`/md/get-started/quickstart.md`](https://docs.shipeasy.ai/md/get-started/quickstart.md) for [the quickstart](https://docs.shipeasy.ai/get-started/quickstart), 295 files in total, generated from the same conversion as the bundles above. The **Copy page** button under any page title copies exactly that file, and **Open in** hands the URL to an assistant.
+Every page on this site is also served as plain markdown at `/md/<path>.md` — [`/md/get-started/quickstart.md`](https://docs.shipeasy.ai/md/get-started/quickstart.md) for [the quickstart](https://docs.shipeasy.ai/get-started/quickstart), 296 files in total, generated from the same conversion as the bundles above. The **Copy page** button under any page title copies exactly that file, and **Open in** hands the URL to an assistant.
 
 Reach for it when you know which page you want. The corpus is for when you do not.
 

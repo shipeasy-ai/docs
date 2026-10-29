@@ -153,3 +153,146 @@ export function rankResults(query: string, results: SortedResult[]): SortedResul
     .sort((a, b) => b.s - a.s)
     .flatMap(({ g }) => g.items);
 }
+
+// ---------------------------------------------------------------------------
+// Query rewriting: typos and plain-English questions
+// ---------------------------------------------------------------------------
+//
+// The static index is exact-word BM25, so two kinds of query dead-end on
+// "No results found" or return keyword scatter:
+//
+//   "killswtich"                              one transposed letter
+//   "how do I turn off a feature in production"  no page says those words
+//
+// `rewriteQuery` runs BEFORE the engine, on the raw input, and returns the
+// string to search for. It never changes what the reader sees in the box.
+
+/** The words readers actually search for — product nouns and page names. A typo
+ *  is corrected only toward one of these, so ordinary English is never touched. */
+const VOCAB = [
+  "killswitch",
+  "killswitches",
+  "config",
+  "configs",
+  "gate",
+  "gates",
+  "flag",
+  "flags",
+  "rollout",
+  "rollouts",
+  "targeting",
+  "metric",
+  "metrics",
+  "alert",
+  "alerts",
+  "mcp",
+  "cli",
+  "sdk",
+  "sdks",
+  "webhook",
+  "slack",
+  "github",
+  "quickstart",
+  "install",
+  "billing",
+  "permissions",
+  "attributes",
+  "authenticate",
+  "troubleshooting",
+  "devtools",
+  "bucketing",
+  "assistant",
+  "credits",
+  "feedback",
+  "errors",
+  "connectors",
+  "triggers",
+  "modules",
+  "grammar",
+  "aggregations",
+  "changelog",
+  "environments",
+  "analytics",
+  "typescript",
+  "python",
+  "kotlin",
+  "swift",
+  "ruby",
+];
+
+/** Optimal-string-alignment distance: an adjacent swap ("swtich") costs 1, not 2. */
+export function editDistance(a: string, b: string): number {
+  const rows = a.length + 1;
+  const cols = b.length + 1;
+  const d: number[][] = Array.from({ length: rows }, (_, i) => {
+    const row = new Array<number>(cols).fill(0);
+    row[0] = i;
+    return row;
+  });
+  for (let j = 0; j < cols; j++) d[0][j] = j;
+  for (let i = 1; i < rows; i++) {
+    for (let j = 1; j < cols; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+      }
+    }
+  }
+  return d[a.length][b.length];
+}
+
+/** The vocabulary word a mistyped term was most likely meant to be, if any. */
+export function correctTerm(word: string): string {
+  const w = word.toLowerCase();
+  // Short words are too ambiguous to correct ("cl" could be anything).
+  if (w.length < 5 || VOCAB.includes(w)) return word;
+  const budget = w.length >= 8 ? 2 : 1;
+  let best: string | null = null;
+  let bestDistance = budget + 1;
+  let tied = false;
+  for (const candidate of VOCAB) {
+    if (Math.abs(candidate.length - w.length) > budget) continue;
+    const dist = editDistance(w, candidate);
+    if (dist < bestDistance) {
+      best = candidate;
+      bestDistance = dist;
+      tied = false;
+    } else if (dist === bestDistance && best !== candidate) {
+      tied = true;
+    }
+  }
+  return best && !tied ? best : word;
+}
+
+/** A question that has no page of its own words, mapped to the page that answers
+ *  it. First match wins, so the narrower intents come first. */
+const INTENTS: [RegExp, string][] = [
+  [
+    /\b(?:turn|switch|shut|kill|cut)\s+(?:it\s+|them\s+|a\s+|the\s+|that\s+|this\s+)?(?:\w+\s+)?off\b|\b(?:disable|stop|pause)\b.*\b(?:feature|prod(?:uction)?|incident)\b|\bpanic\b|\bemergency\b|\bincident\b/,
+    "killswitch",
+  ],
+  [/\b(?:release notes?|what'?s new|what changed|change ?log|new releases?)\b/, "changelog"],
+  [
+    /\b(?:gradually|slowly|percent(?:age)?|ramp)\b.*\b(?:release|roll|launch|ship)|\b(?:roll|release|ship|launch)\b.*\b(?:gradually|slowly|percent(?:age)?|to\s+\d+\s*%)/,
+    "rollout",
+  ],
+  [/\b(?:notify|notified|ping|page|warn)\s+(?:me|us|the team)\b|\bget\s+alerted\b/, "alert"],
+  [/\b(?:log\s?in|sign\s?in|token|api key|credentials)\b.*\b(?:cli|terminal|ci)\b/, "authenticate"],
+  [/\b(?:claude|cursor|copilot|agent|ai assistant)\b.*\b(?:connect|install|plug|add)\b/, "mcp"],
+];
+
+/** What to send to the search engine for what the reader typed. */
+export function rewriteQuery(raw: string): string {
+  const q = raw.trim();
+  if (q.length === 0) return raw;
+  const lower = q.toLowerCase();
+  // A question (or any multi-word phrase) with no exact-term meaning: look for intent.
+  if (lower.split(/\s+/).length >= 2) {
+    for (const [re, to] of INTENTS) if (re.test(lower)) return to;
+  }
+  return q
+    .split(/(\s+)/)
+    .map((part) => (/^\s+$/.test(part) ? part : correctTerm(part)))
+    .join("");
+}

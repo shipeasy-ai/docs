@@ -2,14 +2,14 @@
 
 Source: https://docs.shipeasy.ai/sdks/go
 
-> The Shipeasy Go server SDK — context-aware client, local evaluation, configs, kill switches, and metric tracking.
+> The Shipeasy Go server SDK — context-aware client, local evaluation, configs, killswitches, and metric tracking.
 
 > **Note**
 Generated from the Go SDK repo's own `/docs/` — the same Markdown `shipeasy docs get --sdk go overview` returns, served raw at [`https://shipeasy-ai.github.io/sdk-go/pages/overview.md`](https://shipeasy-ai.github.io/sdk-go/pages/overview.md). Edit it in the SDK repo, not here.
 
 `github.com/shipeasy-ai/sdk-go` is the **server-side** Go SDK for
 [Shipeasy](https://shipeasy.ai): feature flags ("gates"), dynamic configs,
-kill switches, metric tracking, and structured error reporting.
+killswitches, metric tracking, and structured error reporting.
 Evaluation is **local** against a cached copy of the edge blobs — there is no
 network call on the hot path.
 
@@ -76,7 +76,7 @@ lives in the global config — failing loudly surfaces the misconfiguration).
 - [Configuration](https://docs.shipeasy.ai/sdks/reference/go/configuration) — `Configure` options, env vars, init/poll vs one-shot, change listeners.
 - [Flags](https://docs.shipeasy.ai/sdks/reference/go/flags) — `GetFlag`, `GetFlagOr`, `GetFlagDetail`.
 - [Configs](https://docs.shipeasy.ai/sdks/reference/go/configs) — `GetConfig`, `GetConfigOr`.
-- [Kill switches](https://docs.shipeasy.ai/sdks/reference/go/killswitches) — `GetKillswitch`, named switches.
+- [Killswitches](https://docs.shipeasy.ai/sdks/reference/go/killswitches) — `GetKillswitch`, named switches.
 - [Error reporting](https://docs.shipeasy.ai/sdks/reference/go/error-reporting) — the `See()` surface.
 - [Testing](https://docs.shipeasy.ai/sdks/reference/go/testing) — `ConfigureForTesting`, `ConfigureForOffline`, the `Override*` helpers.
 - [OpenFeature](https://docs.shipeasy.ai/sdks/reference/go/openfeature) — `NewGlobalProvider()`.
@@ -143,11 +143,11 @@ v := c.GetConfigOr("billing_copy", map[string]any{"cta": "Buy"}) // name; def
 _ = v
 ```
 
-## Kill switches
+## Killswitches
 
-Check whether the `payments` kill switch is engaged. Assumes `Configure()` ran at startup — see Installation.
+Check whether the `payments` killswitch is engaged. Assumes `Configure()` ran at startup — see Installation.
 
-### Read a kill switch
+### Read a killswitch
 
 ```go
 // construct once per callsite (cheap; binds the user)
@@ -168,7 +168,7 @@ c := shipeasy.NewClient(shipeasy.User{"user_id": "u_123"})
 
 // GetKillswitch(name, switchKey) — the optional switchKey selects a named
 // per-key override (the dashboard "switches" feature). When that key has no
-// override, it falls back to the kill switch's top-level value.
+// override, it falls back to the killswitch's top-level value.
 if c.GetKillswitch("payments", "eu") {
     // killed for the "eu" variant
 }
