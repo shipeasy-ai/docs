@@ -918,7 +918,23 @@
         }
       ],
       "options": [
-        "--data"
+        "--data",
+        "--include"
+      ]
+    },
+    {
+      "path": "shipeasy ops group",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--priority",
+        "--status"
       ]
     },
     {
