@@ -1048,6 +1048,7 @@
         "--offset",
         "--owner",
         "--priority",
+        "--qa-questions",
         "--scope",
         "--status",
         "--type"
@@ -1101,6 +1102,62 @@
       "options": [
         "--data",
         "--kind"
+      ]
+    },
+    {
+      "path": "shipeasy ops qa-questions",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy ops qa-questions answer",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "questionId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--agent",
+        "--answer"
+      ]
+    },
+    {
+      "path": "shipeasy ops qa-questions ask",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--agent",
+        "--question"
+      ]
+    },
+    {
+      "path": "shipeasy ops qa-questions list",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data",
+        "--status"
       ]
     },
     {
