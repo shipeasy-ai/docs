@@ -576,6 +576,25 @@
       ]
     },
     {
+      "path": "shipeasy ops activity",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy ops activity list",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data",
+        "--field",
+        "--item",
+        "--limit",
+        "--since",
+        "--until"
+      ]
+    },
+    {
       "path": "shipeasy ops agents",
       "aliases": [],
       "args": [],
