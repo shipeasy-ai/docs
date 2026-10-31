@@ -2692,6 +2692,8 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy metrics update` — --default-min-effect-of-interest --direction --display --display-name --event-name --folder --query --query-ir --unit --winsorize-pct
 - `shipeasy ops`
 - `shipeasy ops ack` — --agent --launch --session-id
+- `shipeasy ops activity`
+- `shipeasy ops activity list` — --data --field --item --limit --since --until
 - `shipeasy ops agents`
 - `shipeasy ops agents list` — --data
 - `shipeasy ops alerts`
@@ -2864,6 +2866,7 @@ Parameters and error codes: https://docs.shipeasy.ai/get-started/mcp-reference
 - `ops_agents_list`
 - `ops_comments_create`
 - `ops_comments_list`
+- `ops_activity_list`
 - `ops_investigations_create`
 - `ops_investigations_list`
 - `ops_investigations_update`
