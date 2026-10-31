@@ -715,6 +715,30 @@
       ]
     },
     {
+      "path": "shipeasy ops attachments",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy ops attachments create",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--content-base64",
+        "--filename",
+        "--kind",
+        "--mime-type",
+        "--url"
+      ]
+    },
+    {
       "path": "shipeasy ops bug",
       "aliases": [],
       "args": [
@@ -728,6 +752,7 @@
         "--actual-result",
         "--assignee-id",
         "--context",
+        "--delegate-connector-id",
         "--expected-result",
         "--notify",
         "--page-url",
@@ -777,6 +802,24 @@
       ]
     },
     {
+      "path": "shipeasy ops comments upload-media",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--content-base64",
+        "--filename",
+        "--kind",
+        "--mime-type",
+        "--url"
+      ]
+    },
+    {
       "path": "shipeasy ops create",
       "aliases": [],
       "args": [
@@ -790,6 +833,7 @@
         "--actual-result",
         "--assignee-id",
         "--context",
+        "--delegate-connector-id",
         "--description",
         "--expected-result",
         "--notify",
@@ -819,6 +863,7 @@
       "options": [
         "--assignee-id",
         "--context",
+        "--delegate-connector-id",
         "--description",
         "--notify",
         "--page-url",
@@ -976,6 +1021,24 @@
       ]
     },
     {
+      "path": "shipeasy ops links",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--add-blocked-by",
+        "--add-blocking",
+        "--duplicate-of",
+        "--remove-blocked-by",
+        "--remove-blocking"
+      ]
+    },
+    {
       "path": "shipeasy ops list",
       "aliases": [],
       "args": [],
@@ -1115,6 +1178,37 @@
       "options": [
         "--data",
         "--status"
+      ]
+    },
+    {
+      "path": "shipeasy ops routing-rules",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy ops routing-rules create",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--agent-prompt",
+        "--connector",
+        "--enabled",
+        "--priority",
+        "--skip-approval",
+        "--status",
+        "--subscribers",
+        "--tags",
+        "--types",
+        "--user"
+      ]
+    },
+    {
+      "path": "shipeasy ops routing-rules list",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data"
       ]
     },
     {
