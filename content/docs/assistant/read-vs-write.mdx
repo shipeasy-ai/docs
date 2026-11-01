@@ -73,7 +73,7 @@ The call surfaces as an **editable confirmation card**, and the underlying chang
 you press **Confirm**. If a step can't be applied from the dashboard — it needs a code change,
 say — the assistant files it as a ticket instead, and says so.
 
-That inversion is deliberate: because nothing mutates until you confirm, it's safe — and expected —
+That inversion is deliberate: because the change itself doesn't apply until you confirm, it's safe — and expected —
 for the assistant to propose a mutation directly rather than asking "should I?" first.
 
 <AssistantCardScene kind="gate" />
@@ -96,8 +96,10 @@ ops_alerts_create / ops_alerts_update / ops_alerts_archive
 They are the same names the [MCP server](/get-started/mcp-reference) advertises — the assistant and
 an external coding agent drive one surface, not two.
 
-<Callout type="warn" title="Nothing applies until you confirm">
+<Callout type="warn" title="Changes apply only when you confirm">
   The assistant hands you the card first; you apply it. If you cancel, the change isn't applied.
+  One exception: when it drafts a metric, it may register the event that metric counts before you
+  confirm, so that event can remain after a cancel.
   Deleting resources is also available directly in the dashboard UI.
 </Callout>
 

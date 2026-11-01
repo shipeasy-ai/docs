@@ -10,7 +10,7 @@ description: The in-dashboard AI assistant — what it is, how read and write mo
       Describe the outcome. <em>It</em> wires up the flags, metrics, and alerts.
     </>
   }
-  subtitle="A chat assistant built into the dashboard. It reads your project to answer questions, and proposes every change as a card you confirm — feature flags, configs, killswitches, metrics, and alert rules. Nothing happens until you approve it."
+  subtitle="A chat assistant built into the dashboard. It reads your project to answer questions, and proposes every change as a card you confirm — feature flags, configs, killswitches, metrics, and alert rules. The change itself applies only when you approve it."
   primaryHref="/assistant/read-vs-write"
   primaryLabel="Read vs write mode"
   secondaryHref="/assistant/measurement-plans"
@@ -45,7 +45,9 @@ It works in two modes and picks the right one for you. The split is the whole sa
   <Tile href="/assistant/read-vs-write" icon="✦" title="Write — propose a change">
     Changes are proposed, not applied behind your back. Each surfaces as an **editable confirmation
     card** — it applies only when you press **Confirm**. So it's safe (and expected) for the
-    assistant to propose a change directly instead of asking permission first.
+    assistant to propose a change directly instead of asking permission first. One caveat: while
+    drafting a metric, the assistant may register the event the metric counts before you press
+    **Confirm**, so the event can exist even if you cancel the card.
   </Tile>
 </TileGrid>
 
