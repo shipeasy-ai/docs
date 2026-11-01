@@ -2702,31 +2702,43 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy ops alerts create` — --auto-resolve-minutes --bucket-minutes --comparator --composite --delay-minutes --direction --enabled --group-alerts --kind --max-groups --metric-id --name --no-data-minutes --notify --range-max --range-min --recovery-threshold --required-buckets --severity --sigma --sustained --threshold --warn-threshold --window-hours
 - `shipeasy ops alerts list` — --data --q
 - `shipeasy ops alerts update` — --auto-resolve-minutes --bucket-minutes --comparator --composite --delay-minutes --direction --enabled --group-alerts --kind --max-groups --name --no-data-minutes --notify --range-max --range-min --recovery-threshold --required-buckets --severity --sigma --sustained --threshold --warn-threshold --window-hours
-- `shipeasy ops bug` — --actual-result --assignee-id --context --expected-result --notify --page-url --priority --reporter-email --status --steps-to-reproduce --subscribers --tags --user-agent --viewport
+- `shipeasy ops attachments`
+- `shipeasy ops attachments create` — --content-base64 --filename --kind --mime-type --url
+- `shipeasy ops bug` — --actual-result --assignee-id --context --delegate-connector-id --expected-result --notify --page-url --priority --reporter-email --status --steps-to-reproduce --subscribers --tags --user-agent --viewport
 - `shipeasy ops comments`
 - `shipeasy ops comments create` — --body --parent-id
 - `shipeasy ops comments list` — --data
-- `shipeasy ops create` — --actual-result --assignee-id --context --description --expected-result --notify --page-url --priority --reporter-email --status --steps-to-reproduce --subscribers --tags --type --use-case --user-agent --viewport
-- `shipeasy ops feature` — --assignee-id --context --description --notify --page-url --priority --reporter-email --status --subscribers --tags --use-case --user-agent
+- `shipeasy ops comments upload-media` — --content-base64 --filename --kind --mime-type --url
+- `shipeasy ops create` — --actual-result --assignee-id --context --delegate-connector-id --description --expected-result --notify --page-url --priority --reporter-email --status --steps-to-reproduce --subscribers --tags --type --use-case --user-agent --viewport
+- `shipeasy ops feature` — --assignee-id --context --delegate-connector-id --description --notify --page-url --priority --reporter-email --status --subscribers --tags --use-case --user-agent
 - `shipeasy ops fired-alerts`
 - `shipeasy ops fired-alerts list` — --data --status
 - `shipeasy ops fired-alerts update` — --agent --assignee-id --status
-- `shipeasy ops get` — --data
+- `shipeasy ops get` — --data --include
+- `shipeasy ops group` — --priority --status
 - `shipeasy ops investigations`
 - `shipeasy ops investigations create` — --agent --completed-at --confidence --connector-id --duration-ms --findings --kind --model --pr-number --pr-url --qa-notes --question --session-id --sources --started-at --summary --tokens-used --visibility
 - `shipeasy ops investigations list` — --data
 - `shipeasy ops investigations update` — --completed-at --confidence --duration-ms --findings --kind --model --pr-number --pr-url --qa-notes --question --session-id --sources --summary --tokens-used --visibility
 - `shipeasy ops link-pr` — --pr-number --pr-url
-- `shipeasy ops list` — --data --limit --offset --owner --priority --scope --status --type
+- `shipeasy ops links` — --add-blocked-by --add-blocking --duplicate-of --remove-blocked-by --remove-blocking
+- `shipeasy ops list` — --data --limit --offset --owner --priority --qa-questions --scope --status --type
 - `shipeasy ops notify` — --dedupe-key --href --steps --summary --title
 - `shipeasy ops qa-notes`
 - `shipeasy ops qa-notes create` — --agent --body --kind --verdict
 - `shipeasy ops qa-notes list` — --data --kind
+- `shipeasy ops qa-questions`
+- `shipeasy ops qa-questions answer` — --agent --answer
+- `shipeasy ops qa-questions ask` — --agent --question
+- `shipeasy ops qa-questions list` — --data --status
 - `shipeasy ops questions`
 - `shipeasy ops questions answer` — --other --selected
 - `shipeasy ops questions ask` — --agent --delivery --questions --run-id
 - `shipeasy ops questions cancel` — --data
 - `shipeasy ops questions list` — --data --status
+- `shipeasy ops routing-rules`
+- `shipeasy ops routing-rules create` — --agent-prompt --connector --enabled --priority --skip-approval --status --subscribers --tags --types --user
+- `shipeasy ops routing-rules list` — --data
 - `shipeasy ops trigger`
 - `shipeasy ops trigger create`
 - `shipeasy ops trigger create claude` — --config --enabled --events --name --token
@@ -2852,11 +2864,18 @@ Parameters and error codes: https://docs.shipeasy.ai/get-started/mcp-reference
 - `ops_fired_alerts_list`
 - `ops_fired_alerts_update`
 - `ops_get`
+- `ops_group`
 - `ops_link_pr`
+- `ops_links`
 - `ops_list`
 - `ops_notify`
 - `ops_qa_notes_create`
 - `ops_qa_notes_list`
+- `ops_qa_questions_answer`
+- `ops_qa_questions_ask`
+- `ops_qa_questions_list`
+- `ops_routing_rules_create`
+- `ops_routing_rules_list`
 - `ops_update`
 - `ops_alerts_archive`
 - `ops_alerts_channels`
@@ -2864,8 +2883,10 @@ Parameters and error codes: https://docs.shipeasy.ai/get-started/mcp-reference
 - `ops_alerts_list`
 - `ops_alerts_update`
 - `ops_agents_list`
+- `ops_attachments_create`
 - `ops_comments_create`
 - `ops_comments_list`
+- `ops_comments_upload_media`
 - `ops_activity_list`
 - `ops_investigations_create`
 - `ops_investigations_list`
@@ -2878,6 +2899,7 @@ Parameters and error codes: https://docs.shipeasy.ai/get-started/mcp-reference
 - `ops_trigger_create_copilot`
 - `ops_trigger_create_cursor`
 - `ops_trigger_create_jules`
+- `api_keys_create`
 - `projects_current`
 - `projects_update`
 - `projects_upsert`

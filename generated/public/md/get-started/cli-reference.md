@@ -544,6 +544,34 @@ shipeasy ops alerts archive [options] <id>
 | --- | --- | --- |
 | `--data <value>` | optional | Request body as a JSON object. |
 
+### `shipeasy ops attachments`
+
+Screenshots, recordings, and files attached to a bug or feature request — the evidence a QA lane captures at verification time.
+
+```bash
+shipeasy ops attachments [options] [command]
+```
+
+#### `shipeasy ops attachments create`
+
+Attach a screenshot to an item
+
+```bash
+shipeasy ops attachments create [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--content-base64 <value>` | optional | The file bytes, base64-encoded (a bare string or a `data:<mime>;base64,` URI). Pass this or `url`, not both. |
+| `--url <value>` | optional | A public https URL for the server to fetch the file from (no IP literals or internal hosts; max 25 MiB). Pass this or `contentBase64`, not both. |
+| `--filename <value>` | optional | File name, e.g. `checkout-overflow.png`. Defaults to the last segment of `url`, else `file`. |
+| `--mime-type <value>` | optional | Media type, e.g. `image/png`. Defaults from the data URI, the fetched response, or the filename extension. |
+| `--kind <value>` | optional | Attachment kind. Defaults from the media type (image → screenshot, video → recording, else file). Ignored by the comment-media upload. |
+
 ### `shipeasy ops comments`
 
 Comments on a queue item — the discussion thread that hangs off any bug, feature request, or auto-filed error/alert ticket.
@@ -584,6 +612,26 @@ shipeasy ops comments create [options] <handle>
 | --- | --- | --- |
 | `--body <value>` | optional | The comment body as markdown. Mentions (`@teammate`, `@shipeasy`) are parsed from it. |
 | `--parent-id <value>` | optional | Reply under this top-level comment. Omit / `null` for a top-level comment. Replying to a reply attaches to the same top-level parent (threading is one level deep). |
+
+#### `shipeasy ops comments upload-media`
+
+Upload an image to embed in a comment
+
+```bash
+shipeasy ops comments upload-media [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--content-base64 <value>` | optional | The file bytes, base64-encoded (a bare string or a `data:<mime>;base64,` URI). Pass this or `url`, not both. |
+| `--url <value>` | optional | A public https URL for the server to fetch the file from (no IP literals or internal hosts; max 25 MiB). Pass this or `contentBase64`, not both. |
+| `--filename <value>` | optional | File name, e.g. `checkout-overflow.png`. Defaults to the last segment of `url`, else `file`. |
+| `--mime-type <value>` | optional | Media type, e.g. `image/png`. Defaults from the data URI, the fetched response, or the filename extension. |
+| `--kind <value>` | optional | Attachment kind. Defaults from the media type (image → screenshot, video → recording, else file). Ignored by the comment-media upload. |
 
 ### `shipeasy ops fired-alerts`
 
@@ -755,6 +803,66 @@ shipeasy ops qa-notes create [options] <handle>
 | `--body <value>` | optional | The note (markdown). |
 | `--agent <value>` | optional | The agent type writing the note — pass your own type when you are QA automation. Omitted, the note is attributed to the caller's identity. |
 
+### `shipeasy ops qa-questions`
+
+Questions put to QA on a queue item — for when the person or agent working an item does not know the answer and wants QA's call without a build or a meeting.
+
+```bash
+shipeasy ops qa-questions [options] [command]
+```
+
+#### `shipeasy ops qa-questions list`
+
+List an item's QA questions
+
+```bash
+shipeasy ops qa-questions list [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--status <value>` | optional | Only questions in this status. |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy ops qa-questions ask`
+
+Ask QA a question about an item
+
+```bash
+shipeasy ops qa-questions ask [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--question <value>` | optional | What you need QA to answer (markdown). Include what you already tried. |
+| `--agent <value>` | optional | The agent type asking — pass your own type when you are a coding agent. Omitted, the question is attributed to the caller's identity. |
+
+#### `shipeasy ops qa-questions answer`
+
+Answer a QA question
+
+```bash
+shipeasy ops qa-questions answer [options] <handle> <questionId>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+| `questionId` | required | The question id (from `ask`, `list` or `ops get`). |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--answer <value>` | optional | QA's answer (markdown). |
+| `--agent <value>` | optional | The agent type answering — pass your own type when you are QA automation. Omitted, the answer is attributed to the caller's identity. |
+
 ### `shipeasy ops questions`
 
 Structured questions an agent asks the team about a queue item — the `AskUserQuestion` shape: a short `header`, the `question`, 2–4 `options` (label + description), and `multiSelect` for checkboxes instead of radios.
@@ -833,6 +941,47 @@ shipeasy ops questions cancel [options] <handle> <questionId>
 | Option | | Description |
 | --- | --- | --- |
 | `--data <value>` | optional | Request body as a JSON object. |
+
+### `shipeasy ops routing-rules`
+
+Tag automation rules — the project's "when an item carries tag X, do Y" settings.
+
+```bash
+shipeasy ops routing-rules [options] [command]
+```
+
+#### `shipeasy ops routing-rules list`
+
+List tag automation rules
+
+```bash
+shipeasy ops routing-rules list [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy ops routing-rules create`
+
+Create a tag automation rule
+
+```bash
+shipeasy ops routing-rules create [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--tags <value>` | optional | Tag names the rule matches (case-insensitive). Tags are created on first use. |
+| `--types <value>` | optional | Ticket types the rule also fires on. |
+| `--enabled <value>` | optional | Whether the rule is live. Defaults to `true`. |
+| `--user <value>` | optional | Person to assign — a user id. |
+| `--connector <value>` | optional | Connected coding agent to hand the item to — a connector id from `ops agents list`. |
+| `--agent-prompt <value>` | optional | Steering prompt for the launched agent. Only kept alongside a `connector`. |
+| `--status <value>` | optional | Lifecycle status of a queue item. The working flow is `open` → `in_progress` → `ready_for_qa` → `resolved` (or `wont_fix`, terminal from any earlier stage). `blocked` marks an item that can't progress until an external dependency clears — a working state a human sets and clears. `ready_for_qa` is what a developer sets once a fix lands; `resolved` is the QA sign-off, normally flipped in the dashboard after verification — set it directly from code only when the fix has been verified end-to-end. `investigating_by_ai` is a system-owned display state — set when the AI agent (Jarvis) picks an item up to investigate, never chosen by a human — so it is shown but not offered as a manual choice. `pending_approval` is the one human-gated holding state: it parks an item OUT of the work queue until a human promotes it to `open` in the dashboard, so `GET /api/admin/ops` excludes it under `status=all`/default and returns it only when requested as an exact `status`. It covers untriaged inbound that must never be auto-implemented — connector requests filed from a customer's connectors panel, and questions funnelled in from the "Stuck in onboarding?" assistant — where approving means flipping the status to `open`. Two earlier values were removed in favour of this single gate: `triage` (the onboarding-help bucket, now `pending_approval`) and `triaged` (a redundant "looked at but not started" step, now plain `open`). |
+| `--priority <value>` | optional | Triage priority of a queue item. The lowest tier is `nice_to_have` (not `low`) — carried over from the feature-request "importance" scale this priority set replaced. |
+| `--subscribers <value>` | optional | Emails notified about matching items. |
+| `--skip-approval <value>` | optional | Let a matching public-intake ticket skip `pending_approval`. Defaults to `false`. |
 
 ### `shipeasy ops trigger`
 
@@ -970,6 +1119,7 @@ shipeasy ops list [options]
 | `--status <value>` | optional | Filter by one lifecycle status, `unresolved` for every status that is not `resolved` or `wont_fix`, or `all` for every status. Defaults to `all` over HTTP; the CLI and MCP tool default to `unresolved`, so pass `all` there to include resolved and won't-fix items. The human-gated holding state (`pending_approval`) is excluded from `unresolved` and `all`, and returned only when requested as the exact status. (default: `"unresolved"`) |
 | `--priority <value>` | optional | Filter by triage priority, or `all` (the default). Items with no priority set are returned only under `all`. |
 | `--scope <value>` | optional | `ready` narrows to the items ready to be picked up right now: status `open`, no open run (nobody has acked it and is still working), and either unowned (no person and no agent) or reopened (sent back to `open` after an earlier run finished). Leave `status` unset with it. `all` (the default) applies no such narrowing. |
+| `--qa-questions <value>` | optional | `open` narrows to the items with at least one unanswered QA question — the backlog QA answers first (read each with `ops get`, answer with `ops qa-questions answer`). `all` (the default) applies no such narrowing. |
 | `--limit <value>` | optional | Page size — max items to return (1–500). A page shorter than `limit` is the last one. |
 | `--offset <value>` | optional | Number of items to skip before the page starts. Defaults to 0. The order is stable, so `offset += limit` walks the queue page by page. |
 | `--owner <value>` | optional | Narrow to items owned by one person OR one agent. Matches a person by `users.id`, email, or display name, and an agent by connector id, display name, or kebab-case handle — e.g. `owner=Claude` or `owner=alice@acme.dev`. Case-insensitive exact match. |
@@ -996,6 +1146,7 @@ shipeasy ops create [options] <title>
 | `--priority <value>` | optional | Initial triage priority, or `null`. |
 | `--status <value>` | optional | Initial lifecycle status; defaults to `open` when omitted. |
 | `--assignee-id <value>` | optional | The `users.id` of the person to assign as owner at creation, or `null`. |
+| `--delegate-connector-id <value>` | optional | The agent connector the filer chose to delegate this item to at creation. When set, the server launches that one agent and skips any tag-rule auto-launch, so the filer's choice prevails and only one run starts. |
 | `--subscribers <value>` | optional | Emails of teammates to subscribe to this item's Slack pings at creation. |
 | `--tags <value>` | optional | Tag names to label the item with, e.g. `["ios", "checkout"]`. Each name is matched case-insensitively against the project's existing tags and reuses that tag (keeping its stored casing) when one matches; a name with no match creates a new project tag. |
 | `--reporter-email <value>` | optional | Email of the reporter, or `null`. |
@@ -1027,6 +1178,7 @@ shipeasy ops bug [options] <title>
 | `--priority <value>` | optional | Initial triage priority, or `null`. |
 | `--status <value>` | optional | Initial lifecycle status; defaults to `open` when omitted. |
 | `--assignee-id <value>` | optional | The `users.id` of the person to assign as owner at creation, or `null`. |
+| `--delegate-connector-id <value>` | optional | The agent connector the filer chose to delegate this item to at creation. When set, the server launches that one agent and skips any tag-rule auto-launch, so the filer's choice prevails and only one run starts. |
 | `--subscribers <value>` | optional | Emails of teammates to subscribe to this item's Slack pings at creation. |
 | `--tags <value>` | optional | Tag names to label the item with, e.g. `["ios", "checkout"]`. Each name is matched case-insensitively against the project's existing tags and reuses that tag (keeping its stored casing) when one matches; a name with no match creates a new project tag. |
 | `--reporter-email <value>` | optional | Email of the reporter, or `null`. |
@@ -1055,6 +1207,7 @@ shipeasy ops feature [options] <title>
 | `--priority <value>` | optional | Initial triage priority, or `null`. |
 | `--status <value>` | optional | Initial lifecycle status; defaults to `open` when omitted. |
 | `--assignee-id <value>` | optional | The `users.id` of the person to assign as owner at creation, or `null`. |
+| `--delegate-connector-id <value>` | optional | The agent connector the filer chose to delegate this item to at creation. When set, the server launches that one agent and skips any tag-rule auto-launch, so the filer's choice prevails and only one run starts. |
 | `--subscribers <value>` | optional | Emails of teammates to subscribe to this item's Slack pings at creation. |
 | `--tags <value>` | optional | Tag names to label the item with, e.g. `["ios", "checkout"]`. Each name is matched case-insensitively against the project's existing tags and reuses that tag (keeping its stored casing) when one matches; a name with no match creates a new project tag. |
 | `--reporter-email <value>` | optional | Email of the reporter, or `null`. |
@@ -1077,6 +1230,7 @@ shipeasy ops get [options] <handle>
 
 | Option | | Description |
 | --- | --- | --- |
+| `--include <value>` | optional | `linked` inlines the content of every other member of the item's link group as `linkedItems`. |
 | `--data <value>` | optional | Request body as a JSON object. |
 
 ### `shipeasy ops update`
@@ -1120,6 +1274,43 @@ shipeasy ops link-pr [options] <handle>
 | --- | --- | --- |
 | `--pr-number <value>` | optional | PR number to record on the item. `null` unlinks the PR. |
 | `--pr-url <value>` | optional | Explicit PR URL. Required for error/alert tickets (no GitHub issue to derive the URL from). |
+
+### `shipeasy ops links`
+
+Link related items
+
+```bash
+shipeasy ops links [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--add-blocked-by <value>` | optional | Items (number or id) to record as blocking this one. Already-linked items are a no-op. |
+| `--remove-blocked-by <value>` | optional | Items (number or id) to stop recording as blocking this one. Unlinked items are a no-op. |
+| `--add-blocking <value>` | optional | Items (number or id) this one blocks. Already-linked items are a no-op. |
+| `--remove-blocking <value>` | optional | Items (number or id) this one should stop blocking. Unlinked items are a no-op. |
+| `--duplicate-of <value>` | optional | Mark this item as a duplicate of another (number or id), replacing any earlier canonical; `null` clears it. Omit to leave it unchanged. While the canonical is still open, the item closes as `wont_fix`; a canonical that is already `resolved`/`wont_fix` leaves the item's status alone. |
+
+### `shipeasy ops group`
+
+Update a linked group
+
+```bash
+shipeasy ops group [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id — any member of the group. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--status <value>` | optional | Lifecycle status of a queue item. The working flow is `open` → `in_progress` → `ready_for_qa` → `resolved` (or `wont_fix`, terminal from any earlier stage). `blocked` marks an item that can't progress until an external dependency clears — a working state a human sets and clears. `ready_for_qa` is what a developer sets once a fix lands; `resolved` is the QA sign-off, normally flipped in the dashboard after verification — set it directly from code only when the fix has been verified end-to-end. `investigating_by_ai` is a system-owned display state — set when the AI agent (Jarvis) picks an item up to investigate, never chosen by a human — so it is shown but not offered as a manual choice. `pending_approval` is the one human-gated holding state: it parks an item OUT of the work queue until a human promotes it to `open` in the dashboard, so `GET /api/admin/ops` excludes it under `status=all`/default and returns it only when requested as an exact `status`. It covers untriaged inbound that must never be auto-implemented — connector requests filed from a customer's connectors panel, and questions funnelled in from the "Stuck in onboarding?" assistant — where approving means flipping the status to `open`. Two earlier values were removed in favour of this single gate: `triage` (the onboarding-help bucket, now `pending_approval`) and `triaged` (a redundant "looked at but not started" step, now plain `open`). |
+| `--priority <value>` | optional | Triage priority, or `null` when not set (in an update, `null` clears it). |
 
 ### `shipeasy ops ack`
 
@@ -1219,7 +1410,7 @@ shipeasy projects update [options] <id>
 
 ## `shipeasy tags`
 
-Tags: free-form, project-scoped labels any item can carry — queue items (bugs, feature requests, error/alert tickets), flags, configs, kill switches, metrics, tracked errors and alert rules all share one tag roster.
+Tags: free-form, project-scoped labels any item can carry — queue items (bugs, feature requests, error/alert tickets), flags, configs, killswitches, metrics, tracked errors and alert rules all share one tag roster.
 
 ```bash
 shipeasy tags [options] [command]
@@ -1292,7 +1483,7 @@ shipeasy tags update [options] <entityType> <entityId>
 
 ## `shipeasy release`
 
-Feature delivery — flags, kill switches, dynamic configs.
+Feature delivery — flags, killswitches, dynamic configs.
 
 ```bash
 shipeasy release [options] [command]

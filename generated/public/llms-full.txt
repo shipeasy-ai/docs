@@ -2461,6 +2461,34 @@ shipeasy ops alerts archive [options] <id>
 | --- | --- | --- |
 | `--data <value>` | optional | Request body as a JSON object. |
 
+#### `shipeasy ops attachments`
+
+Screenshots, recordings, and files attached to a bug or feature request — the evidence a QA lane captures at verification time.
+
+```bash
+shipeasy ops attachments [options] [command]
+```
+
+##### `shipeasy ops attachments create`
+
+Attach a screenshot to an item
+
+```bash
+shipeasy ops attachments create [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--content-base64 <value>` | optional | The file bytes, base64-encoded (a bare string or a `data:<mime>;base64,` URI). Pass this or `url`, not both. |
+| `--url <value>` | optional | A public https URL for the server to fetch the file from (no IP literals or internal hosts; max 25 MiB). Pass this or `contentBase64`, not both. |
+| `--filename <value>` | optional | File name, e.g. `checkout-overflow.png`. Defaults to the last segment of `url`, else `file`. |
+| `--mime-type <value>` | optional | Media type, e.g. `image/png`. Defaults from the data URI, the fetched response, or the filename extension. |
+| `--kind <value>` | optional | Attachment kind. Defaults from the media type (image → screenshot, video → recording, else file). Ignored by the comment-media upload. |
+
 #### `shipeasy ops comments`
 
 Comments on a queue item — the discussion thread that hangs off any bug, feature request, or auto-filed error/alert ticket.
@@ -2501,6 +2529,26 @@ shipeasy ops comments create [options] <handle>
 | --- | --- | --- |
 | `--body <value>` | optional | The comment body as markdown. Mentions (`@teammate`, `@shipeasy`) are parsed from it. |
 | `--parent-id <value>` | optional | Reply under this top-level comment. Omit / `null` for a top-level comment. Replying to a reply attaches to the same top-level parent (threading is one level deep). |
+
+##### `shipeasy ops comments upload-media`
+
+Upload an image to embed in a comment
+
+```bash
+shipeasy ops comments upload-media [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--content-base64 <value>` | optional | The file bytes, base64-encoded (a bare string or a `data:<mime>;base64,` URI). Pass this or `url`, not both. |
+| `--url <value>` | optional | A public https URL for the server to fetch the file from (no IP literals or internal hosts; max 25 MiB). Pass this or `contentBase64`, not both. |
+| `--filename <value>` | optional | File name, e.g. `checkout-overflow.png`. Defaults to the last segment of `url`, else `file`. |
+| `--mime-type <value>` | optional | Media type, e.g. `image/png`. Defaults from the data URI, the fetched response, or the filename extension. |
+| `--kind <value>` | optional | Attachment kind. Defaults from the media type (image → screenshot, video → recording, else file). Ignored by the comment-media upload. |
 
 #### `shipeasy ops fired-alerts`
 
@@ -2672,6 +2720,66 @@ shipeasy ops qa-notes create [options] <handle>
 | `--body <value>` | optional | The note (markdown). |
 | `--agent <value>` | optional | The agent type writing the note — pass your own type when you are QA automation. Omitted, the note is attributed to the caller's identity. |
 
+#### `shipeasy ops qa-questions`
+
+Questions put to QA on a queue item — for when the person or agent working an item does not know the answer and wants QA's call without a build or a meeting.
+
+```bash
+shipeasy ops qa-questions [options] [command]
+```
+
+##### `shipeasy ops qa-questions list`
+
+List an item's QA questions
+
+```bash
+shipeasy ops qa-questions list [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--status <value>` | optional | Only questions in this status. |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+##### `shipeasy ops qa-questions ask`
+
+Ask QA a question about an item
+
+```bash
+shipeasy ops qa-questions ask [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--question <value>` | optional | What you need QA to answer (markdown). Include what you already tried. |
+| `--agent <value>` | optional | The agent type asking — pass your own type when you are a coding agent. Omitted, the question is attributed to the caller's identity. |
+
+##### `shipeasy ops qa-questions answer`
+
+Answer a QA question
+
+```bash
+shipeasy ops qa-questions answer [options] <handle> <questionId>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+| `questionId` | required | The question id (from `ask`, `list` or `ops get`). |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--answer <value>` | optional | QA's answer (markdown). |
+| `--agent <value>` | optional | The agent type answering — pass your own type when you are QA automation. Omitted, the answer is attributed to the caller's identity. |
+
 #### `shipeasy ops questions`
 
 Structured questions an agent asks the team about a queue item — the `AskUserQuestion` shape: a short `header`, the `question`, 2–4 `options` (label + description), and `multiSelect` for checkboxes instead of radios.
@@ -2750,6 +2858,47 @@ shipeasy ops questions cancel [options] <handle> <questionId>
 | Option | | Description |
 | --- | --- | --- |
 | `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy ops routing-rules`
+
+Tag automation rules — the project's "when an item carries tag X, do Y" settings.
+
+```bash
+shipeasy ops routing-rules [options] [command]
+```
+
+##### `shipeasy ops routing-rules list`
+
+List tag automation rules
+
+```bash
+shipeasy ops routing-rules list [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+##### `shipeasy ops routing-rules create`
+
+Create a tag automation rule
+
+```bash
+shipeasy ops routing-rules create [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--tags <value>` | optional | Tag names the rule matches (case-insensitive). Tags are created on first use. |
+| `--types <value>` | optional | Ticket types the rule also fires on. |
+| `--enabled <value>` | optional | Whether the rule is live. Defaults to `true`. |
+| `--user <value>` | optional | Person to assign — a user id. |
+| `--connector <value>` | optional | Connected coding agent to hand the item to — a connector id from `ops agents list`. |
+| `--agent-prompt <value>` | optional | Steering prompt for the launched agent. Only kept alongside a `connector`. |
+| `--status <value>` | optional | Lifecycle status of a queue item. The working flow is `open` → `in_progress` → `ready_for_qa` → `resolved` (or `wont_fix`, terminal from any earlier stage). `blocked` marks an item that can't progress until an external dependency clears — a working state a human sets and clears. `ready_for_qa` is what a developer sets once a fix lands; `resolved` is the QA sign-off, normally flipped in the dashboard after verification — set it directly from code only when the fix has been verified end-to-end. `investigating_by_ai` is a system-owned display state — set when the AI agent (Jarvis) picks an item up to investigate, never chosen by a human — so it is shown but not offered as a manual choice. `pending_approval` is the one human-gated holding state: it parks an item OUT of the work queue until a human promotes it to `open` in the dashboard, so `GET /api/admin/ops` excludes it under `status=all`/default and returns it only when requested as an exact `status`. It covers untriaged inbound that must never be auto-implemented — connector requests filed from a customer's connectors panel, and questions funnelled in from the "Stuck in onboarding?" assistant — where approving means flipping the status to `open`. Two earlier values were removed in favour of this single gate: `triage` (the onboarding-help bucket, now `pending_approval`) and `triaged` (a redundant "looked at but not started" step, now plain `open`). |
+| `--priority <value>` | optional | Triage priority of a queue item. The lowest tier is `nice_to_have` (not `low`) — carried over from the feature-request "importance" scale this priority set replaced. |
+| `--subscribers <value>` | optional | Emails notified about matching items. |
+| `--skip-approval <value>` | optional | Let a matching public-intake ticket skip `pending_approval`. Defaults to `false`. |
 
 #### `shipeasy ops trigger`
 
@@ -2887,6 +3036,7 @@ shipeasy ops list [options]
 | `--status <value>` | optional | Filter by one lifecycle status, `unresolved` for every status that is not `resolved` or `wont_fix`, or `all` for every status. Defaults to `all` over HTTP; the CLI and MCP tool default to `unresolved`, so pass `all` there to include resolved and won't-fix items. The human-gated holding state (`pending_approval`) is excluded from `unresolved` and `all`, and returned only when requested as the exact status. (default: `"unresolved"`) |
 | `--priority <value>` | optional | Filter by triage priority, or `all` (the default). Items with no priority set are returned only under `all`. |
 | `--scope <value>` | optional | `ready` narrows to the items ready to be picked up right now: status `open`, no open run (nobody has acked it and is still working), and either unowned (no person and no agent) or reopened (sent back to `open` after an earlier run finished). Leave `status` unset with it. `all` (the default) applies no such narrowing. |
+| `--qa-questions <value>` | optional | `open` narrows to the items with at least one unanswered QA question — the backlog QA answers first (read each with `ops get`, answer with `ops qa-questions answer`). `all` (the default) applies no such narrowing. |
 | `--limit <value>` | optional | Page size — max items to return (1–500). A page shorter than `limit` is the last one. |
 | `--offset <value>` | optional | Number of items to skip before the page starts. Defaults to 0. The order is stable, so `offset += limit` walks the queue page by page. |
 | `--owner <value>` | optional | Narrow to items owned by one person OR one agent. Matches a person by `users.id`, email, or display name, and an agent by connector id, display name, or kebab-case handle — e.g. `owner=Claude` or `owner=alice@acme.dev`. Case-insensitive exact match. |
@@ -2913,6 +3063,7 @@ shipeasy ops create [options] <title>
 | `--priority <value>` | optional | Initial triage priority, or `null`. |
 | `--status <value>` | optional | Initial lifecycle status; defaults to `open` when omitted. |
 | `--assignee-id <value>` | optional | The `users.id` of the person to assign as owner at creation, or `null`. |
+| `--delegate-connector-id <value>` | optional | The agent connector the filer chose to delegate this item to at creation. When set, the server launches that one agent and skips any tag-rule auto-launch, so the filer's choice prevails and only one run starts. |
 | `--subscribers <value>` | optional | Emails of teammates to subscribe to this item's Slack pings at creation. |
 | `--tags <value>` | optional | Tag names to label the item with, e.g. `["ios", "checkout"]`. Each name is matched case-insensitively against the project's existing tags and reuses that tag (keeping its stored casing) when one matches; a name with no match creates a new project tag. |
 | `--reporter-email <value>` | optional | Email of the reporter, or `null`. |
@@ -2944,6 +3095,7 @@ shipeasy ops bug [options] <title>
 | `--priority <value>` | optional | Initial triage priority, or `null`. |
 | `--status <value>` | optional | Initial lifecycle status; defaults to `open` when omitted. |
 | `--assignee-id <value>` | optional | The `users.id` of the person to assign as owner at creation, or `null`. |
+| `--delegate-connector-id <value>` | optional | The agent connector the filer chose to delegate this item to at creation. When set, the server launches that one agent and skips any tag-rule auto-launch, so the filer's choice prevails and only one run starts. |
 | `--subscribers <value>` | optional | Emails of teammates to subscribe to this item's Slack pings at creation. |
 | `--tags <value>` | optional | Tag names to label the item with, e.g. `["ios", "checkout"]`. Each name is matched case-insensitively against the project's existing tags and reuses that tag (keeping its stored casing) when one matches; a name with no match creates a new project tag. |
 | `--reporter-email <value>` | optional | Email of the reporter, or `null`. |
@@ -2972,6 +3124,7 @@ shipeasy ops feature [options] <title>
 | `--priority <value>` | optional | Initial triage priority, or `null`. |
 | `--status <value>` | optional | Initial lifecycle status; defaults to `open` when omitted. |
 | `--assignee-id <value>` | optional | The `users.id` of the person to assign as owner at creation, or `null`. |
+| `--delegate-connector-id <value>` | optional | The agent connector the filer chose to delegate this item to at creation. When set, the server launches that one agent and skips any tag-rule auto-launch, so the filer's choice prevails and only one run starts. |
 | `--subscribers <value>` | optional | Emails of teammates to subscribe to this item's Slack pings at creation. |
 | `--tags <value>` | optional | Tag names to label the item with, e.g. `["ios", "checkout"]`. Each name is matched case-insensitively against the project's existing tags and reuses that tag (keeping its stored casing) when one matches; a name with no match creates a new project tag. |
 | `--reporter-email <value>` | optional | Email of the reporter, or `null`. |
@@ -2994,6 +3147,7 @@ shipeasy ops get [options] <handle>
 
 | Option | | Description |
 | --- | --- | --- |
+| `--include <value>` | optional | `linked` inlines the content of every other member of the item's link group as `linkedItems`. |
 | `--data <value>` | optional | Request body as a JSON object. |
 
 #### `shipeasy ops update`
@@ -3037,6 +3191,43 @@ shipeasy ops link-pr [options] <handle>
 | --- | --- | --- |
 | `--pr-number <value>` | optional | PR number to record on the item. `null` unlinks the PR. |
 | `--pr-url <value>` | optional | Explicit PR URL. Required for error/alert tickets (no GitHub issue to derive the URL from). |
+
+#### `shipeasy ops links`
+
+Link related items
+
+```bash
+shipeasy ops links [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--add-blocked-by <value>` | optional | Items (number or id) to record as blocking this one. Already-linked items are a no-op. |
+| `--remove-blocked-by <value>` | optional | Items (number or id) to stop recording as blocking this one. Unlinked items are a no-op. |
+| `--add-blocking <value>` | optional | Items (number or id) this one blocks. Already-linked items are a no-op. |
+| `--remove-blocking <value>` | optional | Items (number or id) this one should stop blocking. Unlinked items are a no-op. |
+| `--duplicate-of <value>` | optional | Mark this item as a duplicate of another (number or id), replacing any earlier canonical; `null` clears it. Omit to leave it unchanged. While the canonical is still open, the item closes as `wont_fix`; a canonical that is already `resolved`/`wont_fix` leaves the item's status alone. |
+
+#### `shipeasy ops group`
+
+Update a linked group
+
+```bash
+shipeasy ops group [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id — any member of the group. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--status <value>` | optional | Lifecycle status of a queue item. The working flow is `open` → `in_progress` → `ready_for_qa` → `resolved` (or `wont_fix`, terminal from any earlier stage). `blocked` marks an item that can't progress until an external dependency clears — a working state a human sets and clears. `ready_for_qa` is what a developer sets once a fix lands; `resolved` is the QA sign-off, normally flipped in the dashboard after verification — set it directly from code only when the fix has been verified end-to-end. `investigating_by_ai` is a system-owned display state — set when the AI agent (Jarvis) picks an item up to investigate, never chosen by a human — so it is shown but not offered as a manual choice. `pending_approval` is the one human-gated holding state: it parks an item OUT of the work queue until a human promotes it to `open` in the dashboard, so `GET /api/admin/ops` excludes it under `status=all`/default and returns it only when requested as an exact `status`. It covers untriaged inbound that must never be auto-implemented — connector requests filed from a customer's connectors panel, and questions funnelled in from the "Stuck in onboarding?" assistant — where approving means flipping the status to `open`. Two earlier values were removed in favour of this single gate: `triage` (the onboarding-help bucket, now `pending_approval`) and `triaged` (a redundant "looked at but not started" step, now plain `open`). |
+| `--priority <value>` | optional | Triage priority, or `null` when not set (in an update, `null` clears it). |
 
 #### `shipeasy ops ack`
 
@@ -3136,7 +3327,7 @@ shipeasy projects update [options] <id>
 
 ### `shipeasy tags`
 
-Tags: free-form, project-scoped labels any item can carry — queue items (bugs, feature requests, error/alert tickets), flags, configs, kill switches, metrics, tracked errors and alert rules all share one tag roster.
+Tags: free-form, project-scoped labels any item can carry — queue items (bugs, feature requests, error/alert tickets), flags, configs, killswitches, metrics, tracked errors and alert rules all share one tag roster.
 
 ```bash
 shipeasy tags [options] [command]
@@ -3209,7 +3400,7 @@ shipeasy tags update [options] <entityType> <entityId>
 
 ### `shipeasy release`
 
-Feature delivery — flags, kill switches, dynamic configs.
+Feature delivery — flags, killswitches, dynamic configs.
 
 ```bash
 shipeasy release [options] [command]
@@ -4799,7 +4990,7 @@ Hand-written tools (`projects_upsert` and auth) layer the `.shipeasy` bind or th
 
 ### Release
 
-Feature delivery — flags, kill switches, dynamic configs.
+Feature delivery — flags, killswitches, dynamic configs.
 
 #### Flags
 
@@ -6159,6 +6350,9 @@ Triggers).
 no `sessionId`, the ack also fires that trigger — a new provider run
 starts working the item. Pass `launch: false` to only claim the item and
 record the run (you are doing the work yourself), without starting one.
+A launch on an item linked to others (see `group` on `ops get`) is only
+allowed on the group's master — any other member answers `409`
+`INVALID_TRANSITION`, naming the master to ack instead.
 
 **Completion.** The run closes automatically on the loop's final actions —
 linking the fixing PR (`link-pr`), an ops-notify escalation, or a
@@ -6183,6 +6377,7 @@ _Errors_ — beyond the [common errors](#errors):
 - `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
 - `NOT_FOUND` — The resource does not exist or is not visible to the caller.
 - `AGENT_NOT_CONNECTED` — The named AI agent type has no connected trigger connector in this project — list the available agents (`ops agents list` / `GET /api/admin/agent-profiles`) and use one of those, or connect the agent under Settings → Triggers.
+- `INVALID_TRANSITION` — The requested lifecycle transition is not allowed from the current state.
 - `VALIDATION` — The request body failed structural (schema) validation.
 
 #### `ops_bug`
@@ -6207,6 +6402,7 @@ _Parameters_
 | `priority` | optional | `any` | Initial triage priority, or `null`. |
 | `status` | optional | `any` | Initial lifecycle status; defaults to `open` when omitted. |
 | `assigneeId` | optional | `any` | The `users.id` of the person to assign as owner at creation, or `null`. |
+| `delegateConnectorId` | optional | `string` | The agent connector the filer chose to delegate this item to at creation. When set, the server launches that one agent and skips any tag-rule auto-launch, so the filer's choice prevails and only one run starts. |
 | `subscribers` | optional | `string[]` | Emails of teammates to subscribe to this item's Slack pings at creation. _(default `[]`)_ |
 | `tags` | optional | `string[]` | Tag names to label the item with, e.g. `["ios", "checkout"]`. Each name is matched case-insensitively against the project's existing tags and reuses that tag (keeping its stored casing) when one matches; a name with no match creates a new project tag. _(default `[]`)_ |
 | `reporterEmail` | optional | `any` | Email of the reporter, or `null`. |
@@ -6246,6 +6442,7 @@ _Parameters_
 | `priority` | optional | `any` | Initial triage priority, or `null`. |
 | `status` | optional | `any` | Initial lifecycle status; defaults to `open` when omitted. |
 | `assigneeId` | optional | `any` | The `users.id` of the person to assign as owner at creation, or `null`. |
+| `delegateConnectorId` | optional | `string` | The agent connector the filer chose to delegate this item to at creation. When set, the server launches that one agent and skips any tag-rule auto-launch, so the filer's choice prevails and only one run starts. |
 | `subscribers` | optional | `string[]` | Emails of teammates to subscribe to this item's Slack pings at creation. _(default `[]`)_ |
 | `tags` | optional | `string[]` | Tag names to label the item with, e.g. `["ios", "checkout"]`. Each name is matched case-insensitively against the project's existing tags and reuses that tag (keeping its stored casing) when one matches; a name with no match creates a new project tag. _(default `[]`)_ |
 | `reporterEmail` | optional | `any` | Email of the reporter, or `null`. |
@@ -6285,6 +6482,7 @@ _Parameters_
 | `priority` | optional | `any` | Initial triage priority, or `null`. |
 | `status` | optional | `any` | Initial lifecycle status; defaults to `open` when omitted. |
 | `assigneeId` | optional | `any` | The `users.id` of the person to assign as owner at creation, or `null`. |
+| `delegateConnectorId` | optional | `string` | The agent connector the filer chose to delegate this item to at creation. When set, the server launches that one agent and skips any tag-rule auto-launch, so the filer's choice prevails and only one run starts. |
 | `subscribers` | optional | `string[]` | Emails of teammates to subscribe to this item's Slack pings at creation. _(default `[]`)_ |
 | `tags` | optional | `string[]` | Tag names to label the item with, e.g. `["ios", "checkout"]`. Each name is matched case-insensitively against the project's existing tags and reuses that tag (keeping its stored casing) when one matches; a name with no match creates a new project tag. _(default `[]`)_ |
 | `reporterEmail` | optional | `any` | Email of the reporter, or `null`. |
@@ -6360,18 +6558,50 @@ _Errors_ — beyond the [common errors](#errors):
 
 Fetch a single queue item by its per-project `number` or full id.
 
-**Use case:** Inspect one item's full detail before updating its status or linking a PR.
+An item linked to others (blocked by / blocking / duplicate of) carries its `group`: every connected item, and the `master` agent runs work through. Pass `include=linked` to inline the other members' content as `linkedItems`, so one call reads the whole group.
+
+**Use cases**
+
+- **Inspect one item** before updating its status or linking a PR.
+- **Pick up linked work** — `include=linked` reads the master and everything tied to it before a run starts.
 
 _Parameters_
 
 | Parameter | | Type | Description |
 | --- | --- | --- | --- |
 | `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `include` | optional | `"linked"` | `linked` inlines the content of every other member of the item's link group as `linkedItems`. |
 
 _Errors_ — beyond the [common errors](#errors):
 
 - `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
 - `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `ops_group`
+
+**Update a linked group**
+
+Applies `status` and/or `priority` to every item in this item's link group — the items tied to it, directly or through a chain, by blocked-by / blocking / duplicate-of links (see `group` on `ops get`). Each member goes through the normal item update, so activity, audit, run close-out and the error sync happen exactly as for a one-item edit. Members already in the requested state are left alone. An item with no links is a group of one.
+
+**Use cases**
+
+- **The fix landed for the whole group** — `{ "status": "resolved" }` on any member.
+- **Drop the group** — `{ "status": "wont_fix" }`.
+- **Escalate it together** — `{ "priority": "critical" }`.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `status` | optional | `"open" \| "pending_approval" \| "investigating_by_ai" \| "in_progress" \| "blocked" \| "ready_for_qa" \| "resolved" \| "wont_fix"` | Lifecycle status of a queue item. The working flow is `open` → `in_progress` → `ready_for_qa` → `resolved` (or `wont_fix`, terminal from any earlier stage). `blocked` marks an item that can't progress until an external dependency clears — a working state a human sets and clears. `ready_for_qa` is what a developer sets once a fix lands; `resolved` is the QA sign-off, normally flipped in the dashboard after verification — set it directly from code only when the fix has been verified end-to-end. `investigating_by_ai` is a system-owned display state — set when the AI agent (Jarvis) picks an item up to investigate, never chosen by a human — so it is shown but not offered as a manual choice. `pending_approval` is the one human-gated holding state: it parks an item OUT of the work queue until a human promotes it to `open` in the dashboard, so `GET /api/admin/ops` excludes it under `status=all`/default and returns it only when requested as an exact `status`. It covers untriaged inbound that must never be auto-implemented — connector requests filed from a customer's connectors panel, and questions funnelled in from the "Stuck in onboarding?" assistant — where approving means flipping the status to `open`. Two earlier values were removed in favour of this single gate: `triage` (the onboarding-help bucket, now `pending_approval`) and `triaged` (a redundant "looked at but not started" step, now plain `open`). |
+| `priority` | optional | `any` | Triage priority, or `null` when not set (in an update, `null` clears it). |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
 
 #### `ops_link_pr`
 
@@ -6388,6 +6618,38 @@ _Parameters_
 | `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
 | `prNumber` | required | `any` | PR number to record on the item. `null` unlinks the PR. |
 | `prUrl` | optional | `string` | Explicit PR URL. Required for error/alert tickets (no GitHub issue to derive the URL from). _(format: uri)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `ops_links`
+
+**Link related items**
+
+Edits how this queue item relates to others: which items block it ("blocked by"), which items it blocks ("blocking"), and which item it duplicates ("duplicate of"). The blocker lists are incremental — already-linked or never-linked items are no-ops and every other relation is left as is; `duplicateOf` sets or (with `null`) clears the one canonical item. An item with a blocker that is not `resolved`/`wont_fix` sits in the dashboard's Blocked lane. The relations show on `ops get` as `blockedBy` / `blocking` / `duplicateOf` / `duplicates`.
+
+A link that would make an item block or duplicate itself — directly or through a chain — is rejected with `409`; an item from another project doesn't resolve (`404`). Marking an item a duplicate of a still-open item closes it as `wont_fix`; if the canonical is already `resolved`/`wont_fix` (or the item itself is already closed) its status is left alone.
+
+**Use cases**
+
+- **This item can't move until #12 lands** — `{ "addBlockedBy": ["12"] }`.
+- **Split work: this item gates #20 and #21** — `{ "addBlocking": ["20", "21"] }`.
+- **The dependency turned out not to be one** — `{ "removeBlockedBy": ["12"] }`.
+- **Same bug was filed twice** — `{ "duplicateOf": "8" }` on the newer item — it closes as `wont_fix` while #8 is open.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `addBlockedBy` | optional | `string[]` | Items (number or id) to record as blocking this one. Already-linked items are a no-op. _(default `[]`)_ |
+| `removeBlockedBy` | optional | `string[]` | Items (number or id) to stop recording as blocking this one. Unlinked items are a no-op. _(default `[]`)_ |
+| `addBlocking` | optional | `string[]` | Items (number or id) this one blocks. Already-linked items are a no-op. _(default `[]`)_ |
+| `removeBlocking` | optional | `string[]` | Items (number or id) this one should stop blocking. Unlinked items are a no-op. _(default `[]`)_ |
+| `duplicateOf` | optional | `any` | Mark this item as a duplicate of another (number or id), replacing any earlier canonical; `null` clears it. Omit to leave it unchanged. While the canonical is still open, the item closes as `wont_fix`; a canonical that is already `resolved`/`wont_fix` leaves the item's status alone. |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -6415,6 +6677,7 @@ _Parameters_
 | `status` | optional | `any` | Filter by one lifecycle status, `unresolved` for every status that is not `resolved` or `wont_fix`, or `all` for every status. Defaults to `all` over HTTP; the CLI and MCP tool default to `unresolved`, so pass `all` there to include resolved and won't-fix items. The human-gated holding state (`pending_approval`) is excluded from `unresolved` and `all`, and returned only when requested as the exact status. _(default `"unresolved"`)_ |
 | `priority` | optional | `any` | Filter by triage priority, or `all` (the default). Items with no priority set are returned only under `all`. _(default `"all"`)_ |
 | `scope` | optional | `"all" \| "ready"` | `ready` narrows to the items ready to be picked up right now: status `open`, no open run (nobody has acked it and is still working), and either unowned (no person and no agent) or reopened (sent back to `open` after an earlier run finished). Leave `status` unset with it. `all` (the default) applies no such narrowing. _(default `"all"`)_ |
+| `qaQuestions` | optional | `"all" \| "open"` | `open` narrows to the items with at least one unanswered QA question — the backlog QA answers first (read each with `ops get`, answer with `ops qa-questions answer`). `all` (the default) applies no such narrowing. _(default `"all"`)_ |
 | `limit` | required | `integer` | Page size — max items to return (1–500). A page shorter than `limit` is the last one. _(1–500)_ |
 | `offset` | optional | `integer` | Number of items to skip before the page starts. Defaults to 0. The order is stable, so `offset += limit` walks the queue page by page. _(default `0`; 0–100000)_ |
 | `owner` | optional | `string` | Narrow to items owned by one person OR one agent. Matches a person by `users.id`, email, or display name, and an agent by connector id, display name, or kebab-case handle — e.g. `owner=Claude` or `owner=alice@acme.dev`. Case-insensitive exact match. |
@@ -6503,6 +6766,141 @@ _Errors_ — beyond the [common errors](#errors):
 
 - `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
 - `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `ops_qa_questions_answer`
+
+**Answer a QA question**
+
+Answer one open QA question. The question moves to `answered` and the
+answer shows on the item. An answered question cannot be answered again
+(409); ask a new one to follow up. The answerer is the caller's identity;
+pass `agent` to record it as answered by that agent type's QA automation.
+
+**Use case:** QA reads the backlog, checks the build, and replies "hide it —
+archived metrics never show on readouts".
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `questionId` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `answer` | required | `string` | QA's answer (markdown). _(length 1–10000)_ |
+| `agent` | optional | `"jarvis" \| "claude" \| "cursor" \| "copilot" \| "jules"` | The agent type answering — pass your own type when you are QA automation. Omitted, the answer is attributed to the caller's identity. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `INVALID_TRANSITION` — The requested lifecycle transition is not allowed from the current state.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `ops_qa_questions_ask`
+
+**Ask QA a question about an item**
+
+Put a question to QA on a queue item — use it when you do not know the
+answer yourself and QA's decision unblocks the work. The question is open
+until QA answers it; it surfaces on the item (`ops get` → `qaQuestions`)
+and in the project-wide QA backlog (`ops list --qa-questions open`). The
+asker is the caller's identity; pass `agent` to record it as asked by that
+agent type.
+
+**Use case:** A coding agent cannot tell whether an empty state is a bug or
+intended; it asks QA and carries on with the rest of the item.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `question` | required | `string` | What you need QA to answer (markdown). Include what you already tried. _(length 1–10000)_ |
+| `agent` | optional | `"jarvis" \| "claude" \| "cursor" \| "copilot" \| "jules"` | The agent type asking — pass your own type when you are a coding agent. Omitted, the question is attributed to the caller's identity. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `ops_qa_questions_list`
+
+**List an item's QA questions**
+
+The questions put to QA on a queue item, newest first (max 100), each with
+QA's answer once given. `ops get` returns the same list as `qaQuestions`.
+
+**Use case:** After asking QA, poll this until the question reads `answered`.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `status` | optional | `"open" \| "answered"` | Where a QA question stands: `open` (waiting on QA) or `answered`. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `ops_routing_rules_create`
+
+**Create a tag automation rule**
+
+Appends one rule after the existing ones; existing rules are untouched.
+The rule fires on a newly filed item carrying any of `tags` (or whose type
+is in `types`) and applies its actions: `user` assigns a person,
+`connector` hands the item to a connected coding agent (launching a run,
+steered by `agentPrompt`), `status` / `priority` set triage fields, and
+`subscribers` emails people. Tags are created on first use.
+
+Returns `400` when the rule has no tag or type, or no action. Returns the
+full rule list after the append.
+
+**Use cases**
+
+- **Auto-fix** — tag `ai-fix` hands the item to a connected agent with a steering prompt.
+- **Triage** — every `error` ticket goes to `high` priority and an on-call email.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `tags` | optional | `string[]` | Tag names the rule matches (case-insensitive). Tags are created on first use. |
+| `types` | optional | `"error" \| "alert" \| "bug" \| "feature_request"[]` | Ticket types the rule also fires on. |
+| `enabled` | optional | `boolean` | Whether the rule is live. Defaults to `true`. |
+| `user` | optional | `string` | Person to assign — a user id. _(length 1–128)_ |
+| `connector` | optional | `string` | Connected coding agent to hand the item to — a connector id from `ops agents list`. _(length 1–128)_ |
+| `agentPrompt` | optional | `string` | Steering prompt for the launched agent. Only kept alongside a `connector`. _(length 0–4000)_ |
+| `status` | optional | `"open" \| "pending_approval" \| "investigating_by_ai" \| "in_progress" \| "blocked" \| "ready_for_qa" \| "resolved" \| "wont_fix"` | Lifecycle status of a queue item. The working flow is `open` → `in_progress` → `ready_for_qa` → `resolved` (or `wont_fix`, terminal from any earlier stage). `blocked` marks an item that can't progress until an external dependency clears — a working state a human sets and clears. `ready_for_qa` is what a developer sets once a fix lands; `resolved` is the QA sign-off, normally flipped in the dashboard after verification — set it directly from code only when the fix has been verified end-to-end. `investigating_by_ai` is a system-owned display state — set when the AI agent (Jarvis) picks an item up to investigate, never chosen by a human — so it is shown but not offered as a manual choice. `pending_approval` is the one human-gated holding state: it parks an item OUT of the work queue until a human promotes it to `open` in the dashboard, so `GET /api/admin/ops` excludes it under `status=all`/default and returns it only when requested as an exact `status`. It covers untriaged inbound that must never be auto-implemented — connector requests filed from a customer's connectors panel, and questions funnelled in from the "Stuck in onboarding?" assistant — where approving means flipping the status to `open`. Two earlier values were removed in favour of this single gate: `triage` (the onboarding-help bucket, now `pending_approval`) and `triaged` (a redundant "looked at but not started" step, now plain `open`). |
+| `priority` | optional | `"nice_to_have" \| "medium" \| "high" \| "critical"` | Triage priority of a queue item. The lowest tier is `nice_to_have` (not `low`) — carried over from the feature-request "importance" scale this priority set replaced. |
+| `subscribers` | optional | `string[]` | Emails notified about matching items. |
+| `skipApproval` | optional | `boolean` | Let a matching public-intake ticket skip `pending_approval`. Defaults to `false`. |
+| `listToken` | optional | `string` | REQUIRED. The `listToken` returned by the most recent `ops_routing_rules_list` call. It proves you listed existing ops routing rules and confirmed this one doesn't already exist before creating it. Call `ops_routing_rules_list` first if you don't have a fresh token. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+
+#### `ops_routing_rules_list`
+
+**List tag automation rules**
+
+The project's tag automation rules in evaluation order. Each rule matches
+newly filed queue items by tag (or ticket type) and applies its actions —
+assign a person, launch a connected coding agent, set status or priority,
+subscribe emails.
+
+**Use case:** Check what automation already exists before adding a rule, so a new one doesn't duplicate or shadow it.
+
+_Parameters_
+
+_No parameters._
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
 
 #### `ops_update`
 
@@ -6733,6 +7131,39 @@ _Errors_ — beyond the [common errors](#errors):
 
 - `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
 
+#### Attachments
+
+Screenshots, recordings, and files attached to a bug or feature request —
+the evidence a QA lane captures at verification time. Upload by base64
+bytes or a public https URL; append-only.
+
+##### `ops_attachments_create`
+
+**Attach a screenshot to an item**
+
+Attach a screenshot, screen recording, or file to a bug or feature request, so the fixer sees what QA saw instead of reconstructing it from measurements. Send the bytes as `contentBase64` (a bare base64 string or a `data:` URI) or give a public https `url` for the server to fetch — exactly one of the two. The `kind` (`screenshot` | `recording` | `file`) defaults from the media type. Up to 25 MiB.
+
+Error and alert tickets cannot carry attachments (`422`). Append-only: there is no replace or delete, so it is safe for restricted ops keys.
+
+**Use case:** A QA lane captures a screenshot at verification time and the filing agent attaches it to the bug or feature request it just filed.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `contentBase64` | optional | `string` | The file bytes, base64-encoded (a bare string or a `data:<mime>;base64,` URI). Pass this or `url`, not both. |
+| `url` | optional | `string` | A public https URL for the server to fetch the file from (no IP literals or internal hosts; max 25 MiB). Pass this or `contentBase64`, not both. _(format: uri)_ |
+| `filename` | optional | `string` | File name, e.g. `checkout-overflow.png`. Defaults to the last segment of `url`, else `file`. |
+| `mimeType` | optional | `string` | Media type, e.g. `image/png`. Defaults from the data URI, the fetched response, or the filename extension. |
+| `kind` | optional | `"screenshot" \| "recording" \| "file"` | Attachment kind. Defaults from the media type (image → screenshot, video → recording, else file). Ignored by the comment-media upload. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
 #### Comments
 
 Comments on a queue item — the discussion thread that hangs off any bug,
@@ -6791,6 +7222,33 @@ _Errors_ — beyond the [common errors](#errors):
 
 - `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
 - `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+##### `ops_comments_upload_media`
+
+**Upload an image to embed in a comment**
+
+Upload an image to embed in a comment on a queue item. Takes the same body as the attachment upload (`contentBase64` or `url`). The response carries a relative `url` — reference it from the comment body as a markdown image (`![caption](url)`) in `ops comments create`, so an evidence comment shows the screenshot inline.
+
+Append-only, safe for restricted ops keys.
+
+**Use case:** Put a screenshot inside an evidence comment rather than on the item itself.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `contentBase64` | optional | `string` | The file bytes, base64-encoded (a bare string or a `data:<mime>;base64,` URI). Pass this or `url`, not both. |
+| `url` | optional | `string` | A public https URL for the server to fetch the file from (no IP literals or internal hosts; max 25 MiB). Pass this or `contentBase64`, not both. _(format: uri)_ |
+| `filename` | optional | `string` | File name, e.g. `checkout-overflow.png`. Defaults to the last segment of `url`, else `file`. |
+| `mimeType` | optional | `string` | Media type, e.g. `image/png`. Defaults from the data URI, the fetched response, or the filename extension. |
+| `kind` | optional | `"screenshot" \| "recording" \| "file"` | Attachment kind. Defaults from the media type (image → screenshot, video → recording, else file). Ignored by the comment-media upload. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
 
 #### Activity
 
@@ -7186,6 +7644,35 @@ Projects: the account-level container every other resource is scoped to.
 
 **Idempotent upsert.** A project is keyed by `(owner_email, domain)`. Calling `upsert` again with the same domain returns the existing project with `created: false`, so it is safe to run on every install.
 
+#### `api_keys_create`
+
+**Create an API key**
+
+Mints a new API key and returns the plaintext token **once** — it is stored hashed and can never be retrieved again, so capture it on creation.
+
+Only `type` is required. `env` is **required** for `server` and `client` keys (the key is bound to one environment, which is the read-env isolation boundary); for `admin` and `ops` keys `env` is ignored and the key is pinned to `prod`. Expiry is fixed for some types: `admin` keys always get a 90-day expiry and `ops` keys a short sliding window, regardless of `expiresInDays`. Only `server`/`client` keys count toward the plan key limit.
+
+**Use cases**
+
+- **Back-end key** — `{ "type": "server", "env": "prod" }` for the production server SDK.
+- **Public browser key** — `{ "type": "client", "env": "prod", "name": "marketing site" }` to embed in the browser SDK.
+- **Scoped, expiring key** — `{ "type": "server", "env": "staging", "scopes": ["gates:evaluate"], "expiresInDays": 30 }` for a time-boxed integration.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `type` | required | `"server" \| "client" \| "admin" \| "ops"` | Key kind to mint. `server` (back-end), `client` (public, browser), `admin` (CLI/devtools token), `ops` (restricted unattended-trigger credential). `admin`/`ops` keys don't count toward the plan key limit. |
+| `name` | optional | `string` | Optional human label. Programmatic (API) mints that omit it get an auto-generated descriptive name; dashboard mints may leave it blank. The cap is generous because provenance labels are composed, not typed — `shipeasy setup` mints keys named with the stack, package, date, and operator that produced them, which does not fit in a one-line-input budget. _(length 1–160)_ |
+| `scopes` | optional | `"" \| "gates:evaluate" \| "events:write" \| "configs:write" \| "" \| "tickets:public_create"[]` | Optional permission strings recorded on the key. `tickets:public_create` is enforced: a client key needs it (plus the project's `allowPublicTickets` setting) to file a `pending_approval` bug via the public `POST /cli/report` endpoint. The rest are audit/display only. |
+| `expiresInDays` | optional | `any` | Days until the key expires (1–3650), or `null`/omitted for a key that never expires. Ignored for `admin` keys (fixed 90-day expiry) and `ops` keys (short sliding window). |
+| `env` | required | `"dev" \| "staging" \| "prod"` | Environment to bind the key to. Always required. For `server`/`client` keys it is the isolation boundary the worker reads from; `admin`/`ops` keys are env-agnostic and pinned to `prod` by the handler regardless of the value sent. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `VALIDATION` — The request body failed structural (schema) validation.
+- `PLAN_LIMIT` — The action would exceed a plan quota (e.g. the tier's maximum metrics or configs). Upgrade the plan or archive an existing resource.
+
 #### `projects_current`
 
 **Show the current project**
@@ -7355,9 +7842,9 @@ _Errors_ — beyond the [common errors](#errors):
 ### Tags
 
 Tags: free-form, project-scoped labels any item can carry — queue items
-(bugs, feature requests, error/alert tickets), flags, configs, kill
-switches, metrics, tracked errors and alert rules all share
-one tag roster.
+(bugs, feature requests, error/alert tickets), flags, configs,
+killswitches, metrics, tracked errors, alert rules all
+share one tag roster.
 
 **Identity.** A tag is its name, unique case-insensitively per project. A
 tag is born the first time it's attached — there is no separate create.
