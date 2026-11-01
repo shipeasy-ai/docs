@@ -14,7 +14,7 @@
  * looks where the nav taught them to look.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "fumadocs-ui/contexts/i18n";
 import {
   SearchDialog as Dialog,
@@ -48,6 +48,40 @@ const SEARCH_TAGS = [
 const SHOWN = 60;
 
 /**
+ * Esc closes the palette, but nothing hands focus back: the trigger flips a
+ * context flag instead of wrapping the dialog in a Radix Trigger, so Radix has
+ * no element to restore to and focus falls to the page top — the next Tab then
+ * lands on the logo and skips the pill nav. Remember what held focus when the
+ * palette opened (it is still the opener at render time, before Radix moves
+ * focus into the dialog) and put it back when it closes. Opened by the Cmd/Ctrl+K
+ * hotkey there is no opener, so the Search button is the fallback.
+ */
+function useRestoreFocusOnClose(open: boolean | undefined) {
+  const opener = useRef<HTMLElement | null>(null);
+  const wasOpen = useRef(false);
+  if (open && !wasOpen.current && typeof document !== "undefined") {
+    const active = document.activeElement;
+    opener.current = active instanceof HTMLElement && active !== document.body ? active : null;
+  }
+  useEffect(() => {
+    if (open) {
+      wasOpen.current = true;
+      return undefined;
+    }
+    if (!wasOpen.current) return undefined;
+    wasOpen.current = false;
+    const frame = requestAnimationFrame(() => {
+      const target =
+        opener.current?.isConnected && opener.current
+          ? opener.current
+          : document.querySelector<HTMLElement>("button[data-search-full], button[data-search]");
+      target?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [open]);
+}
+
+/**
  * Same dialog as fumadocs' `DefaultSearchDialog`, with one difference: results
  * are re-ranked (see `src/lib/search-rank.ts`) so "feature flag", "kill switch"
  * and "alert rule" land on the page about them instead of on whichever chunk
@@ -56,6 +90,7 @@ const SHOWN = 60;
  */
 export default function SearchDialog(props: SharedProps) {
   const { locale } = useI18n();
+  useRestoreFocusOnClose(props.open);
   const [tag, setTag] = useState<string | undefined>(undefined);
   // What the reader typed vs. what the engine is asked: `rewriteQuery` fixes a
   // typo ("killswtich") or turns a question into the page's own word, without
