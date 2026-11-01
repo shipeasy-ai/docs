@@ -61,8 +61,8 @@ That single rule decides almost every architectural choice — no per-request fe
       </>
     }
   >
-    Serves <code>/sdk/flags</code>, <code>/sdk/experiments</code>, <code>/sdk/labels</code>, ingests
-    events at <code>/collect</code>, and runs the cron analysis pipeline.
+    Serves <code>/sdk/flags</code> and <code>/sdk/labels</code>, ingests events at{" "}
+    <code>/collect</code>, and runs the scheduled metrics pipeline.
   </Tile>
   <Tile
     href="#shared-state"
@@ -95,7 +95,7 @@ That single rule decides almost every architectural choice — no per-request fe
       </>
     }
   >
-    A scheduled trigger enqueues one job per project. The consumer runs the t-test and writes
+    A scheduled trigger enqueues one job per project. The consumer aggregates metrics and writes
     results back to the database.
   </Tile>
 </TileGrid>
@@ -139,8 +139,7 @@ The same worker also handles the CLI device-auth flow and runs the cron + queue 
       required: true,
       description: (
         <>
-          Two blobs per project: <code>:flags</code> (feature flags, configs and killswitches) and{" "}
-          <code>:experiments</code>, the longer-lived half of the rule set.
+          One blob per project, <code>:flags</code>, holding feature flags, configs and killswitches.
         </>
       ),
     },
@@ -156,7 +155,7 @@ The same worker also handles the CLI device-auth flow and runs the cron + queue 
       required: true,
       description: (
         <>
-          The cron enqueues one message per project. The consumer runs analysis and writes results
+          The cron enqueues one message per project. The consumer aggregates metrics and writes results
           back to the database.
         </>
       ),
@@ -168,7 +167,7 @@ The same worker also handles the CLI device-auth flow and runs the cron + queue 
 
 When you flip a flag, six things happen — all within about a second. The write path
 fans out from the admin app; the read path and event ingestion live entirely on the
-edge worker; analysis closes the loop back to the database overnight.
+edge worker; metrics aggregation closes the loop back to the database overnight.
 
 <Mermaid
   chart={`flowchart LR
@@ -176,7 +175,7 @@ edge worker; analysis closes the loop back to the database overnight.
     dash["Dashboard / CLI"]:::exp
   end
   d1[("Database<br/><small>source of truth</small>")]:::metric
-  kv[("KV blobs<br/><small>:flags · :experiments</small>")]:::sink
+  kv[("KV blob<br/><small>:flags</small>")]:::sink
   subgraph edge["Edge worker · reads"]
     sdkp["/sdk/*"]:::event
     col["/collect"]:::event
@@ -190,7 +189,7 @@ kv -- "served at edge" --> sdkp
 sdkp -- "4 · background poll" --> app
 app -- "exposure / track" --> col
 col --> ae
-ae -- "5 · cron + queue · t-test" --> d1
+ae -- "5 · cron + queue · metrics" --> d1
 
 classDef event fill:#15151b,stroke:#3c3a47,color:#e8e6f0;
 classDef metric fill:#1a1430,stroke:#8b5cf6,color:#ece9fb;
