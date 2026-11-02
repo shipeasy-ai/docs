@@ -14,11 +14,11 @@ That single rule decides almost every architectural choice — no per-request fe
 
 - **[Admin app — writes](#admin-app)** — Dashboard, REST API, Server Actions, sessions, and the CLI's programmatic surface. This is where humans (and the CLI) make changes.
 
-- **[Edge worker — reads](#edge-worker)** — Serves <code>/sdk/flags</code>, <code>/sdk/experiments</code>, <code>/sdk/labels</code>, ingests events at <code>/collect</code>, and runs the cron analysis pipeline.
+- **[Edge worker — reads](#edge-worker)** — Serves <code>/sdk/flags</code> and <code>/sdk/labels</code>, ingests events at <code>/collect</code>, and runs the scheduled metrics pipeline.
 
 - **[Shared state — one source of truth](#shared-state)** — The database is the row store. KV is the read cache. The events store is append-only telemetry. All three are scoped per project.
 
-- **[Analysis — Cron + Queues](#analysis)** — A scheduled trigger enqueues one job per project. The consumer runs the t-test and writes results back to the database.
+- **[Analysis — Cron + Queues](#analysis)** — A scheduled trigger enqueues one job per project. The consumer aggregates metrics and writes results back to the database.
 
 ### Admin app [#admin-app]
 
@@ -43,15 +43,15 @@ The same worker also handles the CLI device-auth flow and runs the cron + queue 
 ### Shared state [#shared-state]
 
 - `Database (SQLite)` (row store) — Source of truth — feature flags, configs, killswitches, metrics, keys, exposures, daily results. Project-scoped on every query.
-- `KV` (read cache) — Two blobs per project: `:flags` (feature flags, configs and killswitches) and  `:experiments`, the longer-lived half of the rule set.
+- `KV` (read cache) — One blob per project, `:flags`, holding feature flags, configs and killswitches.
 - `Events store` (event store) — Append-only telemetry. Written from the worker only, never from the admin app.
-- `Queues` (async pipeline) — The cron enqueues one message per project. The consumer runs analysis and writes results back to the database.
+- `Queues` (async pipeline) — The cron enqueues one message per project. The consumer aggregates metrics and writes results back to the database.
 
 ## The lifecycle of a write
 
 When you flip a flag, six things happen — all within about a second. The write path
 fans out from the admin app; the read path and event ingestion live entirely on the
-edge worker; analysis closes the loop back to the database overnight.
+edge worker; metrics aggregation closes the loop back to the database overnight.
 
 **You change something in the dashboard or CLI**
 

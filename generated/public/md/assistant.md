@@ -4,7 +4,7 @@ Source: https://docs.shipeasy.ai/assistant
 
 > The in-dashboard AI assistant — what it is, how read and write modes differ, what it renders, and how it meters credits.
 
-A chat assistant built into the dashboard. It reads your project to answer questions, and proposes every change as a card you confirm — feature flags, configs, killswitches, metrics, and alert rules. Nothing happens until you approve it.
+A chat assistant built into the dashboard. It reads your project to answer questions, and proposes every change as a card you confirm — feature flags, configs, killswitches, metrics, and alert rules. The change itself applies only when you approve it.
 
 ## What it is
 
@@ -26,7 +26,8 @@ It works in two modes and picks the right one for you. The split is the whole sa
 
 - **[Read — answer from your project](https://docs.shipeasy.ai/assistant/read-vs-write)** — Read-only tools auto-execute and stream as a **thinking trace** ("✓ Reading your project", "✓ Checking the metric series"). It never changes anything to answer.
 
-- **[Write — propose a change](https://docs.shipeasy.ai/assistant/read-vs-write)** — Changes are proposed, not applied behind your back. Each surfaces as an **editable confirmation card** — it applies only when you press **Confirm**. So it's safe (and expected) for the assistant to propose a change directly instead of asking permission first.
+- **[Write — propose a change](https://docs.shipeasy.ai/assistant/read-vs-write)** — Changes are proposed, not applied behind your back. Each surfaces as an **editable confirmation card** — it applies only when you press **Confirm**. So it's safe (and expected) for the assistant to propose a change directly instead of asking permission first. One caveat: while drafting a metric, the assistant may register the event the metric counts before you press
+    **Confirm**, so the event can exist even if you cancel the card.
 
 ## What it produces
 

@@ -102,11 +102,11 @@ That single rule decides almost every architectural choice — no per-request fe
 
 - **[Admin app — writes](#admin-app)** — Dashboard, REST API, Server Actions, sessions, and the CLI's programmatic surface. This is where humans (and the CLI) make changes.
 
-- **[Edge worker — reads](#edge-worker)** — Serves <code>/sdk/flags</code>, <code>/sdk/experiments</code>, <code>/sdk/labels</code>, ingests events at <code>/collect</code>, and runs the cron analysis pipeline.
+- **[Edge worker — reads](#edge-worker)** — Serves <code>/sdk/flags</code> and <code>/sdk/labels</code>, ingests events at <code>/collect</code>, and runs the scheduled metrics pipeline.
 
 - **[Shared state — one source of truth](#shared-state)** — The database is the row store. KV is the read cache. The events store is append-only telemetry. All three are scoped per project.
 
-- **[Analysis — Cron + Queues](#analysis)** — A scheduled trigger enqueues one job per project. The consumer runs the t-test and writes results back to the database.
+- **[Analysis — Cron + Queues](#analysis)** — A scheduled trigger enqueues one job per project. The consumer aggregates metrics and writes results back to the database.
 
 #### Admin app [#admin-app]
 
@@ -131,15 +131,15 @@ The same worker also handles the CLI device-auth flow and runs the cron + queue 
 #### Shared state [#shared-state]
 
 - `Database (SQLite)` (row store) — Source of truth — feature flags, configs, killswitches, metrics, keys, exposures, daily results. Project-scoped on every query.
-- `KV` (read cache) — Two blobs per project: `:flags` (feature flags, configs and killswitches) and  `:experiments`, the longer-lived half of the rule set.
+- `KV` (read cache) — One blob per project, `:flags`, holding feature flags, configs and killswitches.
 - `Events store` (event store) — Append-only telemetry. Written from the worker only, never from the admin app.
-- `Queues` (async pipeline) — The cron enqueues one message per project. The consumer runs analysis and writes results back to the database.
+- `Queues` (async pipeline) — The cron enqueues one message per project. The consumer aggregates metrics and writes results back to the database.
 
 ### The lifecycle of a write
 
 When you flip a flag, six things happen — all within about a second. The write path
 fans out from the admin app; the read path and event ingestion live entirely on the
-edge worker; analysis closes the loop back to the database overnight.
+edge worker; metrics aggregation closes the loop back to the database overnight.
 
 **You change something in the dashboard or CLI**
 
@@ -17336,7 +17336,7 @@ Source: https://docs.shipeasy.ai/assistant
 
 The in-dashboard AI assistant — what it is, how read and write modes differ, what it renders, and how it meters credits.
 
-A chat assistant built into the dashboard. It reads your project to answer questions, and proposes every change as a card you confirm — feature flags, configs, killswitches, metrics, and alert rules. Nothing happens until you approve it.
+A chat assistant built into the dashboard. It reads your project to answer questions, and proposes every change as a card you confirm — feature flags, configs, killswitches, metrics, and alert rules. The change itself applies only when you approve it.
 
 ### What it is
 
@@ -17358,7 +17358,8 @@ It works in two modes and picks the right one for you. The split is the whole sa
 
 - **[Read — answer from your project](https://docs.shipeasy.ai/assistant/read-vs-write)** — Read-only tools auto-execute and stream as a **thinking trace** ("✓ Reading your project", "✓ Checking the metric series"). It never changes anything to answer.
 
-- **[Write — propose a change](https://docs.shipeasy.ai/assistant/read-vs-write)** — Changes are proposed, not applied behind your back. Each surfaces as an **editable confirmation card** — it applies only when you press **Confirm**. So it's safe (and expected) for the assistant to propose a change directly instead of asking permission first.
+- **[Write — propose a change](https://docs.shipeasy.ai/assistant/read-vs-write)** — Changes are proposed, not applied behind your back. Each surfaces as an **editable confirmation card** — it applies only when you press **Confirm**. So it's safe (and expected) for the assistant to propose a change directly instead of asking permission first. One caveat: while drafting a metric, the assistant may register the event the metric counts before you press
+    **Confirm**, so the event can exist even if you cancel the card.
 
 ### What it produces
 
@@ -17433,7 +17434,7 @@ The call surfaces as an **editable confirmation card**, and the underlying chang
 you press **Confirm**. If a step can't be applied from the dashboard — it needs a code change,
 say — the assistant files it as a ticket instead, and says so.
 
-That inversion is deliberate: because nothing mutates until you confirm, it's safe — and expected —
+That inversion is deliberate: because the change itself doesn't apply until you confirm, it's safe — and expected —
 for the assistant to propose a mutation directly rather than asking "should I?" first.
 
 The write tools cover the full resource set:
@@ -17454,9 +17455,11 @@ ops_alerts_create / ops_alerts_update / ops_alerts_archive
 They are the same names the [MCP server](https://docs.shipeasy.ai/get-started/mcp-reference) advertises — the assistant and
 an external coding agent drive one surface, not two.
 
-> **Nothing applies until you confirm**
+> **Changes apply only when you confirm**
 
 The assistant hands you the card first; you apply it. If you cancel, the change isn't applied.
+One exception: when it drafts a metric, it may register the event that metric counts before you
+confirm, so that event can remain after a cancel.
 Deleting resources is also available directly in the dashboard UI.
 
 ### Why the split holds
