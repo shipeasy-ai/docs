@@ -14773,17 +14773,19 @@ You changed a feature flag in production. The same feature flag in staging is st
 later, a new dev tests against staging, sees v1 behaviour, ships code that depends on v1,
 production breaks because production is on v2.
 
-The cause is straightforward: feature flag config is per-environment, and there's no automatic sync.
+The cause is straightforward: a feature flag is scoped to a single project and has one config, so
+when staging and production are separate projects (each with its own SDK key) they hold separate
+copies of the flag, and there's no automatic sync between them.
 
 Three patterns to keep envs aligned:
 
 #### 1. Mirror writes per-env
 
-Today feature flags live at the project scope (not per-env) — the same rollout %
-applies in staging and prod. To run different rollouts per env, create a
-sibling feature flag per env (e.g. `checkout-v2.staging`, `checkout-v2.prod`)
-and pin the SDK to the matching name based on which env's SDK key it's
-booted with:
+Today feature flags live at the project scope (not per-env) — a single flag has one
+rollout %, and it applies everywhere that project's SDK keys are used. To run different rollouts
+per env within one project, create a sibling feature flag per env
+(e.g. `checkout-v2.staging`, `checkout-v2.prod`) and pin the SDK to the matching name based on
+which env the app is booted in:
 
 ```bash
 shipeasy release flags update checkout-v2.staging --rollout-percent 100
