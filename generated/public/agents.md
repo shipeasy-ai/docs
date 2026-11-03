@@ -2691,7 +2691,7 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy metrics unarchive` — --data
 - `shipeasy metrics update` — --default-min-effect-of-interest --direction --display --display-name --event-name --folder --query --query-ir --unit --winsorize-pct
 - `shipeasy ops`
-- `shipeasy ops ack` — --agent --launch --session-id
+- `shipeasy ops ack` — --agent --launch --run-id --session-id --takeover
 - `shipeasy ops activity`
 - `shipeasy ops activity list` — --data --field --item --limit --since --until
 - `shipeasy ops agents`
@@ -2720,7 +2720,7 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy ops investigations create` — --agent --completed-at --confidence --connector-id --duration-ms --findings --kind --model --pr-number --pr-url --qa-notes --question --session-id --sources --started-at --summary --tokens-used --visibility
 - `shipeasy ops investigations list` — --data
 - `shipeasy ops investigations update` — --completed-at --confidence --duration-ms --findings --kind --model --pr-number --pr-url --qa-notes --question --session-id --sources --summary --tokens-used --visibility
-- `shipeasy ops link-pr` — --pr-number --pr-url
+- `shipeasy ops link-pr` — --pr-number --pr-url --unlink
 - `shipeasy ops links` — --add-blocked-by --add-blocking --duplicate-of --remove-blocked-by --remove-blocking
 - `shipeasy ops list` — --data --limit --offset --owner --priority --qa-questions --scope --status --type
 - `shipeasy ops notify` — --dedupe-key --href --steps --summary --title
