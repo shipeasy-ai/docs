@@ -572,7 +572,9 @@
       "options": [
         "--agent",
         "--launch",
-        "--session-id"
+        "--run-id",
+        "--session-id",
+        "--takeover"
       ]
     },
     {
@@ -1033,7 +1035,8 @@
       ],
       "options": [
         "--pr-number",
-        "--pr-url"
+        "--pr-url",
+        "--unlink"
       ]
     },
     {
