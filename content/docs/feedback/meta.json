@@ -10,6 +10,7 @@
     "connectors",
     "slack",
     "memory",
+    "trails",
     "---",
     "case-studies",
     "edge-cases",
