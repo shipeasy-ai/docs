@@ -38,7 +38,7 @@ such as 5 minutes or 1 hour. **Must breach** says how many buckets have to be pa
 
 **Set severity, then who hears about it**
 
-Severity is **Critical**, **Warning** or **Info**. **Notify** lists where a fired alert goes —
+Severity is **Critical**, **Warning** or **Info** — `danger`, `warn` and `info` in the CLI and API (`--severity danger` is Critical, `--severity warn` is Warning). **Notify** lists where a fired alert goes —
 **In-app** (Home and the bell) is on by default, and you can add a Slack channel and an email
 address.
 
@@ -58,7 +58,7 @@ into buckets — 6 to 12 of them, at a width we support — and each bucket is
 judged on its own. You choose how many buckets must breach before the rule
 fires, and whether a fired alert resolves itself when the metric comes back
 inside the threshold or is set to **Never auto-resolve**. The dashboard labels
-the middle severity **Warning**. (You can also describe the rule to the
+the middle severity **Warning** (`warn` on the CLI and API). (You can also describe the rule to the
 assistant and let it draft the card for you.) The API and CLI shape below is
 the same rule expressed as fields.
 

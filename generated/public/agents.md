@@ -581,6 +581,15 @@ Full flow, including CI tokens, lives in [Authenticate](https://docs.shipeasy.ai
 // app/layout.tsx — runs once per cold start\nimport { configure } from "@shipeasy/sdk/server";\nconfigure({ apiKey: process.env.SHIPEASY_SERVER_KEY ?? "", attributes: (u) => ({ user_id: u.id, plan: u.plan }) });
 ```
 
+First put the server key where `process.env.SHIPEASY_SERVER_KEY` can read it. Mint one with
+`shipeasy sdk keys create --type server`, then add it to a `.env` file at your project root
+(and keep that file out of git):
+
+```bash
+## .env
+SHIPEASY_SERVER_KEY=sdk_server_...
+```
+
 The single `configure()` call boots flags, configs **and** killswitches. The server SDK polls the
 rule set in the background and evaluates **locally** — there is no per-request network hop. Env
 (dev / staging / prod) is derived from the key, not from a query param. See [Keys &
@@ -2722,7 +2731,9 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy ops investigations update` — --completed-at --confidence --duration-ms --findings --kind --model --pr-number --pr-url --qa-notes --question --session-id --sources --summary --tokens-used --visibility
 - `shipeasy ops link-pr` — --pr-number --pr-url --unlink
 - `shipeasy ops links` — --add-blocked-by --add-blocking --duplicate-of --remove-blocked-by --remove-blocking
-- `shipeasy ops list` — --data --limit --offset --owner --priority --qa-questions --scope --status --type
+- `shipeasy ops list` — --closed-since --data --limit --offset --owner --priority --qa-questions --reporter --scope --status --type
+- `shipeasy ops memory`
+- `shipeasy ops memory search` — --data --item --kind --limit --paths --q
 - `shipeasy ops notify` — --dedupe-key --href --steps --summary --title
 - `shipeasy ops qa-notes`
 - `shipeasy ops qa-notes create` — --agent --body --kind --verdict
@@ -2888,6 +2899,7 @@ Parameters and error codes: https://docs.shipeasy.ai/get-started/mcp-reference
 - `ops_comments_list`
 - `ops_comments_upload_media`
 - `ops_activity_list`
+- `ops_memory_search`
 - `ops_investigations_create`
 - `ops_investigations_list`
 - `ops_investigations_update`
@@ -3000,6 +3012,7 @@ Parameters and error codes: https://docs.shipeasy.ai/get-started/mcp-reference
 - Errors dashboard & triage — https://docs.shipeasy.ai/feedback/errors
 - Connectors — https://docs.shipeasy.ai/feedback/connectors
 - Slack — https://docs.shipeasy.ai/feedback/slack
+- Project memory — https://docs.shipeasy.ai/feedback/memory
 - Case studies (feedback) — https://docs.shipeasy.ai/feedback/case-studies
 - Route bug reports to your tracker — https://docs.shipeasy.ai/feedback/case-studies/route-bugs-to-your-tracker
 - From metric alert to auto-filed ticket — https://docs.shipeasy.ai/feedback/case-studies/alert-to-ticket-loop

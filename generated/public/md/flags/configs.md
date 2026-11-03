@@ -39,13 +39,13 @@ Both are typed values you can change without a redeploy. Pick by the **shape of 
 | Question            | Feature flag       | Config                                 |
 | ------------------- | ------------------ | -------------------------------------- |
 | Output              | boolean            | `string` / `number` / `boolean` / JSON |
-| Targeting rules?    | yes                | no — values are global                 |
-| Rollout percentage? | yes                | no                                     |
+| Targeting rules?    | yes                | no — values are global per environment |
+| Rollout percentage? | yes                | no — use a flag around the read        |
 | Use case            | "is feature X on?" | "what value should X be?"              |
 
 ## See also
 
 - [Quickstart](https://docs.shipeasy.ai/flags/configs/quickstart) — create your first config in 5 minutes
 - [Values](https://docs.shipeasy.ai/flags/configs/values) — schema validation, JSON shapes, complex configs
-- [Targeting](https://docs.shipeasy.ai/flags/configs/targeting) — when you need targeting, reach for a feature flag
+- [Targeting](https://docs.shipeasy.ai/flags/configs/targeting) — configs can't be targeted; this covers the feature-flag rules engine to use instead
 - [Decision tree](https://docs.shipeasy.ai/flags/decision) — feature flag vs config vs killswitch

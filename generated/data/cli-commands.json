@@ -1076,6 +1076,25 @@
       ]
     },
     {
+      "path": "shipeasy ops memory",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy ops memory search",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data",
+        "--item",
+        "--kind",
+        "--limit",
+        "--paths",
+        "--q"
+      ]
+    },
+    {
       "path": "shipeasy ops notify",
       "aliases": [],
       "args": [],

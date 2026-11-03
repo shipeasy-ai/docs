@@ -2,7 +2,14 @@
 
 Source: https://docs.shipeasy.ai/flags/configs/targeting
 
-> Show a value to the right users — attribute rules, deterministic percentage rollouts, and per-feature-flag salts. The rules engine, in detail.
+> Configs are global and cannot be targeted or rolled out by percentage — this page covers the rules engine you reach for on a feature flag instead.
+
+> **Configs are global — targeting and rollouts belong to feature flags**
+
+A [config](https://docs.shipeasy.ai/flags/configs) has no targeting rules and no rollout percentage: every user in an
+environment reads the same value. Everything below (rules, operators, percentage rollouts, salts)
+describes **feature flags**. To vary a config's answer by user, wrap the read in a feature
+flag or use a [structured config](https://docs.shipeasy.ai/flags/configs/values#structured-configs) keyed by cohort.
 
 A targeting rule on a feature flag is a predicate of the form **`attr op value`**. Multiple rules on a feature flag are **ANDed** together. To OR, use the `in` operator with an array, or split into separate feature flags and combine in code.
 

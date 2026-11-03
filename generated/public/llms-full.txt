@@ -307,6 +307,15 @@ Full flow, including CI tokens, lives in [Authenticate](https://docs.shipeasy.ai
 // app/layout.tsx — runs once per cold start\nimport { configure } from "@shipeasy/sdk/server";\nconfigure({ apiKey: process.env.SHIPEASY_SERVER_KEY ?? "", attributes: (u) => ({ user_id: u.id, plan: u.plan }) });
 ```
 
+First put the server key where `process.env.SHIPEASY_SERVER_KEY` can read it. Mint one with
+`shipeasy sdk keys create --type server`, then add it to a `.env` file at your project root
+(and keep that file out of git):
+
+```bash
+## .env
+SHIPEASY_SERVER_KEY=sdk_server_...
+```
+
 The single `configure()` call boots flags, configs **and** killswitches. The server SDK polls the
 rule set in the background and evaluates **locally** — there is no per-request network hop. Env
 (dev / staging / prod) is derived from the key, not from a query param. See [Keys &
@@ -2677,6 +2686,31 @@ shipeasy ops investigations update [options] <handle> <investigationId>
 | `--completed-at <value>` | optional | ISO-8601 timestamp the work finished. Set it (or flip `kind` off `working`) to mark a run record done. |
 | `--session-id <value>` | optional | The agent-run session id, so the dashboard can deep-link to the run. |
 
+#### `shipeasy ops memory`
+
+Project memory — what the project learned from every ticket it shipped or declined: decisions from answered questions, QA findings, the files each feature lives in, and the PR that shipped it.
+
+```bash
+shipeasy ops memory [options] [command]
+```
+
+##### `shipeasy ops memory search`
+
+Search project memory
+
+```bash
+shipeasy ops memory search [options]
+```
+
+| Option | | Description |
+| --- | --- | --- |
+| `--q <value>` | optional | Free-text query, e.g. `checkout retry`. |
+| `--paths <value>` | optional | Comma-separated repo-relative files or directories, e.g. `apps/web/src/checkout/,packages/billing/src/retry.ts`. |
+| `--item <value>` | optional | A queue item — its per-project number (e.g. `7`) or full id. Its title and description become the query; its own entries are excluded. |
+| `--kind <value>` | optional | Only entries of this kind. |
+| `--limit <value>` | optional | Maximum entries to return (1-50). Defaults to 10. |
+| `--data <value>` | optional | Request body as a JSON object. |
+
 #### `shipeasy ops qa-notes`
 
 Typed QA notes on a queue item — the QA follow-up that is not discussion.
@@ -3040,6 +3074,8 @@ shipeasy ops list [options]
 | `--limit <value>` | optional | Page size — max items to return (1–500). A page shorter than `limit` is the last one. |
 | `--offset <value>` | optional | Number of items to skip before the page starts. Defaults to 0. The order is stable, so `offset += limit` walks the queue page by page. |
 | `--owner <value>` | optional | Narrow to items owned by one person OR one agent. Matches a person by `users.id`, email, or display name, and an agent by connector id, display name, or kebab-case handle — e.g. `owner=Claude` or `owner=alice@acme.dev`. Case-insensitive exact match. |
+| `--reporter <value>` | optional | Narrow to items filed by one reporter — an email, matched case-insensitive and exact against `reporterEmail`. Items with no reporter never match. While set, `status=all` also returns `pending_approval` items: public intake files every ticket as `pending_approval`, and a reporter must see the ticket they just filed. |
+| `--closed-since <value>` | optional | ISO-8601 timestamp. Items still being worked are always returned; `resolved` and `wont_fix` items only when they closed at or after this time (see `closedAt`). Combines with `status` like any other filter. |
 | `--data <value>` | optional | Request body as a JSON object. |
 
 #### `shipeasy ops create`
@@ -3244,7 +3280,7 @@ shipeasy ops ack [options] <handle>
 
 | Option | | Description |
 | --- | --- | --- |
-| `--agent <value>` | optional | The AI agent type acking on the item's behalf — pass your own type when you are a coding agent (Claude Code passes `claude`, Cursor `cursor`, Copilot `copilot`, Jules/Gemini `jules`). Omit entirely for a human ack by the authenticated caller. |
+| `--agent <value>` | optional | The AI agent type acking on the item's behalf — pass your own type when you are a coding agent (Claude Code passes `claude`, Cursor `cursor`, Copilot `copilot`, Jules `jules`, Gemini `gemini` → normalized to `jules`). Omit entirely for a human ack by the authenticated caller. |
 | `--session-id <value>` | optional | The agent-run session id (e.g. Claude's `session_01…`), so the dashboard can deep-link to the exact run page. Omit when the harness has no session id. |
 | `--launch <value>` | optional | Whether an AI ack may FIRE the agent's connected trigger. Default `true`: an ack naming a connected agent, with no `sessionId`, starts a new provider run of that agent. Pass `false` to only record the ack — claim the item and open the run record — without starting anything, e.g. when you ARE that agent working the item yourself and have no session id to pass. Ignored on a human ack. |
 | `--run-id <value>` | optional | The run you were handed — the investigation id a fired run's prompt names, or the `runId` an earlier ack returned. Proves the open run is yours, so the ack adopts it instead of answering `409` `ALREADY_EXISTS`. |
@@ -3876,7 +3912,7 @@ shipeasy release flags whitelist [options] <id>
 
 | Argument | | Description |
 | --- | --- | --- |
-| `id` | required | Stable opaque gate id (`gate_…`) or the gate's `name`. |
+| `id` | required | Stable opaque gate id (`gat_…`) or the gate's `name`. |
 
 | Option | | Description |
 | --- | --- | --- |
@@ -3892,7 +3928,7 @@ shipeasy release flags whitelist-add [options] <id>
 
 | Argument | | Description |
 | --- | --- | --- |
-| `id` | required | Stable opaque gate id (`gate_…`) or the gate's `name`. |
+| `id` | required | Stable opaque gate id (`gat_…`) or the gate's `name`. |
 
 | Option | | Description |
 | --- | --- | --- |
@@ -3909,7 +3945,7 @@ shipeasy release flags whitelist-set [options] <id>
 
 | Argument | | Description |
 | --- | --- | --- |
-| `id` | required | Stable opaque gate id (`gate_…`) or the gate's `name`. |
+| `id` | required | Stable opaque gate id (`gat_…`) or the gate's `name`. |
 
 | Option | | Description |
 | --- | --- | --- |
@@ -3926,7 +3962,7 @@ shipeasy release flags whitelist-remove [options] <id>
 
 | Argument | | Description |
 | --- | --- | --- |
-| `id` | required | Stable opaque gate id (`gate_…`) or the gate's `name`. |
+| `id` | required | Stable opaque gate id (`gat_…`) or the gate's `name`. |
 
 | Option | | Description |
 | --- | --- | --- |
@@ -6343,7 +6379,7 @@ dashboard renders the open run as a live working indicator (which agent +
 time since the run started).
 
 **AI ack.** Pass `agent` with your own agent type (`claude`, `cursor`,
-`copilot`, `jules`; `gemini` aliases `jules`) and, when you have one, the
+`copilot`, `jules`; `gemini` is also accepted and is normalized to `jules` on receipt) and, when you have one, the
 run's `sessionId` so the dashboard can deep-link to the session. If the
 project has no connected trigger connector of that type the call fails
 with `AGENT_NOT_CONNECTED` — list the available agents with `ops agents list` and use one of those (or connect the agent under Settings →
@@ -6379,7 +6415,7 @@ _Parameters_
 | Parameter | | Type | Description |
 | --- | --- | --- | --- |
 | `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
-| `agent` | optional | `"claude" \| "cursor" \| "copilot" \| "jules" \| "gemini" \| "jarvis"` | The AI agent type acking on the item's behalf — pass your own type when you are a coding agent (Claude Code passes `claude`, Cursor `cursor`, Copilot `copilot`, Jules/Gemini `jules`). Omit entirely for a human ack by the authenticated caller. |
+| `agent` | optional | `"claude" \| "cursor" \| "copilot" \| "jules" \| "gemini" \| "jarvis"` | The AI agent type acking on the item's behalf — pass your own type when you are a coding agent (Claude Code passes `claude`, Cursor `cursor`, Copilot `copilot`, Jules `jules`, Gemini `gemini` → normalized to `jules`). Omit entirely for a human ack by the authenticated caller. |
 | `sessionId` | optional | `string` | The agent-run session id (e.g. Claude's `session_01…`), so the dashboard can deep-link to the exact run page. Omit when the harness has no session id. _(length 0–300)_ |
 | `launch` | optional | `boolean` | Whether an AI ack may FIRE the agent's connected trigger. Default `true`: an ack naming a connected agent, with no `sessionId`, starts a new provider run of that agent. Pass `false` to only record the ack — claim the item and open the run record — without starting anything, e.g. when you ARE that agent working the item yourself and have no session id to pass. Ignored on a human ack. _(default `true`)_ |
 | `runId` | optional | `string` | The run you were handed — the investigation id a fired run's prompt names, or the `runId` an earlier ack returned. Proves the open run is yours, so the ack adopts it instead of answering `409` `ALREADY_EXISTS`. _(length 0–100)_ |
@@ -6681,7 +6717,7 @@ _Errors_ — beyond the [common errors](#errors):
 
 Returns the unified ops queue (bugs, feature requests, errors, alerts, measurement plans) in work order — highest priority first, oldest first within a priority — so consumers work it top-down. Every filter is applied in SQL before paging, and filters combine with AND. Human-gated holding states (items awaiting human sign-off in the dashboard) are never returned by `all`/default status.
 
-**Filters:** `type` (one item type), `status` (one lifecycle status, or `unresolved` — everything not yet `resolved`/`wont_fix`), `priority` (one triage priority), `owner` (one person or agent), and `scope=ready` — the items ready to be picked up right now: `open`, with nobody working them (no open run), and either unowned or reopened (sent back to `open` after an earlier run finished).
+**Filters:** `type` (one item type), `status` (one lifecycle status, or `unresolved` — everything not yet `resolved`/`wont_fix`), `priority` (one triage priority), `owner` (one person or agent), `reporter` (one filer's email), `closedSince` (drop items closed before a time), and `scope=ready` — the items ready to be picked up right now: `open`, with nobody working them (no open run), and either unowned or reopened (sent back to `open` after an earlier run finished).
 
 **Paging:** `limit` is the page size and `offset` the number of items to skip. The order is stable, so walk the queue with `offset += limit`; a page shorter than `limit` is the last one.
 
@@ -6699,6 +6735,8 @@ _Parameters_
 | `limit` | required | `integer` | Page size — max items to return (1–500). A page shorter than `limit` is the last one. _(1–500)_ |
 | `offset` | optional | `integer` | Number of items to skip before the page starts. Defaults to 0. The order is stable, so `offset += limit` walks the queue page by page. _(default `0`; 0–100000)_ |
 | `owner` | optional | `string` | Narrow to items owned by one person OR one agent. Matches a person by `users.id`, email, or display name, and an agent by connector id, display name, or kebab-case handle — e.g. `owner=Claude` or `owner=alice@acme.dev`. Case-insensitive exact match. |
+| `reporter` | optional | `string` | Narrow to items filed by one reporter — an email, matched case-insensitive and exact against `reporterEmail`. Items with no reporter never match. While set, `status=all` also returns `pending_approval` items: public intake files every ticket as `pending_approval`, and a reporter must see the ticket they just filed. |
+| `closedSince` | optional | `string` | ISO-8601 timestamp. Items still being worked are always returned; `resolved` and `wont_fix` items only when they closed at or after this time (see `closedAt`). Combines with `status` like any other filter. _(format: date-time)_ |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -7308,6 +7346,50 @@ _Parameters_
 _Errors_ — beyond the [common errors](#errors):
 
 - `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+
+#### Memory
+
+Project memory — what the project learned from every ticket it shipped or
+declined: decisions from answered questions, QA findings, the files each
+feature lives in, and the PR that shipped it. Derived from the tickets'
+own records and rebuilt when they change. Search it before you start a
+ticket so you build on what was decided instead of rediscovering it.
+
+##### `ops_memory_search`
+
+**Search project memory**
+
+What the project already learned from the tickets it shipped — the
+decisions the team made in answered questions, what QA found, which files
+a feature lives in, the PR that shipped it, and the requests that were
+turned down. Every entry is derived from the item's own records
+(investigations, questions, QA notes, linked PRs) and is rebuilt whenever
+those change, so it never disagrees with the ticket.
+
+Search with `q` (free text), `paths` (comma-separated files or
+directories — entries that touched them rank first) or `item` (a queue
+item — its title and description become the query, and its own entries
+are left out). With none of them, the newest entries come back. Bodies are
+capped; read the full ticket with `ops get <item>`.
+
+**Use case:** A coding agent picks up a ticket and, before reading the
+repo, asks what was already decided and built around it:
+`ops memory search --item 42`.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `q` | optional | `string` | Free-text query, e.g. `checkout retry`. _(length 1–500)_ |
+| `paths` | optional | `string` | Comma-separated repo-relative files or directories, e.g. `apps/web/src/checkout/,packages/billing/src/retry.ts`. _(length 1–2000)_ |
+| `item` | optional | `string` | A queue item — its per-project number (e.g. `7`) or full id. Its title and description become the query; its own entries are excluded. _(length 1–128)_ |
+| `kind` | optional | `"shipped" \| "declined" \| "decision" \| "qa"` | What a project-memory entry records. `shipped` — an item that reached `ready_for_qa`/`resolved`: what was asked, what the run found, the files it touched, the PR. `declined` — an item closed `wont_fix`: the request and why it was turned down. `decision` — an answered structured question: what the team picked. `qa` — a QA note or an answered QA question: what "fixed" turned out to mean, or what QA found failing. |
+| `limit` | optional | `integer` | Maximum entries to return (1-50). Defaults to 10. _(1–50)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
 
 #### Investigations
 
@@ -12344,15 +12426,15 @@ Both are typed values you can change without a redeploy. Pick by the **shape of 
 | Question            | Feature flag       | Config                                 |
 | ------------------- | ------------------ | -------------------------------------- |
 | Output              | boolean            | `string` / `number` / `boolean` / JSON |
-| Targeting rules?    | yes                | no — values are global                 |
-| Rollout percentage? | yes                | no                                     |
+| Targeting rules?    | yes                | no — values are global per environment |
+| Rollout percentage? | yes                | no — use a flag around the read        |
 | Use case            | "is feature X on?" | "what value should X be?"              |
 
 ### See also
 
 - [Quickstart](https://docs.shipeasy.ai/flags/configs/quickstart) — create your first config in 5 minutes
 - [Values](https://docs.shipeasy.ai/flags/configs/values) — schema validation, JSON shapes, complex configs
-- [Targeting](https://docs.shipeasy.ai/flags/configs/targeting) — when you need targeting, reach for a feature flag
+- [Targeting](https://docs.shipeasy.ai/flags/configs/targeting) — configs can't be targeted; this covers the feature-flag rules engine to use instead
 - [Decision tree](https://docs.shipeasy.ai/flags/decision) — feature flag vs config vs killswitch
 
 ---
@@ -12755,7 +12837,14 @@ If your JSON is approaching the size limit, you're probably storing data that be
 
 Source: https://docs.shipeasy.ai/flags/configs/targeting
 
-Show a value to the right users — attribute rules, deterministic percentage rollouts, and per-feature-flag salts. The rules engine, in detail.
+Configs are global and cannot be targeted or rolled out by percentage — this page covers the rules engine you reach for on a feature flag instead.
+
+> **Configs are global — targeting and rollouts belong to feature flags**
+
+A [config](https://docs.shipeasy.ai/flags/configs) has no targeting rules and no rollout percentage: every user in an
+environment reads the same value. Everything below (rules, operators, percentage rollouts, salts)
+describes **feature flags**. To vary a config's answer by user, wrap the read in a feature
+flag or use a [structured config](https://docs.shipeasy.ai/flags/configs/values#structured-configs) keyed by cohort.
 
 A targeting rule on a feature flag is a predicate of the form **`attr op value`**. Multiple rules on a feature flag are **ANDed** together. To OR, use the `in` operator with an array, or split into separate feature flags and combine in code.
 
@@ -15713,7 +15802,7 @@ such as 5 minutes or 1 hour. **Must breach** says how many buckets have to be pa
 
 **Set severity, then who hears about it**
 
-Severity is **Critical**, **Warning** or **Info**. **Notify** lists where a fired alert goes —
+Severity is **Critical**, **Warning** or **Info** — `danger`, `warn` and `info` in the CLI and API (`--severity danger` is Critical, `--severity warn` is Warning). **Notify** lists where a fired alert goes —
 **In-app** (Home and the bell) is on by default, and you can add a Slack channel and an email
 address.
 
@@ -15733,7 +15822,7 @@ into buckets — 6 to 12 of them, at a width we support — and each bucket is
 judged on its own. You choose how many buckets must breach before the rule
 fires, and whether a fired alert resolves itself when the metric comes back
 inside the threshold or is set to **Never auto-resolve**. The dashboard labels
-the middle severity **Warning**. (You can also describe the rule to the
+the middle severity **Warning** (`warn` on the CLI and API). (You can also describe the rule to the
 assistant and let it draft the card for you.) The API and CLI shape below is
 the same rule expressed as fields.
 
@@ -16821,6 +16910,128 @@ re-grant.
 
 ---
 
+## Project memory
+
+Source: https://docs.shipeasy.ai/feedback/memory
+
+Every ticket your project ships or declines leaves facts behind — decisions, QA findings, the files a feature lives in. Coding agents search them before they start, so they build on what was decided instead of rediscovering it.
+
+A coding agent that picks up a ticket usually starts cold: it re-reads the
+repo, re-asks questions your team already answered, and re-learns what QA
+caught last time. **Project memory** is the project's record of what its
+shipped tickets settled, kept in a form an agent can query in one call.
+
+It is built from data the ops queue already stores — nothing new to capture,
+no notes to write:
+
+| Kind       | Comes from                                             | What it remembers                                                    |
+| ---------- | ------------------------------------------------------ | -------------------------------------------------------------------- |
+| `shipped`  | a ticket that reached **Ready for QA** or **Resolved** | what was asked, what the run found, the files it touched, the PR     |
+| `declined` | a ticket closed **Won't fix**                          | the request and why it was turned down, so it isn't rebuilt blind    |
+| `decision` | an answered [agent question](https://docs.shipeasy.ai/docs/get-started/agents) | the question, the option the team picked, the options it turned down |
+| `qa`       | a QA note or an answered QA question                   | what "fixed" turned out to mean, what QA found still failing         |
+
+The files come from the run records agents fill in while they work (the
+`sources` on an investigation), so a decision made on a checkout ticket is
+findable by anyone about to touch the checkout code.
+
+### Always consistent with the tickets
+
+Memory is **derived, never edited**. A ticket's entries are a pure function of
+its own records and are rebuilt as a set whenever those records change:
+
+- Answer a question, add a QA note, or fill in a run record on a shipped ticket, and its entries are rebuilt right after.
+- Every other change — a status flip from the dashboard, the CLI, a bulk edit, a merged PR — is caught on the next read: before answering, a search rebuilds any shipped ticket whose entries are older than the ticket.
+- Reopen a ticket and its entries are dropped. It is no longer something the project shipped.
+
+So there is no second copy that can drift, and nothing to back-fill: the first
+search on a project builds its memory from the tickets it already has.
+
+### How agents use it
+
+Agents get memory in two ways.
+
+**Handed up front.** When a ticket is delegated to a connected coding agent
+(Claude, Cursor, Copilot or Jules), the run's prompt carries the headlines of
+the entries most related to that ticket — matched on its title and description
+— with the ticket they came from and the files involved:
+
+```text
+Project memory — what earlier shipped tickets settled that looks related.
+Build on these decisions instead of re-deciding them, and read the full
+entries before you design (`ops memory search --item 42` / the
+`ops_memory_search` MCP tool):
+- #31 decision: Retry policy: Three, exponential (`apps/web/src/checkout/retry.ts`)
+- #28 qa: QA verification (fail): Retry fires twice when the first call succeeded
+- #17 shipped: Checkout retries timed-out charges (`apps/web/src/checkout/retry.ts`)
+```
+
+**Searched on demand.** The `shipeasy-ops-work` skill searches memory before it
+designs a fix. Any agent or person can do the same:
+
+```bash
+## Around a ticket — its own words become the query; the ticket itself is left out
+shipeasy ops memory search --item 42
+
+## Free text
+shipeasy ops memory search --q "checkout retry"
+
+## By the files you are about to change — entries that touched them, their
+## directory or a neighbouring one rank first
+shipeasy ops memory search --paths apps/web/src/checkout/retry.ts,packages/billing/src
+
+## Only the decisions
+shipeasy ops memory search --item 42 --kind decision
+```
+
+Over MCP the same call is `ops_memory_search` with `q`, `paths`, `item`,
+`kind` and `limit`. Each entry comes back with its kind, a one-line title, a
+short body, the files, the PR, the ticket it belongs to, and a relevance
+`score`.
+
+> **Token-light by design**
+
+Bodies are capped and a search returns 10 entries by default (up to 50), so a
+lookup costs a few hundred tokens instead of a crawl through the repo. Read a
+whole ticket with `shipeasy ops get <item>` when an entry is worth the detail.
+
+#### How results are ranked
+
+A search reduces its text to keywords (dropping stop-words and words under three
+letters) and scores every candidate:
+
+- a keyword in the **title** counts more than one in the **files**, which counts more than one in the **body**, plus a bonus for matching more of the keywords;
+- a queried **path** scores highest on the same file, then a file under the queried directory, then the same directory, then a neighbouring one;
+- **decisions** and **QA findings** are weighted above plain ship records — they are what an agent most often gets wrong by not knowing;
+- older entries count for less: a year-old fact counts half as much as today's.
+
+With no query at all, the newest entries come back.
+
+### Configure it
+
+Open **Settings → Memory**. Every control saves as soon as you change it.
+
+| Setting                     | Default | What it does                                                                                                                         |
+| --------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Keep a project memory**   | On      | Off keeps nothing: stored entries are dropped, searches answer empty, and runs are handed no memory. On rebuilds on the next read.   |
+| **Headlines per agent run** | 4       | How many related entries a fired agent run is handed per ticket, from 0 to 6. At 0 agents can still search on their own.             |
+| **Kinds served**            | All     | Untick a kind to stop serving it to searches and run prompts — for example, keep declined requests out of agent prompts.             |
+| **Rebuild**                 | —       | Drops every entry and rebuilds from the tickets now. The page shows how many entries and tickets are stored, and when it last built. |
+
+Memory stays inside its project: a search only ever reads the project the
+credential belongs to, and a restricted ops key can read it but never write it
+— there is no write route at all.
+
+### Make memory better
+
+Memory is only as good as what runs and people leave on tickets:
+
+- **Agents:** fill in your run record as you work (`ops investigations update`) — a `summary`, `findings`, and the `sources` you read or changed. Those files are what makes a ticket findable by path.
+- **Ask, don't assume.** A structured question (`ops questions ask`) that the team answers becomes a `decision` every later run sees.
+- **QA:** a `narrowing`, `clarification` or `correction` note records what "fixed" means for the next person who touches that code.
+
+---
+
 ## Case studies (feedback)
 
 Source: https://docs.shipeasy.ai/feedback/case-studies
@@ -17766,8 +17977,9 @@ or via `POST /api/admin/keys` with `type: "admin"`. Keys expire after 90 days; r
 
 ### Common patterns
 
-**Pagination.** List endpoints return `{ data: [...], next_cursor: "..." }`. Pass
-`?cursor=<next_cursor>` and `?limit=<n>` to page.
+**Pagination.** Paginated list endpoints return `{ data: [...], next_cursor: "..." }` (`next_cursor` is
+`null` on the last page). Pass `?cursor=<next_cursor>` and `?limit=<n>` to page. Small, bounded
+catalogs (for example flag templates) are returned in one page and take no `limit` or `cursor`.
 
 **Errors.** All errors share a single envelope:
 
@@ -17777,6 +17989,18 @@ or via `POST /api/admin/keys` with `type: "admin"`. Keys expire after 90 days; r
 
 **Idempotency.** `POST` writes that create resources accept `Idempotency-Key: <uuid>` and replay
 the same response if you retry within 24h.
+
+### Servers
+
+| Surface | Base URL | Auth |
+| --- | --- | --- |
+| Admin API (everything in this reference unless noted) | `https://shipeasy.ai/api/admin` | admin key |
+| Public ops intake (file a bug, file a feature request) | `https://api.shipeasy.ai` | client key with the `tickets:public_create` scope |
+
+Public submissions are always filed as `pending_approval`, awaiting human approval. A status sent
+by the caller cannot override that.
+
+Environment names are `dev`, `staging` and `prod`.
 
 ---
 

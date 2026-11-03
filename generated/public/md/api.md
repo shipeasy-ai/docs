@@ -24,8 +24,9 @@ or via `POST /api/admin/keys` with `type: "admin"`. Keys expire after 90 days; r
 
 ## Common patterns
 
-**Pagination.** List endpoints return `{ data: [...], next_cursor: "..." }`. Pass
-`?cursor=<next_cursor>` and `?limit=<n>` to page.
+**Pagination.** Paginated list endpoints return `{ data: [...], next_cursor: "..." }` (`next_cursor` is
+`null` on the last page). Pass `?cursor=<next_cursor>` and `?limit=<n>` to page. Small, bounded
+catalogs (for example flag templates) are returned in one page and take no `limit` or `cursor`.
 
 **Errors.** All errors share a single envelope:
 
@@ -35,3 +36,15 @@ or via `POST /api/admin/keys` with `type: "admin"`. Keys expire after 90 days; r
 
 **Idempotency.** `POST` writes that create resources accept `Idempotency-Key: <uuid>` and replay
 the same response if you retry within 24h.
+
+## Servers
+
+| Surface | Base URL | Auth |
+| --- | --- | --- |
+| Admin API (everything in this reference unless noted) | `https://shipeasy.ai/api/admin` | admin key |
+| Public ops intake (file a bug, file a feature request) | `https://api.shipeasy.ai` | client key with the `tickets:public_create` scope |
+
+Public submissions are always filed as `pending_approval`, awaiting human approval. A status sent
+by the caller cannot override that.
+
+Environment names are `dev`, `staging` and `prod`.
