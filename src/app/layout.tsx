@@ -40,6 +40,12 @@ export const metadata: Metadata = {
     images: ["https://shipeasy.ai/opengraph-image.png"],
     creator: "@shipeasyai",
   },
+  // Build identity — see next.config.ts. `view-source:` any page and read
+  // these two tags to know exactly which deployed export answered.
+  other: {
+    "docs-build": process.env.DOCS_BUILD_SHA ?? "unknown",
+    "docs-built-at": process.env.DOCS_BUILD_TIME ?? "unknown",
+  },
   robots: {
     index: true,
     follow: true,

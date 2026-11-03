@@ -88,3 +88,13 @@ at the monorepo path this site used to live at, and ran `pnpm --filter
 reported success while building and deploying nothing — the site sat stale for
 days with a green tick over it. A build that did real work says
 `Uploaded … files` and prints a version id.
+
+**Every page names the build it came from.** The export stamps
+`<meta name="docs-build">` (the commit SHA — `WORKERS_CI_COMMIT_SHA` on
+Workers Builds, `git rev-parse` locally) and `<meta name="docs-built-at">` into
+every page's `<head>`. When a report says one URL served two different bodies,
+read those two tags from each body: two SHAs that both appear in the Worker's
+deployment history is a deploy transition; a SHA that isn't there (or no tag
+at all) did not come from a `shipeasy-docs` deploy. HTML is served by Workers
+Assets with `max-age=0, must-revalidate`, so a fresh deploy replaces every
+edge's copy — there is no long-lived page cache to purge.
