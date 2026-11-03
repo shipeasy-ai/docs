@@ -1,0 +1,131 @@
+---
+title: Project memory
+description: Every ticket your project ships or declines leaves facts behind — decisions, QA findings, the files a feature lives in. Coding agents search them before they start, so they build on what was decided instead of rediscovering it.
+---
+
+<DocMeta status="Beta" read="5 min read" works="Every plan · per project" />
+
+A coding agent that picks up a ticket usually starts cold: it re-reads the
+repo, re-asks questions your team already answered, and re-learns what QA
+caught last time. **Project memory** is the project's record of what its
+shipped tickets settled, kept in a form an agent can query in one call.
+
+It is built from data the ops queue already stores — nothing new to capture,
+no notes to write:
+
+| Kind       | Comes from                                             | What it remembers                                                    |
+| ---------- | ------------------------------------------------------ | -------------------------------------------------------------------- |
+| `shipped`  | a ticket that reached **Ready for QA** or **Resolved** | what was asked, what the run found, the files it touched, the PR     |
+| `declined` | a ticket closed **Won't fix**                          | the request and why it was turned down, so it isn't rebuilt blind    |
+| `decision` | an answered [agent question](/get-started/agents)      | the question, the option the team picked, the options it turned down |
+| `qa`       | a QA note or an answered QA question                   | what "fixed" turned out to mean, what QA found still failing         |
+
+The files come from the run records agents fill in while they work (the
+`sources` on an investigation), so a decision made on a checkout ticket is
+findable by anyone about to touch the checkout code.
+
+## Always consistent with the tickets
+
+Memory is **derived, never edited**. A ticket's entries are a pure function of
+its own records and are rebuilt as a set whenever those records change:
+
+- Answer a question, add a QA note, or fill in a run record on a shipped ticket,
+  and its entries are rebuilt right after.
+- Every other change — a status flip from the dashboard, the CLI, a bulk edit,
+  a merged PR — is caught on the next read: before answering, a search rebuilds
+  any shipped ticket whose entries are older than the ticket.
+- Reopen a ticket and its entries are dropped. It is no longer something the
+  project shipped.
+
+So there is no second copy that can drift, and nothing to back-fill: the first
+search on a project builds its memory from the tickets it already has.
+
+## How agents use it
+
+Agents get memory in two ways.
+
+**Handed up front.** When a ticket is delegated to a connected coding agent
+(Claude, Cursor, Copilot or Jules), the run's prompt carries the headlines of
+the entries most related to that ticket — matched on its title and description
+— with the ticket they came from and the files involved:
+
+```text
+Project memory — what earlier shipped tickets settled that looks related.
+Build on these decisions instead of re-deciding them, and read the full
+entries before you design (`ops memory search --item 42` / the
+`ops_memory_search` MCP tool):
+- #31 decision: Retry policy: Three, exponential (`apps/web/src/checkout/retry.ts`)
+- #28 qa: QA verification (fail): Retry fires twice when the first call succeeded
+- #17 shipped: Checkout retries timed-out charges (`apps/web/src/checkout/retry.ts`)
+```
+
+**Searched on demand.** The `shipeasy-ops-work` skill searches memory before it
+designs a fix. Any agent or person can do the same:
+
+```bash
+# Around a ticket — its own words become the query; the ticket itself is left out
+shipeasy ops memory search --item 42
+
+# Free text
+shipeasy ops memory search --q "checkout retry"
+
+# By the files you are about to change — entries that touched them, their
+# directory or a neighbouring one rank first
+shipeasy ops memory search --paths apps/web/src/checkout/retry.ts,packages/billing/src
+
+# Only the decisions
+shipeasy ops memory search --item 42 --kind decision
+```
+
+Over MCP the same call is `ops_memory_search` with `q`, `paths`, `item`,
+`kind` and `limit`. Each entry comes back with its kind, a one-line title, a
+short body, the files, the PR, the ticket it belongs to, and a relevance
+`score`.
+
+<Callout type="info" title="Token-light by design">
+  Bodies are capped and a search returns 10 entries by default (up to 50), so a
+  lookup costs a few hundred tokens instead of a crawl through the repo. Read a
+  whole ticket with `shipeasy ops get <item>` when an entry is worth the detail.
+</Callout>
+
+### How results are ranked
+
+A search reduces its text to keywords (dropping stop-words and words under three
+letters) and scores every candidate:
+
+- a keyword in the **title** counts more than one in the **files**, which counts
+  more than one in the **body**, plus a bonus for matching more of the keywords;
+- a queried **path** scores highest on the same file, then a file under the
+  queried directory, then the same directory, then a neighbouring one;
+- **decisions** and **QA findings** are weighted above plain ship records —
+  they are what an agent most often gets wrong by not knowing;
+- older entries count for less: a year-old fact counts half as much as today's.
+
+With no query at all, the newest entries come back.
+
+## Configure it
+
+Open **Settings → Memory**. Every control saves as soon as you change it.
+
+| Setting                     | Default | What it does                                                                                                                         |
+| --------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Keep a project memory**   | On      | Off keeps nothing: stored entries are dropped, searches answer empty, and runs are handed no memory. On rebuilds on the next read.   |
+| **Headlines per agent run** | 4       | How many related entries a fired agent run is handed per ticket, from 0 to 6. At 0 agents can still search on their own.             |
+| **Kinds served**            | All     | Untick a kind to stop serving it to searches and run prompts — for example, keep declined requests out of agent prompts.             |
+| **Rebuild**                 | —       | Drops every entry and rebuilds from the tickets now. The page shows how many entries and tickets are stored, and when it last built. |
+
+Memory stays inside its project: a search only ever reads the project the
+credential belongs to, and a restricted ops key can read it but never write it
+— there is no write route at all.
+
+## Make memory better
+
+Memory is only as good as what runs and people leave on tickets:
+
+- **Agents:** fill in your run record as you work (`ops investigations update`)
+  — a `summary`, `findings`, and the `sources` you read or changed. Those files
+  are what makes a ticket findable by path.
+- **Ask, don't assume.** A structured question (`ops questions ask`) that the
+  team answers becomes a `decision` every later run sees.
+- **QA:** a `narrowing`, `clarification` or `correction` note records what
+  "fixed" means for the next person who touches that code.

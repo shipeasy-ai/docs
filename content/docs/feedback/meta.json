@@ -9,6 +9,7 @@
     "errors",
     "connectors",
     "slack",
+    "memory",
     "---",
     "case-studies",
     "edge-cases",

@@ -36,6 +36,15 @@ Full flow, including CI tokens, lives in [Authenticate](https://docs.shipeasy.ai
 // app/layout.tsx — runs once per cold start\nimport { configure } from "@shipeasy/sdk/server";\nconfigure({ apiKey: process.env.SHIPEASY_SERVER_KEY ?? "", attributes: (u) => ({ user_id: u.id, plan: u.plan }) });
 ```
 
+First put the server key where `process.env.SHIPEASY_SERVER_KEY` can read it. Mint one with
+`shipeasy sdk keys create --type server`, then add it to a `.env` file at your project root
+(and keep that file out of git):
+
+```bash
+# .env
+SHIPEASY_SERVER_KEY=sdk_server_...
+```
+
 The single `configure()` call boots flags, configs **and** killswitches. The server SDK polls the
 rule set in the background and evaluates **locally** — there is no per-request network hop. Env
 (dev / staging / prod) is derived from the key, not from a query param. See [Keys &
