@@ -16,7 +16,7 @@ no notes to write:
 | ---------- | ------------------------------------------------------ | -------------------------------------------------------------------- |
 | `shipped`  | a ticket that reached **Ready for QA** or **Resolved** | what was asked, what the run found, the files it touched, the PR     |
 | `declined` | a ticket closed **Won't fix**                          | the request and why it was turned down, so it isn't rebuilt blind    |
-| `decision` | an answered [agent question](https://docs.shipeasy.ai/docs/get-started/agents) | the question, the option the team picked, the options it turned down |
+| `decision` | an answered [agent question](https://docs.shipeasy.ai/get-started/agents)      | the question, the option the team picked, the options it turned down |
 | `qa`       | a QA note or an answered QA question                   | what "fixed" turned out to mean, what QA found still failing         |
 
 The files come from the run records agents fill in while they work (the
