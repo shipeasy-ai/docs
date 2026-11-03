@@ -2747,9 +2747,24 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy ops questions ask` — --agent --delivery --questions --run-id
 - `shipeasy ops questions cancel` — --data
 - `shipeasy ops questions list` — --data --status
+- `shipeasy ops review-agents`
+- `shipeasy ops review-agents archive` — --data
+- `shipeasy ops review-agents create` — --blocking --connector-id --description --enabled --instructions --key --name --polarity --preset --threshold --trigger --value-type
+- `shipeasy ops review-agents list` — --data
+- `shipeasy ops review-agents update` — --blocking --connector-id --description --enabled --instructions --name --polarity --threshold --trigger --value-type
 - `shipeasy ops routing-rules`
 - `shipeasy ops routing-rules create` — --agent-prompt --connector --enabled --priority --skip-approval --status --subscribers --tags --types --user
 - `shipeasy ops routing-rules list` — --data
+- `shipeasy ops trail-gates`
+- `shipeasy ops trail-gates get` — --data
+- `shipeasy ops trail-gates set` — --agent-review --checks --evals --human-review --up-to-date
+- `shipeasy ops trails`
+- `shipeasy ops trails approve` — --body --pr-url
+- `shipeasy ops trails get` — --data
+- `shipeasy ops trails merge` — --bypass --method --pr-url --reason
+- `shipeasy ops trails review` — --agent-keys --pr-url
+- `shipeasy ops trails submit-eval` — --agent --agent-key --findings --head-sha --pr-url --rationale --session-id --value
+- `shipeasy ops trails update-finding` — --agent --reason --status
 - `shipeasy ops trigger`
 - `shipeasy ops trigger create`
 - `shipeasy ops trigger create claude` — --config --enabled --events --name --token
@@ -2885,8 +2900,14 @@ Parameters and error codes: https://docs.shipeasy.ai/get-started/mcp-reference
 - `ops_qa_questions_answer`
 - `ops_qa_questions_ask`
 - `ops_qa_questions_list`
+- `ops_review_agents_archive`
+- `ops_review_agents_create`
+- `ops_review_agents_list`
+- `ops_review_agents_update`
 - `ops_routing_rules_create`
 - `ops_routing_rules_list`
+- `ops_trail_gates_get`
+- `ops_trail_gates_set`
 - `ops_update`
 - `ops_alerts_archive`
 - `ops_alerts_channels`
@@ -2900,6 +2921,12 @@ Parameters and error codes: https://docs.shipeasy.ai/get-started/mcp-reference
 - `ops_comments_upload_media`
 - `ops_activity_list`
 - `ops_memory_search`
+- `ops_trails_approve`
+- `ops_trails_get`
+- `ops_trails_merge`
+- `ops_trails_review`
+- `ops_trails_submit_eval`
+- `ops_trails_update_finding`
 - `ops_investigations_create`
 - `ops_investigations_list`
 - `ops_investigations_update`
@@ -3013,6 +3040,7 @@ Parameters and error codes: https://docs.shipeasy.ai/get-started/mcp-reference
 - Connectors — https://docs.shipeasy.ai/feedback/connectors
 - Slack — https://docs.shipeasy.ai/feedback/slack
 - Project memory — https://docs.shipeasy.ai/feedback/memory
+- Trails — https://docs.shipeasy.ai/feedback/trails
 - Case studies (feedback) — https://docs.shipeasy.ai/feedback/case-studies
 - Route bug reports to your tracker — https://docs.shipeasy.ai/feedback/case-studies/route-bugs-to-your-tracker
 - From metric alert to auto-filed ticket — https://docs.shipeasy.ai/feedback/case-studies/alert-to-ticket-loop

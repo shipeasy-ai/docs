@@ -1278,6 +1278,76 @@
       ]
     },
     {
+      "path": "shipeasy ops review-agents",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy ops review-agents archive",
+      "aliases": [],
+      "args": [
+        {
+          "name": "agentId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy ops review-agents create",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--blocking",
+        "--connector-id",
+        "--description",
+        "--enabled",
+        "--instructions",
+        "--key",
+        "--name",
+        "--polarity",
+        "--preset",
+        "--threshold",
+        "--trigger",
+        "--value-type"
+      ]
+    },
+    {
+      "path": "shipeasy ops review-agents list",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy ops review-agents update",
+      "aliases": [],
+      "args": [
+        {
+          "name": "agentId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--blocking",
+        "--connector-id",
+        "--description",
+        "--enabled",
+        "--instructions",
+        "--name",
+        "--polarity",
+        "--threshold",
+        "--trigger",
+        "--value-type"
+      ]
+    },
+    {
       "path": "shipeasy ops routing-rules",
       "aliases": [],
       "args": [],
@@ -1306,6 +1376,141 @@
       "args": [],
       "options": [
         "--data"
+      ]
+    },
+    {
+      "path": "shipeasy ops trail-gates",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy ops trail-gates get",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy ops trail-gates set",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--agent-review",
+        "--checks",
+        "--evals",
+        "--human-review",
+        "--up-to-date"
+      ]
+    },
+    {
+      "path": "shipeasy ops trails",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy ops trails approve",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--body",
+        "--pr-url"
+      ]
+    },
+    {
+      "path": "shipeasy ops trails get",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy ops trails merge",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--bypass",
+        "--method",
+        "--pr-url",
+        "--reason"
+      ]
+    },
+    {
+      "path": "shipeasy ops trails review",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--agent-keys",
+        "--pr-url"
+      ]
+    },
+    {
+      "path": "shipeasy ops trails submit-eval",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--agent",
+        "--agent-key",
+        "--findings",
+        "--head-sha",
+        "--pr-url",
+        "--rationale",
+        "--session-id",
+        "--value"
+      ]
+    },
+    {
+      "path": "shipeasy ops trails update-finding",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "findingId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--agent",
+        "--reason",
+        "--status"
       ]
     },
     {
