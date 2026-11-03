@@ -1062,12 +1062,14 @@
       "aliases": [],
       "args": [],
       "options": [
+        "--closed-since",
         "--data",
         "--limit",
         "--offset",
         "--owner",
         "--priority",
         "--qa-questions",
+        "--reporter",
         "--scope",
         "--status",
         "--type"
