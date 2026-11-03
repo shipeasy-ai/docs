@@ -87,8 +87,9 @@ function resolveParam(p: RawParam): OpParameter | null {
       return {
         name: "X-Project-Id",
         in: "header",
-        required: true,
-        description: "Project to scope this request to.",
+        required: false,
+        description:
+          "Optional override. The admin key already carries its project; send this only to act on a different project you administer.",
         schema: { type: "string" },
       };
     }
