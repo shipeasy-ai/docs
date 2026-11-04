@@ -764,6 +764,7 @@
         "--steps-to-reproduce",
         "--subscribers",
         "--tags",
+        "--trail",
         "--user-agent",
         "--viewport"
       ]
@@ -846,6 +847,7 @@
         "--steps-to-reproduce",
         "--subscribers",
         "--tags",
+        "--trail",
         "--type",
         "--use-case",
         "--user-agent",
@@ -874,6 +876,7 @@
         "--status",
         "--subscribers",
         "--tags",
+        "--trail",
         "--use-case",
         "--user-agent"
       ]
@@ -1278,6 +1281,76 @@
       ]
     },
     {
+      "path": "shipeasy ops review-agents",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy ops review-agents archive",
+      "aliases": [],
+      "args": [
+        {
+          "name": "agentId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy ops review-agents create",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--blocking",
+        "--connector-id",
+        "--description",
+        "--enabled",
+        "--instructions",
+        "--key",
+        "--name",
+        "--polarity",
+        "--preset",
+        "--threshold",
+        "--trigger",
+        "--value-type"
+      ]
+    },
+    {
+      "path": "shipeasy ops review-agents list",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy ops review-agents update",
+      "aliases": [],
+      "args": [
+        {
+          "name": "agentId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--blocking",
+        "--connector-id",
+        "--description",
+        "--enabled",
+        "--instructions",
+        "--name",
+        "--polarity",
+        "--threshold",
+        "--trigger",
+        "--value-type"
+      ]
+    },
+    {
       "path": "shipeasy ops routing-rules",
       "aliases": [],
       "args": [],
@@ -1306,6 +1379,46 @@
       "args": [],
       "options": [
         "--data"
+      ]
+    },
+    {
+      "path": "shipeasy ops trail-gates",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy ops trail-gates get",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy ops trail-gates set",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--agent-review",
+        "--attribution-window-hours",
+        "--autopilot",
+        "--checks",
+        "--copy",
+        "--discovered",
+        "--evals",
+        "--fix-rounds",
+        "--guarded",
+        "--human-review",
+        "--intake-matching",
+        "--measured",
+        "--plan",
+        "--repos",
+        "--require-plan",
+        "--rollback",
+        "--rollout",
+        "--ships-dark",
+        "--up-to-date"
       ]
     },
     {
@@ -2577,6 +2690,534 @@
       "options": [
         "--add",
         "--remove"
+      ]
+    },
+    {
+      "path": "shipeasy trails",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy trails approve",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--body",
+        "--pr-url"
+      ]
+    },
+    {
+      "path": "shipeasy trails approve-plan",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--agent",
+        "--connector-id",
+        "--start-build"
+      ]
+    },
+    {
+      "path": "shipeasy trails attribute",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "item",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--confidence",
+        "--evidence"
+      ]
+    },
+    {
+      "path": "shipeasy trails close",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--reason"
+      ]
+    },
+    {
+      "path": "shipeasy trails confirm-suspect",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "suspectId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy trails create",
+      "aliases": [],
+      "args": [
+        {
+          "name": "title",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--autopilot",
+        "--body",
+        "--intake",
+        "--origin-item",
+        "--owner-connector-id",
+        "--owner-id",
+        "--priority",
+        "--repos",
+        "--type"
+      ]
+    },
+    {
+      "path": "shipeasy trails get",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data",
+        "--files"
+      ]
+    },
+    {
+      "path": "shipeasy trails items",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy trails items add",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--item"
+      ]
+    },
+    {
+      "path": "shipeasy trails items remove",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "itemHandle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy trails link-pr",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "prUrl",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--item"
+      ]
+    },
+    {
+      "path": "shipeasy trails list",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--cursor",
+        "--data",
+        "--f",
+        "--limit",
+        "--merged-since",
+        "--owner",
+        "--phase",
+        "--q",
+        "--scope",
+        "--sort",
+        "--touches",
+        "--type",
+        "--view"
+      ]
+    },
+    {
+      "path": "shipeasy trails merge",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--bypass",
+        "--method",
+        "--pr-url",
+        "--reason"
+      ]
+    },
+    {
+      "path": "shipeasy trails pause-autopilot",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--reason"
+      ]
+    },
+    {
+      "path": "shipeasy trails pause-rollout",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--reason"
+      ]
+    },
+    {
+      "path": "shipeasy trails promote-finding",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "findingId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--reason",
+        "--title",
+        "--type"
+      ]
+    },
+    {
+      "path": "shipeasy trails reject-suspect",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "suspectId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy trails reopen",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy trails resources",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy trails resources add",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--kind",
+        "--resource-key",
+        "--role"
+      ]
+    },
+    {
+      "path": "shipeasy trails resources list",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy trails resources remove",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy trails resume-autopilot",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--reason"
+      ]
+    },
+    {
+      "path": "shipeasy trails resume-rollout",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--reason"
+      ]
+    },
+    {
+      "path": "shipeasy trails review",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--agent-keys",
+        "--pr-url"
+      ]
+    },
+    {
+      "path": "shipeasy trails start",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--agent",
+        "--connector-id",
+        "--kind",
+        "--prompt"
+      ]
+    },
+    {
+      "path": "shipeasy trails submit-eval",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--agent",
+        "--agent-key",
+        "--findings",
+        "--head-sha",
+        "--pr-url",
+        "--rationale",
+        "--resources",
+        "--session-id",
+        "--value"
+      ]
+    },
+    {
+      "path": "shipeasy trails submit-plan",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--plan",
+        "--release"
+      ]
+    },
+    {
+      "path": "shipeasy trails unlink-pr",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data",
+        "--pr-url"
+      ]
+    },
+    {
+      "path": "shipeasy trails update",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--autopilot",
+        "--body",
+        "--owner-connector-id",
+        "--owner-id",
+        "--priority",
+        "--repos",
+        "--title",
+        "--type"
+      ]
+    },
+    {
+      "path": "shipeasy trails update-finding",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "findingId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--agent",
+        "--reason",
+        "--status"
+      ]
+    },
+    {
+      "path": "shipeasy trails update-plan",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--plan",
+        "--release"
       ]
     },
     {
