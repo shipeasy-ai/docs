@@ -96,10 +96,10 @@ the same response if you retry within 24h.
 
 ## Servers
 
-| Surface | Base URL | Auth |
-| --- | --- | --- |
-| Admin API (everything in this reference unless noted) | `https://shipeasy.ai/api/admin` | admin key |
-| Public ops intake (file a bug, file a feature request) | `https://api.shipeasy.ai` | client key with the `tickets:public_create` scope |
+| Surface                                                | Base URL                        | Auth                                              |
+| ------------------------------------------------------ | ------------------------------- | ------------------------------------------------- |
+| Admin API (everything in this reference unless noted)  | `https://shipeasy.ai/api/admin` | admin key                                         |
+| Public ops intake (file a bug, file a feature request) | `https://api.shipeasy.ai`       | client key with the `tickets:public_create` scope |
 
 Public submissions are always filed as `pending_approval`, awaiting human approval. A status sent
 by the caller cannot override that.
