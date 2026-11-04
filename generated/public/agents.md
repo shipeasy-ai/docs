@@ -451,7 +451,7 @@ Shipeasy has exactly two kinds of SDK key. One per entrypoint, one configure cal
 | Visibility | **Secret** — never ships to a browser        | **Public** — ships in your bundle      |
 | Reads      | Full rule set (gates, configs, killswitches) | Only client-readable flags and configs |
 | Writes     | Events                                       | Events, rate-limited by domain         |
-| Env        | Bound to one env; may override per request   | **Locked** to its env                  |
+| Env        | Bound env is the default; `?env=` overrides  | **Locked** to its env                  |
 
 ```ts
 // Server (root layout / startup) — server key ONLY, passed as apiKey
@@ -491,25 +491,31 @@ key, not when you use it.
 
 ### The read environment is derived from the key
 
-This is the part people expect to be a config flag and it isn't. **There is no `?env=` for normal use.** The environment a key reads is baked into the key when you mint it.
+This is the part people expect to be a config flag and it isn't. The environment a key reads is baked into the key when you mint it, and that bound env is what every request reads unless a server key explicitly overrides it (below).
 
-- A key minted for `prod` reads `prod` flags and configs. Forever.
-- A key minted for `staging` reads `staging`. Forever.
+- A key minted for `prod` reads `prod` flags and configs.
+- A key minted for `staging` reads `staging`.
 
-So you deploy the prod key to prod and the staging key to staging — there is nothing to set in code, and nothing a misconfigured request can override into the wrong env.
+So you deploy the prod key to prod and the staging key to staging — there is nothing to set in code. A client key can never be pointed at another env; a server key reads another env only when a request explicitly asks for it with `?env=`.
 
 > **Why not a query param?**
 
-Deriving env from the key makes the wrong env **unreachable** by accident. A request can't ask for
-prod data with a staging key, because the key *is* the env credential. It also means a public
-client key can't be coaxed into reading another environment from the browser.
+Deriving env from the key means the wrong env is never read **by accident**: with no override, a
+staging key reads staging. A public client key can't be coaxed into reading another environment
+from the browser at all, because it ignores `?env=`.
 
 #### Client keys are locked; server keys can override
 
-|                | Per-request env override                                                                                                   |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| **Client key** | No. The env is locked to the key — a `staging` client key can only ever read `staging`.                                    |
-| **Server key** | Yes, for **local debugging only** — a server key may override per request (e.g. to preview another env from your machine). |
+|                | Per-request env override                                                                                                               |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **Client key** | No. `?env=` is ignored — a `staging` client key can only ever read `staging`.                                                          |
+| **Server key** | Yes. A valid `?env=dev\|staging\|prod` on a read wins over the bound env **for that request only**; without it, the bound env applies. |
+
+How the two rules fit together: the env bound at mint time is the **default**, and the per-request override is the **only** way a server key reads anything else.
+
+- The override applies to reads only (`/sdk/flags`, `/sdk/bootstrap`, `/sdk/evaluate`). Events a server key sends are always recorded against its bound env.
+- An unknown value (`?env=bogus`) is ignored and the bound env is read — never silently prod.
+- It exists so you can preview another env from your machine (for example a dev box reading staging) without minting a key.
 
 A client key is public, so allowing it to switch environments would let anyone with your bundle read any env. A server key is a trusted secret on your own infrastructure, so the per-request override is safe there — but you should still deploy the right key per environment and treat the override as a debugging convenience, not a deploy strategy.
 

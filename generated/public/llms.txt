@@ -37,7 +37,7 @@ Generated from https://docs.shipeasy.ai — do not edit by hand. Regenerate with
 
 ## SDKs
 
-- [SDKs](https://docs.shipeasy.ai/sdks): One package for JavaScript (server + browser) plus seven native server languages — all evaluating the same blob, the same way.
+- [SDKs](https://docs.shipeasy.ai/sdks): One package for JavaScript (server + browser), six native server languages, and a native Swift client SDK — all published and installable today.
 - [Node / TypeScript](https://docs.shipeasy.ai/sdks/node-typescript): The canonical Shipeasy SDK — one package with a server and a browser build, local evaluation, configs, killswitches, and metric tracking.
 - [Browser & React](https://docs.shipeasy.ai/sdks/browser-react): The client build of @shipeasy/sdk — client-key init, identify, in-browser evaluation, the DevTools overlay, and SSR bootstrap.
 - [Go](https://docs.shipeasy.ai/sdks/go): The Shipeasy Go server SDK — context-aware client, local evaluation, configs, killswitches, and metric tracking.

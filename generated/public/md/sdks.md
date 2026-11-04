@@ -2,9 +2,9 @@
 
 Source: https://docs.shipeasy.ai/sdks
 
-> One package for JavaScript (server + browser) plus seven native server languages — all evaluating the same blob, the same way.
+> One package for JavaScript (server + browser), six native server languages, and a native Swift client SDK — all published and installable today.
 
-The TypeScript package ships a server and a browser build. Seven native server SDKs — Go, Python, Ruby, Java, Kotlin, PHP, Swift — speak the same wire format and run the same deterministic evaluation locally.
+The TypeScript package ships a server and a browser build. Six native server SDKs — Go, Python, Ruby, Java, Kotlin, PHP — speak the same wire format and run the same deterministic evaluation locally. The Swift SDK is a native client for iOS and macOS apps.
 
 Every Shipeasy SDK is a thin client over two cached blobs — `:flags` (gates + configs + killswitches) and `:experiments`, the longer-lived half of the rule set. The SDK polls them in the background and **evaluates locally**: there is no per-call network round-trip on your hot path.
 
@@ -57,6 +57,8 @@ Defaults are returned **only when a value can't be evaluated** (client not ready
 
 ## Pick your language
 
+Every SDK below is published and installable today — each language page carries the exact install line and its current status.
+
 - **[Node / TypeScript](https://docs.shipeasy.ai/sdks/node-typescript)** — The canonical SDK. Server + browser builds in one package.
 
 - **[Browser & React](https://docs.shipeasy.ai/sdks/browser-react)** — Client-key build, identify, devtools overlay, SSR bootstrap.
@@ -73,7 +75,7 @@ Defaults are returned **only when a value can't be evaluated** (client not ready
 
 - **[PHP](https://docs.shipeasy.ai/sdks/php)** — PHP-FPM friendly, per-request init, Laravel/WordPress hosts.
 
-- **[Swift](https://docs.shipeasy.ai/sdks/swift)** — async/await, iOS 15+/macOS 12+, server-key only.
+- **[Swift](https://docs.shipeasy.ai/sdks/swift)** — Native app client: async/await, iOS 15+/macOS 12+, public client key.
 
 **Related**
 
