@@ -2713,13 +2713,13 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy ops alerts update` — --auto-resolve-minutes --bucket-minutes --comparator --composite --delay-minutes --direction --enabled --group-alerts --kind --max-groups --name --no-data-minutes --notify --range-max --range-min --recovery-threshold --required-buckets --severity --sigma --sustained --threshold --warn-threshold --window-hours
 - `shipeasy ops attachments`
 - `shipeasy ops attachments create` — --content-base64 --filename --kind --mime-type --url
-- `shipeasy ops bug` — --actual-result --assignee-id --context --delegate-connector-id --expected-result --notify --page-url --priority --reporter-email --status --steps-to-reproduce --subscribers --tags --user-agent --viewport
+- `shipeasy ops bug` — --actual-result --assignee-id --context --delegate-connector-id --expected-result --notify --page-url --priority --reporter-email --status --steps-to-reproduce --subscribers --tags --trail --user-agent --viewport
 - `shipeasy ops comments`
 - `shipeasy ops comments create` — --body --parent-id
 - `shipeasy ops comments list` — --data
 - `shipeasy ops comments upload-media` — --content-base64 --filename --kind --mime-type --url
-- `shipeasy ops create` — --actual-result --assignee-id --context --delegate-connector-id --description --expected-result --notify --page-url --priority --reporter-email --status --steps-to-reproduce --subscribers --tags --type --use-case --user-agent --viewport
-- `shipeasy ops feature` — --assignee-id --context --delegate-connector-id --description --notify --page-url --priority --reporter-email --status --subscribers --tags --use-case --user-agent
+- `shipeasy ops create` — --actual-result --assignee-id --context --delegate-connector-id --description --expected-result --notify --page-url --priority --reporter-email --status --steps-to-reproduce --subscribers --tags --trail --type --use-case --user-agent --viewport
+- `shipeasy ops feature` — --assignee-id --context --delegate-connector-id --description --notify --page-url --priority --reporter-email --status --subscribers --tags --trail --use-case --user-agent
 - `shipeasy ops fired-alerts`
 - `shipeasy ops fired-alerts list` — --data --status
 - `shipeasy ops fired-alerts update` — --agent --assignee-id --status
@@ -2733,7 +2733,7 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy ops links` — --add-blocked-by --add-blocking --duplicate-of --remove-blocked-by --remove-blocking
 - `shipeasy ops list` — --closed-since --data --limit --offset --owner --priority --qa-questions --reporter --scope --status --type
 - `shipeasy ops memory`
-- `shipeasy ops memory search` — --data --item --kind --limit --paths --q
+- `shipeasy ops memory search` — --data --item --kind --limit --paths --q --trail
 - `shipeasy ops notify` — --dedupe-key --href --steps --summary --title
 - `shipeasy ops qa-notes`
 - `shipeasy ops qa-notes create` — --agent --body --kind --verdict
@@ -2757,14 +2757,7 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy ops routing-rules list` — --data
 - `shipeasy ops trail-gates`
 - `shipeasy ops trail-gates get` — --data
-- `shipeasy ops trail-gates set` — --agent-review --checks --evals --human-review --up-to-date
-- `shipeasy ops trails`
-- `shipeasy ops trails approve` — --body --pr-url
-- `shipeasy ops trails get` — --data
-- `shipeasy ops trails merge` — --bypass --method --pr-url --reason
-- `shipeasy ops trails review` — --agent-keys --pr-url
-- `shipeasy ops trails submit-eval` — --agent --agent-key --findings --head-sha --pr-url --rationale --session-id --value
-- `shipeasy ops trails update-finding` — --agent --reason --status
+- `shipeasy ops trail-gates set` — --agent-review --attribution-window-hours --autopilot --checks --copy --discovered --evals --fix-rounds --goal-window-days --guarded --human-review --intake-matching --max-goal-replans --max-parallel-runs --measured --plan --repos --require-plan --rollback --rollout --ships-dark --up-to-date
 - `shipeasy ops trigger`
 - `shipeasy ops trigger create`
 - `shipeasy ops trigger create claude` — --config --enabled --events --name --token
@@ -2834,6 +2827,47 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy tags list` — --data --q
 - `shipeasy tags set` — --tags
 - `shipeasy tags update` — --add --remove
+- `shipeasy trails`
+- `shipeasy trails approve` — --body --pr-url
+- `shipeasy trails approve-plan` — --agent --connector-id --start-build
+- `shipeasy trails attribute` — --confidence --evidence
+- `shipeasy trails close` — --reason
+- `shipeasy trails confirm-suspect` — --data
+- `shipeasy trails create` — --autopilot --body --goal --health --intake --origin-item --owner-connector-id --owner-id --priority --repos --start-date --target-date --type
+- `shipeasy trails get` — --data --files
+- `shipeasy trails items`
+- `shipeasy trails items add` — --item --milestone-id
+- `shipeasy trails items move` — --milestone-id
+- `shipeasy trails items remove` — --data
+- `shipeasy trails link-pr` — --item
+- `shipeasy trails list` — --cursor --data --f --health --limit --merged-since --owner --phase --q --scope --sort --touches --type --view
+- `shipeasy trails merge` — --bypass --method --pr-url --reason
+- `shipeasy trails milestones`
+- `shipeasy trails milestones add` — --description --position --target-date
+- `shipeasy trails milestones remove` — --data
+- `shipeasy trails milestones update` — --description --name --position --target-date
+- `shipeasy trails pause-autopilot` — --reason
+- `shipeasy trails pause-rollout` — --reason --resource
+- `shipeasy trails plan-revisions` — --data
+- `shipeasy trails promote-finding` — --reason --title --type
+- `shipeasy trails reject-suspect` — --data
+- `shipeasy trails release-facts` — --data --proxy
+- `shipeasy trails reopen` — --data
+- `shipeasy trails resources`
+- `shipeasy trails resources add` — --kind --resource-key --role
+- `shipeasy trails resources list` — --data
+- `shipeasy trails resources remove` — --data
+- `shipeasy trails resume-autopilot` — --reason
+- `shipeasy trails resume-rollout` — --reason --resource
+- `shipeasy trails review` — --agent-keys --pr-url
+- `shipeasy trails start` — --agent --connector-id --kind --prompt
+- `shipeasy trails submit-eval` — --agent --agent-key --findings --head-sha --pr-url --rationale --resources --session-id --value
+- `shipeasy trails submit-plan` — --breakdown --marketing --plan --release --sources --summary
+- `shipeasy trails timeline` — --before --data --decisions --limit
+- `shipeasy trails unlink-pr` — --data --pr-url
+- `shipeasy trails update` — --autopilot --body --goal --health --owner-connector-id --owner-id --priority --repos --start-date --target-date --title --type
+- `shipeasy trails update-finding` — --agent --reason --status
+- `shipeasy trails update-plan` — --breakdown --marketing --plan --release
 - `shipeasy upgrade` — --agents --dry-run --only-installed --pm --scope --skip-cli --skip-sdk --yes
 - `shipeasy upgrade skills` — --agents --dry-run --only-installed --pm --scope --skip-cli
 - `shipeasy whoami` — --data
@@ -2921,12 +2955,6 @@ Parameters and error codes: https://docs.shipeasy.ai/get-started/mcp-reference
 - `ops_comments_upload_media`
 - `ops_activity_list`
 - `ops_memory_search`
-- `ops_trails_approve`
-- `ops_trails_get`
-- `ops_trails_merge`
-- `ops_trails_review`
-- `ops_trails_submit_eval`
-- `ops_trails_update_finding`
 - `ops_investigations_create`
 - `ops_investigations_list`
 - `ops_investigations_update`
@@ -2938,6 +2966,38 @@ Parameters and error codes: https://docs.shipeasy.ai/get-started/mcp-reference
 - `ops_trigger_create_copilot`
 - `ops_trigger_create_cursor`
 - `ops_trigger_create_jules`
+- `trails_attribute`
+- `trails_close`
+- `trails_confirm_suspect`
+- `trails_create`
+- `trails_get`
+- `trails_link_pr`
+- `trails_list`
+- `trails_pause_autopilot`
+- `trails_pause_rollout`
+- `trails_plan_revisions`
+- `trails_promote_finding`
+- `trails_reject_suspect`
+- `trails_release_facts`
+- `trails_reopen`
+- `trails_review`
+- `trails_start`
+- `trails_submit_eval`
+- `trails_submit_plan`
+- `trails_timeline`
+- `trails_unlink_pr`
+- `trails_update`
+- `trails_update_finding`
+- `trails_update_plan`
+- `trails_resources_add`
+- `trails_resources_list`
+- `trails_resources_remove`
+- `trails_items_add`
+- `trails_items_move`
+- `trails_items_remove`
+- `trails_milestones_add`
+- `trails_milestones_remove`
+- `trails_milestones_update`
 - `api_keys_create`
 - `projects_current`
 - `projects_update`
