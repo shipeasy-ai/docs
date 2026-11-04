@@ -1094,7 +1094,8 @@
         "--kind",
         "--limit",
         "--paths",
-        "--q"
+        "--q",
+        "--trail"
       ]
     },
     {
@@ -1408,9 +1409,12 @@
         "--discovered",
         "--evals",
         "--fix-rounds",
+        "--goal-window-days",
         "--guarded",
         "--human-review",
         "--intake-matching",
+        "--max-goal-replans",
+        "--max-parallel-runs",
         "--measured",
         "--plan",
         "--repos",
@@ -2795,12 +2799,16 @@
       "options": [
         "--autopilot",
         "--body",
+        "--goal",
+        "--health",
         "--intake",
         "--origin-item",
         "--owner-connector-id",
         "--owner-id",
         "--priority",
         "--repos",
+        "--start-date",
+        "--target-date",
         "--type"
       ]
     },
@@ -2836,7 +2844,27 @@
         }
       ],
       "options": [
-        "--item"
+        "--item",
+        "--milestone-id"
+      ]
+    },
+    {
+      "path": "shipeasy trails items move",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "itemHandle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--milestone-id"
       ]
     },
     {
@@ -2885,6 +2913,7 @@
         "--cursor",
         "--data",
         "--f",
+        "--health",
         "--limit",
         "--merged-since",
         "--owner",
@@ -2915,6 +2944,74 @@
       ]
     },
     {
+      "path": "shipeasy trails milestones",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy trails milestones add",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "name",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--description",
+        "--position",
+        "--target-date"
+      ]
+    },
+    {
+      "path": "shipeasy trails milestones remove",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "milestoneId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy trails milestones update",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "milestoneId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--description",
+        "--name",
+        "--position",
+        "--target-date"
+      ]
+    },
+    {
       "path": "shipeasy trails pause-autopilot",
       "aliases": [],
       "args": [
@@ -2939,7 +3036,22 @@
         }
       ],
       "options": [
-        "--reason"
+        "--reason",
+        "--resource"
+      ]
+    },
+    {
+      "path": "shipeasy trails plan-revisions",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
       ]
     },
     {
@@ -2980,6 +3092,21 @@
       ],
       "options": [
         "--data"
+      ]
+    },
+    {
+      "path": "shipeasy trails release-facts",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data",
+        "--proxy"
       ]
     },
     {
@@ -3076,7 +3203,8 @@
         }
       ],
       "options": [
-        "--reason"
+        "--reason",
+        "--resource"
       ]
     },
     {
@@ -3144,8 +3272,29 @@
         }
       ],
       "options": [
+        "--breakdown",
+        "--marketing",
         "--plan",
-        "--release"
+        "--release",
+        "--sources",
+        "--summary"
+      ]
+    },
+    {
+      "path": "shipeasy trails timeline",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--before",
+        "--data",
+        "--decisions",
+        "--limit"
       ]
     },
     {
@@ -3176,10 +3325,14 @@
       "options": [
         "--autopilot",
         "--body",
+        "--goal",
+        "--health",
         "--owner-connector-id",
         "--owner-id",
         "--priority",
         "--repos",
+        "--start-date",
+        "--target-date",
         "--title",
         "--type"
       ]
@@ -3216,6 +3369,8 @@
         }
       ],
       "options": [
+        "--breakdown",
+        "--marketing",
         "--plan",
         "--release"
       ]
