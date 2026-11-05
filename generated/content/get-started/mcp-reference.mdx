@@ -2617,6 +2617,182 @@ _Errors_ — beyond the [common errors](#errors):
 - `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
 - `NOT_FOUND` — The resource does not exist or is not visible to the caller.
 
+### Brain
+
+The project brain — a knowledge graph of notes and typed links that grows
+on its own from the work (every item, trail, PR, file, flag and metric is
+a note, linked the moment anything mentions it) and from knowledge sent
+in, which is reconciled into what is already known: later and stronger
+sources rewrite weaker or older ones, and every rewrite keeps a revision.
+Search it before you design; teach it what you learned.
+
+#### `ops_brain_coverage`
+
+**Check how complete the brain is on a topic**
+
+What the brain knows about a topic, and what it is missing, as a ranked
+worklist. It takes the notes matching `topic` (or `slug` and its
+neighbours), then checks them for gaps: subjects other notes link to that
+nobody wrote, thin notes, notes with no summary, notes that name code but
+are not grounded in it, anchors whose code changed, held claims, live
+contradictions, notes untouched for six months, and the kinds of
+knowledge still missing (no pitfall, no decision…). `score` is 0-100.
+`next` is what to write, worst first.
+
+**Use case:** a system keeps the brain complete on what matters. It reads
+`ops brain coverage --topic checkout`, ingests notes that answer `next`,
+and reads coverage again until the score stops moving.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `topic` | optional | `string` | The subject to check, e.g. `checkout retries`. Pass this or `slug`; with neither, the whole brain is checked (its newest 300 notes). _(length 1–500)_ |
+| `slug` | optional | `string` | Check a note and its neighbourhood instead of a search. _(length 1–300)_ |
+| `depth` | optional | `integer` | Hops around the matches to include (0-2). Defaults to 1. _(0–2)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `ops_brain_get`
+
+**Read one brain note**
+
+One note in full: body, current facts and their history, held claims,
+every source that asserted it, and every link in and out (a backlink
+reads by its inverse relation — `touched_by`, `superseded_by`).
+
+**Use case:** `ops brain get flag/checkout` shows every item, trail,
+decision and pitfall that mentions the flag.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `slug` | required | `string` | The note's slug: `flag/checkout`, `item/42`, `file/apps/web/src/a.ts`, `checkout-retry-policy`. _(length 1–300)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `ops_brain_graph`
+
+**Read a neighbourhood of the brain**
+
+The notes within `depth` hops of `slug` (links followed both ways) and the
+edges between them — or, without a slug, the most recently updated notes
+and their edges.
+
+**Use case:** Everything two hops from `item/42`: its files, the flags it
+mentions, and the pitfalls other work left on them.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `slug` | optional | `string` | The note to start from. _(length 1–300)_ |
+| `depth` | optional | `integer` | Hops to follow (1-4). Defaults to 2. _(1–4)_ |
+| `limit` | optional | `integer` | Maximum notes (1-300). Defaults to 100. _(1–300)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `ops_brain_ingest`
+
+**Teach the brain**
+
+Send knowledge in — one to twenty notes. Each is reconciled into the note
+its title lands on rather than added beside it: the later claim wins
+within the same source strength, a weaker source never overwrites a
+stronger one (a person > verified code > a merged PR > a ticket > text
+sent in), every rewrite keeps a revision, and the same text twice changes
+nothing.
+
+By default shipeasy's model extracts and verifies the text (billed to the
+project's Jarvis credits). When you already wrote each note in its final
+form — seeding from the repo — pass `extract: false` and use the markup:
+`type:: convention`, `summary:: one line`, `key:: value` facts, typed
+links (`depends_on:: [[Billing]]`), `[[Other note]]`, `@gate:<key>`, `#42`,
+backticked repo paths. Ground each note with `evidence` — a repo path and
+a snippet copied verbatim from it; verified evidence makes the note
+outrank anything said about that code, and it is re-checked when the file
+changes. Tag a note with the project's own tags: `tags:: checkout, ios`
+(see `tags list`). Only tags the project already has are kept; any other
+comes back in `dropped`. Lessons, not logs: one subject per note.
+
+**Use case:** Seeding: read README / CLAUDE.md / design docs, then send
+`{notes: [{text: "# Retries are capped\ntype:: convention\n…", extract: false, source: "seed:claude", evidence: [{path: "src/retry.ts", snippet: "export const MAX_RETRIES = 3;"}]}]}`.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `notes` | required | `object[]` | One to twenty notes, each reconciled into the note its title lands on. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `ops_brain_search`
+
+**Search the project brain**
+
+Search the project's knowledge graph — conventions, pitfalls, decisions,
+concepts and facts, plus a note for every item, trail, flag, metric, PR
+and file they link. Title and slug hits rank over body hits, and a
+well-linked note over a lonely one. No `q` returns the most recently
+updated notes. Read one in full with `ops brain get <slug>`.
+
+**Use case:** Before designing a change to checkout, an agent asks what
+the team knows: `ops brain search "checkout retry"`.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `q` | optional | `string` | Free-text query, e.g. `checkout retry`. _(length 1–500)_ |
+| `type` | optional | `"item" \| "trail" \| "flag" \| "config" \| "killswitch" \| "metric" \| "universe" \| "alert" \| "pr" \| "file" \| "concept" \| "decision" \| "convention" \| "pitfall" \| "fact"` | A note's type. Entity notes (`item` … `file`) mirror something that exists elsewhere and are created the first time anything links to them; knowledge notes (`concept`, `decision`, `convention`, `pitfall`, `fact`) hold what the team learned. |
+| `limit` | optional | `integer` | Maximum notes to return (1-100). Defaults to 20. _(1–100)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+
+#### `ops_brain_sources`
+
+**List what the brain read**
+
+The brain's intake: every input it read (text sent in, shipped items,
+answered questions, trails), newest first, with its extraction state,
+the notes it produced and the model tokens it cost.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `limit` | optional | `integer` | Maximum sources (1-200). Defaults to 50. _(1–200)_ |
+
+#### `ops_brain_status`
+
+**Brain status and seeding guide**
+
+What the project brain holds — notes per type, links, candidates, held
+claims, orphans, the intake queue — and `guide`, the playbook for seeding
+or extending it. Call it first when asked to set up, seed or grow the
+brain, and again when done to report what changed.
+
+**Use case:** "Set up our brain" — read the status, follow `guide`
+(read the repo's own knowledge, write notes with `ops brain ingest`), then
+read the status again.
+
+_Parameters_
+
+_No parameters._
+
 ### Investigations
 
 Investigation records on a queue item — the structured, read-only write-ups
@@ -3974,14 +4150,14 @@ _Parameters_
 | `timing` | optional | `string` | When it may go out — `before_release` (the default), `at_release`, `at_full_rollout`, `after_goal`, or a milestone's name. _(length 1–120)_ |
 | `content` | required | `object` | The asset's content, typed by kind:
 - `email` — `subject`, `html` and/or `text`.
-- `post` — `body`, optional `media` URLs and a `target` (the Slack channel, the subreddit, the account).
+- `post` — `body`, optional `media` URLs and a `target` (the Slack channel, the subreddit, the account). A `target` of `slack`, `slack:#channel` or `slack:<channel id>` makes it a Slack post, published through the project's Slack connector on delivery (`slack` alone is the connector's notification channel); any other post is a hand-off a person marks posted.
 - `ad` — `variants` (each a `headline`, `body` and `cta`), `platform`, `budget`, and an optional `audience` description. |
 | `content.subject` | optional | `string` | Email subject line. _(length 0–200)_ |
 | `content.html` | optional | `string` | Email HTML body. _(length 0–200000)_ |
 | `content.text` | optional | `string` | Email plain-text body. _(length 0–100000)_ |
 | `content.body` | optional | `string` | The post's text. _(length 0–40000)_ |
 | `content.media` | optional | `string[]` | Image or video URLs attached to the post. |
-| `content.target` | optional | `string` | Where the post goes — a Slack channel, a subreddit, an account name. _(length 0–200)_ |
+| `content.target` | optional | `string` | Where the post goes — `slack`, `slack:#channel` or `slack:<channel id>` for a Slack post published on delivery; a subreddit or an account name for a hand-off. _(length 0–200)_ |
 | `content.variants` | optional | `object[]` | The ad's copy variants. |
 | `content.platform` | optional | `string` | The ad platform (Google, Meta, LinkedIn, …). _(length 0–100)_ |
 | `content.budget` | optional | `string` | The ad's budget, as the person launching it will read it (`$500 over 2 weeks`). _(length 0–100)_ |
@@ -4158,6 +4334,30 @@ _Errors_ — beyond the [common errors](#errors):
 - `INVALID_TRANSITION` — The requested lifecycle transition is not allowed from the current state.
 - `VALIDATION` — The request body failed structural (schema) validation.
 
+#### `trails_marketing_results`
+
+**Read each delivered asset's results**
+
+The result of every delivered marketing asset on the trail: its delivery evidence (sent / suppressed / failed counts, or the post or campaign URL), the signups attributed to it (the trail's `trail_marketing_attributed_signups` metric filtered by `utm_content=<asset id>`, since delivery), and how the trail's goal metric moved in the window after delivery against the same window before it.
+
+An asset with no delivery yet is left out. `signups` is `null` when the trail does not measure attributed signups or the read failed; `goal` is `null` when the trail has no goal metric.
+
+Served only while the `trail_marketing` flag is on for the project; otherwise `404`.
+
+Safe for the restricted ops key.
+
+**Use case:** After the launch, see which email or post brought signups and whether the goal moved after it went out.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | The trail's handle (`T-12`) or its id. _(length 1–64; pattern `^(?:T-[0-9]+\|[0-9a-fA-F-]{32,36})$`)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
 #### `trails_marketing_submit`
 
 **Submit a marketing asset for review**
@@ -4203,14 +4403,14 @@ _Parameters_
 | `timing` | optional | `string` | When it may go out. _(length 1–120)_ |
 | `content` | optional | `object` | The asset's content, typed by kind:
 - `email` — `subject`, `html` and/or `text`.
-- `post` — `body`, optional `media` URLs and a `target` (the Slack channel, the subreddit, the account).
+- `post` — `body`, optional `media` URLs and a `target` (the Slack channel, the subreddit, the account). A `target` of `slack`, `slack:#channel` or `slack:<channel id>` makes it a Slack post, published through the project's Slack connector on delivery (`slack` alone is the connector's notification channel); any other post is a hand-off a person marks posted.
 - `ad` — `variants` (each a `headline`, `body` and `cta`), `platform`, `budget`, and an optional `audience` description. |
 | `content.subject` | optional | `string` | Email subject line. _(length 0–200)_ |
 | `content.html` | optional | `string` | Email HTML body. _(length 0–200000)_ |
 | `content.text` | optional | `string` | Email plain-text body. _(length 0–100000)_ |
 | `content.body` | optional | `string` | The post's text. _(length 0–40000)_ |
 | `content.media` | optional | `string[]` | Image or video URLs attached to the post. |
-| `content.target` | optional | `string` | Where the post goes — a Slack channel, a subreddit, an account name. _(length 0–200)_ |
+| `content.target` | optional | `string` | Where the post goes — `slack`, `slack:#channel` or `slack:<channel id>` for a Slack post published on delivery; a subreddit or an account name for a hand-off. _(length 0–200)_ |
 | `content.variants` | optional | `object[]` | The ad's copy variants. |
 | `content.platform` | optional | `string` | The ad platform (Google, Meta, LinkedIn, …). _(length 0–100)_ |
 | `content.budget` | optional | `string` | The ad's budget, as the person launching it will read it (`$500 over 2 weeks`). _(length 0–100)_ |
