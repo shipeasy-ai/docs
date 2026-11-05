@@ -2023,7 +2023,11 @@ button[aria-label="Open Sidebar"] {
 }
 .se-qs-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  /* minmax(0, …) not bare 1fr: a bare 1fr track floors at the widest
+     item's min-content, and a nowrap .se-qs-snip or a <pre> in the body
+     then stretched every step past the viewport (1500px+ at 390px wide)
+     with no scroll path to the clipped copy. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   position: relative;
   z-index: 1;
 }
@@ -2034,6 +2038,7 @@ button[aria-label="Open Sidebar"] {
   flex-direction: column;
   gap: 10px;
   min-height: 150px;
+  min-width: 0;
 }
 .se-qs-step:last-child {
   border-right: 0;
@@ -2055,6 +2060,7 @@ button[aria-label="Open Sidebar"] {
 .se-qs-step .body,
 .se-qs-step .body p {
   margin: 0;
+  overflow-wrap: anywhere;
   font-size: 12.5px;
   color: var(--se-fg-2);
   line-height: 1.5;
@@ -2072,7 +2078,7 @@ button[aria-label="Open Sidebar"] {
   align-items: center;
   gap: 8px;
   white-space: nowrap;
-  overflow: hidden;
+  overflow-x: auto;
 }
 .se-qs-snip .p {
   color: var(--se-accent);
@@ -2080,7 +2086,7 @@ button[aria-label="Open Sidebar"] {
 }
 @media (max-width: 720px) {
   .se-qs-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .se-qs-step {
     border-right: 0;
