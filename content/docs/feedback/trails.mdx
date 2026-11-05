@@ -37,14 +37,14 @@ lives.
    the ticket, read the diff, submit. Agents that share a coding agent are
    scored in one session.
 3. **Each agent submits** a value (a 0–100 score, or yes/no), a short rationale
-   and any findings, through `shipeasy ops trails submit-eval` or the
-   `ops_trails_submit_eval` MCP tool. The value is read against the agent's
+   and any findings, through `shipeasy trails submit-eval` or the
+   `trails_submit_eval` MCP tool. The value is read against the agent's
    threshold and polarity:
    - **Pass** (green)
    - **Warn** (orange): passing, but within 10 points of the threshold
    - **Fail** (red)
-4. **The coding agent iterates.** It reads the trail (`shipeasy ops trails get
-   <ticket>`), fixes what is open, resolves the findings it fixed and pushes
+4. **The coding agent iterates.** It reads the trail (`shipeasy trails get
+      <ticket>`), fixes what is open, resolves the findings it fixed and pushes
 again. Each eval shows its value on the latest push next to its last five
 earlier ones, so you can see whether the loop has settled.
 5. **A person approves and merges.** Merge only when confidence is high, risk is
@@ -81,7 +81,7 @@ shipeasy ops review-agents create --preset security
 shipeasy ops review-agents create --key migrations --name "Migration risk" \
   --instructions "Score the rollout and rollback risk of any migration, lower is better" \
   --polarity lower_is_better --threshold 40 --blocking true
-shipeasy ops trails review 42        # re-run the agents on the latest push now
+shipeasy trails review 42        # re-run the agents on the latest push now
 ```
 
 ## Gates
@@ -124,7 +124,7 @@ pushes again until no eval fails.
 For agents, this prompt works well:
 
 ```text
-Run `shipeasy ops trails get 42`. Summarise the intent and the open findings
+Run `shipeasy trails get 42`. Summarise the intent and the open findings
 on the latest push. Check each finding against the code, fix the real ones,
 resolve them with the commit that fixed them, and explain any you would
 dismiss. Do not approve or merge.
