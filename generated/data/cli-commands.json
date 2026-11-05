@@ -2927,6 +2927,262 @@
       ]
     },
     {
+      "path": "shipeasy trails marketing",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy trails marketing approve",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "assetId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy trails marketing cancel",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "assetId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy trails marketing create",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--audience",
+        "--channel",
+        "--content",
+        "--item-id",
+        "--timing"
+      ]
+    },
+    {
+      "path": "shipeasy trails marketing deliver",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "assetId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy trails marketing get",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "assetId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy trails marketing list",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy trails marketing mark-delivered",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "assetId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--campaign-url",
+        "--post-url"
+      ]
+    },
+    {
+      "path": "shipeasy trails marketing preview",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "assetId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy trails marketing request-changes",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "assetId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--reason"
+      ]
+    },
+    {
+      "path": "shipeasy trails marketing submit",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "assetId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy trails marketing update",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "assetId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--audience",
+        "--content",
+        "--timing"
+      ]
+    },
+    {
+      "path": "shipeasy trails marketing-lists",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy trails marketing-lists archive",
+      "aliases": [],
+      "args": [
+        {
+          "name": "listId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy trails marketing-lists list",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy trails marketing-lists upload",
+      "aliases": [],
+      "args": [
+        {
+          "name": "name",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--attestation",
+        "--contacts",
+        "--csv"
+      ]
+    },
+    {
       "path": "shipeasy trails merge",
       "aliases": [],
       "args": [
@@ -3273,6 +3529,7 @@
       ],
       "options": [
         "--breakdown",
+        "--goal",
         "--marketing",
         "--plan",
         "--release",
