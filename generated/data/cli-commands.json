@@ -741,6 +741,91 @@
       ]
     },
     {
+      "path": "shipeasy ops brain",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy ops brain coverage",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data",
+        "--depth",
+        "--slug",
+        "--topic"
+      ]
+    },
+    {
+      "path": "shipeasy ops brain get",
+      "aliases": [],
+      "args": [
+        {
+          "name": "slug",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data",
+        "--slug"
+      ]
+    },
+    {
+      "path": "shipeasy ops brain graph",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data",
+        "--depth",
+        "--limit",
+        "--slug"
+      ]
+    },
+    {
+      "path": "shipeasy ops brain ingest",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--notes"
+      ]
+    },
+    {
+      "path": "shipeasy ops brain search",
+      "aliases": [],
+      "args": [
+        {
+          "name": "q",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data",
+        "--limit",
+        "--q",
+        "--type"
+      ]
+    },
+    {
+      "path": "shipeasy ops brain sources",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data",
+        "--limit"
+      ]
+    },
+    {
+      "path": "shipeasy ops brain status",
+      "aliases": [],
+      "args": [],
+      "options": [
+        "--data"
+      ]
+    },
+    {
       "path": "shipeasy ops bug",
       "aliases": [],
       "args": [
@@ -3056,6 +3141,7 @@
         }
       ],
       "options": [
+        "--budget",
         "--campaign-url",
         "--post-url"
       ]
