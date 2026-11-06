@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@shipeasy/openapi':
-        specifier: ^3.2.0
-        version: 3.2.0
+        specifier: ^3.11.0
+        version: 3.11.0
       '@types/hast':
         specifier: ^3.0.4
         version: 3.0.5
@@ -1268,8 +1268,8 @@ packages:
   '@shikijs/vscode-textmate@10.0.2':
     resolution: {integrity: sha512-83yeghZ2xxin3Nj8z1NMd/NCuca+gsYXswywDy5bHvwlWL8tpTQmzGeUuHd9FC3E/SBEMvzJRwWEOz5gGes9Qg==}
 
-  '@shipeasy/openapi@3.2.0':
-    resolution: {integrity: sha512-+jnql4CMrMX/heIWmU5oi3SkiTqRyO1kMJhrltrxoI54eG8ENHSOrPl5DGG68XDkroB6js0oA/MRq+bxncXUmA==}
+  '@shipeasy/openapi@3.11.0':
+    resolution: {integrity: sha512-Ez6FGXtN/hmgxcTrgryn+U1ugK3UBvTB9onVMAtLoIlU95Ds6DkgWDbvdfbgAzhk4Vctwedf+OjYwYNAbWG/yQ==}
     engines: {node: '>=20'}
 
   '@sindresorhus/is@7.2.0':
@@ -4912,7 +4912,7 @@ snapshots:
 
   '@shikijs/vscode-textmate@10.0.2': {}
 
-  '@shipeasy/openapi@3.2.0':
+  '@shipeasy/openapi@3.11.0':
     dependencies:
       zod: 4.4.3
 
