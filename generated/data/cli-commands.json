@@ -3185,6 +3185,20 @@
       ]
     },
     {
+      "path": "shipeasy trails marketing results",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
       "path": "shipeasy trails marketing submit",
       "aliases": [],
       "args": [
