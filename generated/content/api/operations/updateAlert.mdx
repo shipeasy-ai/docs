@@ -18,8 +18,11 @@ _openapi:
 
           - **`status`** — flip between `active` / `resolved` / `dismissed`.
           `resolved` and `dismissed` stamp `resolvedAt` / `dismissedAt`;
-          `active` re-opens and clears both. A resolved alert re-fires (as the
-          same row, re-activated) if its condition is raised again.
+          `active` re-opens and clears both. These write the underlying queue
+          item's own status (`resolved` / `wont_fix` / `open`), so clearing an
+          alert here and resolving it in the ops queue are the same act. A
+          cleared instance is never revived: if the condition fires again it
+          opens a NEW instance with its own id.
 
           - **`assigneeId`** — the PERSON owner (a `users.id`), or `null` to
           unassign.
@@ -48,7 +51,7 @@ _openapi:
 
 Triage writes on one fired alert — the only mutations this surface allows. All body fields are optional (at least one required); only the fields present are changed.
 
-- **`status`** — flip between `active` / `resolved` / `dismissed`. `resolved` and `dismissed` stamp `resolvedAt` / `dismissedAt`; `active` re-opens and clears both. A resolved alert re-fires (as the same row, re-activated) if its condition is raised again.
+- **`status`** — flip between `active` / `resolved` / `dismissed`. `resolved` and `dismissed` stamp `resolvedAt` / `dismissedAt`; `active` re-opens and clears both. These write the underlying queue item's own status (`resolved` / `wont_fix` / `open`), so clearing an alert here and resolving it in the ops queue are the same act. A cleared instance is never revived: if the condition fires again it opens a NEW instance with its own id.
 - **`assigneeId`** — the PERSON owner (a `users.id`), or `null` to unassign.
 - **`agent`** — the AGENT owner: a connected trigger connector's id, or the built-in `"jarvis"` (**Enterprise plan only** — `403` otherwise), or `null` to clear. Person and agent halves are independent.
 

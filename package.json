@@ -29,7 +29,7 @@
     "check-links:external": "tsx scripts/check-links.ts --external"
   },
   "dependencies": {
-    "@shipeasy/openapi": "^3.2.0",
+    "@shipeasy/openapi": "^3.11.0",
     "@types/hast": "^3.0.4",
     "fumadocs-core": "16.7.16",
     "fumadocs-mdx": "14.3.0",
