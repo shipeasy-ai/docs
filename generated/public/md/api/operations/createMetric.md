@@ -13,5 +13,5 @@ query is invalid or references an unregistered event / label.
 
 **Use cases**
 
-- **Track an event** — `count_users(<event>)` for unique-user counts.
+- **Track an event** — `count(<event>)` for event counts.
 - **Sum a value** — `sum(<event>, <label>)` for revenue / quantity metrics.

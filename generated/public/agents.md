@@ -2713,6 +2713,14 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy ops alerts update` — --auto-resolve-minutes --bucket-minutes --comparator --composite --delay-minutes --direction --enabled --group-alerts --kind --max-groups --name --no-data-minutes --notify --range-max --range-min --recovery-threshold --required-buckets --severity --sigma --sustained --threshold --warn-threshold --window-hours
 - `shipeasy ops attachments`
 - `shipeasy ops attachments create` — --content-base64 --filename --kind --mime-type --url
+- `shipeasy ops brain`
+- `shipeasy ops brain coverage` — --data --depth --slug --topic
+- `shipeasy ops brain get` — --data --slug
+- `shipeasy ops brain graph` — --data --depth --limit --slug
+- `shipeasy ops brain ingest` — --notes
+- `shipeasy ops brain search` — --data --limit --q --type
+- `shipeasy ops brain sources` — --data --limit
+- `shipeasy ops brain status` — --data
 - `shipeasy ops bug` — --actual-result --assignee-id --context --delegate-connector-id --expected-result --notify --page-url --priority --reporter-email --status --steps-to-reproduce --subscribers --tags --trail --user-agent --viewport
 - `shipeasy ops comments`
 - `shipeasy ops comments create` — --body --parent-id
@@ -2841,6 +2849,23 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy trails items remove` — --data
 - `shipeasy trails link-pr` — --item
 - `shipeasy trails list` — --cursor --data --f --health --limit --merged-since --owner --phase --q --scope --sort --touches --type --view
+- `shipeasy trails marketing`
+- `shipeasy trails marketing approve` — --data
+- `shipeasy trails marketing cancel` — --data
+- `shipeasy trails marketing create` — --audience --channel --content --item-id --timing
+- `shipeasy trails marketing deliver` — --data
+- `shipeasy trails marketing get` — --data
+- `shipeasy trails marketing list` — --data
+- `shipeasy trails marketing mark-delivered` — --budget --campaign-url --post-url
+- `shipeasy trails marketing preview` — --data
+- `shipeasy trails marketing request-changes` — --reason
+- `shipeasy trails marketing results` — --data
+- `shipeasy trails marketing submit` — --data
+- `shipeasy trails marketing update` — --audience --content --timing
+- `shipeasy trails marketing-lists`
+- `shipeasy trails marketing-lists archive` — --data
+- `shipeasy trails marketing-lists list` — --data
+- `shipeasy trails marketing-lists upload` — --attestation --contacts --csv
 - `shipeasy trails merge` — --bypass --method --pr-url --reason
 - `shipeasy trails milestones`
 - `shipeasy trails milestones add` — --description --position --target-date
@@ -2862,7 +2887,7 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy trails review` — --agent-keys --pr-url
 - `shipeasy trails start` — --agent --connector-id --kind --prompt
 - `shipeasy trails submit-eval` — --agent --agent-key --findings --head-sha --pr-url --rationale --resources --session-id --value
-- `shipeasy trails submit-plan` — --breakdown --marketing --plan --release --sources --summary
+- `shipeasy trails submit-plan` — --breakdown --goal --marketing --plan --release --sources --summary
 - `shipeasy trails timeline` — --before --data --decisions --limit
 - `shipeasy trails unlink-pr` — --data --pr-url
 - `shipeasy trails update` — --autopilot --body --goal --health --owner-connector-id --owner-id --priority --repos --start-date --target-date --title --type
@@ -2955,6 +2980,13 @@ Parameters and error codes: https://docs.shipeasy.ai/get-started/mcp-reference
 - `ops_comments_upload_media`
 - `ops_activity_list`
 - `ops_memory_search`
+- `ops_brain_coverage`
+- `ops_brain_get`
+- `ops_brain_graph`
+- `ops_brain_ingest`
+- `ops_brain_search`
+- `ops_brain_sources`
+- `ops_brain_status`
 - `ops_investigations_create`
 - `ops_investigations_list`
 - `ops_investigations_update`
@@ -2998,6 +3030,18 @@ Parameters and error codes: https://docs.shipeasy.ai/get-started/mcp-reference
 - `trails_milestones_add`
 - `trails_milestones_remove`
 - `trails_milestones_update`
+- `trails_marketing_cancel`
+- `trails_marketing_create`
+- `trails_marketing_deliver`
+- `trails_marketing_get`
+- `trails_marketing_list`
+- `trails_marketing_lists_archive`
+- `trails_marketing_lists_list`
+- `trails_marketing_preview`
+- `trails_marketing_request_changes`
+- `trails_marketing_results`
+- `trails_marketing_submit`
+- `trails_marketing_update`
 - `api_keys_create`
 - `projects_current`
 - `projects_update`

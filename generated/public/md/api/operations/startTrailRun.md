@@ -1,0 +1,15 @@
+# Start an agent on a trail
+
+Source: https://docs.shipeasy.ai/api/operations/startTrailRun
+
+> >-
+
+Fire the project's coding-agent trigger on the trail. Once the plan is approved (`trails approve-plan`), starting an agent **builds** it. Where the project turned plan approval off (`trail-gates` `requirePlan`), the plan run asks nothing and a plan with no warnings approves itself and starts the build.
+
+**Build.** When the approved plan filed items, `build` launches an item run for every open item of the first milestone that still has open items and no run working it (items without a milestone count as the first), at most `trail-gates` `maxParallelRuns` (default 3) at once, and no trail-level build run: `run` is `null` and `itemRuns` says what happened to each item. Each item run opens its own pull request, which becomes a change of the trail. Otherwise one trail-level build run carries the plan to pull requests, creates exactly the resources the plan lists and links them, as before, and `itemRuns` is empty.
+
+**Replan.** Once a plan is approved, `kind: replan` fires a read-only run that re-reads the goal metric, the items' outcomes and project memory and submits the plan's next revision, which waits as `drafted` for approval.
+
+`fix` runs are fired by the server when a change's evals or findings fail. Pass `kind` to ask for one explicitly. Runs spend your own agent quota, not Shipeasy credits.
+
+**Use case:** A trail is created from a feature request; start an agent on it to plan it, approve the plan, then start it again to build.

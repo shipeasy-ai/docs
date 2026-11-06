@@ -13,9 +13,9 @@ Point a coding agent at one of these instead of asking it to crawl the site. Eve
 
 | Endpoint | What it is | Size |
 | --- | --- | --- |
-| [`/llms.txt`](https://docs.shipeasy.ai/llms.txt) | **Index** — Every page with its one-line description. Fetch this first | 35 KB |
-| [`/llms-full.txt`](https://docs.shipeasy.ai/llms-full.txt) | **Full corpus** — The whole documentation in one file, in nav order | 1,010 KB |
-| [`/agents.md`](https://docs.shipeasy.ai/agents.md) | **Setup runbook** — Install to first flag, then a full CLI + MCP reference | 133 KB |
+| [`/llms.txt`](https://docs.shipeasy.ai/llms.txt) | **Index** — Every page with its one-line description. Fetch this first | 41 KB |
+| [`/llms-full.txt`](https://docs.shipeasy.ai/llms-full.txt) | **Full corpus** — The whole documentation in one file, in nav order | 1,045 KB |
+| [`/agents.md`](https://docs.shipeasy.ai/agents.md) | **Setup runbook** — Install to first flag, then a full CLI + MCP reference | 135 KB |
 
 ## Which one
 
@@ -27,13 +27,13 @@ Point a coding agent at one of these instead of asking it to crawl the site. Eve
 
 ## One page at a time
 
-Every page on this site is also served as plain markdown at `/md/<path>.md` — [`/md/get-started/quickstart.md`](https://docs.shipeasy.ai/md/get-started/quickstart.md) for [the quickstart](https://docs.shipeasy.ai/get-started/quickstart), 298 files in total, generated from the same conversion as the bundles above. The **Copy page** button under any page title copies exactly that file, and **Open in** hands the URL to an assistant.
+Every page on this site is also served as plain markdown at `/md/<path>.md` — [`/md/get-started/quickstart.md`](https://docs.shipeasy.ai/md/get-started/quickstart.md) for [the quickstart](https://docs.shipeasy.ai/get-started/quickstart), 369 files in total, generated from the same conversion as the bundles above. The **Copy page** button under any page title copies exactly that file, and **Open in** hands the URL to an assistant.
 
 Reach for it when you know which page you want. The corpus is for when you do not.
 
 ## What is not in them
 
-The 101 per-operation [API reference](https://docs.shipeasy.ai/api) pages and the 101 per-language [SDK reference](https://docs.shipeasy.ai/sdks) pages are **indexed in `llms.txt` but not inlined** — they are generated schema tables, and inlining them would bury the prose. Fetch the page you need, or read the [OpenAPI spec](https://docs.shipeasy.ai/api) directly.
+The 172 per-operation [API reference](https://docs.shipeasy.ai/api) pages and the 101 per-language [SDK reference](https://docs.shipeasy.ai/sdks) pages are **indexed in `llms.txt` but not inlined** — they are generated schema tables, and inlining them would bury the prose. Fetch the page you need, or read the [OpenAPI spec](https://docs.shipeasy.ai/api) directly.
 
 ## Skip the fetch entirely
 

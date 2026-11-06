@@ -1,0 +1,16 @@
+# Attribute an item to a trail
+
+Source: https://docs.shipeasy.ai/api/operations/attributeTrail
+
+> >-
+
+Record that an error, alert or bug was caused by the trail after it merged. Errors carry no release or commit SHA, so attribution is a judgement: compare the stack frames and the error's subject against each candidate trail's changed files (`trails get --files`) and resources, and attribute only on concrete evidence — a frame in a changed file, the failing call touching a resource of the trail, or a guard metric of the trail. If nothing fits, leave the item unattributed.
+
+- `confidence: high` or `medium` puts the item on the trail with source `post_merge`, and writes `evidence` as an investigation note on the item and a system comment on the trail.
+- `confidence: low` records a *suspect* instead: the trail lists it under suspected regressions and a person confirms or rejects it.
+
+Attribution never flips a rollback. Propose one to a person as a structured question.
+
+Safe for the restricted ops key.
+
+**Use case:** A new error's stack frame sits in a file T-12 changed two hours ago; the investigating agent attributes it with the frame as evidence.

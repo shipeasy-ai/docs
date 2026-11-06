@@ -2125,28 +2125,28 @@ _Parameters_
 | `checks.blocking` | required | `boolean` | — |
 | `checks.required` | required | `string[]` | Check names that must pass. Empty means every reported check. |
 | `discovered` | optional | `object` | Passes when no item discovered on the trail is open at or above `priority`. Off by default; turn it on to say "a high bug found while building this blocks shipping it". |
-| `discovered.enabled` | required | `boolean` | — _(default `false`)_ |
-| `discovered.blocking` | required | `boolean` | — _(default `false`)_ |
+| `discovered.enabled` | required | `boolean` | — |
+| `discovered.blocking` | required | `boolean` | — |
 | `discovered.priority` | required | `"nice_to_have" \| "medium" \| "high" \| "critical"` | Triage priority of a queue item. The lowest tier is `nice_to_have` (not `low`) — carried over from the feature-request "importance" scale this priority set replaced. |
 | `shipsDark` | optional | `object` | Release gate. Passes when every flag the trail ships behind exists and is not at 100% in prod, so new code merges off. Off by default. _(default `{"enabled":false,"blocking":false}`)_ |
-| `shipsDark.enabled` | required | `boolean` | Whether the gate is evaluated at all. _(default `false`)_ |
-| `shipsDark.blocking` | required | `boolean` | Whether a failing gate blocks the merge (a non-blocking gate only reports). _(default `false`)_ |
+| `shipsDark.enabled` | required | `boolean` | Whether the gate is evaluated at all. |
+| `shipsDark.blocking` | required | `boolean` | Whether a failing gate blocks the merge (a non-blocking gate only reports). |
 | `rollback` | optional | `object` | Release gate. For a `feature` trail, passes when a rollback kill switch exists. Off by default. _(default `{"enabled":false,"blocking":false}`)_ |
-| `rollback.enabled` | required | `boolean` | Whether the gate is evaluated at all. _(default `false`)_ |
-| `rollback.blocking` | required | `boolean` | Whether a failing gate blocks the merge (a non-blocking gate only reports). _(default `false`)_ |
+| `rollback.enabled` | required | `boolean` | Whether the gate is evaluated at all. |
+| `rollback.blocking` | required | `boolean` | Whether a failing gate blocks the merge (a non-blocking gate only reports). |
 | `measured` | optional | `object` | Release gate. Off by default. _(default `{"enabled":false,"blocking":false}`)_ |
-| `measured.enabled` | required | `boolean` | Whether the gate is evaluated at all. _(default `false`)_ |
-| `measured.blocking` | required | `boolean` | Whether a failing gate blocks the merge (a non-blocking gate only reports). _(default `false`)_ |
+| `measured.enabled` | required | `boolean` | Whether the gate is evaluated at all. |
+| `measured.blocking` | required | `boolean` | Whether a failing gate blocks the merge (a non-blocking gate only reports). |
 | `guarded` | optional | `object` | Release gate. Passes when every measured resource has at least one guarding alert rule. Off by default. _(default `{"enabled":false,"blocking":false}`)_ |
-| `guarded.enabled` | required | `boolean` | Whether the gate is evaluated at all. _(default `false`)_ |
-| `guarded.blocking` | required | `boolean` | Whether a failing gate blocks the merge (a non-blocking gate only reports). _(default `false`)_ |
+| `guarded.enabled` | required | `boolean` | Whether the gate is evaluated at all. |
+| `guarded.blocking` | required | `boolean` | Whether a failing gate blocks the merge (a non-blocking gate only reports). |
 | `copy` | optional | `object` | Release gate. Passes when every copy i18n key exists in every published locale of its profile. Off by default. _(default `{"enabled":false,"blocking":false}`)_ |
-| `copy.enabled` | required | `boolean` | Whether the gate is evaluated at all. _(default `false`)_ |
-| `copy.blocking` | required | `boolean` | Whether a failing gate blocks the merge (a non-blocking gate only reports). _(default `false`)_ |
+| `copy.enabled` | required | `boolean` | Whether the gate is evaluated at all. |
+| `copy.blocking` | required | `boolean` | Whether a failing gate blocks the merge (a non-blocking gate only reports). |
 | `plan` | optional | `object` | Gate. Reads `pending` while a drafted plan waits for approval, and is left out when the trail has no plan yet. On and blocking by default, whoever approved the plan. _(default `{"enabled":true,"blocking":true}`)_ |
-| `plan.enabled` | required | `boolean` | Whether the gate is evaluated at all. _(default `true`)_ |
-| `plan.blocking` | required | `boolean` | Whether a failing gate blocks the merge. Off, the gate only reports. _(default `true`)_ |
-| `requirePlan` | optional | `boolean` | Whether a person approves a trail's plan before it builds. Every trail is planned first — starting an agent on a trail with no approved plan fires a read-only plan run, and the build follows the approved plan. On, the plan run asks the person how the trail should ship and anything else that is open, and waits for their approval. Off, it asks nothing and takes its own recommendations; a plan the checks raise no warning on approves itself and the build starts, one with a warning waits for a person. _(default `true`)_ |
+| `plan.enabled` | required | `boolean` | Whether the gate is evaluated at all. |
+| `plan.blocking` | required | `boolean` | Whether a failing gate blocks the merge. Off, the gate only reports. |
+| `requirePlan` | optional | `boolean` | Whether a person approves a trail's plan before it builds. Every trail is planned first — starting an agent on a trail with no approved plan fires a read-only plan run, and the build follows the approved plan. On, the plan run asks the person only what the goal leaves open (never how it ships — it chooses that itself), and the plan waits for their approval. Off, it asks nothing and takes its own recommendations; a plan the checks raise no warning on approves itself and the build starts, one with a warning waits for a person. _(default `true`)_ |
 | `fixRounds` | optional | `integer` | How many times the server re-fires the coding agent with a fix prompt after a change's evals or findings fail. After the cap the trail reads `reviewing`, needs a person. `0` turns the loop off. _(default `3`; 0–10)_ |
 | `goalWindowDays` | optional | `integer` | How many days a delivered trail is watched before its goal metric is judged. A trail is delivered when its plan is approved, every code and tracking item is done and every flag it ships behind is fully rolled out (or, with none, something merged). _(default `7`; 1–90)_ |
 | `maxGoalReplans` | optional | `integer` | How many times shipeasy re-plans a trail on its own after its goal was missed. Each re-plan proposes new options that differ from what was tried. Past the cap the trail is off track and the owner decides; `0` never re-plans automatically. _(default `3`; 0–10)_ |
@@ -2160,7 +2160,7 @@ _Parameters_
 | `rollout.guards` | required | `object` | What is watched while a step holds. The trail's `guards` alert-rule resources are watched too. |
 | `rollout.guards.alertRuleIds` | required | `string[]` | Alert rules (ids) whose firing during a step is a breach. |
 | `rollout.guards.attributedErrors` | required | `boolean` | Whether a new error attributed to the trail at high confidence is a breach. |
-| `rollout.policies` | required | `object` | The three decisions the plan asks the owner, each with the project default pre-selected. |
+| `rollout.policies` | required | `object` | The three rollout decisions — the project defaults unless the creation dialog or a plan edit sets them. |
 | `rollout.policies.onBreach` | required | `"pull_back" \| "ask_first" \| "ask_then_pull_back"` | What to do when a guard trips during a step — `pull_back` (pull the flag back, investigate and suggest a fix, tell the owner; the default), `ask_first` (ask the owner, only notify), or `ask_then_pull_back` (ask, and pull back after `breachTimeoutMinutes` with no answer). |
 | `rollout.policies.breachTimeoutMinutes` | required | `integer` | With `ask_then_pull_back`, minutes the owner has before the controller pulls back. _(1–1440)_ |
 | `rollout.policies.advance` | required | `"auto" \| "ask"` | Whether a healthy step advances by itself (`auto`) or waits for the owner to say so (`ask`). |
@@ -2614,6 +2614,182 @@ _Errors_ — beyond the [common errors](#errors):
 
 - `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
 - `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+### Brain
+
+The project brain — a knowledge graph of notes and typed links that grows
+on its own from the work (every item, trail, PR, file, flag and metric is
+a note, linked the moment anything mentions it) and from knowledge sent
+in, which is reconciled into what is already known: later and stronger
+sources rewrite weaker or older ones, and every rewrite keeps a revision.
+Search it before you design; teach it what you learned.
+
+#### `ops_brain_coverage`
+
+**Check how complete the brain is on a topic**
+
+What the brain knows about a topic, and what it is missing, as a ranked
+worklist. It takes the notes matching `topic` (or `slug` and its
+neighbours), then checks them for gaps: subjects other notes link to that
+nobody wrote, thin notes, notes with no summary, notes that name code but
+are not grounded in it, anchors whose code changed, held claims, live
+contradictions, notes untouched for six months, and the kinds of
+knowledge still missing (no pitfall, no decision…). `score` is 0-100.
+`next` is what to write, worst first.
+
+**Use case:** a system keeps the brain complete on what matters. It reads
+`ops brain coverage --topic checkout`, ingests notes that answer `next`,
+and reads coverage again until the score stops moving.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `topic` | optional | `string` | The subject to check, e.g. `checkout retries`. Pass this or `slug`; with neither, the whole brain is checked (its newest 300 notes). _(length 1–500)_ |
+| `slug` | optional | `string` | Check a note and its neighbourhood instead of a search. _(length 1–300)_ |
+| `depth` | optional | `integer` | Hops around the matches to include (0-2). Defaults to 1. _(0–2)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `ops_brain_get`
+
+**Read one brain note**
+
+One note in full: body, current facts and their history, held claims,
+every source that asserted it, and every link in and out (a backlink
+reads by its inverse relation — `touched_by`, `superseded_by`).
+
+**Use case:** `ops brain get flag/checkout` shows every item, trail,
+decision and pitfall that mentions the flag.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `slug` | required | `string` | The note's slug: `flag/checkout`, `item/42`, `file/apps/web/src/a.ts`, `checkout-retry-policy`. _(length 1–300)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `ops_brain_graph`
+
+**Read a neighbourhood of the brain**
+
+The notes within `depth` hops of `slug` (links followed both ways) and the
+edges between them — or, without a slug, the most recently updated notes
+and their edges.
+
+**Use case:** Everything two hops from `item/42`: its files, the flags it
+mentions, and the pitfalls other work left on them.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `slug` | optional | `string` | The note to start from. _(length 1–300)_ |
+| `depth` | optional | `integer` | Hops to follow (1-4). Defaults to 2. _(1–4)_ |
+| `limit` | optional | `integer` | Maximum notes (1-300). Defaults to 100. _(1–300)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `ops_brain_ingest`
+
+**Teach the brain**
+
+Send knowledge in — one to twenty notes. Each is reconciled into the note
+its title lands on rather than added beside it: the later claim wins
+within the same source strength, a weaker source never overwrites a
+stronger one (a person > verified code > a merged PR > a ticket > text
+sent in), every rewrite keeps a revision, and the same text twice changes
+nothing.
+
+By default shipeasy's model extracts and verifies the text (billed to the
+project's Jarvis credits). When you already wrote each note in its final
+form — seeding from the repo — pass `extract: false` and use the markup:
+`type:: convention`, `summary:: one line`, `key:: value` facts, typed
+links (`depends_on:: [[Billing]]`), `[[Other note]]`, `@gate:<key>`, `#42`,
+backticked repo paths. Ground each note with `evidence` — a repo path and
+a snippet copied verbatim from it; verified evidence makes the note
+outrank anything said about that code, and it is re-checked when the file
+changes. Tag a note with the project's own tags: `tags:: checkout, ios`
+(see `tags list`). Only tags the project already has are kept; any other
+comes back in `dropped`. Lessons, not logs: one subject per note.
+
+**Use case:** Seeding: read README / CLAUDE.md / design docs, then send
+`{notes: [{text: "# Retries are capped\ntype:: convention\n…", extract: false, source: "seed:claude", evidence: [{path: "src/retry.ts", snippet: "export const MAX_RETRIES = 3;"}]}]}`.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `notes` | required | `object[]` | One to twenty notes, each reconciled into the note its title lands on. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `ops_brain_search`
+
+**Search the project brain**
+
+Search the project's knowledge graph — conventions, pitfalls, decisions,
+concepts and facts, plus a note for every item, trail, flag, metric, PR
+and file they link. Title and slug hits rank over body hits, and a
+well-linked note over a lonely one. No `q` returns the most recently
+updated notes. Read one in full with `ops brain get <slug>`.
+
+**Use case:** Before designing a change to checkout, an agent asks what
+the team knows: `ops brain search "checkout retry"`.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `q` | optional | `string` | Free-text query, e.g. `checkout retry`. _(length 1–500)_ |
+| `type` | optional | `"item" \| "trail" \| "flag" \| "config" \| "killswitch" \| "metric" \| "universe" \| "alert" \| "pr" \| "file" \| "concept" \| "decision" \| "convention" \| "pitfall" \| "fact"` | A note's type. Entity notes (`item` … `file`) mirror something that exists elsewhere and are created the first time anything links to them; knowledge notes (`concept`, `decision`, `convention`, `pitfall`, `fact`) hold what the team learned. |
+| `limit` | optional | `integer` | Maximum notes to return (1-100). Defaults to 20. _(1–100)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+
+#### `ops_brain_sources`
+
+**List what the brain read**
+
+The brain's intake: every input it read (text sent in, shipped items,
+answered questions, trails), newest first, with its extraction state,
+the notes it produced and the model tokens it cost.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `limit` | optional | `integer` | Maximum sources (1-200). Defaults to 50. _(1–200)_ |
+
+#### `ops_brain_status`
+
+**Brain status and seeding guide**
+
+What the project brain holds — notes per type, links, candidates, held
+claims, orphans, the intake queue — and `guide`, the playbook for seeding
+or extending it. Call it first when asked to set up, seed or grow the
+brain, and again when done to report what changed.
+
+**Use case:** "Set up our brain" — read the status, follow `guide`
+(read the repo's own knowledge, write notes with `ops brain ingest`), then
+read the status again.
+
+_Parameters_
+
+_No parameters._
 
 ### Investigations
 
@@ -3112,7 +3288,7 @@ _Parameters_
 | `intake.rollout.guards` | required | `object` | What is watched while a step holds. The trail's `guards` alert-rule resources are watched too. |
 | `intake.rollout.guards.alertRuleIds` | required | `string[]` | Alert rules (ids) whose firing during a step is a breach. |
 | `intake.rollout.guards.attributedErrors` | required | `boolean` | Whether a new error attributed to the trail at high confidence is a breach. |
-| `intake.rollout.policies` | required | `object` | The three decisions the plan asks the owner, each with the project default pre-selected. |
+| `intake.rollout.policies` | required | `object` | The three rollout decisions — the project defaults unless the creation dialog or a plan edit sets them. |
 | `intake.rollout.policies.onBreach` | required | `"pull_back" \| "ask_first" \| "ask_then_pull_back"` | What to do when a guard trips during a step — `pull_back` (pull the flag back, investigate and suggest a fix, tell the owner; the default), `ask_first` (ask the owner, only notify), or `ask_then_pull_back` (ask, and pull back after `breachTimeoutMinutes` with no answer). |
 | `intake.rollout.policies.breachTimeoutMinutes` | required | `integer` | With `ask_then_pull_back`, minutes the owner has before the controller pulls back. _(1–1440)_ |
 | `intake.rollout.policies.advance` | required | `"auto" \| "ask"` | Whether a healthy step advances by itself (`auto`) or waits for the owner to say so (`ask`). |
@@ -3475,7 +3651,7 @@ _Errors_ — beyond the [common errors](#errors):
 
 **Submit a trail's plan**
 
-A plan run submits what it worked out: the plan in markdown, the `release` block (how the trail ships, why, and the exact flags, kill switches, and tracking — events, metrics, alert rules — the build will create; no release tool for `straight_to_main`), the `breakdown` (the milestones and the items, each with its work kind and assignee) and the `sources` it rests on (what it read in project memory and earlier tickets, and what each settled). Submit it only after the person has answered the release question you asked with `ops questions ask`. The plan is recorded as `drafted` and waits for a person to approve it; nothing in the breakdown is filed until then. Submitting again replaces a drafted plan; an approved plan is refused with `409` (a person edits it to reopen it), except from a `replan` run, whose submission drafts the next revision with a `summary` of what changed. The open plan or replan run on the trail is closed.
+A plan run submits what it worked out: the plan in markdown, the `release` block (how the trail ships, why, and the exact flags, kill switches, and tracking — events, metrics, alert rules — the build will create; no release tool for `straight_to_main`), the `breakdown` (the milestones and the items, each with its work kind and assignee) and the `sources` it rests on (what it read in project memory and earlier tickets, and what each settled). Submit it once the person has answered any question you asked with `ops questions ask`; the release and its rollout are your choice, with the reason, and the person changes them when they approve. The plan is recorded as `drafted` and waits for a person to approve it; nothing in the breakdown is filed until then. Submitting again replaces a drafted plan; an approved plan is refused with `409` (a person edits it to reopen it), except from a `replan` run, whose submission drafts the next revision with a `summary` of what changed. The open plan or replan run on the trail is closed.
 
 The plan is checked against the trail's release facts (`trails release-facts`). On an autopilot trail any warning pauses autopilot and hands the plan to its owner.
 
@@ -3501,7 +3677,7 @@ _Parameters_
 | `release.rollout.guards` | required | `object` | What is watched while a step holds. The trail's `guards` alert-rule resources are watched too. |
 | `release.rollout.guards.alertRuleIds` | required | `string[]` | Alert rules (ids) whose firing during a step is a breach. |
 | `release.rollout.guards.attributedErrors` | required | `boolean` | Whether a new error attributed to the trail at high confidence is a breach. |
-| `release.rollout.policies` | required | `object` | The three decisions the plan asks the owner, each with the project default pre-selected. |
+| `release.rollout.policies` | required | `object` | The three rollout decisions — the project defaults unless the creation dialog or a plan edit sets them. |
 | `release.rollout.policies.onBreach` | required | `"pull_back" \| "ask_first" \| "ask_then_pull_back"` | What to do when a guard trips during a step — `pull_back` (pull the flag back, investigate and suggest a fix, tell the owner; the default), `ask_first` (ask the owner, only notify), or `ask_then_pull_back` (ask, and pull back after `breachTimeoutMinutes` with no answer). |
 | `release.rollout.policies.breachTimeoutMinutes` | required | `integer` | With `ask_then_pull_back`, minutes the owner has before the controller pulls back. _(1–1440)_ |
 | `release.rollout.policies.advance` | required | `"auto" \| "ask"` | Whether a healthy step advances by itself (`auto`) or waits for the owner to say so (`ask`). |
@@ -3516,6 +3692,7 @@ _Parameters_
 | `marketing.channels` | required | `object[]` | — |
 | `sources` | optional | `object[]` | What the plan rests on in project memory (`ops memory search`) and earlier tickets and trails, each with what it settled. |
 | `summary` | optional | `string` | For a replan, what changed since the last approved revision. Recorded on the revision. _(length 0–500)_ |
+| `goal` | optional | `any` | The metric the plan says will judge the trail, with its baseline and target — sent when the intent is an outcome and the trail has no goal yet. It becomes the trail's goal only while the trail has none (a goal a person set is never replaced), and its metric must already exist; leave `metric` out when a tracking item creates it. |
 
 _Errors_ — beyond the [common errors](#errors):
 
@@ -3665,7 +3842,7 @@ _Parameters_
 | `release.rollout.guards` | required | `object` | What is watched while a step holds. The trail's `guards` alert-rule resources are watched too. |
 | `release.rollout.guards.alertRuleIds` | required | `string[]` | Alert rules (ids) whose firing during a step is a breach. |
 | `release.rollout.guards.attributedErrors` | required | `boolean` | Whether a new error attributed to the trail at high confidence is a breach. |
-| `release.rollout.policies` | required | `object` | The three decisions the plan asks the owner, each with the project default pre-selected. |
+| `release.rollout.policies` | required | `object` | The three rollout decisions — the project defaults unless the creation dialog or a plan edit sets them. |
 | `release.rollout.policies.onBreach` | required | `"pull_back" \| "ask_first" \| "ask_then_pull_back"` | What to do when a guard trips during a step — `pull_back` (pull the flag back, investigate and suggest a fix, tell the owner; the default), `ask_first` (ask the owner, only notify), or `ask_then_pull_back` (ask, and pull back after `breachTimeoutMinutes` with no answer). |
 | `release.rollout.policies.breachTimeoutMinutes` | required | `integer` | With `ask_then_pull_back`, minutes the owner has before the controller pulls back. _(1–1440)_ |
 | `release.rollout.policies.advance` | required | `"auto" \| "ask"` | Whether a healthy step advances by itself (`auto`) or waits for the owner to say so (`ask`). |
@@ -3914,6 +4091,337 @@ _Errors_ — beyond the [common errors](#errors):
 - `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
 - `NOT_FOUND` — The resource does not exist or is not visible to the caller.
 - `VALIDATION` — The request body failed structural (schema) validation.
+
+### Marketing
+
+The emails, posts and ads a trail's marketing channels deliver. Each is a
+draft until it is submitted, and goes out only after a person approves it
+— never an agent, a key or autopilot. Every link is UTM-tagged on approve
+so signups are credited to the asset; an approved asset waits in
+`scheduled` until its timing (at release, at full rollout, after the goal,
+or a milestone) arrives. Emails are sent by the platform; posts and ads
+are handed off to a person who records the URL.
+
+#### `trails_marketing_cancel`
+
+**Cancel a marketing asset**
+
+Cancel an asset that has not started going out. A send in flight is stopped by the `marketing/pause_sends` kill switch, not by cancelling.
+
+Served only while the `trail_marketing` flag is on for the project; otherwise `404`.
+
+Not open to the restricted ops key.
+
+**Use case:** The launch moved; cancel the scheduled post.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | The trail's handle (`T-12`) or its id. _(length 1–64; pattern `^(?:T-[0-9]+\|[0-9a-fA-F-]{32,36})$`)_ |
+| `assetId` | required | `string` | The marketing asset's id (`TrailMarketingAsset.id`). _(length 1–64; pattern `^[0-9a-fA-F-]{32,36}$`)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `INVALID_TRANSITION` — The requested lifecycle transition is not allowed from the current state.
+
+#### `trails_marketing_create`
+
+**Draft a marketing asset**
+
+Draft an email, post or ad for one of the trail's marketing channels. The channel decides the kind: `email` makes an email, `ads` an ad, every other channel a post. The draft goes nowhere until it is submitted and a person approves it.
+
+Served only while the `trail_marketing` flag is on for the project; otherwise `404`.
+
+Safe for the restricted ops key.
+
+**Use case:** An agent drafts the launch email for the trail's members from the plan's marketing block.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | The trail's handle (`T-12`) or its id. _(length 1–64; pattern `^(?:T-[0-9]+\|[0-9a-fA-F-]{32,36})$`)_ |
+| `channel` | required | `"blog" \| "email" \| "social" \| "ads" \| "landing" \| "community" \| "press"` | The plan channel the asset belongs to. `email` makes an email asset, `ads` an ad, every other channel a post. `in_app` and `other` stay tracked items and have no asset. |
+| `itemId` | optional | `any` | The trail's marketing item this asset belongs to — its number or id. Omitted, the asset belongs to the trail only. |
+| `timing` | optional | `string` | When it may go out — `before_release` (the default), `at_release`, `at_full_rollout`, `after_goal`, or a milestone's name. _(length 1–120)_ |
+| `content` | required | `object` | The asset's content, typed by kind:
+- `email` — `subject`, `html` and/or `text`.
+- `post` — `body`, optional `media` URLs and a `target` (the Slack channel, the subreddit, the account). A `target` of `slack`, `slack:#channel` or `slack:<channel id>` makes it a Slack post, published through the project's Slack connector on delivery (`slack` alone is the connector's notification channel); any other post is a hand-off a person marks posted.
+- `ad` — `variants` (each a `headline`, `body` and `cta`), `platform`, `budget`, and an optional `audience` description. |
+| `content.subject` | optional | `string` | Email subject line. _(length 0–200)_ |
+| `content.html` | optional | `string` | Email HTML body. _(length 0–200000)_ |
+| `content.text` | optional | `string` | Email plain-text body. _(length 0–100000)_ |
+| `content.body` | optional | `string` | The post's text. _(length 0–40000)_ |
+| `content.media` | optional | `string[]` | Image or video URLs attached to the post. |
+| `content.target` | optional | `string` | Where the post goes — `slack`, `slack:#channel` or `slack:<channel id>` for a Slack post published on delivery; a subreddit or an account name for a hand-off. _(length 0–200)_ |
+| `content.variants` | optional | `object[]` | The ad's copy variants. |
+| `content.platform` | optional | `string` | The ad platform (Google, Meta, LinkedIn, …). _(length 0–100)_ |
+| `content.budget` | optional | `string` | The ad's budget, as the person launching it will read it (`$500 over 2 weeks`). _(length 0–100)_ |
+| `content.audience` | optional | `string` | The ad's targeting, described. _(length 0–2000)_ |
+| `audience` | optional | `any` | Email only — who it goes to. |
+| `listToken` | optional | `string` | REQUIRED. The `listToken` returned by the most recent `trails_marketing_list` call. It proves you listed existing trails marketing and confirmed this one doesn't already exist before creating it. Call `trails_marketing_list` first if you don't have a fresh token. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+- `REFERENCED_NOT_FOUND` — A referenced entity (metric, gate, event) does not exist.
+
+#### `trails_marketing_deliver`
+
+**Deliver a marketing asset now**
+
+Send an approved asset now — if its timing allows. When the timing has arrived it moves to `delivering`: an email goes to the mail queue, a post or ad waits for a person to post it and mark it delivered. When it has not, the asset moves to `scheduled` and goes out on its own once it does. Refused with `409` while the `marketing/pause_sends` kill switch is armed.
+
+Served only while the `trail_marketing` flag is on for the project; otherwise `404`.
+
+Not open to the restricted ops key.
+
+**Use case:** The flag reached 100 % an hour ago; send the announcement now rather than waiting for the next tick.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | The trail's handle (`T-12`) or its id. _(length 1–64; pattern `^(?:T-[0-9]+\|[0-9a-fA-F-]{32,36})$`)_ |
+| `assetId` | required | `string` | The marketing asset's id (`TrailMarketingAsset.id`). _(length 1–64; pattern `^[0-9a-fA-F-]{32,36}$`)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `INVALID_TRANSITION` — The requested lifecycle transition is not allowed from the current state.
+
+#### `trails_marketing_get`
+
+**Show a marketing asset**
+
+One asset with its content, state, approval and delivery evidence.
+
+Served only while the `trail_marketing` flag is on for the project; otherwise `404`.
+
+Safe for the restricted ops key.
+
+**Use case:** Read the post a person handed off, with the URL they recorded.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | The trail's handle (`T-12`) or its id. _(length 1–64; pattern `^(?:T-[0-9]+\|[0-9a-fA-F-]{32,36})$`)_ |
+| `assetId` | required | `string` | The marketing asset's id (`TrailMarketingAsset.id`). _(length 1–64; pattern `^[0-9a-fA-F-]{32,36}$`)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `trails_marketing_list`
+
+**List a trail's marketing assets**
+
+Every email, post and ad drafted on the trail, oldest first, with its state, its approval, its delivery evidence (sent / suppressed / failed counts, or the post or campaign URL) and whether its timing would let it go out now.
+
+Served only while the `trail_marketing` flag is on for the project; otherwise `404`.
+
+Safe for the restricted ops key.
+
+**Use case:** Before the release, check which announcements are still waiting on a person's approval.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | The trail's handle (`T-12`) or its id. _(length 1–64; pattern `^(?:T-[0-9]+\|[0-9a-fA-F-]{32,36})$`)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `trails_marketing_lists_archive`
+
+**Archive a contact list**
+
+Archive a list. It can no longer be chosen as an audience; assets already approved with it keep it. Its addresses stay until the project is deleted.
+
+Served only while the `trail_marketing` flag is on for the project; otherwise `404`.
+
+Not open to the restricted ops key.
+
+**Use case:** The waitlist is stale; stop it being picked for new emails.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `listId` | required | `string` | The contact list's id (`MarketingList.id`). _(length 1–64; pattern `^[0-9a-fA-F-]{32,36}$`)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `INVALID_TRANSITION` — The requested lifecycle transition is not allowed from the current state.
+
+#### `trails_marketing_lists_list`
+
+**List contact lists**
+
+The project's uploaded contact lists, newest first, with their size and consent attestation. Archived lists are included with `archivedAt` set.
+
+Served only while the `trail_marketing` flag is on for the project; otherwise `404`.
+
+Safe for the restricted ops key.
+
+**Use case:** Pick the attested list to send the launch email to.
+
+_Parameters_
+
+_No parameters._
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `trails_marketing_preview`
+
+**Preview a marketing asset**
+
+The asset as it will go out: the rendered email or post with every link UTM-tagged, and for an email the recipient count after the suppression list and today's cap.
+
+Served only while the `trail_marketing` flag is on for the project; otherwise `404`.
+
+Safe for the restricted ops key.
+
+**Use case:** Before approving, check the email reaches the members it should and fits today's cap.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | The trail's handle (`T-12`) or its id. _(length 1–64; pattern `^(?:T-[0-9]+\|[0-9a-fA-F-]{32,36})$`)_ |
+| `assetId` | required | `string` | The marketing asset's id (`TrailMarketingAsset.id`). _(length 1–64; pattern `^[0-9a-fA-F-]{32,36}$`)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `trails_marketing_request_changes`
+
+**Ask for changes to a marketing asset**
+
+Send an asset in review back with what needs to change. The next edit makes it a draft again.
+
+Served only while the `trail_marketing` flag is on for the project; otherwise `404`.
+
+Not open to the restricted ops key.
+
+**Use case:** The post links the wrong page; send it back.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | The trail's handle (`T-12`) or its id. _(length 1–64; pattern `^(?:T-[0-9]+\|[0-9a-fA-F-]{32,36})$`)_ |
+| `assetId` | required | `string` | The marketing asset's id (`TrailMarketingAsset.id`). _(length 1–64; pattern `^[0-9a-fA-F-]{32,36}$`)_ |
+| `reason` | optional | `string` | What needs to change, posted on the trail's timeline. _(length 1–2000)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `INVALID_TRANSITION` — The requested lifecycle transition is not allowed from the current state.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `trails_marketing_results`
+
+**Read each delivered asset's results**
+
+The result of every delivered marketing asset on the trail: its delivery evidence (sent / suppressed / failed counts, or the post or campaign URL), the signups attributed to it (the trail's `trail_marketing_attributed_signups` metric filtered by `utm_content=<asset id>`, since delivery), and how the trail's goal metric moved in the window after delivery against the same window before it.
+
+An asset with no delivery yet is left out. `signups` is `null` when the trail does not measure attributed signups or the read failed; `goal` is `null` when the trail has no goal metric.
+
+Served only while the `trail_marketing` flag is on for the project; otherwise `404`.
+
+Safe for the restricted ops key.
+
+**Use case:** After the launch, see which email or post brought signups and whether the goal moved after it went out.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | The trail's handle (`T-12`) or its id. _(length 1–64; pattern `^(?:T-[0-9]+\|[0-9a-fA-F-]{32,36})$`)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `trails_marketing_submit`
+
+**Submit a marketing asset for review**
+
+Move a draft to `in_review`, where a person approves it or asks for changes.
+
+Served only while the `trail_marketing` flag is on for the project; otherwise `404`.
+
+Safe for the restricted ops key.
+
+**Use case:** The agent finished the launch email; hand it to the trail's lead.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | The trail's handle (`T-12`) or its id. _(length 1–64; pattern `^(?:T-[0-9]+\|[0-9a-fA-F-]{32,36})$`)_ |
+| `assetId` | required | `string` | The marketing asset's id (`TrailMarketingAsset.id`). _(length 1–64; pattern `^[0-9a-fA-F-]{32,36}$`)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `INVALID_TRANSITION` — The requested lifecycle transition is not allowed from the current state.
+
+#### `trails_marketing_update`
+
+**Edit a marketing asset**
+
+Change an asset's content, timing or audience. Editing an approved or scheduled asset drops its approval and sends it back to review; editing one with changes requested makes it a draft again. A delivering, delivered, failed or cancelled asset cannot be edited (`409`).
+
+Served only while the `trail_marketing` flag is on for the project; otherwise `404`.
+
+Safe for the restricted ops key.
+
+**Use case:** Fix a typo in the subject line after review asked for changes.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | The trail's handle (`T-12`) or its id. _(length 1–64; pattern `^(?:T-[0-9]+\|[0-9a-fA-F-]{32,36})$`)_ |
+| `assetId` | required | `string` | The marketing asset's id (`TrailMarketingAsset.id`). _(length 1–64; pattern `^[0-9a-fA-F-]{32,36}$`)_ |
+| `timing` | optional | `string` | When it may go out. _(length 1–120)_ |
+| `content` | optional | `object` | The asset's content, typed by kind:
+- `email` — `subject`, `html` and/or `text`.
+- `post` — `body`, optional `media` URLs and a `target` (the Slack channel, the subreddit, the account). A `target` of `slack`, `slack:#channel` or `slack:<channel id>` makes it a Slack post, published through the project's Slack connector on delivery (`slack` alone is the connector's notification channel); any other post is a hand-off a person marks posted.
+- `ad` — `variants` (each a `headline`, `body` and `cta`), `platform`, `budget`, and an optional `audience` description. |
+| `content.subject` | optional | `string` | Email subject line. _(length 0–200)_ |
+| `content.html` | optional | `string` | Email HTML body. _(length 0–200000)_ |
+| `content.text` | optional | `string` | Email plain-text body. _(length 0–100000)_ |
+| `content.body` | optional | `string` | The post's text. _(length 0–40000)_ |
+| `content.media` | optional | `string[]` | Image or video URLs attached to the post. |
+| `content.target` | optional | `string` | Where the post goes — `slack`, `slack:#channel` or `slack:<channel id>` for a Slack post published on delivery; a subreddit or an account name for a hand-off. _(length 0–200)_ |
+| `content.variants` | optional | `object[]` | The ad's copy variants. |
+| `content.platform` | optional | `string` | The ad platform (Google, Meta, LinkedIn, …). _(length 0–100)_ |
+| `content.budget` | optional | `string` | The ad's budget, as the person launching it will read it (`$500 over 2 weeks`). _(length 0–100)_ |
+| `content.audience` | optional | `string` | The ad's targeting, described. _(length 0–2000)_ |
+| `audience` | optional | `any` | Email only — who it goes to. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `INVALID_TRANSITION` — The requested lifecycle transition is not allowed from the current state.
+- `VALIDATION` — The request body failed structural (schema) validation.
+- `REFERENCED_NOT_FOUND` — A referenced entity (metric, gate, event) does not exist.
 
 ## Projects
 
