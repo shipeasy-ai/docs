@@ -855,6 +855,83 @@
       ]
     },
     {
+      "path": "shipeasy ops checklist",
+      "aliases": [],
+      "args": [],
+      "options": []
+    },
+    {
+      "path": "shipeasy ops checklist add",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--agent",
+        "--text"
+      ]
+    },
+    {
+      "path": "shipeasy ops checklist archive",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "itemId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy ops checklist list",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
+      ]
+    },
+    {
+      "path": "shipeasy ops checklist update",
+      "aliases": [],
+      "args": [
+        {
+          "name": "handle",
+          "required": true,
+          "variadic": false
+        },
+        {
+          "name": "itemId",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--agent",
+        "--note",
+        "--position",
+        "--status",
+        "--text"
+      ]
+    },
+    {
       "path": "shipeasy ops comments",
       "aliases": [],
       "args": [],
@@ -979,6 +1056,35 @@
       "options": [
         "--data",
         "--status"
+      ]
+    },
+    {
+      "path": "shipeasy ops fired-alerts noise",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--relax",
+        "--value"
+      ]
+    },
+    {
+      "path": "shipeasy ops fired-alerts relax-options",
+      "aliases": [],
+      "args": [
+        {
+          "name": "id",
+          "required": true,
+          "variadic": false
+        }
+      ],
+      "options": [
+        "--data"
       ]
     },
     {
