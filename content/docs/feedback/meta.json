@@ -7,6 +7,7 @@
     "devtools",
     "error-reporting",
     "errors",
+    "inbound-alerts",
     "connectors",
     "slack",
     "memory",

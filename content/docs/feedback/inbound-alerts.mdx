@@ -1,0 +1,119 @@
+---
+title: Inbound alerts (Google Cloud Monitoring)
+description: File Google Cloud Monitoring incidents as alert tickets in your ops queue, over a webhook channel or a Pub/Sub push subscription — no relay to build or keep alive.
+---
+
+<DocMeta status="Beta" read="5 min read" works="Google Cloud Monitoring · per project" />
+
+Infrastructure signals — a Cloud Run service's 5xx ratio, an SLO burn rate, an
+instance that stopped serving — never reach your app's SDK. The inbound alert
+endpoint lets Google Cloud Monitoring deliver them straight into the same queue
+as your app errors and metric alerts. Each incident becomes an **alert ticket**
+that behaves like a native one: routing rules, Slack and bell notifications,
+tags and coding-agent triggers all apply.
+
+It runs on Shipeasy's edge, not inside your app, so an alert that your API is
+failing still lands while your API is failing.
+
+## Generate the URL
+
+Open **Settings → Notifications → Inbound alerts** and click **Generate URL**.
+Copy it right away — it is shown once. It looks like:
+
+```text
+https://api.shipeasy.ai/inbound/alerts/gcp/seinb_…
+```
+
+The secret at the end is the whole credential, so treat the URL like a password.
+It is not your admin key and can do nothing but file alert tickets into this
+project. **Rotate URL** replaces it (the old one stops working at once);
+**Revoke** turns the endpoint off. Only a hash of the token is stored.
+
+## Option A — a webhook channel
+
+<Steps>
+<Step title="Create the channel">
+In the Google Cloud console go to **Monitoring → Alerting → Edit notification
+channels → Webhooks → Add new**, and paste the URL as the endpoint.
+</Step>
+<Step title="Or use basic auth">
+If you'd rather keep the token out of the URL, set the endpoint to
+`https://api.shipeasy.ai/inbound/alerts/gcp`, enable **Use HTTP Basic Auth**, and
+paste the token (the `seinb_…` part) as the password. The username is ignored.
+</Step>
+<Step title="Attach it to your alerting policies">
+Add the channel to each policy that should file tickets, then **Send test
+notification**. The delivery shows up in the log under the settings card.
+</Step>
+</Steps>
+
+## Option B — Pub/Sub push (retries)
+
+A webhook channel makes one delivery attempt. Routing through Pub/Sub gets you
+Pub/Sub's retries and dead-lettering instead.
+
+<Steps>
+<Step title="Point Monitoring at a topic">
+Create a **Pub/Sub** notification channel for a topic, and grant the Monitoring
+service agent `roles/pubsub.publisher` on it.
+</Step>
+<Step title="Add a push subscription">
+Create a push subscription on that topic whose endpoint is the generated URL.
+Turn on **Enable authentication**, pick a service account, and set an
+**audience** — the endpoint URL without the token works well.
+</Step>
+<Step title="Require Google's signed token">
+Back in **Inbound alerts**, enter the same audience under **Pub/Sub OIDC
+audience** (and, optionally, the service account's email) and save. From then on
+every delivery must carry a Google-signed token for that audience, and plain
+webhook posts are refused.
+</Step>
+</Steps>
+
+## What gets filed
+
+| Incident                                  | What happens                                                                                       |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `open`, no open ticket for its policy     | A new alert ticket, titled `<policy> · <condition>`                                               |
+| `open` again, or another incident of the same policy | Folded into the open ticket — no duplicate; its delivery count goes up                  |
+| `closed`                                  | A comment with the recovery time; when auto-resolve is on and no other incident of the policy is still open, the ticket resolves |
+| `open` after the policy's ticket closed   | A new ticket — each firing episode is its own ticket, like native alerts                           |
+
+Severity maps to the ticket's starting priority: **Critical → critical**,
+**Error → high**, **Warning → medium**, no severity → high. The ticket's
+**Source** links back to the incident in the Google Cloud console, and
+`context.alert.external` carries the policy, condition, resource labels and
+incident ids for agents and the API.
+
+## The delivery log
+
+The settings card lists the latest deliveries: **accepted**, **deduped** (folded
+into an open ticket) or **rejected** with the reason — a malformed payload, a
+failed Pub/Sub token check. A misconfigured channel shows up here instead of
+silently dropping alerts. A request with an unknown or revoked token is refused
+with `401` and, having no project, is not logged.
+
+<Callout type="info" title="What leaves Google Cloud">
+  Cloud Monitoring incident payloads carry metric and resource metadata only — no request bodies
+  or user data.
+</Callout>
+
+<SeeAlso
+  links={[
+    {
+      href: "/feedback/errors",
+      title: "Errors & alerts",
+      note: "How alert tickets behave once they are in the queue.",
+    },
+    {
+      href: "/metrics/alerts",
+      title: "Alert rules",
+      note: "Alerts on your app's own metrics, evaluated by Shipeasy.",
+    },
+    {
+      href: "/feedback/slack",
+      title: "Slack",
+      note: "Where alert tickets post as cards.",
+    },
+  ]}
+/>
