@@ -685,6 +685,85 @@ shipeasy ops brain ingest [options]
 | --- | --- | --- |
 | `--notes <value>` | optional | One to twenty notes, each reconciled into the note its title lands on. |
 
+### `shipeasy ops checklist`
+
+The to-do checklist inside a feature or bug item — the things being implemented, kept in the item's body instead of in comments.
+
+```bash
+shipeasy ops checklist [options] [command]
+```
+
+#### `shipeasy ops checklist list`
+
+List an item's checklist
+
+```bash
+shipeasy ops checklist list [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy ops checklist add`
+
+Add a checklist line
+
+```bash
+shipeasy ops checklist add [options] <handle>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--text <value>` | optional | What the line asks for (markdown, one line). |
+| `--agent <value>` | optional | The agent type adding the line — pass your own type when you are a coding agent. Omitted, the line is attributed to the caller's identity. |
+
+#### `shipeasy ops checklist update`
+
+Update a checklist line
+
+```bash
+shipeasy ops checklist update [options] <handle> <itemId>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+| `itemId` | required | The checklist line id (from `list`, `add` or `ops get` → `checklist`). |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--text <value>` | optional | New text for the line. |
+| `--status <value>` | optional | Where a checklist line stands — `open` (still to do), `done` (the dev ticked it), `verified` (QA confirmed it) or `returned` (QA sent it back with a `note`; tick it `done` again once fixed). |
+| `--note <value>` | optional | Why QA returns the line — required when moving it to `returned` (send it alone to reword the note of a returned line), refused on a line that ends up in any other status. |
+| `--position <value>` | optional | New display position (lines sort ascending; ties by creation order). |
+| `--agent <value>` | optional | The agent type making the change — pass your own type when you are an agent. Omitted, the change is attributed to the caller's identity. |
+
+#### `shipeasy ops checklist archive`
+
+Archive a checklist line
+
+```bash
+shipeasy ops checklist archive [options] <handle> <itemId>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `handle` | required | Per-project item number (e.g. `7`) or the full ops item id. |
+| `itemId` | required | The checklist line id (from `list`, `add` or `ops get` → `checklist`). |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
 ### `shipeasy ops comments`
 
 Comments on a queue item — the discussion thread that hangs off any bug, feature request, or auto-filed error/alert ticket.
@@ -784,6 +863,39 @@ shipeasy ops fired-alerts update [options] <id>
 | `--status <value>` | optional | New lifecycle state, written through to the queue item (`resolved` / `wont_fix` / `open`). `resolved` / `dismissed` stamp their timestamp; `active` re-opens and clears both. |
 | `--assignee-id <value>` | optional | PERSON owner — a `users.id`, or `null` to clear the assignment. |
 | `--agent <value>` | optional | AGENT owner — a connected trigger connector's id (`connectors.id`), the built-in `"jarvis"` (Enterprise plan only — rejected with `403` otherwise), or `null` to clear. Stored in `assigneeConnectorId` or `assigneeAgent` depending on the value; the two are mutually exclusive. |
+
+#### `shipeasy ops fired-alerts relax-options`
+
+Suggest how to relax a noisy alert's rule
+
+```bash
+shipeasy ops fired-alerts relax-options [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | The fired alert's id (or its ops item number). |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--data <value>` | optional | Request body as a JSON object. |
+
+#### `shipeasy ops fired-alerts noise`
+
+Mark a fired alert as noise
+
+```bash
+shipeasy ops fired-alerts noise [options] <id>
+```
+
+| Argument | | Description |
+| --- | --- | --- |
+| `id` | required | The fired alert's id (or its ops item number). |
+
+| Option | | Description |
+| --- | --- | --- |
+| `--relax <value>` | optional | `recommended` applies the recommended suggestion; a field name applies that field's suggestion, or exactly `value` when given. Omit to leave the rule alone. |
+| `--value <value>` | optional | Exact value for the `relax` field. Must loosen the rule. Requires `relax` to name a field. |
 
 ### `shipeasy ops investigations`
 
