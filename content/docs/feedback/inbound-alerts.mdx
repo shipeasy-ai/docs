@@ -1,101 +1,496 @@
 ---
-title: Inbound alerts (Google Cloud Monitoring)
-description: File Google Cloud Monitoring incidents as alert tickets in your ops queue, over a webhook channel or a Pub/Sub push subscription — no relay to build or keep alive.
+title: Inbound alerts
+description: File incidents from Google Cloud Monitoring, Prometheus Alertmanager, Grafana, AWS CloudWatch, Azure Monitor, Datadog — or any tool that can POST JSON — as alert tickets in your ops queue, with no relay to build or keep alive.
 ---
 
-<DocMeta status="Beta" read="5 min read" works="Google Cloud Monitoring · per project" />
+<DocMeta
+  status="Beta"
+  read="12 min read"
+  works="Google Cloud · Prometheus · Grafana · AWS · Azure · Datadog · any webhook"
+/>
 
-Infrastructure signals — a Cloud Run service's 5xx ratio, an SLO burn rate, an
-instance that stopped serving — never reach your app's SDK. The inbound alert
-endpoint lets Google Cloud Monitoring deliver them straight into the same queue
-as your app errors and metric alerts. Each incident becomes an **alert ticket**
-that behaves like a native one: routing rules, Slack and bell notifications,
-tags and coding-agent triggers all apply.
+Infrastructure signals never reach your app's SDK: a load balancer's 5xx ratio,
+an SLO burn rate, a database at 95% CPU, a service that stopped serving. Inbound
+alerts let your monitoring stack deliver them into the same queue as your app
+errors and metric alerts. Each incident becomes an **alert ticket** that works
+like a native one. Routing rules, Slack and bell notifications, tags and
+coding-agent triggers all apply.
 
-It runs on Shipeasy's edge, not inside your app, so an alert that your API is
-failing still lands while your API is failing.
+The endpoint runs on Shipeasy's edge, not inside your app. So when your API is
+failing, the alert that says so still lands.
 
-## Generate the URL
+## Supported providers
 
-Open **Settings → Notifications → Inbound alerts** and click **Generate URL**.
-Copy it right away — it is shown once. It looks like:
+| Provider                                            | How it delivers                                           | One ticket per           | Closes on          |
+| --------------------------------------------------- | --------------------------------------------------------- | ------------------------ | ------------------ |
+| [Google Cloud Monitoring](#google-cloud-monitoring) | Webhook channel, or Pub/Sub push (retries)                | Alerting policy          | `closed` incident  |
+| [Prometheus Alertmanager](#prometheus-alertmanager) | `webhook_configs` receiver                                | Alert rule (`alertname`) | `resolved` alert   |
+| [Grafana](#grafana)                                 | Webhook contact point (unified or legacy alerting)        | Folder + alert rule      | `resolved` / `ok`  |
+| [AWS CloudWatch](#aws-cloudwatch)                   | SNS HTTPS subscription, or an EventBridge API destination | Alarm                    | `OK` state         |
+| [Azure Monitor](#azure-monitor)                     | Action group webhook (common alert schema)                | Alert rule               | `Resolved`         |
+| [Datadog](#datadog)                                 | Webhooks integration                                      | Monitor                  | `Recovered`        |
+| [Generic JSON](#generic-json)                       | Any tool that can POST a custom JSON body                 | `group` (or `title`)     | `status: "closed"` |
 
-```text
-https://api.shipeasy.ai/inbound/alerts/gcp/seinb_…
-```
+The generic shape covers New Relic, Uptime Kuma, Checkly, Zabbix, Nagios, cron
+jobs and your own scripts. See the [recipes](#recipes-for-other-tools).
 
-The secret at the end is the whole credential, so treat the URL like a password.
-It is not your admin key and can do nothing but file alert tickets into this
-project. **Rotate URL** replaces it (the old one stops working at once);
-**Revoke** turns the endpoint off. Only a hash of the token is stored.
-
-## Option A — a webhook channel
+## Set up an endpoint
 
 <Steps>
-<Step title="Create the channel">
-In the Google Cloud console go to **Monitoring → Alerting → Edit notification
-channels → Webhooks → Add new**, and paste the URL as the endpoint.
+<Step title="Pick the provider">
+Open **Settings → Notifications → Inbound alerts** and choose your provider. Each
+one is a separate endpoint with its own URL. A connected provider shows a green
+dot.
 </Step>
-<Step title="Or use basic auth">
-If you'd rather keep the token out of the URL, set the endpoint to
-`https://api.shipeasy.ai/inbound/alerts/gcp`, enable **Use HTTP Basic Auth**, and
-paste the token (the `seinb_…` part) as the password. The username is ignored.
+<Step title="Generate the URL">
+Click **Generate URL** and copy it right away, because it is shown only once. It
+looks like this:
+
+```text
+https://api.shipeasy.ai/inbound/alerts/<provider>/seinb_…
+```
+
 </Step>
-<Step title="Attach it to your alerting policies">
-Add the channel to each policy that should file tickets, then **Send test
-notification**. The delivery shows up in the log under the settings card.
+<Step title="Point your monitoring at it">
+Follow that provider's section below, then send a test notification. Each
+delivery shows up in the log under the card.
 </Step>
 </Steps>
 
-## Option B — Pub/Sub push (retries)
+### The URL is the credential
+
+The `seinb_…` secret at the end is the whole credential, so treat the URL like a
+password. It is **not** your admin key. All it can do is file alert tickets for
+one provider in one project. Only a hash of it is stored.
+
+- **Rotate URL** replaces it, and the old URL stops working at once.
+- **Revoke** turns the endpoint off. Tickets that are already open stay open.
+- If your tool can't put a secret in a URL, you can send the token two other
+  ways. Either way, POST to `https://api.shipeasy.ai/inbound/alerts/<provider>`
+  with no token at the end:
+
+| How             | Send                                                  |
+| --------------- | ----------------------------------------------------- |
+| HTTP basic auth | Any username, and the `seinb_…` token as the password |
+| Bearer header   | `Authorization: Bearer seinb_…`                       |
+
+A token only works on its own provider's path. A Grafana token posted to the
+Datadog path is refused.
+
+## How incidents become tickets
+
+Every provider runs the same lifecycle. Its parser only decides what counts as
+"the incident" and what counts as "the policy".
+
+| Delivery                                                      | What happens                                                                                                                   |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Open, and the policy has no open ticket                       | A new alert ticket, titled `<policy> · <condition>`                                                                            |
+| Open again, or another incident of the same policy            | Folded into the open ticket, with no duplicate. Its delivery count goes up                                                     |
+| Closed                                                        | A comment with the recovery time. If auto-resolve is on and no other incident of the policy is still open, the ticket resolves |
+| Open, after the policy's ticket was closed                    | A new ticket. Each firing episode gets its own ticket, the same as native alerts                                               |
+| Neither open nor closed (`INSUFFICIENT_DATA`, a mute, an ack) | Logged and ignored                                                                                                             |
+
+Batched providers (an Alertmanager or Grafana group, a generic `alerts[]` array)
+run the lifecycle for each alert in the batch. Ten instances of one alert rule
+firing together make **one** ticket, which resolves once the last instance
+recovers.
+
+**Auto-resolve** is on by default. Turn it off per provider if a person should
+close each ticket. The recovery comment is still posted.
+
+### Severity → priority
+
+One table covers every provider, so a Datadog P1 and a Cloud Monitoring CRITICAL
+land with the same priority:
+
+| Upstream severity                                            | Ticket priority |
+| ------------------------------------------------------------ | --------------- |
+| `CRITICAL`, `P1`, `P0`, `Sev0`, `page`, `fatal`, `emergency` | critical        |
+| `ERROR`, `HIGH`, `P2`, `Sev1`, `major`, **no severity**      | high            |
+| `WARNING`, `P3`–`P5`, `Sev2`–`Sev4`, `info`, `low`           | medium          |
+
+The ticket's **Source** links back to the incident in the provider's console.
+`context.alert.external` holds the upstream details for agents and the API:
+policy, condition, severity as sent, resource labels, incident ids, and which
+incidents are still open.
+
+## Google Cloud Monitoring
+
+<Tabs items={["Webhook channel", "Pub/Sub push (retries)"]}>
+<Tab value="Webhook channel">
+
+<Steps>
+  <Step title="Create the channel">
+    In the Google Cloud console, open **Monitoring → Alerting → Edit notification channels →
+    Webhooks → Add new**. Paste the URL as the endpoint.
+  </Step>
+  <Step title="Or use basic auth">
+    To keep the token out of the URL, set the endpoint to
+    `https://api.shipeasy.ai/inbound/alerts/gcp` instead. Turn on **Use HTTP Basic Auth** and paste
+    the token as the password.
+  </Step>
+  <Step title="Attach it to your alerting policies">
+    Add the channel to each policy that should file tickets, then click **Send test notification**.
+  </Step>
+</Steps>
+
+</Tab>
+<Tab value="Pub/Sub push (retries)">
 
 A webhook channel makes one delivery attempt. Routing through Pub/Sub gets you
 Pub/Sub's retries and dead-lettering instead.
 
 <Steps>
-<Step title="Point Monitoring at a topic">
-Create a **Pub/Sub** notification channel for a topic, and grant the Monitoring
-service agent `roles/pubsub.publisher` on it.
+  <Step title="Point Monitoring at a topic">
+    Create a **Pub/Sub** notification channel for a topic. Grant the Monitoring service agent
+    `roles/pubsub.publisher` on that topic.
+  </Step>
+  <Step title="Add a push subscription">
+    On that topic, create a push subscription whose endpoint is the generated URL. Turn on **Enable
+    authentication**, pick a service account, and set an **audience**. The endpoint URL without the
+    token works well as the audience.
+  </Step>
+  <Step title="Require Google's signed token">
+    Back in Shipeasy, enter the same audience under **Pub/Sub OIDC audience** (and, optionally, the
+    service account's email) and save. From then on, every delivery must carry a Google-signed token
+    for that audience. Plain webhook posts are refused.
+  </Step>
+</Steps>
+
+</Tab>
+</Tabs>
+
+Each incident's `incident_id` is the incident, and its alerting policy is the
+policy.
+
+## Prometheus Alertmanager
+
+Add a webhook receiver and route alerts to it. Keep `send_resolved: true` (the
+default), because that is what closes tickets.
+
+```yaml title="alertmanager.yml"
+receivers:
+  - name: shipeasy
+    webhook_configs:
+      - url: https://api.shipeasy.ai/inbound/alerts/alertmanager/seinb_…
+        send_resolved: true
+        # Or keep the token out of the URL:
+        # url: https://api.shipeasy.ai/inbound/alerts/alertmanager
+        # http_config:
+        #   authorization:
+        #     credentials: seinb_…   # sent as "Authorization: Bearer seinb_…"
+
+route:
+  receiver: shipeasy
+  # …or add it as a child route for the alerts that should become tickets:
+  # routes:
+  #   - matchers: [ 'severity=~"critical|warning"' ]
+  #     receiver: shipeasy
+```
+
+- **Incident** is each alert's `fingerprint`; **policy** is its `alertname`.
+- **Severity** comes from the `severity` label (or `priority`).
+- **Summary** comes from the `summary` annotation, falling back to `description`.
+- **Link** is the alert's `generatorURL`.
+- **Resource labels** are the alert's other labels (`job`, `instance`, …).
+
+<Callout type="info" title="Repeat notifications">
+  Alertmanager re-sends firing alerts every `repeat_interval`. Repeats fold into the open ticket and
+  raise its delivery count, so you never get a duplicate.
+</Callout>
+
+## Grafana
+
+<Steps>
+  <Step title="Create a webhook contact point">
+    In Grafana, go to **Alerting → Contact points → Add contact point**. Pick the **Webhook**
+    integration and paste the URL. Or use the token-free URL and set **Authorization header →
+    Bearer** with the token.
+  </Step>
+  <Step title="Route alerts to it">
+    Add the contact point to a notification policy (or pick it on individual alert rules), then
+    click **Test**.
+  </Step>
+</Steps>
+
+- **One ticket per alert rule.** A rule is identified by its `grafana_folder` and `alertname` labels, and each `fingerprint` is an incident.
+- **Link** is the panel (`panelURL`), falling back to the dashboard.
+- **Observed value** is the first number in the alert's `values`.
+- **Severity** comes from a `severity` label on the rule.
+
+Legacy dashboard alerting (Grafana 10 and older) works on the same URL:
+
+- `alerting` and `no_data` open a ticket;
+- `ok` closes it;
+- `pending` and `paused` are ignored.
+
+## AWS CloudWatch
+
+<Tabs items={["SNS (recommended)", "EventBridge"]}>
+<Tab value="SNS (recommended)">
+
+<Steps>
+  <Step title="Subscribe the URL to the alarm's topic">
+    In **SNS → Topics**, open the topic your CloudWatch alarms notify and choose **Create
+    subscription**. Set the protocol to **HTTPS** and the endpoint to the generated URL. Leave **raw
+    message delivery** off.
+  </Step>
+  <Step title="Nothing to confirm by hand">
+    SNS sends a `SubscriptionConfirmation` first. Shipeasy checks its signature and confirms it for
+    you. The log shows **accepted · subscribe**, and the subscription turns **Confirmed** in the AWS
+    console.
+  </Step>
+  <Step title="Pin the topic (recommended)">
+    Enter the topic ARN under **SNS topic ARN** and save. From then on, the endpoint only accepts
+    signed SNS messages from that topic.
+  </Step>
+  <Step title="Make sure the alarm notifies on recovery">
+    On each alarm, add the topic to **both** the *In alarm* and *OK* actions, so a recovery closes
+    the ticket.
+  </Step>
+</Steps>
+
+Every SNS message is signature-checked. The certificate must come from an
+`sns.<region>.amazonaws.com` host, and SignatureVersion 1 and 2 are both
+supported. A tampered or forged message is rejected and logged.
+
+</Tab>
+<Tab value="EventBridge">
+
+<Steps>
+<Step title="Create an API destination">
+In **EventBridge → API destinations**, create a connection with **API key**
+authorization. Use the header `Authorization` with the value `Bearer seinb_…`.
+Then create a destination that POSTs to
+`https://api.shipeasy.ai/inbound/alerts/aws`.
 </Step>
-<Step title="Add a push subscription">
-Create a push subscription on that topic whose endpoint is the generated URL.
-Turn on **Enable authentication**, pick a service account, and set an
-**audience** — the endpoint URL without the token works well.
-</Step>
-<Step title="Require Google's signed token">
-Back in **Inbound alerts**, enter the same audience under **Pub/Sub OIDC
-audience** (and, optionally, the service account's email) and save. From then on
-every delivery must carry a Google-signed token for that audience, and plain
-webhook posts are refused.
+<Step title="Add a rule">
+Create a rule with the event pattern
+`{"source": ["aws.cloudwatch"], "detail-type": ["CloudWatch Alarm State Change"]}`
+and target the API destination. EventBridge retries failed deliveries.
 </Step>
 </Steps>
 
-## What gets filed
+Leave **SNS topic ARN** empty for EventBridge. Setting it requires signed SNS
+envelopes and refuses everything else.
 
-| Incident                                  | What happens                                                                                       |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `open`, no open ticket for its policy     | A new alert ticket, titled `<policy> · <condition>`                                               |
-| `open` again, or another incident of the same policy | Folded into the open ticket — no duplicate; its delivery count goes up                  |
-| `closed`                                  | A comment with the recovery time; when auto-resolve is on and no other incident of the policy is still open, the ticket resolves |
-| `open` after the policy's ticket closed   | A new ticket — each firing episode is its own ticket, like native alerts                           |
+</Tab>
+</Tabs>
 
-Severity maps to the ticket's starting priority: **Critical → critical**,
-**Error → high**, **Warning → medium**, no severity → high. The ticket's
-**Source** links back to the incident in the Google Cloud console, and
-`context.alert.external` carries the policy, condition, resource labels and
-incident ids for agents and the API.
+- **The alarm is both the policy and the incident.** It's identified by its ARN, so `ALARM` opens a ticket and `OK` resolves it.
+- `INSUFFICIENT_DATA` is ignored.
+- **Resource labels** are the metric's dimensions, plus the account and region.
+- **Observed value** is the datapoint from the state-change reason.
+- **Link** is the alarm in the CloudWatch console.
+- **Priority is high**, because CloudWatch alarms carry no severity.
+
+## Azure Monitor
+
+<Steps>
+  <Step title="Add a webhook action">
+    Open your action group, then **Actions → Webhook**. Paste the URL and set **Enable the common
+    alert schema** to **Yes**.
+  </Step>
+  <Step title="Attach the action group to your alert rules">
+    Then **Test action group** to send a sample.
+  </Step>
+</Steps>
+
+- **Incident** is `essentials.alertId`; **policy** is the alert rule.
+- `Fired` opens a ticket and `Resolved` closes it.
+- **Severity:** `Sev0` → critical, `Sev1` → high, `Sev2`–`Sev4` → medium.
+- **Resource labels** are the target resource and its resource group, parsed from `alertTargetIDs`.
+- **Link** is the alert in the Azure portal.
+
+The older per-type metric alert schema (`Activated` / `Resolved`) is accepted
+too. For any other type, turn on the common schema.
+
+## Datadog
+
+<Steps>
+<Step title="Add a webhook">
+In **Integrations → Webhooks**, add a webhook. Paste the URL and replace the
+payload with the template below. If you'd rather not put the token in the URL,
+use the token-free URL and add a custom header `Authorization: Bearer seinb_…`.
+</Step>
+<Step title="Notify it from your monitors">
+Add `@webhook-<name>` to each monitor's message. Datadog then notifies the
+webhook on trigger, re-trigger, warn and recovery.
+</Step>
+</Steps>
+
+```json title="Datadog webhook payload"
+{
+  "alert_id": "$ALERT_ID",
+  "alert_cycle_key": "$ALERT_CYCLE_KEY",
+  "alert_transition": "$ALERT_TRANSITION",
+  "alert_title": "$ALERT_TITLE",
+  "alert_priority": "$ALERT_PRIORITY",
+  "body": "$EVENT_MSG",
+  "link": "$LINK",
+  "date": "$DATE",
+  "hostname": "$HOSTNAME",
+  "tags": "$TAGS",
+  "scope": "$ALERT_SCOPE",
+  "metric": "$ALERT_METRIC",
+  "value": "$ALERT_VALUE"
+}
+```
+
+- **Policy** is the monitor (`alert_id`), and **incident** is one trigger → recover cycle (`alert_cycle_key`). A multi-alert monitor's groups all fold into that monitor's ticket.
+- These transitions open (or keep open) the ticket: `Triggered`, `Re-Triggered`, `Warn`, `No Data`, `Renotify`.
+- These close it: `Recovered`, `Warn Recovered`, `No Data Recovered`.
+- **Priority** follows `$ALERT_PRIORITY` (P1 → critical, P2 → high, P3–P5 → medium).
+- **Resource labels** are your monitor's `$TAGS`.
+
+Only `alert_id` and `alert_transition` are required. Datadog's default payload
+also works: the transition is read from the `[Triggered]` / `[Recovered]` title
+prefix.
+
+## Generic JSON
+
+For anything else, POST this shape to
+`https://api.shipeasy.ai/inbound/alerts/generic/seinb_…`:
+
+```json title="One incident"
+{
+  "id": "db-primary-down",
+  "status": "open",
+  "title": "Primary DB unreachable",
+  "group": "db-primary",
+  "severity": "critical",
+  "summary": "3 consecutive health checks failed from eu-west-1",
+  "url": "https://status.example.com/checks/db-primary",
+  "condition": "health check",
+  "startedAt": "2026-11-12T10:00:00Z",
+  "resource": "postgres",
+  "labels": { "region": "eu-west-1", "cluster": "prod" },
+  "value": 0
+}
+```
+
+| Field                   | Required | Meaning                                                                                                                                                                                                         |
+| ----------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                    | yes      | The incident. Send the **same** `id` when it opens and when it closes                                                                                                                                           |
+| `status`                | yes      | `open` or `closed`. Also accepted: `firing`, `triggered`, `alerting`, `problem`, `down`, `created`, `failed` (open); `resolved`, `ok`, `recovered`, `up` (closed); `acknowledged`, `pending`, `muted` (ignored) |
+| `title`                 | yes      | The check or policy name. It is the ticket title                                                                                                                                                                |
+| `group`                 | no       | Incidents with the same `group` fold into one ticket. Defaults to `title`                                                                                                                                       |
+| `severity`              | no       | `critical`, `high`, `error`, `medium`, `warning`, `low`, `info`, `P1`–`P5`, `Sev0`–`Sev4`                                                                                                                       |
+| `summary`               | no       | The ticket's detail line                                                                                                                                                                                        |
+| `url`                   | no       | An `https://` link to the incident. It becomes the ticket's Source link                                                                                                                                         |
+| `condition`             | no       | Shown after the title: `<title> · <condition>`                                                                                                                                                                  |
+| `startedAt` / `endedAt` | no       | ISO-8601, or unix seconds or milliseconds                                                                                                                                                                       |
+| `resource`, `labels`    | no       | What it fired on. `labels` is a flat string map                                                                                                                                                                 |
+| `value`                 | no       | The observed value                                                                                                                                                                                              |
+
+Common aliases are read too, for tools whose template can't rename a field:
+
+- `incident_id` for `id`
+- `state` for `status`
+- `name` for `title`
+- `message` or `description` for `summary`
+- `link` for `url`
+- `started_at` for `startedAt`
+
+To send several incidents at once, use `{ "alerts": [ … ] }` or a top-level
+array.
+
+```bash title="From a script or cron job"
+curl -fsS -X POST "https://api.shipeasy.ai/inbound/alerts/generic" \
+  -H "Authorization: Bearer $SHIPEASY_INBOUND_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"id":"nightly-backup","status":"open","title":"Nightly backup failed","severity":"high"}'
+```
+
+### Recipes for other tools
+
+<Tabs items={["New Relic", "Uptime Kuma", "Checkly", "Zabbix / Nagios"]}>
+<Tab value="New Relic">
+
+Create a **Webhook** destination with the generated URL, and use this payload
+template in your workflow:
+
+```handlebars
+{ "id":
+{{json issueId}}, "status":
+{{json state}}, "title":
+{{json accumulations.conditionName.[0]}}, "group":
+{{json accumulations.policyName.[0]}}, "severity":
+{{json priority}}, "summary":
+{{json annotations.title.[0]}}, "url":
+{{json issuePageUrl}}
+}
+```
+
+`CREATED` and `ACTIVATED` open a ticket, `CLOSED` closes it, and
+`ACKNOWLEDGED` is ignored.
+
+</Tab>
+<Tab value="Uptime Kuma">
+
+Add a **Webhook** notification with the generated URL. Set **Request Body** to
+**Custom Body**:
+
+```liquid
+{
+  "id": "kuma-{{ monitorJSON['id'] }}",
+  "status": "{% if heartbeatJSON['status'] == 1 %}closed{% else %}open{% endif %}",
+  "title": "{{ monitorJSON['name'] }}",
+  "summary": "{{ msg }}",
+  "severity": "high"
+}
+```
+
+</Tab>
+<Tab value="Checkly">
+
+Add a **Webhook** alert channel with the generated URL and this body:
+
+```handlebars
+{ "id": "{{CHECK_ID}}", "status": "{{ALERT_TYPE}}", "title": "{{CHECK_NAME}}", "summary": "{{ALERT_TITLE}}",
+"url": "{{RESULT_LINK}}" }
+```
+
+`ALERT_FAILURE` and `ALERT_DEGRADED` open a ticket, and `ALERT_RECOVERY`
+closes it.
+
+</Tab>
+<Tab value="Zabbix / Nagios">
+
+Any alert script that can run `curl` can post the generic shape:
+
+- **Open:** post `status: "open"` with `{EVENT.ID}` (Zabbix) or `$HOSTNAME$-$SERVICEDESC$` (Nagios) as the `id`.
+- **Close:** send the **same** `id` with `status: "closed"` when the problem recovers.
+
+</Tab>
+</Tabs>
 
 ## The delivery log
 
-The settings card lists the latest deliveries: **accepted**, **deduped** (folded
-into an open ticket) or **rejected** with the reason — a malformed payload, a
-failed Pub/Sub token check. A misconfigured channel shows up here instead of
-silently dropping alerts. A request with an unknown or revoked token is refused
-with `401` and, having no project, is not logged.
+The card lists the latest deliveries across every provider. Each one shows its
+outcome:
 
-<Callout type="info" title="What leaves Google Cloud">
-  Cloud Monitoring incident payloads carry metric and resource metadata only — no request bodies
-  or user data.
+- **accepted** — it filed a ticket, closed one, or confirmed an SNS subscription;
+- **deduped** — it folded into an open ticket, or was ignored;
+- **rejected** — it failed, with the reason (a malformed payload, a missing field, a failed Pub/Sub token or SNS signature check).
+
+A misconfigured channel shows up here instead of silently dropping alerts.
+
+| Response | Meaning                                                                                         |
+| -------- | ----------------------------------------------------------------------------------------------- |
+| `200`    | Accepted, deduped or ignored                                                                    |
+| `400`    | The body couldn't be read as that provider's payload. The reason is in the response and the log |
+| `401`    | Unknown or revoked token, a token for another provider, or a failed Pub/Sub / SNS check         |
+| `404`    | Unknown provider in the path                                                                    |
+| `413`    | Body over 256 KB                                                                                |
+| `500`    | The ticket couldn't be written. The sender retries, and a retry only folds into the open ticket |
+
+A request with an unknown or revoked token has no project to log against, so it
+is refused with `401` and doesn't appear in the log.
+
+<Callout type="info" title="What leaves your monitoring">
+  Incident payloads carry metric, policy and resource metadata only, with no request bodies or user
+  data. Only the fields above are stored on the ticket.
 </Callout>
 
 <SeeAlso

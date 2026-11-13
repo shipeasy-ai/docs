@@ -1595,6 +1595,60 @@ _Errors_ — beyond the [common errors](#errors):
 
 - `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
 
+### `ops_fired_alerts_noise`
+
+**Mark a fired alert as noise**
+
+Waves a fired alert off as **noise** — it closes as `dismissed` (the queue item goes `wont_fix`) and is recorded as noise rather than a plain dismissal — and optionally relaxes the rule that raised it so the same condition fires less often.
+
+- **No `relax`** — mark as noise only; the rule is untouched.
+- **`relax: "recommended"`** — apply the recommended suggestion from `GET /api/admin/alerts/{id}/relax-options`.
+- **`relax: "<field>"`** (`threshold`, `rangeMin`, `rangeMax`, `sigma`, `requiredBuckets`, `windowHours`, `noDataMinutes`) without `value` — apply the computed suggestion for that field. `422` when the backtest has none for it, with the reason.
+- **`relax: "<field>"` with `value`** — set that field to exactly `value`. It must be a relaxation (a higher `gt` threshold, a lower `lt` one, a wider range, a higher sigma, more required buckets, a longer window); a value that would make the rule fire more is refused with `422` — tighten a rule with `PATCH /api/admin/alert-rules/{id}`. Warning / recovery levels move by the same delta; a longer window pins the bucket width and keeps an "N of M" rule's ratio.
+
+The rule change goes through the alert-rule update, so it is validated, audited, and restorable exactly like any other edit. The ops item records it as `context.alert.noise` — `{ by, at, relaxed: { field, dimension, from, to } | null }`. Returns the closed alert and the relaxation applied (or `null`).
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `relax` | optional | `any` | `recommended` applies the recommended suggestion; a field name applies that field's suggestion, or exactly `value` when given. Omit to leave the rule alone. |
+| `value` | optional | `number` | Exact value for the `relax` field. Must loosen the rule. Requires `relax` to name a field. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+### `ops_fired_alerts_relax_options`
+
+**Suggest how to relax a noisy alert's rule**
+
+Computes, for one fired `metric_rule` alert, the smallest change to its rule that would have kept THIS firing quiet — one suggestion per dimension the rule can be relaxed on:
+
+- **value** — the bound itself: `threshold`, a range edge (`rangeMin` / `rangeMax`), or `sigma` for anomaly / outlier rules. A warning or recovery level moves by the same delta, so their ordering survives.
+- **buckets** — `requiredBuckets`, on a rule that already counts "N of M" breaching buckets.
+- **time** — `windowHours` (or `noDataMinutes` for a no-data rule). The bucket width is pinned at its current size, so the window grows by buckets rather than widening them.
+
+No model is involved. The suggestions come from a **backtest**: the rule is replayed over the metric's recent data (up to 7 days plus the firing) with the evaluator's own arithmetic and raise/clear state machine, and each knob is searched for the smallest value whose replay never has this alert open, plus a little headroom, rounded to a number a person would type. Each option reports how often the rule fired over the replayed span before and after the change. The `recommended` option is the one that gives up the fewest OTHER firings (ties go to the smaller change).
+
+Read-only — nothing changes. Apply a suggestion with `POST /api/admin/alerts/{id}/noise`.
+
+**Use case:** before marking an alert as noise, see what it would take for the rule to stop raising it, and what that costs in coverage.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `id` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
 ### `ops_fired_alerts_update`
 
 **Update a fired alert**
@@ -1635,10 +1689,13 @@ Fetch a single queue item by its per-project `number` or full id.
 
 An item linked to others (blocked by / blocking / duplicate of) carries its `group`: every connected item, and the `master` agent runs work through. Pass `include=linked` to inline the other members' content as `linkedItems`, so one call reads the whole group.
 
+Read it before you investigate. A bug that only some users hit is often caused by one of those. It is a snapshot from filing time, so check the entity's current state too.
+
 **Use cases**
 
 - **Inspect one item** before updating its status or linking a PR.
 - **Pick up linked work** — `include=linked` reads the master and everything tied to it before a run starts.
+- **Debug a public report** against the reporter's own feature state in `context.reporter`.
 
 _Parameters_
 
@@ -2969,7 +3026,9 @@ decision from a person when the implementation needs one. Each question
 is the `AskUserQuestion` shape: a short `header` chip, the full
 `question`, 2–4 `options` (`label` + `description`), and `multiSelect`
 (checkboxes instead of radios). The person can always answer "Other" in
-free text, so never add an "Other" option yourself. The questions render
+free text, or "No preference" (leave the call to you — take the simplest,
+least-change option), so never add an "Other" or a "No preference"
+option yourself. The questions render
 at the very top of the item's detail panel and mark the row in the queue.
 
 **Delivery.** `resume` re-fires your trigger-connector run on the item
@@ -3036,7 +3095,9 @@ The structured questions asked on a queue item, with their answers —
 newest first (max 100). Pull this to read the answers to questions you
 asked: an answered question reads `status: completed` and carries
 `answer.selected` (the option labels picked) and `answer.other` (the
-free-text "Other" reply, or `null`).
+free-text "Other" reply, or `null`). `answer.selected` of exactly
+`["No preference"]` means the person has no opinion: pick the simplest
+option that changes the least, and don't overcomplicate it.
 
 **Use case:** You asked with `delivery: poll` from a live session — poll
 this until your questions read `completed`, then continue with the answers.
@@ -3052,6 +3113,121 @@ _Errors_ — beyond the [common errors](#errors):
 
 - `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
 - `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+### Checklist
+
+The to-do checklist inside a feature or bug item — the things being
+implemented, kept in the item's body instead of in comments. The dev (or a
+coding agent) adds lines and ticks them `done` as they land; QA marks each
+done line `verified`, or `returned` with a note that says what is still
+wrong, which hands it back to the dev. `ops get` carries the list as
+`checklist`, so an agent reads its work order with the item.
+
+#### `ops_checklist_add`
+
+**Add a checklist line**
+
+Add one line to the end of a queue item's checklist, `open`. Write a
+multi-part plan as one line per part, so the dev can tick each off and QA
+can verify or return each on its own. The author is the caller's identity;
+pass `agent` to record the line as added by that agent type. An item holds
+at most 200 lines.
+
+**Use case:** An agent starting a feature lists the four changes it will
+make, then ticks them off as they land.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `text` | required | `string` | What the line asks for (markdown, one line). _(length 1–500)_ |
+| `agent` | optional | `"jarvis" \| "claude" \| "cursor" \| "copilot" \| "jules"` | The agent type adding the line — pass your own type when you are a coding agent. Omitted, the line is attributed to the caller's identity. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `VALIDATION` — The request body failed structural (schema) validation.
+
+#### `ops_checklist_archive`
+
+**Archive a checklist line**
+
+Take a line off an item's checklist — it no longer applies (the plan
+changed, or it was added by mistake). The line leaves the list and every
+read; nothing is deleted.
+
+**Use case:** The plan dropped a step; archive its line so the count stays
+honest.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `itemId` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `ops_checklist_list`
+
+**List an item's checklist**
+
+The to-do checklist inside a queue item, in display order (archived lines
+left out, max 200). Each line is `open`, `done` (the dev ticked it),
+`verified` (QA confirmed it) or `returned` (QA sent it back — `note` says
+why). `ops get` returns the same list as `checklist`.
+
+**Use case:** A coding agent picks an item up and works its `returned`
+lines first, then the `open` ones.
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+
+#### `ops_checklist_update`
+
+**Update a checklist line**
+
+Change one checklist line: its `text`, its `position`, or its `status`.
+The dev ticks a line `done` (or back to `open`); QA marks a `done` line
+`verified`, or `returned` with a `note` saying what is still wrong; ticking
+a returned line `done` again clears the note and hands it back to QA. Who
+did what is recorded from the caller's identity, or `agent` when given. An
+illegal move (verifying an `open` line) answers 409 `INVALID_TRANSITION`.
+
+**Use case:** QA retests a feature, verifies three lines and returns the
+fourth: "the export still drops the header row".
+
+_Parameters_
+
+| Parameter | | Type | Description |
+| --- | --- | --- | --- |
+| `handle` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `itemId` | required | `string` | A resource path identifier — an opaque `xxx_` id (~30 chars) or the resource's `name`/`key`. 1–128 characters; the upper bound matches the longest name/key any resource accepts, so an over-long value can never name a real row. _(length 1–128)_ |
+| `text` | optional | `string` | New text for the line. _(length 1–500)_ |
+| `status` | optional | `"open" \| "done" \| "verified" \| "returned"` | Where a checklist line stands — `open` (still to do), `done` (the dev ticked it), `verified` (QA confirmed it) or `returned` (QA sent it back with a `note`; tick it `done` again once fixed). |
+| `note` | optional | `string` | Why QA returns the line — required when moving it to `returned` (send it alone to reword the note of a returned line), refused on a line that ends up in any other status. _(length 1–2000)_ |
+| `position` | optional | `integer` | New display position (lines sort ascending; ties by creation order). _(≥ 0)_ |
+| `agent` | optional | `"jarvis" \| "claude" \| "cursor" \| "copilot" \| "jules"` | The agent type making the change — pass your own type when you are an agent. Omitted, the change is attributed to the caller's identity. |
+
+_Errors_ — beyond the [common errors](#errors):
+
+- `BAD_REQUEST` — Malformed request (bad JSON, missing project scope).
+- `NOT_FOUND` — The resource does not exist or is not visible to the caller.
+- `INVALID_TRANSITION` — The requested lifecycle transition is not allowed from the current state.
+- `VALIDATION` — The request body failed structural (schema) validation.
 
 ### Trigger
 
