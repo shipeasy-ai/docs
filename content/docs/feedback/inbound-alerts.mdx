@@ -109,6 +109,10 @@ land with the same priority:
 | `ERROR`, `HIGH`, `P2`, `Sev1`, `major`, **no severity**      | high            |
 | `WARNING`, `P3`–`P5`, `Sev2`–`Sev4`, `info`, `low`           | medium          |
 
+A later incident of the same policy folds into the open ticket. If its severity
+differs, the ticket's priority moves to match, unless someone changed the
+priority by hand.
+
 The ticket's **Source** links back to the incident in the provider's console.
 `context.alert.external` holds the upstream details for agents and the API:
 policy, condition, severity as sent, resource labels, incident ids, and which
