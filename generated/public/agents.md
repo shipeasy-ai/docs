@@ -2722,6 +2722,11 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy ops brain sources` — --data --limit
 - `shipeasy ops brain status` — --data
 - `shipeasy ops bug` — --actual-result --assignee-id --context --delegate-connector-id --expected-result --notify --page-url --priority --reporter-email --status --steps-to-reproduce --subscribers --tags --trail --user-agent --viewport
+- `shipeasy ops checklist`
+- `shipeasy ops checklist add` — --agent --text
+- `shipeasy ops checklist archive` — --data
+- `shipeasy ops checklist list` — --data
+- `shipeasy ops checklist update` — --agent --note --position --status --text
 - `shipeasy ops comments`
 - `shipeasy ops comments create` — --body --parent-id
 - `shipeasy ops comments list` — --data
@@ -2730,6 +2735,8 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy ops feature` — --assignee-id --context --delegate-connector-id --description --notify --page-url --priority --reporter-email --status --subscribers --tags --trail --use-case --user-agent
 - `shipeasy ops fired-alerts`
 - `shipeasy ops fired-alerts list` — --data --status
+- `shipeasy ops fired-alerts noise` — --relax --value
+- `shipeasy ops fired-alerts relax-options` — --data
 - `shipeasy ops fired-alerts update` — --agent --assignee-id --status
 - `shipeasy ops get` — --data --include
 - `shipeasy ops group` — --priority --status
@@ -2947,6 +2954,8 @@ Parameters and error codes: https://docs.shipeasy.ai/get-started/mcp-reference
 - `ops_create`
 - `ops_feature`
 - `ops_fired_alerts_list`
+- `ops_fired_alerts_noise`
+- `ops_fired_alerts_relax_options`
 - `ops_fired_alerts_update`
 - `ops_get`
 - `ops_group`
@@ -2994,6 +3003,10 @@ Parameters and error codes: https://docs.shipeasy.ai/get-started/mcp-reference
 - `ops_questions_ask`
 - `ops_questions_cancel`
 - `ops_questions_list`
+- `ops_checklist_add`
+- `ops_checklist_archive`
+- `ops_checklist_list`
+- `ops_checklist_update`
 - `ops_trigger_create_claude`
 - `ops_trigger_create_copilot`
 - `ops_trigger_create_cursor`
@@ -3141,6 +3154,7 @@ Parameters and error codes: https://docs.shipeasy.ai/get-started/mcp-reference
 - The devtools overlay — https://docs.shipeasy.ai/feedback/devtools
 - Error reporting with see() — https://docs.shipeasy.ai/feedback/error-reporting
 - Errors dashboard & triage — https://docs.shipeasy.ai/feedback/errors
+- Inbound alerts — https://docs.shipeasy.ai/feedback/inbound-alerts
 - Connectors — https://docs.shipeasy.ai/feedback/connectors
 - Slack — https://docs.shipeasy.ai/feedback/slack
 - Project memory — https://docs.shipeasy.ai/feedback/memory
