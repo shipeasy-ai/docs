@@ -13097,7 +13097,7 @@ network call per evaluation.
 <dependency>
   <groupId>ai.shipeasy</groupId>
   <artifactId>shipeasy</artifactId>
-  <version>0.20.1</version>
+  <version>0.21.0</version>
 </dependency>
 ```
 
@@ -13267,7 +13267,7 @@ path.
 ### Install
 
 ```kotlin
-implementation("ai.shipeasy:shipeasy-kotlin:0.21.1")
+implementation("ai.shipeasy:shipeasy-kotlin:0.22.0")
 ```
 
 Full wiring — frameworks, options, env vars — is in [Installation](https://docs.shipeasy.ai/sdks/reference/kotlin/installation).
@@ -13626,7 +13626,7 @@ to embed in a shipped app), evaluates one device user server-side over
 ### Install
 
 ```bash
-.package(url: "https://github.com/shipeasy-ai/sdk-swift.git", from: "3.0.0")
+.package(url: "https://github.com/shipeasy-ai/sdk-swift.git", from: "3.1.0")
 ```
 
 Full wiring — frameworks, options, env vars — is in [Installation](https://docs.shipeasy.ai/sdks/reference/swift/installation).

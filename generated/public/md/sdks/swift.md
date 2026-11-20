@@ -16,7 +16,7 @@ to embed in a shipped app), evaluates one device user server-side over
 ## Install
 
 ```bash
-.package(url: "https://github.com/shipeasy-ai/sdk-swift.git", from: "3.0.0")
+.package(url: "https://github.com/shipeasy-ai/sdk-swift.git", from: "3.1.0")
 ```
 
 Full wiring — frameworks, options, env vars — is in [Installation](https://docs.shipeasy.ai/sdks/reference/swift/installation).
