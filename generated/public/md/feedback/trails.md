@@ -31,10 +31,10 @@ lives.
 1. **A push lands** on a linked PR. Shipeasy records it as the change's latest
    push.
 2. **Review agents run.** Every enabled review agent with the `push` trigger
-   scores the push. They run in your connected coding agent (Claude, Cursor,
-   Copilot or Jules), on that agent's own quota, as a read-only review: read
-   the ticket, read the diff, submit. Agents that share a coding agent are
-   scored in one session.
+   scores the push. They run in your connected coding agent (Claude, Cursor or
+   Copilot), on that agent's own quota, as a read-only review: read the ticket,
+   read the diff, submit. Agents that share a coding agent are scored in one
+   session.
 3. **Each agent submits** a value (a 0–100 score, or yes/no), a short rationale
    and any findings, through `shipeasy trails submit-eval` or the
    `trails_submit_eval` MCP tool. The value is read against the agent's
@@ -44,8 +44,8 @@ lives.
    - **Fail** (red)
 4. **The coding agent iterates.** It reads the trail (`shipeasy trails get
       <ticket>`), fixes what is open, resolves the findings it fixed and pushes
-again. Each eval shows its value on the latest push next to its last five
-earlier ones, so you can see whether the loop has settled.
+   again. Each eval shows its value on the latest push next to its last five
+   earlier ones, so you can see whether the loop has settled.
 5. **A person approves and merges.** Merge only when confidence is high, risk is
    low and the findings are cleared.
 

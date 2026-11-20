@@ -165,8 +165,8 @@ without a human watching log volume.
 a bare `console.error`, so it becomes a **tracked error** with a frequency the backend
 counts. Point a [threshold alert](/metrics/alerts) at that error's rate; when it
 crosses the line the alert files a bug into the same ops queue as everything else.
-From there an [**AI trigger**](/get-started/triggers) — Claude, Copilot, Cursor or
-Jules — picks the ticket up and opens a pull request against it. The loop from caught
+From there an [**AI trigger**](/get-started/triggers) — Claude, Copilot or
+Cursor — picks the ticket up and opens a pull request against it. The loop from caught
 exception to proposed fix runs without anyone paging themselves.
 
 **Combines:** `see()` error reporting → tracked-error frequency → a threshold alert (files the ticket) → the ops queue → an AI trigger that opens the PR.

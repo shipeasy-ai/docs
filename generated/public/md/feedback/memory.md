@@ -40,7 +40,7 @@ search on a project builds its memory from the tickets it already has.
 Agents get memory in two ways.
 
 **Handed up front.** When a ticket is delegated to a connected coding agent
-(Claude, Cursor, Copilot or Jules), the run's prompt carries the headlines of
+(Claude, Cursor or Copilot), the run's prompt carries the headlines of
 the entries most related to that ticket — matched on its title and description
 — with the ticket they came from and the files involved:
 
