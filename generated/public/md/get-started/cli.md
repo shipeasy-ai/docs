@@ -177,7 +177,7 @@ See [MCP server](https://docs.shipeasy.ai/get-started/mcp) for the tool inventor
 
 There is no separate `skills` or `plugin` install command — `shipeasy setup`
 does it. It detects every coding agent in your environment (Claude Code,
-Cursor, OpenAI Codex, GitHub Copilot, Google Jules) and wires each the way
+Cursor, OpenAI Codex, GitHub Copilot, Antigravity, Gemini CLI) and wires each the way
 that agent expects: the Claude Code marketplace plugin (commands + skills +
 MCP) for Claude, and the agent's own instructions file
 (`.cursor/rules/shipeasy.mdc`, `AGENTS.md`, `.github/copilot-instructions.md`)

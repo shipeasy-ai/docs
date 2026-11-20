@@ -1401,7 +1401,7 @@ See [MCP server](https://docs.shipeasy.ai/get-started/mcp) for the tool inventor
 
 There is no separate `skills` or `plugin` install command — `shipeasy setup`
 does it. It detects every coding agent in your environment (Claude Code,
-Cursor, OpenAI Codex, GitHub Copilot, Google Jules) and wires each the way
+Cursor, OpenAI Codex, GitHub Copilot, Antigravity, Gemini CLI) and wires each the way
 that agent expects: the Claude Code marketplace plugin (commands + skills +
 MCP) for Claude, and the agent's own instructions file
 (`.cursor/rules/shipeasy.mdc`, `AGENTS.md`, `.github/copilot-instructions.md`)
@@ -2371,8 +2371,8 @@ shipeasy setup triggers
 shipeasy setup triggers --platform claude
 ```
 
-`--platform` is one of `claude`, `codex`, `cursor`, `copilot`, `gemini`, `jules`. The command
-explains the trade, has you pick a platform, then opens the guided setup on the dashboard's
+`--platform` is one of `claude`, `codex`, `cursor`, `copilot`. The command explains the trade,
+has you pick a platform, then opens the guided setup on the dashboard's
 **Triggers** tab preselected to it — the same surface that manages the trigger afterwards.
 `shipeasy setup` offers this as an inline step.
 
@@ -2384,18 +2384,17 @@ launched and authenticated, differs. The low-level plumbing is still there if yo
 
 ### Three scheduler tiers
 
-| Tier                              | Platforms                              | Mechanism                                                                          |
-| --------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------- |
-| **A — Shipeasy fires it**         | `claude`, `cursor`, `copilot`, `jules` | Shipeasy's own cron starts the run over HTTPS — your machine can be off            |
-| **B — scheduled on the platform** | `codex`                                | a GitHub Actions `schedule:` job submits a Codex Cloud task                        |
-| **C — headless + external cron**  | `gemini`                               | non-interactive run mode driven by system cron or a GitHub Actions `schedule:` job |
+| Tier                              | Platforms                     | Mechanism                                                                          |
+| --------------------------------- | ----------------------------- | ---------------------------------------------------------------------------------- |
+| **A — Shipeasy fires it**         | `claude`, `cursor`, `copilot` | Shipeasy's own cron starts the run over HTTPS — your machine can be off            |
+| **B — scheduled on the platform** | `codex`                       | a GitHub Actions `schedule:` job submits a Codex Cloud task                        |
+| **C — headless + external cron**  | `gemini`                      | non-interactive run mode driven by system cron or a GitHub Actions `schedule:` job |
 
 | `--platform` | Scheduler                                                                       | Launch / auth                                                     |
 | ------------ | ------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | `claude`     | `/schedule` cloud routine                                                       | runs `shipeasy-ops-work --pr`; **registers a Shipeasy connector** |
 | `cursor`     | Shipeasy cron → `POST https://api.cursor.com/v1/agents`                         | `autoCreatePR`; `CURSOR_API_KEY`                                  |
 | `copilot`    | Shipeasy cron → GitHub coding-agent task via `.github/agents/shipeasy.agent.md` | **Connect GitHub** (user-to-server token); PAT fallback           |
-| `jules`      | Shipeasy cron → Jules session                                                   | Jules API key                                                     |
 | `codex`      | Actions `schedule:` job (`.github/workflows/shipeasy-trigger.yml`)              | `codex cloud exec`; `CODEX_API_KEY` + `CODEX_ENV_ID`              |
 | `gemini`     | Actions `schedule:` (run-gemini-cli)                                            | `gemini -p --approval-mode=yolo`                                  |
 
@@ -2433,13 +2432,6 @@ Shipeasy starts a Copilot coding-agent task through the custom agent file
 `.github/agents/shipeasy.agent.md`. GitHub only lets a user token start a task: **Connect GitHub**
 authorizes the Shipeasy app as you, or paste a Copilot-licensed fine-grained PAT with the **Agent
 tasks** permission. The `ops` key lives in the repo's GitHub Agents secret store.
-
-#### Gemini (Jules) [#jules]
-
-Shipeasy starts a Google Jules session that opens a PR. **Connect** needs the Jules source (your
-repo), a Jules API key, and a restricted `ops` key, which is embedded in the prompt because Jules
-has no environment-variable channel. For headless Gemini CLI runs on your own cron, see
-[Tier C](#tier-c--the-github-actions-shape-gemini) below.
 
 #### Codex [#codex]
 
@@ -2521,17 +2513,16 @@ runs. PRs land for review; nothing auto-merges.
 ### Mention an agent in a comment [#mentions]
 
 Besides running on a schedule, a connected agent can be started by hand: write its handle in a
-comment on a queue item — `@claude`, `@cursor`, `@copilot` or `@jules` — and Shipeasy hands the item
+comment on a queue item — `@claude`, `@cursor` or `@copilot` — and Shipeasy hands the item
 to that agent. It marks your comment as seen with a 👀 reaction and the agent picks the work up,
 exactly as a scheduled run would. A second mention while that agent's run is still open adds
 instructions to it rather than starting from scratch.
 
 > **Off by default**
 
-A mention starts a real run, which spends your own Claude, Cursor, Copilot or Jules quota, so it
-is a project-level choice and **starts off**. Turn it on under **Settings → Ops → Mentions →
-Mentioning an agent starts a run**. While it is off, a mention stays a plain reference in the
-comment.
+A mention starts a real run, which spends your own Claude, Cursor or Copilot quota, so it is a
+project-level choice and **starts off**. Turn it on under **Settings → Ops → Mentions → Mentioning
+an agent starts a run**. While it is off, a mention stays a plain reference in the comment.
 
 A mention can only start an agent that is connected — set one up under **Settings → Triggers**
 first. The Mentions row lists which are connected right now. Codex, Muse and other MCP tools have no
@@ -2547,12 +2538,11 @@ own cron fires the run**. That backend is a Cloudflare Worker, so it can only fi
 exposes (1) a clean HTTP "start a run" endpoint — a plain `fetch()`, no CLI binary, no local
 scheduler — and (2) a storable static token.
 
-Four providers clear that bar and are registered as trigger connectors:
+Three providers clear that bar and are registered as trigger connectors:
 
 - **`claude`** — `POST …/routines/<id>/fire` with a per-routine bearer token.
 - **`cursor`** — `POST https://api.cursor.com/v1/agents` with `CURSOR_API_KEY` + `autoCreatePR`.
 - **`copilot`** — a GitHub coding-agent task, via the GitHub connection you already made.
-- **`jules`** — a Jules session started from its API key.
 
 Each gets a guided flow and a **Trigger now** button on the dashboard, plus auto-fire on new queue
 items. `codex` and `gemini` are **platform-scheduled**: they run on their own surface (Codex
@@ -2778,7 +2768,6 @@ Full flags and arguments: https://docs.shipeasy.ai/get-started/cli-reference
 - `shipeasy ops trigger create claude` — --config --enabled --events --name --token
 - `shipeasy ops trigger create copilot` — --config --enabled --events --name --token
 - `shipeasy ops trigger create cursor` — --api-key --config --enabled --events --name --ops-key
-- `shipeasy ops trigger create jules` — --api-key --config --enabled --events --name --ops-key
 - `shipeasy ops trigger prep` — --dry-run --frequency --json --model --name --project --repo
 - `shipeasy ops update` — --actual-result --description --expected-result --github-pr-number --notify --priority --status --steps-to-reproduce --title --use-case
 - `shipeasy projects`
@@ -3010,7 +2999,6 @@ Parameters and error codes: https://docs.shipeasy.ai/get-started/mcp-reference
 - `ops_trigger_create_claude`
 - `ops_trigger_create_copilot`
 - `ops_trigger_create_cursor`
-- `ops_trigger_create_jules`
 - `trails_attribute`
 - `trails_close`
 - `trails_confirm_suspect`

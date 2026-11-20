@@ -19,7 +19,7 @@ There is no single Connectors screen in the dashboard. Each destination has the 
 
 - **Google Sheets** — Appends a <b>row</b> to a spreadsheet and tab of your choice for every selected event.
 
-- **Coding agents** — Claude, Cursor, Copilot and Jules connectors run an agent on your queue instead of mirroring it. See [Scheduled triggers](https://docs.shipeasy.ai/get-started/triggers).
+- **Coding agents** — Claude, Cursor and Copilot connectors run an agent on your queue instead of mirroring it. See [Scheduled triggers](https://docs.shipeasy.ai/get-started/triggers).
 
 These are the only destinations. Anything else is not available.
 

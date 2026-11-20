@@ -1672,21 +1672,6 @@
       ]
     },
     {
-      "path": "shipeasy ops trigger create jules",
-      "aliases": [
-        "gemini"
-      ],
-      "args": [],
-      "options": [
-        "--api-key",
-        "--config",
-        "--enabled",
-        "--events",
-        "--name",
-        "--ops-key"
-      ]
-    },
-    {
       "path": "shipeasy ops trigger prep",
       "aliases": [],
       "args": [],
