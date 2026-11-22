@@ -16,7 +16,7 @@ path.
 ## Install
 
 ```kotlin
-implementation("ai.shipeasy:shipeasy-kotlin:0.22.0")
+implementation("ai.shipeasy:shipeasy-kotlin:0.24.0")
 ```
 
 Full wiring — frameworks, options, env vars — is in [Installation](https://docs.shipeasy.ai/sdks/reference/kotlin/installation).
@@ -49,7 +49,8 @@ its own.
 
 A handful of top-level package functions cover everything else without naming a
 heavyweight object: `overrideFlag` / `overrideConfig` / `clearOverrides`, `onChange`, `bootstrapScriptTag` / `i18nScriptTag` /
-`devtoolsScriptTag`, and the
+`devtoolsScriptTag`, `withRequestOverrides` (honor signed DevTools overrides on
+server reads), and the
 `see()` family.
 
 ## Shipping in an Android app? Use `ShipeasyClient`

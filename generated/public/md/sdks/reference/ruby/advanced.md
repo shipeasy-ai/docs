@@ -91,6 +91,91 @@ For **Sinatra / Hanami / bare Rack** (no Railtie), mount it yourself:
 use Shipeasy::SDK::RackMiddleware
 ```
 
+## DevTools overrides on server reads
+
+When a teammate is signed in to the Shipeasy DevTools overlay, every override
+they set in the browser (including the `?se_gate_<name>=true` URL state) is
+mirrored into a **signed** `se_ov` cookie. Cookies reach the server on every
+same-origin request — page loads and GraphQL/XHR alike — so server-side reads
+can honour them. `Shipeasy::SDK::RackMiddleware` (auto-mounted by the Rails
+Railtie; add `use Shipeasy::SDK::RackMiddleware` for Sinatra / bare Rack)
+verifies the cookie once per request and scopes the result to that request.
+Every `Shipeasy::Client` read inside it then resolves:
+
+1. a programmatic override (`Shipeasy.override_flag` and friends), then
+2. the signed cookie override, then
+3. normal evaluation.
+
+| read | cookie override |
+| --- | --- |
+| `get_flag` / `get_flag_detail` | gate value, reason `OVERRIDE` |
+| `get_killswitch(name)` | the same gate namespace (whole-switch read only; per-key `switch_key` reads are untouched) |
+| `get_config` | replaces the value (your decoder still runs) |
+| `universe(name).assign` | forces that experiment's group (variant params from the blob) |
+
+Outside Rack (a job, a GraphQL executor, a custom server) scope it yourself:
+
+```ruby
+# cookie_header: the raw Cookie header, or the bare se_ov value
+Shipeasy.with_request_overrides(request.headers["Cookie"]) do
+  Shipeasy::Client.new(current_user).get_flag("new_checkout")
+end
+```
+
+It is stored in fiber storage (Ruby 3.2+, inherited by child fibers such as
+`GraphQL::Dataloader`) or fiber-local state on older Rubies, so concurrent
+requests never bleed, and it is cleared when the block / request ends.
+
+**Fail closed.** The cookie is only trusted when Shipeasy served your project's
+override key to the SDK, the HMAC signature verifies, the key id matches, and
+it has not expired; anything else is ignored and reads evaluate normally. A bare
+`?se_gate_` URL parameter with no signed-in DevTools session never reaches the
+server — it stays client-only by design.
+
+### Local dev: `?se_gate_x=true` without signing in
+
+On a dev machine you can skip DevTools sign-in. The browser SDK mirrors the
+page's `?se_gate_` / `se_ks_` / `se_config_` / `se_exp_` URL params into an
+**unsigned** `se_ov_dev` cookie (non-production browser builds only), and the
+server reads it when you opt in:
+
+```ruby
+Shipeasy.configure do |c|
+  c.dev_overrides = true   # default false
+end
+```
+
+Two guards, both required: the option is on **and** the process is non-production
+(`SHIPEASY_ENV`, then `RAILS_ENV` / `RACK_ENV` / `APP_ENV`; unset means production;
+`configure_for_testing` counts as non-production). In a production process the
+option is ignored with one warning, and the middleware / scope helper never looks
+at the cookie, so it is never active in production. Precedence per name:
+programmatic override, then signed `se_ov`, then `se_ov_dev`, then normal
+evaluation; the reason stays `OVERRIDE`.
+
+### Frontend and API on different subdomains
+
+With the app on `app.example.com` and the API on `api.example.com`, the browser
+SDK and DevTools overlay scope the override cookies to the registrable domain
+(auto-detected, or set `overrideCookieDomain` in the browser `configure()`), so
+the API receives them and the middleware above just works. For token-auth APIs
+or origins the cookie cannot reach, the browser also exposes
+`getOverrideHeaders()` (from `@shipeasy/sdk/client`), which returns
+`{ "X-Shipeasy-Overrides": "<cookie-header syntax>" }`; send it with your
+requests (your API's CORS must allow that header). `RackMiddleware` reads it
+automatically (`HTTP_X_SHIPEASY_OVERRIDES`), with the same verification and
+dev-guards as the cookies; the `Cookie` header wins per cookie name and the
+custom header fills in when the cookie is absent. Outside Rack:
+
+```ruby
+Shipeasy.with_request_overrides(
+  request.headers["Cookie"],
+  overrides_header: request.headers["X-Shipeasy-Overrides"],
+) do
+  Shipeasy::Client.new(current_user).get_flag("new_checkout")
+end
+```
+
 ## Change listeners
 
 `Shipeasy.on_change` registers a callback fired after a background poll fetches

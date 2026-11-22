@@ -62,3 +62,10 @@ d := c.GetFlagDetail("new_checkout")
 
 `GetFlagOr` returns `def` exactly when the reason is `CLIENT_NOT_READY` or
 `FLAG_NOT_FOUND`.
+
+## DevTools overrides
+
+Bound to a request context (`NewClient(user).WithContext(r.Context())` behind
+`shipeasy.Middleware`), `GetFlag` / `GetFlagDetail` honor a signed-in DevTools
+override with reason `shipeasy.ReasonOverride`. Programmatic `OverrideFlag` still
+wins. See [Advanced](https://docs.shipeasy.ai/sdks/reference/go/advanced#devtools-overrides-on-server-reads).

@@ -125,6 +125,75 @@ Press `Shift+Alt+S` on any page running the SDK (or append `?se=1`). The
 Shipeasy devtools panel mounts in a Shadow DOM overlay and lets you flip every
 gate / config / experiment / translation **for the current session only** —
 handy for QA, demos, and bug repro. The overlay is delivered as a hosted script
-(`se-devtools.js`) — nothing to install, see the Browser devtools page. React
+(`se-devtools.js`) — nothing to install: the browser SDK loads it on demand
+when the page has not mounted the tag, see the Browser devtools page. React
 Native apps get the same panels from the `@shipeasy/react-native-devtools`
 package.
+
+## Signed overrides on the server
+
+When a developer is signed in to the devtools overlay, every override (including
+a `?se_gate_…` URL one) is mirrored into a signed `se_ov` cookie that reaches
+your server on every same-origin request, page loads and XHR/GraphQL alike. To
+let server-side reads see it, wrap request handling in `withRequestOverrides`:
+
+```ts
+import { withRequestOverrides, Client } from "@shipeasy/sdk/server";
+
+app.use((req, res, next) => withRequestOverrides(req.headers.cookie, next));
+
+// anywhere inside the request
+new Client(user).getFlag("new_checkout"); // true when forced in devtools
+```
+
+Inside the scope `Client.getFlag` / `getFlagDetail` (reason `OVERRIDE`),
+`getKillswitch` (whole-switch reads), `getConfig` and `universe(name).assign()`
+honour the cookie. Precedence: programmatic `overrideFlag` etc., then the signed
+cookie, then normal evaluation. It is fail-closed: it needs the project's
+override key served by Shipeasy, a valid signature and an unexpired cookie, else
+real values resolve. Unsigned `?se_gate_…` URL params alone stay client-only by
+design. Outside a scope, behaviour is unchanged.
+
+### Dev-only URL overrides without sign-in
+
+On a local/dev/test stack you can make a plain `?se_gate_x=true` reach server
+reads without signing in to devtools. In non-production builds the browser SDK
+mirrors the current URL's override params into an unsigned `se_ov_dev` session
+cookie (written on init, deleted when the URL has no override params). The
+server reads it only when you opt in:
+
+```ts
+configure({ apiKey: process.env.SHIPEASY_SERVER_KEY!, devOverrides: true });
+```
+
+Two guards, both required: `devOverrides: true` AND a non-production process
+(`SHIPEASY_ENV` / `NODE_ENV`; `configureForTesting()` counts as non-production).
+In a production process the option is ignored with one warning and the cookie is
+never read; the browser writer is compiled out of production bundles. Precedence:
+programmatic > signed `se_ov` > `se_ov_dev` > evaluation. Never active in
+production.
+
+### Frontend and API on different subdomains
+
+With the frontend on `app.example.com` and the API on `api.example.com`, the
+override cookies are written with `Domain=.example.com` so both hosts receive
+them. The domain is auto-detected (the broadest one the browser accepts; no
+Domain on `localhost` / IPs); force one with the browser option
+`configure({ clientKey, overrideCookieDomain: ".example.com" })`. Stale host-only
+copies from older SDKs are cleared on every write.
+
+For a token-auth API on another origin that never receives cookies, send them as
+a header instead:
+
+```ts
+import { getOverrideHeaders } from "@shipeasy/sdk/client";
+
+fetch("https://api.example.com/graphql", { headers: { ...getOverrideHeaders() } });
+// Apollo: new HttpLink({ uri, headers: { ...getOverrideHeaders() } })
+```
+
+`getOverrideHeaders()` returns `{ "X-Shipeasy-Overrides": "se_ov=…; se_ov_dev=…" }`
+(or `{}`). Allow that header in the API's CORS config. On the server, pass it as
+the third argument: `withRequestOverrides(req.headers.cookie, next,
+req.headers["x-shipeasy-overrides"])`. The `Cookie` header wins per cookie name;
+the same verification and `devOverrides` guards apply.

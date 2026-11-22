@@ -96,7 +96,83 @@ new Client(Map.of()).getFlag("new_checkout");
 
 An explicit `user_id`/`anonymous_id` always wins. The cookie is non-`HttpOnly`
 by design so the browser SDK buckets identically. Non-servlet stacks (Ktor,
-http4k, Javalin) can use the `AnonId` primitives directly.
+http4k, Javalin) can use the `AnonId` primitives directly. The same filter also
+scopes signed DevTools overrides to the request (next section).
+
+## DevTools overrides on server reads (signed `se_ov` cookie)
+
+When a developer is signed in to the DevTools overlay, every override they set
+(including `?se_gate_x=true` URL state) is mirrored into a signed `se_ov`
+cookie, which reaches your server on every same-origin request. Install
+`AnonIdFilter` (it verifies the cookie once per request) or wrap the request in
+`Shipeasy.withRequestOverrides(...)`, and `Client` reads inside the request —
+`getFlag`/`getFlagDetail` (reason `OVERRIDE`), `getKillswitch` (whole-switch),
+`getConfig` and `universe(name).assign()` — return the overridden value.
+
+```java
+// Servlet apps: the AnonIdFilter registered above already does this.
+// Any other stack: wrap the request handling yourself.
+String cookieHeader = request.getHeader("Cookie"); // raw header, or the bare se_ov value
+Shipeasy.withRequestOverrides(cookieHeader, () -> {
+    Client c = new Client(user);                   // construct once per callsite
+    boolean on = c.getFlag("new_checkout");        // honors the signed override
+    render(on);
+});
+// Supplier overload returns the body's result:
+// String html = Shipeasy.withRequestOverrides(cookieHeader, () -> renderPage(user));
+```
+
+Precedence: `Shipeasy.overrideFlag(...)` (programmatic) beats the signed cookie,
+which beats normal evaluation. Outside a scope nothing changes. It is
+**fail-closed**: overrides apply only when Shipeasy serves your project's
+override key, the cookie's signature verifies, its key id matches and it has not
+expired; anything else is ignored silently. A plain unsigned `?se_gate_` URL
+parameter on its own is **client-only by design** — it never reaches server
+reads. The scope is thread-local; if you hand work to another thread, wrap it
+again with the same header.
+
+### Frontend and API on different subdomains
+
+With the frontend on `app.example.com` and the API on `api.example.com`, the
+browser SDK scopes the `se_ov` / `se_ov_dev` cookies to the registrable domain
+(auto-detected, or set `overrideCookieDomain` in the browser `configure()`), so
+the API receives them like any other cookie and the filter / scope above just
+works. For token-auth APIs that do not get cookies, the browser SDK's
+`getOverrideHeaders()` returns an `X-Shipeasy-Overrides` header (cookie-header
+syntax, e.g. `se_ov=...; se_ov_dev=...`; allow it in the API's CORS
+`Access-Control-Allow-Headers`). `AnonIdFilter` reads it automatically; for the
+manual scope pass it as the second argument. The `Cookie` header wins per cookie
+name, the header fills in when the cookie is absent, and the same verification
+and guards apply (a signed value must verify; `se_ov_dev` is never even parsed
+unless `devOverrides` is on in a non-production process).
+
+```java
+Shipeasy.withRequestOverrides(
+    request.getHeader("Cookie"),
+    request.getHeader("X-Shipeasy-Overrides"), // optional, may be null
+    () -> handle(request));
+```
+
+### Local dev without sign-in — `devOverrides` (`se_ov_dev`)
+
+On a local/dev/test stack you can opt in to an **unsigned** cookie so
+`?se_gate_x=true` reaches server reads without DevTools sign-in. The dev browser
+build writes `se_ov_dev` (base64url JSON `{"gates":{},"configs":{},"exps":{}}`);
+the server reads it only when you turn the option on:
+
+```java
+Shipeasy.configure(Shipeasy.options(System.getenv("SHIPEASY_SERVER_KEY"))
+    .devOverrides(true)); // default false
+// tests: Shipeasy.configureForTesting(new Shipeasy.TestOptions().devOverrides(true))
+```
+
+Two guards, both required: the option is `true` **and** the process is
+non-production (`shipeasy.env` system property, then `SHIPEASY_ENV` / `APP_ENV` /
+`ENV`; unset means production; test/offline engines count as non-production).
+In a production process the option is ignored with one logged warning and the
+cookie is never even read, so it is never active in production. Precedence per
+name: programmatic `overrideFlag` > signed `se_ov` > `se_ov_dev` > evaluation;
+reason stays `OVERRIDE`.
 
 ## Server-side rendering (SSR) bootstrap
 

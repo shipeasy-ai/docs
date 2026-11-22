@@ -110,6 +110,27 @@ http.ListenAndServe(":8080", shipeasy.Middleware(mux)) // mints __se_anon_id coo
 c := shipeasy.NewClient(shipeasy.User{"anonymous_id": shipeasy.AnonID(r)})
 ```
 
+## DevTools overrides on server reads
+
+`shipeasy.Middleware` verifies the signed `se_ov` DevTools cookie once per
+request. Bind the client to the request context so overrides apply:
+`shipeasy.NewClient(user).WithContext(r.Context())`. Without the middleware use
+`ctx := shipeasy.WithRequestOverrides(r.Context(), r.Header.Get("Cookie"))` and
+`shipeasy.NewClientContext(ctx, user)`. Precedence: `Override*` > signed cookie >
+normal evaluation (reason `ReasonOverride`). Fails closed (needs the project's
+override key served by Shipeasy, a valid unexpired signature); unsigned
+`?se_gate_` URL params alone are client-only.
+
+Local dev only: `Options{DevOverrides: true}` (default false) also honors the
+unsigned `se_ov_dev` cookie the browser SDK writes for `?se_gate_x=true`, and only
+in a non-production process (otherwise ignored with one warning). Signed `se_ov`
+wins per name.
+
+Cross-subdomain APIs: the browser SDK domain-scopes the cookies, or send
+`getOverrideHeaders()` (`X-Shipeasy-Overrides`, cookie syntax); `Middleware`
+reads it, or pass `r.Header.Get(shipeasy.OverridesHeader)` as the third arg of
+`WithRequestOverrides`. Cookie wins per name; same verification and guards.
+
 ## Error reporting — See()
 
 ```go

@@ -19,7 +19,7 @@ network call per evaluation.
 <dependency>
   <groupId>ai.shipeasy</groupId>
   <artifactId>shipeasy</artifactId>
-  <version>0.21.0</version>
+  <version>0.24.0</version>
 </dependency>
 ```
 

@@ -137,6 +137,82 @@ shipeasy.Configure(shipeasy.Options{
 })
 ```
 
+## DevTools overrides on server reads
+
+A signed-in Shipeasy DevTools overlay mirrors its overrides (gates, killswitches,
+configs, experiment groups, including the `?se_gate_<name>=true` URL state) into
+a signed `se_ov` cookie. The browser sends it on every same-origin request, so
+`shipeasy.Middleware` can verify it once per request and put the result on the
+request context. Bind your `Client` to that context:
+
+```go
+http.ListenAndServe(":8080", shipeasy.Middleware(mux))
+
+// in a handler
+c := shipeasy.NewClient(user).WithContext(r.Context())
+c.GetFlag("new_checkout") // honors the signed-in DevTools override
+```
+
+Without `Middleware`, scope it yourself with `WithRequestOverrides`:
+
+```go
+ctx := shipeasy.WithRequestOverrides(r.Context(), r.Header.Get("Cookie"))
+c := shipeasy.NewClientContext(ctx, user)
+```
+
+Precedence on a read is programmatic `Override*` > signed cookie > normal
+evaluation. A cookie override reports `shipeasy.ReasonOverride`. The cookie's
+`gates` map covers killswitches too (whole-switch `GetKillswitch` reads only),
+`configs` replace `GetConfig` values, and `exps` force a universe assignment to
+that group.
+
+It fails closed: overrides apply only when Shipeasy serves your project's
+override key, the cookie signature is valid, and it has not expired. A client
+with no request context, or an unsigned `?se_gate_` URL parameter alone, is
+unaffected, so those stay client-only by design.
+
+### Local dev: `?se_gate_x=true` without signing in
+
+On a local, dev or test stack you can skip DevTools sign-in. The browser SDK
+mirrors the URL overrides into an unsigned `se_ov_dev` cookie outside
+production builds, and the server reads it when you opt in:
+
+```go
+shipeasy.Configure(shipeasy.Options{
+    APIKey:       os.Getenv("SHIPEASY_SERVER_KEY"),
+    DevOverrides: true, // default false
+})
+```
+
+Two guards apply: `DevOverrides` must be true AND the process must be
+non-production (`SHIPEASY_ENV`, `APP_ENV`, `GO_ENV` or `ENV`; `ConfigureForTesting`
+counts as non-production via `TestOptions.DevOverrides`). Set in a production
+process it is ignored with one warning, and the cookie is never even read. The
+cookie is unsigned, so it is **never active in production**. Per name the
+precedence is programmatic `Override*` > signed `se_ov` > `se_ov_dev` >
+normal evaluation.
+
+### Frontend and API on different subdomains
+
+When the frontend is `app.example.com` and the API is `api.example.com`, the
+browser SDK scopes the override cookies to the registrable domain (auto-detected,
+or set `overrideCookieDomain` in the browser `configure()`), so the API sees them
+and `Middleware` works unchanged. For token-auth APIs (or when you do not want
+cookies sent), the browser SDK's `getOverrideHeaders()` returns
+`{"X-Shipeasy-Overrides": "se_ov=...; se_ov_dev=..."}`: attach it to your API
+requests (the API's CORS must allow that header). `Middleware` reads it
+automatically; for manual scoping pass it as the optional third argument:
+
+```go
+ctx := shipeasy.WithRequestOverrides(r.Context(), r.Header.Get("Cookie"),
+    r.Header.Get(shipeasy.OverridesHeader))
+```
+
+Per cookie name the `Cookie` header wins and the custom header fills in when it
+is absent. The same verification and guards apply (a signed value must verify;
+`se_ov_dev` is not even parsed unless `DevOverrides` is on in a non-production
+process).
+
 ## bucketBy
 
 An experiment can bucket on an attribute other than the individual (e.g.

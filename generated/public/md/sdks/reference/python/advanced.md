@@ -161,6 +161,72 @@ end users at all:
 head += shipeasy.devtools_script_tag() if request.user.is_staff else ""
 ```
 
+### DevTools overrides on server reads
+
+A signed-in DevTools overlay mirrors every override — including `?se_gate_x=true`
+URL state — into a signed `se_ov` cookie that rides every same-origin request.
+Install the middleware (or scope the request yourself) and server-side
+`Client` reads honor it: `get_flag` / `get_flag_detail` (reason `OVERRIDE`),
+`get_killswitch` (whole-switch reads), `get_config`, and
+`universe(name).assign()` experiment groups.
+
+```python
+# Already using AnonIdMiddleware / AnonIdASGIMiddleware / the Django middleware?
+# Nothing to add — they verify the cookie once per request. Otherwise scope it
+# by hand around the work that reads flags:
+with shipeasy.request_overrides(request.headers.get("Cookie")):  # a Cookie header or the bare se_ov value
+    client = shipeasy.Client(user)
+    client.get_flag("new_checkout")  # True if the signed cookie forces it
+```
+
+Precedence: `override_flag` / `override_config` / `override_experiment` >
+signed cookie > normal evaluation. It is **fail-closed**: overrides apply only
+when Shipeasy serves your project's override key, the signature verifies, the
+key id matches and the cookie has not expired — otherwise reads resolve
+normally and nothing raises. Outside a `request_overrides` scope behaviour is
+unchanged. A bare, unsigned `?se_gate_` URL param is client-only by design and
+never reaches the server.
+
+#### Frontend and API on different subdomains
+
+With the frontend on `app.example.com` and the API on `api.example.com`, the
+browser SDK scopes the override cookies to the registrable domain
+(auto-detected; override with the browser `overrideCookieDomain` option), so the
+API receives them as ordinary cookies. For token-auth APIs that do not take
+cookies, the browser SDK's `getOverrideHeaders()` returns an
+`X-Shipeasy-Overrides` header (cookie syntax, e.g. `se_ov=<v>; se_ov_dev=<v>`)
+to send on API calls; the API's CORS must allow that header. The middleware reads
+it automatically; with the manual scope pass it as the second argument:
+
+```python
+with shipeasy.request_overrides(
+    request.headers.get("Cookie"),
+    request.headers.get("X-Shipeasy-Overrides"),  # optional; the Cookie header wins per cookie name
+):
+    ...
+```
+
+The same verification and guards apply to the header: signed cookies must
+verify, and `se_ov_dev` is not even parsed unless `dev_overrides` is on in a
+non-production process.
+
+#### Dev-only URL overrides without DevTools sign-in
+
+On a local/dev/test stack you can opt in to the unsigned `se_ov_dev` cookie the
+browser SDK mirrors from `?se_gate_x=true`-style URL params, so URL overrides
+reach server reads with no DevTools sign-in:
+
+```python
+shipeasy.configure(api_key=..., dev_overrides=True)  # default False
+```
+
+Two guards, both required: the option is `True` **and** the process is not
+production (`SHIPEASY_ENV` / `APP_ENV` / `ENV` / `PYTHON_ENV`, else the `env`
+option; `configure_for_testing` counts as non-production). In a production
+process the option is ignored with one warning, and the cookie is never even
+read — it is never active in production. Precedence: `override_*` > signed
+`se_ov` > `se_ov_dev` > evaluation (per name; signed wins conflicts).
+
 ### Identity coherence (no anon→identified flip)
 
 When you pass an identified `user` (one carrying `user_id` / `email` / targeting

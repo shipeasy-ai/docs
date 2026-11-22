@@ -61,3 +61,11 @@ d.reason   // one of the Reason constants
 
 `getFlag` is strictly boolean. For typed values use [configs](https://docs.shipeasy.ai/sdks/reference/kotlin/configs); for
 variant assignment use experiments.
+
+## DevTools overrides on the server
+
+Signed-in DevTools overrides (the `se_ov` cookie) reach `getFlag` /
+`getFlagDetail` once `AnonIdFilter` is installed or the request is wrapped in
+`withRequestOverrides(cookieHeader) { ... }` — the detail reason is `OVERRIDE`.
+Programmatic `overrideFlag` still wins; no valid signature, no override. See
+[Advanced](https://docs.shipeasy.ai/sdks/reference/kotlin/advanced#server-side-devtools-overrides-se_ov).

@@ -15,13 +15,13 @@ Server SDK for the JVM (Android-compatible). Distributed on Maven Central as
 ### Gradle (Kotlin DSL) — `build.gradle.kts`
 
 ```kotlin
-implementation("ai.shipeasy:shipeasy-kotlin:0.22.0")
+implementation("ai.shipeasy:shipeasy-kotlin:0.24.0")
 ```
 
 ### Gradle (Groovy DSL) — `build.gradle`
 
 ```groovy
-implementation 'ai.shipeasy:shipeasy-kotlin:0.22.0'
+implementation 'ai.shipeasy:shipeasy-kotlin:0.24.0'
 ```
 
 ### Maven — `pom.xml`
@@ -30,7 +30,7 @@ implementation 'ai.shipeasy:shipeasy-kotlin:0.22.0'
 <dependency>
   <groupId>ai.shipeasy</groupId>
   <artifactId>shipeasy-kotlin</artifactId>
-  <version>0.22.0</version>
+  <version>0.24.0</version>
 </dependency>
 ```
 
@@ -269,7 +269,7 @@ on every cold start.
 Add the Android companion artifact (a thin adapter over the pure-JVM core):
 
 ```kotlin
-implementation("ai.shipeasy:shipeasy-kotlin-android:0.22.0")
+implementation("ai.shipeasy:shipeasy-kotlin-android:0.24.0")
 ```
 
 Configure once in `Application.onCreate()` — `configureAndroid` wires
